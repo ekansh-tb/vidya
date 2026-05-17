@@ -1,0 +1,178 @@
+export type Book = {
+  id: string;
+  title: string;
+  author: string;
+  region: "indian" | "world" | "magazine" | "comic" | "marathi" | "hindi";
+  blurb: string;
+  readMinutes: number;
+  cover: string;        // emoji or color
+  difficulty: "easy" | "medium" | "stretch";
+  link?: string;
+};
+
+export const LIBRARY: Book[] = [
+  // Indian classics
+  {
+    id: "panchatantra",
+    title: "Panchatantra: Best Tales",
+    author: "Vishnu Sharma (retold)",
+    region: "indian",
+    blurb: "Talking animals teaching wisdom. Quick, funny, and full of moral surprises.",
+    readMinutes: 12,
+    cover: "🦊",
+    difficulty: "easy",
+  },
+  {
+    id: "rk-narayan-swami",
+    title: "Swami and Friends",
+    author: "R. K. Narayan",
+    region: "indian",
+    blurb: "A 10-year-old boy in fictional Malgudi navigates school, friendships, and growing up.",
+    readMinutes: 45,
+    cover: "🚂",
+    difficulty: "medium",
+  },
+  {
+    id: "ruskin-bond-rusty",
+    title: "The Adventures of Rusty",
+    author: "Ruskin Bond",
+    region: "indian",
+    blurb: "The hill-station boyhood adventures every Indian kid grows up loving.",
+    readMinutes: 30,
+    cover: "🏔️",
+    difficulty: "easy",
+  },
+  {
+    id: "feluda",
+    title: "The Adventures of Feluda",
+    author: "Satyajit Ray",
+    region: "indian",
+    blurb: "India's most famous teenage-friendly detective. Smart, snappy, totally bingeable.",
+    readMinutes: 35,
+    cover: "🕵️",
+    difficulty: "medium",
+  },
+  {
+    id: "amar-chitra-katha",
+    title: "Amar Chitra Katha — Ramayana",
+    author: "Anant Pai",
+    region: "comic",
+    blurb: "The Ramayana told in vivid comic panels. Read one episode a day.",
+    readMinutes: 15,
+    cover: "🏹",
+    difficulty: "easy",
+  },
+  {
+    id: "tinkle",
+    title: "Tinkle Digest",
+    author: "ACK Media",
+    region: "magazine",
+    blurb: "Suppandi, Shikari Shambu, Kalia, brain-teasers. Pure joy.",
+    readMinutes: 18,
+    cover: "📔",
+    difficulty: "easy",
+  },
+  // World classics
+  {
+    id: "matilda",
+    title: "Matilda",
+    author: "Roald Dahl",
+    region: "world",
+    blurb: "A genius little girl with a secret superpower — and a terrible headmistress.",
+    readMinutes: 60,
+    cover: "📚",
+    difficulty: "medium",
+  },
+  {
+    id: "charlie",
+    title: "Charlie and the Chocolate Factory",
+    author: "Roald Dahl",
+    region: "world",
+    blurb: "Golden tickets, an Oompa-Loompa song, and rivers of chocolate.",
+    readMinutes: 55,
+    cover: "🍫",
+    difficulty: "easy",
+  },
+  {
+    id: "harry-potter-1",
+    title: "Harry Potter and the Philosopher's Stone",
+    author: "J. K. Rowling",
+    region: "world",
+    blurb: "An ordinary boy discovers he's a wizard. The first step into Hogwarts.",
+    readMinutes: 90,
+    cover: "⚡",
+    difficulty: "stretch",
+  },
+  {
+    id: "wind-willows",
+    title: "The Wind in the Willows",
+    author: "Kenneth Grahame",
+    region: "world",
+    blurb: "Mole, Rat, Badger and the wild adventures of Mr Toad. Gentle and warm.",
+    readMinutes: 50,
+    cover: "🐸",
+    difficulty: "medium",
+  },
+  {
+    id: "diary-wimpy-kid",
+    title: "Diary of a Wimpy Kid",
+    author: "Jeff Kinney",
+    region: "world",
+    blurb: "Greg Heffley's middle-school diary — illustrated, hilarious, and very real.",
+    readMinutes: 30,
+    cover: "✏️",
+    difficulty: "easy",
+  },
+  // Maharashtra / Indian languages
+  {
+    id: "syamchi-aai",
+    title: "श्यामची आई",
+    author: "साने गुरुजी",
+    region: "marathi",
+    blurb: "श्यामच्या आईने त्याला शिकवलेल्या कथा. मराठी साहित्यातील एक रत्न.",
+    readMinutes: 25,
+    cover: "🪔",
+    difficulty: "medium",
+  },
+  {
+    id: "balbharati-marathi",
+    title: "बालभारती — मराठी इयत्ता ५",
+    author: "महाराष्ट्र राज्य पाठ्यपुस्तक मंडळ",
+    region: "marathi",
+    blurb: "तुमचे शाळेचे मराठी पुस्तक. पाठ निवडा आणि एक छानशी कथा वाचा.",
+    readMinutes: 10,
+    cover: "📕",
+    difficulty: "easy",
+    link: "https://books.ebalbharati.in/",
+  },
+  {
+    id: "sulabhbharati-hindi",
+    title: "सुलभभारती — हिंदी कक्षा ५",
+    author: "बालभारती",
+    region: "hindi",
+    blurb: "आपकी हिंदी की पाठ्यपुस्तक. नंदनवन, बूँदें, पेटूराम — कोई भी पाठ चुनिए.",
+    readMinutes: 10,
+    cover: "📙",
+    difficulty: "easy",
+    link: "https://books.ebalbharati.in/",
+  },
+  {
+    id: "premchand-idgah",
+    title: "ईदगाह",
+    author: "मुंशी प्रेमचंद",
+    region: "hindi",
+    blurb: "हामिद की भोली समझ — एक छोटी पर बहुत बड़ी कहानी.",
+    readMinutes: 20,
+    cover: "📿",
+    difficulty: "medium",
+  },
+];
+
+export const LIBRARY_REGIONS: { id: Book["region"]; label: string; color: string }[] = [
+  { id: "indian",   label: "Indian classics",         color: "#F59E0B" },
+  { id: "marathi",  label: "मराठी",                   color: "#EA580C" },
+  { id: "hindi",    label: "हिंदी",                   color: "#A78BFA" },
+  { id: "world",    label: "From around the world",   color: "#22D3EE" },
+  { id: "comic",    label: "Comics",                  color: "#F472B6" },
+  { id: "magazine", label: "Magazines",               color: "#34D399" },
+];

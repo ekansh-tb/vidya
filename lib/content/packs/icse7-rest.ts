@@ -1,0 +1,815 @@
+// Remaining ICSE Class 7 Exam Packs — Chemistry, Biology, History & Civics,
+// Geography, Computer Studies. Verified against Selina + icsehelp + extramarks
+// (May 2026). Compact but complete.
+
+import type { ExamPack } from "../exam-pack";
+
+// =========================
+// CHEMISTRY — Selina (7 chapters)
+// =========================
+export const ICSE7_CHEMISTRY: ExamPack = {
+  subjectId: "icse-chemistry",
+  title: "Chemistry — Class 7 ICSE",
+  context: "Selina Concise · 7 chapters · WWS Hadapsar",
+  highlights: [
+    { label: "Textbook", value: "Selina Concise Chemistry 7" },
+    { label: "Chapters", value: "7" },
+  ],
+  reference: { label: "Selina Chemistry 7 (Shaalaa)", url: "https://www.shaalaa.com/textbook-solutions/selina-solutions-concise-chemistry-class-7-icse_42" },
+  plan: [
+    { title: "Walk the 7 chapters", hint: "Tag confidence per chapter" },
+    { title: "Key definitions",     hint: "Element vs compound vs mixture" },
+    { title: "Practice MCQs",        hint: "Symbols, valencies, balancing" },
+    { title: "Common mistakes",      hint: "Where marks fall" },
+    { title: "Cheat sheet",          hint: "Symbols + valencies" },
+  ],
+  topics: [
+    {
+      id: "1-matter", num: 1, title: "Matter & Its Composition",
+      blurb: "States of matter, kinetic particle theory.",
+      syllabus: [
+        "Matter = anything with mass and volume.",
+        "Three states: solid (fixed shape & volume), liquid (volume only), gas (neither).",
+        "Inter-particle space: solids < liquids < gases.",
+        "Inter-particle attraction: solids > liquids > gases.",
+        "State changes: melting, freezing, vaporisation, condensation, sublimation, deposition.",
+      ],
+    },
+    {
+      id: "2-changes", num: 2, title: "Physical & Chemical Changes",
+      blurb: "Reversible vs irreversible, signs of chemical change.",
+      syllabus: [
+        "Physical change: no new substance, often reversible (ice → water).",
+        "Chemical change: new substance forms, usually irreversible (rusting, burning).",
+        "Signs of chemical change: colour change, gas evolved, heat/light, precipitate, smell, energy change.",
+        "Examples — rusting of iron; burning of magnesium ribbon; cooking food.",
+      ],
+    },
+    {
+      id: "3-elements", num: 3, title: "Elements, Compounds & Mixtures",
+      blurb: "Classification of pure substances vs mixtures.",
+      syllabus: [
+        "Element: substance made of one type of atom (Cu, O, Fe).",
+        "Compound: two or more elements chemically combined in fixed ratio (H₂O, NaCl).",
+        "Mixture: two or more substances physically mixed (air, salt water).",
+        "Types of mixtures: homogeneous (uniform) vs heterogeneous (non-uniform).",
+        "Separation: filtration, evaporation, distillation, chromatography, magnetic separation, sublimation.",
+      ],
+    },
+    {
+      id: "4-atoms", num: 4, title: "Atoms, Molecules & Radicals",
+      blurb: "Atomicity, valency, simple radicals.",
+      syllabus: [
+        "Atom = smallest particle of an element that takes part in a chemical reaction.",
+        "Molecule = group of atoms bonded together.",
+        "Atomicity: monoatomic (He), diatomic (O₂, H₂, Cl₂), triatomic (O₃), polyatomic (S₈).",
+        "Valency: combining capacity. Group 1 = 1, Group 2 = 2, etc.",
+        "Radicals: positive (Na⁺, NH₄⁺), negative (Cl⁻, SO₄²⁻, NO₃⁻, OH⁻).",
+      ],
+    },
+    {
+      id: "5-language", num: 5, title: "Language of Chemistry",
+      blurb: "Symbols, formulae, balancing equations.",
+      syllabus: [
+        "Symbol: shorthand for an element (H, O, Na, Cu, Fe).",
+        "Formula: shorthand for a compound (H₂O, NaCl, CO₂, H₂SO₄).",
+        "Writing a formula: criss-cross valencies (Al₂O₃ from Al³⁺ + O²⁻).",
+        "Chemical equation: reactants → products; must be balanced.",
+        "Balancing: same number of atoms of each element on both sides.",
+      ],
+    },
+    {
+      id: "6-metals", num: 6, title: "Metals & Non-metals",
+      blurb: "Properties, uses, exceptions.",
+      syllabus: [
+        "Metals: lustrous, malleable, ductile, conduct heat & electricity, sonorous.",
+        "Non-metals: dull, brittle, non-conductors (except graphite).",
+        "Exceptions: mercury (liquid metal), graphite (non-metal that conducts), diamond (hardest non-metal).",
+        "Uses: Fe in construction; Cu in wiring; Al in foil; Au/Ag in jewellery; C in pencils; S in matches.",
+      ],
+    },
+    {
+      id: "7-air", num: 7, title: "Air & Atmosphere",
+      blurb: "Composition, importance, pollution.",
+      syllabus: [
+        "Air composition by volume: ~78% N₂, ~21% O₂, ~1% argon + CO₂ + traces.",
+        "Air supports combustion (O₂) and respiration; CO₂ used in photosynthesis.",
+        "Atmosphere layers: troposphere, stratosphere (ozone), mesosphere, thermosphere, exosphere.",
+        "Air pollution: SO₂, NOₓ, CO, particulates; acid rain; smog.",
+        "Reducing pollution: catalytic converters, public transport, cleaner fuels.",
+      ],
+    },
+  ],
+  flashcards: [
+    { term: "Matter", def: "Anything that has mass and occupies space." },
+    { term: "Element", def: "A pure substance made of only one type of atom." },
+    { term: "Compound", def: "Two or more elements chemically combined in a fixed ratio." },
+    { term: "Mixture", def: "Two or more substances physically combined, separable by physical means." },
+    { term: "Atom", def: "The smallest particle of an element that takes part in a chemical reaction." },
+    { term: "Molecule", def: "A group of two or more atoms chemically bonded; smallest unit of a compound." },
+    { term: "Atomicity", def: "Number of atoms in one molecule of an element (H₂ → 2, O₃ → 3, S₈ → 8)." },
+    { term: "Valency", def: "Combining capacity of an element — how many H atoms or Cl atoms it combines with." },
+    { term: "Radical", def: "A group of atoms acting as a single unit and carrying a charge (NH₄⁺, SO₄²⁻)." },
+    { term: "Symbol", def: "Shorthand notation of an element — first letter capital, second small (Na, Cu, Fe)." },
+    { term: "Formula", def: "Shorthand notation of a compound (H₂O = water, CO₂ = carbon dioxide)." },
+    { term: "Physical change", def: "A change in form/state with no new substance; usually reversible." },
+    { term: "Chemical change", def: "A change that produces one or more new substances; usually irreversible." },
+    { term: "Ductile", def: "Can be drawn into thin wires — a property of metals like copper." },
+    { term: "Malleable", def: "Can be beaten into thin sheets — a property of metals like aluminium." },
+    { term: "Allotrope", def: "Different physical forms of the same element — graphite, diamond, fullerene of carbon." },
+    { term: "Troposphere", def: "Lowest atmospheric layer (0–12 km); weather happens here." },
+    { term: "Ozone layer", def: "Region in the stratosphere that absorbs harmful UV radiation from the Sun." },
+    { term: "Acid rain", def: "Rain made acidic by sulphur dioxide and nitrogen oxides dissolving in water vapour." },
+    { term: "Catalyst", def: "A substance that speeds up a chemical reaction without being consumed itself." },
+  ],
+  questions: [
+    { id: "ic-1", topic: "1-matter", q: "Which state of matter has neither a fixed shape nor a fixed volume?", opts: ["Solid", "Liquid", "Gas", "Plasma"], a: "Gas", model: "Gases fill any container completely — no fixed shape, no fixed volume." },
+    { id: "ic-2", topic: "1-matter", q: "Direct change of solid to gas without melting is called?", opts: ["Evaporation", "Condensation", "Sublimation", "Deposition"], a: "Sublimation", model: "E.g. camphor, naphthalene, dry ice." },
+    { id: "ic-3", topic: "2-changes", q: "Which of these is a chemical change?", opts: ["Melting of ice", "Boiling of water", "Rusting of iron", "Dissolving sugar"], a: "Rusting of iron", model: "Rust = iron oxide, a new substance — chemical change." },
+    { id: "ic-4", topic: "3-elements", q: "Air is an example of?", opts: ["Element", "Compound", "Homogeneous mixture", "Heterogeneous mixture"], a: "Homogeneous mixture", model: "Air is uniform throughout — homogeneous mixture of gases." },
+    { id: "ic-5", topic: "3-elements", q: "Best method to separate iron filings from sulphur?", opts: ["Filtration", "Magnetic separation", "Evaporation", "Sublimation"], a: "Magnetic separation", model: "Iron is magnetic; sulphur is not." },
+    { id: "ic-6", topic: "4-atoms", q: "Atomicity of ozone (O₃)?", opts: ["1", "2", "3", "4"], a: "3", model: "Three oxygen atoms — triatomic." },
+    { id: "ic-7", topic: "4-atoms", q: "Valency of calcium (Ca)?", opts: ["1", "2", "3", "4"], a: "2", model: "Calcium is in Group 2 — loses 2 electrons → valency 2 (Ca²⁺)." },
+    { id: "ic-8", topic: "5-language", q: "Formula for aluminium oxide (Al³⁺, O²⁻)?", opts: ["AlO", "Al₂O₃", "Al₃O₂", "AlO₃"], a: "Al₂O₃", model: "Criss-cross valencies → Al₂O₃." },
+    { id: "ic-9", topic: "5-language", q: "In the equation 2H₂ + O₂ → 2H₂O, the coefficient of water is?", opts: ["1", "2", "3", "4"], a: "2", model: "Balancing gives 2H₂O on the product side." },
+    { id: "ic-10", topic: "6-metals", q: "Which non-metal conducts electricity?", opts: ["Sulphur", "Phosphorus", "Graphite", "Iodine"], a: "Graphite", model: "Graphite (a form of carbon) is the famous non-metal conductor." },
+    { id: "ic-11", topic: "6-metals", q: "Only metal that is liquid at room temperature?", opts: ["Sodium", "Mercury", "Gallium", "Aluminium"], a: "Mercury", model: "Mercury (Hg) is the only metal that is liquid at room temperature." },
+    { id: "ic-12", topic: "7-air", q: "Approximate % of nitrogen in air?", opts: ["21%", "50%", "78%", "98%"], a: "78%", model: "N₂ ≈ 78%, O₂ ≈ 21%, rest ≈ 1%." },
+    { id: "ic-13", topic: "7-air", q: "Which gas is mainly responsible for acid rain?", opts: ["O₂", "N₂", "SO₂", "He"], a: "SO₂", model: "Sulphur dioxide (and NOₓ) dissolve to form sulphuric/nitric acid in rain." },
+  ],
+  mistakes: [
+    { mistake: "Writing 'NaCL' or 'naCl' — wrong symbol case.", fix: "First letter capital, second small. NaCl, CO₂, H₂O." },
+    { mistake: "Forgetting subscripts in formulae.", fix: "Subscripts tell you how many atoms — H2O is wrong; H₂O is right." },
+    { mistake: "Saying air is a compound.", fix: "Air is a mixture of gases — components keep their own properties." },
+    { mistake: "Confusing physical and chemical change.", fix: "Physical = no new substance (usually reversible). Chemical = new substance, energy change, irreversible." },
+    { mistake: "Forgetting to balance equations.", fix: "Same number of each element on both sides; only adjust coefficients, never subscripts." },
+  ],
+  cheat: [
+    { heading: "Common valencies", bullets: ["1 → H, Na, K, Cl, Ag", "2 → O, Mg, Ca, Zn, Cu (II)", "3 → Al, Fe (III), N (in NH₃)", "4 → C, Si, Pb (IV)"] },
+    { heading: "Common radicals", bullets: ["Positive: Na⁺, K⁺, NH₄⁺, Ca²⁺, Mg²⁺, Al³⁺", "Negative: Cl⁻, OH⁻, NO₃⁻, SO₄²⁻, CO₃²⁻, PO₄³⁻"] },
+    { heading: "Air composition", bullets: ["N₂ ≈ 78%", "O₂ ≈ 21%", "Argon + CO₂ + traces ≈ 1%"] },
+    { heading: "Properties cheat", bullets: ["Metals: lustrous, malleable, ductile, conductor, sonorous.", "Non-metals: dull, brittle, insulator (except graphite).", "Mercury = liquid metal. Bromine = liquid non-metal."] },
+    { heading: "Quick chemistry rules", bullets: ["Reactants → products. Use → for irreversible, ⇌ for reversible.", "Balanced equation = same atoms each side.", "Sub-scripts only inside a compound; coefficients only in front."] },
+  ],
+};
+
+// =========================
+// BIOLOGY — Selina (7 chapters)
+// =========================
+export const ICSE7_BIOLOGY: ExamPack = {
+  subjectId: "icse-biology",
+  title: "Biology — Class 7 ICSE",
+  context: "Selina Concise · 7 chapters · 3 units · WWS Hadapsar",
+  highlights: [
+    { label: "Textbook", value: "Selina Concise Biology 7" },
+    { label: "Chapters", value: "7" },
+  ],
+  reference: { label: "Selina Biology 7 (Shaalaa)", url: "https://www.shaalaa.com/textbook-solutions/selina-solutions-concise-biology-class-7-icse_43" },
+  plan: [
+    { title: "7 chapters across 3 units", hint: "Tissue · Plant Life · Human Body" },
+    { title: "20 must-know terms", hint: "Define them precisely" },
+    { title: "Practice diagrams", hint: "Label is half the marks" },
+    { title: "Common mistakes", hint: "Spelling matters!" },
+    { title: "Cheat sheet", hint: "Functions table" },
+  ],
+  topics: [
+    {
+      id: "1-tissues", num: 1, title: "Plant & Animal Tissues",
+      blurb: "Group of similar cells doing a common function.",
+      syllabus: [
+        "Tissue = group of cells of similar structure performing a particular function.",
+        "Plant tissues: meristematic (growing) and permanent (mature).",
+        "Permanent plant tissues: parenchyma, collenchyma, sclerenchyma (simple); xylem, phloem (complex, conducting).",
+        "Animal tissues: epithelial (covering), connective (binding — blood, bone), muscular (movement), nervous (sensation & response).",
+      ],
+    },
+    {
+      id: "2-plants", num: 2, title: "Classification of Plants",
+      blurb: "Thallophyta to Angiosperms — basis of grouping.",
+      syllabus: [
+        "Cryptogams (non-flowering): Thallophyta (algae), Bryophyta (mosses), Pteridophyta (ferns).",
+        "Phanerogams (flowering): Gymnosperms (naked seeds — pine), Angiosperms (covered seeds — mango).",
+        "Angiosperms split into monocots (one cotyledon — wheat) and dicots (two — mango).",
+      ],
+    },
+    {
+      id: "3-animals", num: 3, title: "Classification of Animals",
+      blurb: "Invertebrates vs vertebrates and major phyla.",
+      syllabus: [
+        "Invertebrates: Porifera (sponges), Coelenterata (Hydra), Platyhelminthes (flatworms), Nematoda (round-worms), Annelida (earthworm), Arthropoda (insects), Mollusca (snails), Echinodermata (starfish).",
+        "Vertebrates (Chordata): Pisces (fish), Amphibia (frog), Reptilia (snake), Aves (birds), Mammalia (humans).",
+        "Key features per class: skin, body covering, breathing, reproduction, body temperature (cold vs warm-blooded).",
+      ],
+    },
+    {
+      id: "4-photo", num: 4, title: "Photosynthesis & Respiration",
+      blurb: "Food-making vs energy release.",
+      syllabus: [
+        "Photosynthesis: 6CO₂ + 6H₂O → (sunlight + chlorophyll) → C₆H₁₂O₆ + 6O₂.",
+        "Site: chloroplasts (mainly in leaves).",
+        "Factors affecting: light, CO₂, temperature, chlorophyll, water.",
+        "Respiration: C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + ENERGY (ATP).",
+        "Aerobic respiration (with O₂) vs anaerobic (without — yields less energy + lactic acid / alcohol).",
+      ],
+    },
+    {
+      id: "5-excretion", num: 5, title: "Excretion in Humans",
+      blurb: "Removal of metabolic waste.",
+      syllabus: [
+        "Excretion = removal of waste products from the body.",
+        "Excretory organs: kidneys (urine), lungs (CO₂), skin (sweat), liver (bile pigments).",
+        "Kidneys filter blood → urine via ureters → urinary bladder → urethra.",
+        "Functional unit of kidney = nephron (~1 million per kidney).",
+      ],
+    },
+    {
+      id: "6-nervous", num: 6, title: "Nervous System",
+      blurb: "Brain, spinal cord, nerves — and reflex action.",
+      syllabus: [
+        "Central nervous system: brain + spinal cord.",
+        "Peripheral nervous system: cranial + spinal nerves.",
+        "Neuron = structural & functional unit of nervous system.",
+        "Brain parts: cerebrum (thinking), cerebellum (balance), medulla oblongata (heartbeat, breathing).",
+        "Reflex action — automatic response (knee-jerk, blink); reflex arc via spinal cord (not brain).",
+      ],
+    },
+    {
+      id: "7-allergy", num: 7, title: "Allergy",
+      blurb: "Hypersensitivity to harmless substances.",
+      syllabus: [
+        "Allergy = overreaction of the body's immune system to a normally harmless substance.",
+        "Allergens: pollen, dust mites, foods (peanuts, milk), insect stings, medicines.",
+        "Symptoms: sneezing, watery eyes, skin rash, swelling, breathing trouble.",
+        "Treatment: antihistamines; avoid allergens; severe → adrenaline / EpiPen.",
+      ],
+    },
+  ],
+  flashcards: [
+    { term: "Tissue", def: "Group of similar cells working together to perform a specific function." },
+    { term: "Meristematic tissue", def: "Plant tissue with actively dividing cells, found at growing tips of roots and shoots." },
+    { term: "Xylem", def: "Plant tissue that conducts water and minerals upward from roots to leaves." },
+    { term: "Phloem", def: "Plant tissue that transports food prepared in leaves to other parts of the plant." },
+    { term: "Epithelial tissue", def: "Animal tissue forming protective coverings and linings of organs." },
+    { term: "Cryptogams", def: "Non-flowering plants (algae, mosses, ferns) — reproduce by spores." },
+    { term: "Phanerogams", def: "Flowering plants with seeds — gymnosperms (naked seeds) and angiosperms (covered seeds)." },
+    { term: "Cold-blooded", def: "Animals whose body temperature changes with the environment — fish, reptiles, amphibians." },
+    { term: "Warm-blooded", def: "Animals that keep a constant body temperature — birds and mammals." },
+    { term: "Photosynthesis", def: "Process by which green plants make their food using sunlight, CO₂ and water." },
+    { term: "Chlorophyll", def: "Green pigment in plants that absorbs sunlight for photosynthesis." },
+    { term: "Respiration", def: "Process of releasing energy from food by oxidation: glucose + O₂ → CO₂ + H₂O + energy." },
+    { term: "Aerobic respiration", def: "Respiration with oxygen — produces CO₂, water, and a lot of energy." },
+    { term: "Anaerobic respiration", def: "Respiration without oxygen — produces lactic acid (animals) or ethanol + CO₂ (yeast)." },
+    { term: "Excretion", def: "Removal of metabolic waste products from the body." },
+    { term: "Nephron", def: "Functional unit of the kidney that filters blood and forms urine." },
+    { term: "Neuron", def: "Structural and functional unit of the nervous system; transmits nerve impulses." },
+    { term: "Reflex action", def: "Automatic, involuntary response to a stimulus, controlled by the spinal cord." },
+    { term: "Allergen", def: "A substance that causes an allergic reaction (pollen, dust, certain foods)." },
+    { term: "Antihistamine", def: "Medicine that blocks histamine and relieves allergy symptoms." },
+  ],
+  questions: [
+    { id: "ib-1", topic: "1-tissues", q: "Which plant tissue carries water from roots to leaves?", opts: ["Phloem", "Xylem", "Parenchyma", "Collenchyma"], a: "Xylem", model: "Xylem = upward water transport; phloem = food transport." },
+    { id: "ib-2", topic: "1-tissues", q: "Which animal tissue forms the lining of the mouth and stomach?", opts: ["Muscular", "Nervous", "Epithelial", "Connective"], a: "Epithelial", model: "Epithelial tissue covers and lines body surfaces." },
+    { id: "ib-3", topic: "2-plants", q: "Mango is an example of?", opts: ["Cryptogam", "Bryophyte", "Gymnosperm", "Angiosperm"], a: "Angiosperm", model: "Mango has flowers and seeds inside fruit — angiosperm." },
+    { id: "ib-4", topic: "3-animals", q: "Frog belongs to which class?", opts: ["Pisces", "Amphibia", "Reptilia", "Mammalia"], a: "Amphibia", model: "Lives in water and on land; cold-blooded — amphibian." },
+    { id: "ib-5", topic: "4-photo", q: "Site of photosynthesis inside a plant cell?", opts: ["Mitochondria", "Nucleus", "Chloroplast", "Ribosome"], a: "Chloroplast", model: "Chloroplasts contain chlorophyll where photosynthesis occurs." },
+    { id: "ib-6", topic: "4-photo", q: "Gas released during photosynthesis?", opts: ["CO₂", "O₂", "N₂", "H₂"], a: "O₂", model: "6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂. Oxygen is released." },
+    { id: "ib-7", topic: "5-excretion", q: "Functional unit of the kidney?", opts: ["Neuron", "Nephron", "Alveolus", "Villus"], a: "Nephron", model: "Each kidney has about a million nephrons that filter blood." },
+    { id: "ib-8", topic: "6-nervous", q: "Reflex actions are controlled by?", opts: ["Cerebrum", "Cerebellum", "Spinal cord", "Medulla"], a: "Spinal cord", model: "Reflex arc passes through the spinal cord, not the brain, for speed." },
+    { id: "ib-9", topic: "6-nervous", q: "Part of brain controlling balance?", opts: ["Cerebrum", "Cerebellum", "Medulla oblongata", "Hypothalamus"], a: "Cerebellum", model: "Cerebellum coordinates muscle movements and balance." },
+    { id: "ib-10", topic: "7-allergy", q: "Which medicine relieves an allergic reaction?", opts: ["Antibiotic", "Antiseptic", "Antihistamine", "Analgesic"], a: "Antihistamine", model: "Antihistamines block histamine that the body releases during allergy." },
+  ],
+  mistakes: [
+    { mistake: "Mixing xylem and phloem.", fix: "X-ylem = water Up (think 'X' as water tower). Phloem = Food (Ph for Phood)." },
+    { mistake: "Saying photosynthesis happens at night.", fix: "Photosynthesis needs sunlight — daytime only. Respiration happens 24×7." },
+    { mistake: "Spelling 'chlorophyll' as 'clorofil'.", fix: "Memorise: c-h-l-o-r-o-p-h-y-l-l." },
+    { mistake: "Confusing nephron and neuron.", fix: "Nephron = kidney filter. Neuron = nerve cell. Both end in -on." },
+    { mistake: "Allergy = disease.", fix: "Allergy is an immune over-reaction, not an infectious disease." },
+  ],
+  cheat: [
+    { heading: "Photosynthesis vs Respiration", bullets: [
+      "Photosynthesis: in chloroplasts, needs sunlight, absorbs CO₂, releases O₂, stores energy.",
+      "Respiration: in mitochondria, no sunlight needed, absorbs O₂, releases CO₂, releases energy.",
+      "Aerobic (with O₂) → more energy. Anaerobic (without) → less energy + lactic acid/alcohol.",
+    ]},
+    { heading: "Tissue map", bullets: [
+      "Plant simple: parenchyma · collenchyma · sclerenchyma.",
+      "Plant complex: xylem (water up) · phloem (food anywhere).",
+      "Animal: epithelial · connective (blood/bone) · muscular · nervous.",
+    ]},
+    { heading: "Animal kingdom", bullets: [
+      "Cold-blooded: fish · amphibians · reptiles.",
+      "Warm-blooded: birds · mammals.",
+      "Mammals: hair, mammary glands, give birth to live young (except platypus, echidna — egg-layers).",
+    ]},
+    { heading: "Brain quick-ref", bullets: [
+      "Cerebrum = thinking, memory, voluntary actions.",
+      "Cerebellum = balance & coordination.",
+      "Medulla oblongata = heartbeat, breathing, BP — involuntary.",
+    ]},
+  ],
+};
+
+// =========================
+// HISTORY & CIVICS — Class 7 ICSE
+// =========================
+export const ICSE7_HISTORY: ExamPack = {
+  subjectId: "icse-history-civics",
+  title: "History & Civics — Class 7 ICSE",
+  context: "Medieval India · UN · WWS Hadapsar",
+  highlights: [
+    { label: "History themes", value: "6" },
+    { label: "Civics", value: "UN + citizenship" },
+  ],
+  reference: { label: "ICSE 7 History syllabus (extramarks)", url: "https://www.extramarks.com/studymaterials/icse/icse-syllabus-class-7-history/" },
+  plan: [
+    { title: "6 history themes", hint: "Tag confidence per theme" },
+    { title: "Key terms & rulers",   hint: "Flashcards" },
+    { title: "Date practice",         hint: "20 MCQs" },
+    { title: "Common mistakes",       hint: "Date confusion" },
+    { title: "Cheat sheet",            hint: "Dynasty timeline" },
+  ],
+  topics: [
+    {
+      id: "1-europe", num: 1, title: "Medieval Europe: Christianity",
+      blurb: "Spread of Christianity, the Church, feudal society.",
+      syllabus: [
+        "Rise of Christianity from Jesus in 1st century CE.",
+        "Role of the Church in medieval Europe — Pope, monasteries, education.",
+        "Feudal system: king → lords → vassals → serfs.",
+        "Crusades (1096–1291) — wars between Christians and Muslims for Holy Land.",
+      ],
+    },
+    {
+      id: "2-islam", num: 2, title: "Rise & Spread of Islam",
+      blurb: "Prophet Muhammad, caliphs, spread across Asia and Africa.",
+      syllabus: [
+        "Prophet Muhammad (570–632 CE) — born in Mecca; Quran revealed.",
+        "Hijra (migration to Medina) in 622 CE = start of Islamic (Hijri) calendar.",
+        "Four caliphs: Abu Bakr, Umar, Uthman, Ali.",
+        "Spread of Islam — Arabia, Persia, Egypt, North Africa, Spain, Central Asia.",
+        "Contributions: algebra, medicine, astronomy, architecture (mosques, arches).",
+      ],
+    },
+    {
+      id: "3-delhi", num: 3, title: "The Delhi Sultanate",
+      blurb: "Five dynasties ruling Delhi (1206–1526).",
+      syllabus: [
+        "Slave (Mamluk) Dynasty (1206–1290): Qutb-ud-din Aibak, Iltutmish, Razia, Balban. Qutub Minar started by Aibak, completed by Iltutmish.",
+        "Khilji Dynasty (1290–1320): Alauddin Khilji — market control, defeated Mongols, conquered south.",
+        "Tughlaq Dynasty (1320–1414): Muhammad-bin-Tughlaq (capital shift Delhi→Daulatabad; token currency); Firoz Shah Tughlaq.",
+        "Sayyid Dynasty (1414–1451).",
+        "Lodi Dynasty (1451–1526): Bahlol, Sikandar, Ibrahim Lodi — defeated by Babur at 1st Battle of Panipat (1526).",
+        "Administration: iqta system, sultan as supreme ruler, ulama, military.",
+        "Society & culture: Indo-Islamic architecture (true arch, dome), language Urdu/Hindavi emerging.",
+      ],
+    },
+    {
+      id: "4-vijayanagara", num: 4, title: "Vijayanagara & Bahmani Kingdoms",
+      blurb: "South Indian kingdoms (14th–16th c.).",
+      syllabus: [
+        "Vijayanagara founded 1336 by Harihara & Bukka.",
+        "Greatest ruler: Krishnadeva Raya — patron of art, architecture, Telugu literature.",
+        "Capital Hampi — UNESCO World Heritage Site.",
+        "Bahmani Kingdom founded 1347 by Alauddin Bahman Shah.",
+        "Bahmani later split into five Deccan sultanates: Bijapur, Golconda, Ahmednagar, Berar, Bidar.",
+        "Battle of Talikota (1565) — Deccan sultanates defeated Vijayanagara.",
+      ],
+    },
+    {
+      id: "5-mughal", num: 5, title: "The Mughal Empire",
+      blurb: "Babur to Aurangzeb (1526–1707).",
+      syllabus: [
+        "Babur (1526–1530) — won 1st Battle of Panipat against Ibrahim Lodi; battle of Khanwa vs Rana Sanga (1527).",
+        "Humayun (1530–40, 1555–56) — defeated by Sher Shah Suri, regained throne briefly.",
+        "Sher Shah Suri (1540–45) — built Grand Trunk Road, Rupiya currency, postal system.",
+        "Akbar (1556–1605) — Battle of Panipat II (1556), Mansabdari system, Din-i-Ilahi, abolished jizya, married Jodha Bai, Navratnas (9 jewels including Birbal, Tansen).",
+        "Jahangir (1605–1627) — patron of painting; Nur Jahan held real power.",
+        "Shah Jahan (1628–1658) — built Taj Mahal, Red Fort, Jama Masjid (Delhi).",
+        "Aurangzeb (1658–1707) — empire's largest extent; reimposed jizya; Mughal decline began.",
+      ],
+    },
+    {
+      id: "6-bhakti", num: 6, title: "Bhakti & Sufi Movements",
+      blurb: "Composite culture: devotional movements 14th–17th c.",
+      syllabus: [
+        "Bhakti — personal devotion to one God; rejected caste & ritual.",
+        "Saints: Ramanuja (south), Ramananda, Kabir (one-God, rejected Hindu-Muslim split), Guru Nanak (founder of Sikhism), Mirabai (devotee of Krishna), Tulsidas (Ramcharitmanas), Surdas, Tukaram, Eknath, Namdev (Maharashtra).",
+        "Sufism — Islamic mysticism; love and devotion to Allah; tolerant of other faiths.",
+        "Sufi orders: Chishti (Khwaja Moinuddin Chishti — Ajmer; Nizamuddin Auliya — Delhi), Suhrawardi.",
+        "Both movements promoted harmony, vernacular languages, music (qawwali, kirtan).",
+      ],
+    },
+    {
+      id: "7-civics", num: 7, title: "Civics — United Nations & citizenship",
+      blurb: "UN, its agencies, basic citizenship.",
+      syllabus: [
+        "United Nations founded 24 Oct 1945 after WWII. HQ: New York.",
+        "Aims: maintain peace, friendly relations, cooperation, human rights.",
+        "Six main organs: General Assembly, Security Council (5 permanent members — China, France, Russia, UK, USA — with veto), ECOSOC, Trusteeship Council, ICJ (The Hague), Secretariat.",
+        "Agencies: UNESCO (education, culture — Paris), UNICEF (children — New York), WHO (health — Geneva), FAO (food — Rome), ILO (labour — Geneva), IMF, World Bank.",
+        "Citizenship: rights & duties of an Indian citizen.",
+      ],
+    },
+  ],
+  flashcards: [
+    { term: "Hijra", def: "Migration of Prophet Muhammad from Mecca to Medina in 622 CE; start of the Hijri calendar." },
+    { term: "Caliph", def: "Successor to Prophet Muhammad as leader of the Muslim community." },
+    { term: "Sultanate", def: "An Islamic state ruled by a sultan; in India, the Delhi Sultanate (1206–1526) had five dynasties." },
+    { term: "Iqta system", def: "Land assignment under Delhi Sultanate — officials collected revenue in lieu of salary." },
+    { term: "Mansabdari", def: "Akbar's administrative system ranking officers by zat (personal rank) and sawar (cavalry to maintain)." },
+    { term: "Jizya", def: "Tax levied on non-Muslims in some Islamic states; abolished by Akbar, reimposed by Aurangzeb." },
+    { term: "Din-i-Ilahi", def: "Religion founded by Akbar in 1582, drawing on multiple faiths; few followers." },
+    { term: "Navratnas", def: "The nine jewels of Akbar's court — Birbal, Tansen, Abul Fazl, Faizi, Raja Todar Mal, etc." },
+    { term: "Bhakti movement", def: "Medieval devotional movement preaching personal love for one God and rejecting caste & ritual." },
+    { term: "Sufism", def: "Mystical strand of Islam emphasising love, devotion, music, and tolerance." },
+    { term: "Hampi", def: "Capital of the Vijayanagara empire; ruins are now a UNESCO World Heritage Site in Karnataka." },
+    { term: "Battle of Talikota (1565)", def: "Vijayanagara was defeated by a coalition of Deccan sultanates here." },
+    { term: "First Battle of Panipat (1526)", def: "Babur defeated Ibrahim Lodi, founding the Mughal Empire in India." },
+    { term: "Grand Trunk Road", def: "Long highway from Bengal to Peshawar — re-laid by Sher Shah Suri." },
+    { term: "United Nations", def: "International organisation founded on 24 October 1945 to keep world peace; HQ in New York." },
+    { term: "Security Council", def: "15-member UN body responsible for peace and security; 5 permanent members with veto power." },
+    { term: "UNESCO", def: "UN Educational, Scientific and Cultural Organization, headquartered in Paris." },
+    { term: "UNICEF", def: "UN agency for children's welfare; headquartered in New York." },
+    { term: "WHO", def: "World Health Organization — UN agency for global health; HQ Geneva." },
+    { term: "Veto", def: "Power to reject a Security Council decision, held by each of the 5 permanent members." },
+  ],
+  questions: [
+    { id: "ih-1", topic: "2-islam", q: "Hijra (Prophet Muhammad's migration to Medina) took place in?", opts: ["570 CE", "622 CE", "632 CE", "1206 CE"], a: "622 CE", model: "622 CE = start of the Islamic (Hijri) calendar." },
+    { id: "ih-2", topic: "3-delhi", q: "Founder of the Slave Dynasty?", opts: ["Iltutmish", "Razia Sultan", "Qutb-ud-din Aibak", "Balban"], a: "Qutb-ud-din Aibak", model: "Aibak founded the Mamluk (Slave) dynasty in 1206 — first ruler of Delhi Sultanate." },
+    { id: "ih-3", topic: "3-delhi", q: "Who shifted the capital from Delhi to Daulatabad?", opts: ["Alauddin Khilji", "Muhammad-bin-Tughlaq", "Firoz Shah Tughlaq", "Sikandar Lodi"], a: "Muhammad-bin-Tughlaq", model: "Famous unsuccessful move; later he had to shift back." },
+    { id: "ih-4", topic: "4-vijayanagara", q: "Greatest ruler of Vijayanagara?", opts: ["Harihara", "Bukka", "Krishnadeva Raya", "Alauddin Bahman Shah"], a: "Krishnadeva Raya", model: "Patron of art, literature, and architecture." },
+    { id: "ih-5", topic: "4-vijayanagara", q: "Battle of Talikota was fought in?", opts: ["1565", "1526", "1556", "1707"], a: "1565", model: "Deccan sultanates jointly defeated Vijayanagara at Talikota." },
+    { id: "ih-6", topic: "5-mughal", q: "First Battle of Panipat (1526) was fought between?", opts: ["Akbar vs Hemu", "Babur vs Ibrahim Lodi", "Sher Shah vs Humayun", "Aurangzeb vs Marathas"], a: "Babur vs Ibrahim Lodi", model: "Babur's victory founded the Mughal Empire." },
+    { id: "ih-7", topic: "5-mughal", q: "Who built the Taj Mahal?", opts: ["Akbar", "Jahangir", "Shah Jahan", "Aurangzeb"], a: "Shah Jahan", model: "Shah Jahan built it in memory of Mumtaz Mahal at Agra (~1632–53)." },
+    { id: "ih-8", topic: "5-mughal", q: "Who reimposed jizya tax?", opts: ["Akbar", "Jahangir", "Shah Jahan", "Aurangzeb"], a: "Aurangzeb", model: "Akbar abolished jizya; Aurangzeb reimposed it in 1679." },
+    { id: "ih-9", topic: "6-bhakti", q: "Founder of Sikhism?", opts: ["Kabir", "Guru Nanak", "Mirabai", "Tulsidas"], a: "Guru Nanak", model: "Guru Nanak (1469–1539) preached oneness of God and rejected ritualism." },
+    { id: "ih-10", topic: "6-bhakti", q: "Famous Sufi saint of Ajmer?", opts: ["Nizamuddin Auliya", "Khwaja Moinuddin Chishti", "Baba Farid", "Shaikh Salim Chishti"], a: "Khwaja Moinuddin Chishti", model: "Khwaja Moinuddin Chishti's dargah in Ajmer is a major Sufi pilgrim site." },
+    { id: "ih-11", topic: "7-civics", q: "When was the United Nations founded?", opts: ["1919", "1939", "1945", "1950"], a: "1945", model: "UN founded on 24 October 1945; HQ in New York." },
+    { id: "ih-12", topic: "7-civics", q: "Headquarters of WHO?", opts: ["New York", "Paris", "Geneva", "Rome"], a: "Geneva", model: "WHO HQ in Geneva. UNESCO in Paris, UNICEF in New York, FAO in Rome." },
+    { id: "ih-13", topic: "7-civics", q: "Number of permanent members in UN Security Council?", opts: ["3", "5", "10", "15"], a: "5", model: "China, France, Russia, UK, USA — each has veto power." },
+  ],
+  mistakes: [
+    { mistake: "Confusing dates of Panipat I, II, III.", fix: "I = 1526 (Babur–Lodi). II = 1556 (Akbar–Hemu). III = 1761 (Marathas–Ahmad Shah Abdali — Cl 8)." },
+    { mistake: "Saying Akbar built the Taj Mahal.", fix: "Shah Jahan built the Taj. Akbar built Fatehpur Sikri and Agra Fort." },
+    { mistake: "Mixing UNESCO, UNICEF, WHO HQ cities.", fix: "UNESCO → Paris. UNICEF → New York. WHO → Geneva. FAO → Rome." },
+    { mistake: "Spelling 'Aurangzeb' as 'Aurungzeb'.", fix: "Use A-u-r-a-n-g-z-e-b." },
+    { mistake: "Calling the Bhakti & Sufi movements one and the same.", fix: "Bhakti is Hindu devotional. Sufism is Islamic mystical. They influenced each other and promoted harmony." },
+  ],
+  cheat: [
+    { heading: "Delhi Sultanate (1206–1526) — 5 dynasties", bullets: [
+      "Slave (Mamluk) 1206–1290 · Khilji 1290–1320 · Tughlaq 1320–1414 · Sayyid 1414–1451 · Lodi 1451–1526.",
+      "Qutb-ud-din Aibak → Qutub Minar (started).",
+      "Razia = first female ruler of Delhi.",
+      "Alauddin Khilji = market control + defeated Mongols.",
+      "Muhammad-bin-Tughlaq = capital shift + token currency (both failed).",
+      "Ibrahim Lodi = defeated by Babur at 1st Panipat 1526.",
+    ]},
+    { heading: "Mughal succession", bullets: [
+      "Babur (1526) → Humayun (1530) → Akbar (1556) → Jahangir (1605) → Shah Jahan (1628) → Aurangzeb (1658–1707).",
+      "Akbar's Navratnas: Birbal, Tansen, Abul Fazl, Faizi, Raja Todar Mal, Raja Man Singh, Mullah Do-Piyaza, Fakir Aziao-Din, Hakim Humam.",
+      "Akbar abolished jizya. Aurangzeb reimposed it.",
+    ]},
+    { heading: "Bhakti vs Sufi", bullets: [
+      "Bhakti: Ramanuja, Ramananda, Kabir, Guru Nanak, Mirabai, Tulsidas, Surdas, Tukaram, Namdev.",
+      "Sufism: Chishti (Khwaja Moinuddin – Ajmer, Nizamuddin – Delhi); Suhrawardi.",
+      "Both: composite culture, vernacular languages, music (qawwali, kirtan).",
+    ]},
+    { heading: "UN quick-card", bullets: [
+      "Founded 24 Oct 1945. HQ New York. 6 organs.",
+      "Security Council = 15 members; 5 permanent (China, France, Russia, UK, USA) with veto.",
+      "ICJ in The Hague. UNESCO Paris. UNICEF New York. WHO Geneva. FAO Rome.",
+    ]},
+  ],
+};
+
+// =========================
+// GEOGRAPHY — Class 7 ICSE
+// =========================
+export const ICSE7_GEOGRAPHY: ExamPack = {
+  subjectId: "icse-geography",
+  title: "Geography — Class 7 ICSE",
+  context: "7 themes · WWS Hadapsar",
+  highlights: [{ label: "Themes", value: "7" }],
+  reference: { label: "ICSE 7 Geography (extramarks)", url: "https://www.extramarks.com/studymaterials/icse/icse-syllabus-class-7-geography/" },
+  plan: [
+    { title: "7 themes", hint: "Atmosphere · climate · soil · industries · energy · continents" },
+    { title: "Diagrams", hint: "Atmosphere layers · weather instruments" },
+    { title: "Practice MCQs", hint: "Tools, terms, examples" },
+    { title: "Cheat sheet", hint: "Layer/instrument table" },
+  ],
+  topics: [
+    {
+      id: "1-maps", num: 1, title: "Representation of Geographical Features",
+      blurb: "Topo-sheets, colours, scale, signs.",
+      syllabus: [
+        "Topo (topographical) maps show physical and cultural features.",
+        "Colour codes: blue = water, green = vegetation/forest, brown = relief (contours), yellow = open ground.",
+        "Scale: large vs small. Conventional signs.",
+        "Cardinal directions: N, E, S, W; compass.",
+      ],
+    },
+    {
+      id: "2-atmosphere", num: 2, title: "Atmosphere",
+      blurb: "Layers and composition.",
+      syllabus: [
+        "Composition: N₂ 78%, O₂ 21%, others 1%.",
+        "Layers (bottom-up): Troposphere → Stratosphere → Mesosphere → Thermosphere → Exosphere.",
+        "Troposphere — weather; Stratosphere — ozone protects from UV; Mesosphere — meteors burn; Thermosphere — auroras, ISS; Exosphere — fades into space.",
+        "Greenhouse effect — heat trapped by CO₂, methane; rising → global warming.",
+      ],
+    },
+    {
+      id: "3-weather", num: 3, title: "Weather & Climate",
+      blurb: "Elements & instruments.",
+      syllabus: [
+        "Weather = day-to-day atmospheric condition. Climate = long-term average (~30 years).",
+        "Elements: temperature, atmospheric pressure, humidity, precipitation, wind, sunshine.",
+        "Instruments: thermometer (temp), barometer (pressure), hygrometer (humidity), anemometer (wind speed), wind vane (direction), rain gauge (rainfall).",
+        "Types of rainfall: convectional, orographic (relief), cyclonic.",
+      ],
+    },
+    {
+      id: "4-soil", num: 4, title: "Weathering & Soil Formation",
+      blurb: "How rocks break and form soil.",
+      syllabus: [
+        "Weathering = breakdown of rocks in place.",
+        "Types: mechanical (temperature, frost, wind, water), chemical (water, oxygen, CO₂), biological (plants, animals).",
+        "Soil profile horizons: O (organic top), A (topsoil), B (subsoil), C (parent rock), R (bedrock).",
+        "Soil conservation — afforestation, terrace farming, contour ploughing, crop rotation.",
+      ],
+    },
+    {
+      id: "5-industries", num: 5, title: "Industries",
+      blurb: "Manufacturing — what, where, why.",
+      syllabus: [
+        "Iron & Steel — Jamshedpur (TISCO), Bhilai, Bokaro, Rourkela, Durgapur.",
+        "Cotton textiles — Mumbai, Ahmedabad, Coimbatore.",
+        "Sugar — UP, Maharashtra, Bihar.",
+        "Information Technology (IT) — Bengaluru, Hyderabad, Pune, Chennai.",
+        "Factors: raw material, labour, power, market, transport.",
+      ],
+    },
+    {
+      id: "6-energy", num: 6, title: "Energy & Power Resources",
+      blurb: "Renewable vs non-renewable.",
+      syllabus: [
+        "Non-renewable: coal, petroleum, natural gas, nuclear (uranium).",
+        "Renewable: solar, wind, hydro, tidal, geothermal, biomass.",
+        "India's main coalfields: Jharia, Bokaro, Raniganj.",
+        "Hydroelectric: Bhakra-Nangal (Sutlej), Sardar Sarovar (Narmada), Tehri (Bhagirathi).",
+        "Solar: largest park at Bhadla, Rajasthan.",
+      ],
+    },
+    {
+      id: "7-continents", num: 7, title: "Continents (Europe · Africa · Australia · Antarctica)",
+      blurb: "Major features.",
+      syllabus: [
+        "Europe: smallest after Australia/Antarctica; Alps; Volga; UK, France, Germany.",
+        "Africa: 2nd largest; Sahara desert; Nile (longest river); Mt. Kilimanjaro; equator passes through.",
+        "Australia: smallest continent; Great Barrier Reef; Murray-Darling; Sydney, Canberra (capital).",
+        "Antarctica: coldest, driest, windiest; no permanent residents; protected by Antarctic Treaty 1959.",
+      ],
+    },
+  ],
+  flashcards: [
+    { term: "Atmosphere", def: "Layer of gases surrounding the Earth, held by gravity." },
+    { term: "Troposphere", def: "Lowest atmospheric layer where weather occurs (~0–12 km)." },
+    { term: "Ozone layer", def: "Region in the stratosphere that absorbs harmful UV radiation." },
+    { term: "Greenhouse effect", def: "Trapping of heat near Earth's surface by atmospheric gases like CO₂ and methane." },
+    { term: "Weather", def: "Short-term, day-to-day condition of the atmosphere." },
+    { term: "Climate", def: "Long-term average atmospheric conditions of a region (~30 years)." },
+    { term: "Barometer", def: "Instrument used to measure atmospheric pressure." },
+    { term: "Anemometer", def: "Instrument used to measure wind speed." },
+    { term: "Hygrometer", def: "Instrument used to measure humidity." },
+    { term: "Orographic rainfall", def: "Rainfall caused when moist air is forced to rise over mountains and cools." },
+    { term: "Weathering", def: "Breaking down of rocks by physical, chemical or biological agents at the place where they lie." },
+    { term: "Soil profile", def: "Vertical section of soil from surface to bedrock showing distinct layers (horizons O, A, B, C, R)." },
+    { term: "Renewable energy", def: "Energy from sources that are naturally replenished — solar, wind, hydro, tidal, geothermal, biomass." },
+    { term: "Non-renewable energy", def: "Energy from finite sources that take millions of years to form — coal, petroleum, natural gas." },
+    { term: "Sahara", def: "Largest hot desert in the world, located in North Africa." },
+    { term: "Great Barrier Reef", def: "World's largest coral reef system, off the coast of Queensland, Australia." },
+    { term: "Antarctic Treaty (1959)", def: "International agreement preserving Antarctica for peaceful scientific research." },
+  ],
+  questions: [
+    { id: "ig-1", topic: "2-atmosphere", q: "Weather phenomena occur in which atmospheric layer?", opts: ["Stratosphere", "Troposphere", "Mesosphere", "Exosphere"], a: "Troposphere", model: "Troposphere holds water vapour and most clouds — weather happens here." },
+    { id: "ig-2", topic: "2-atmosphere", q: "Ozone layer is found in?", opts: ["Troposphere", "Stratosphere", "Mesosphere", "Thermosphere"], a: "Stratosphere", model: "Ozone in stratosphere absorbs harmful UV." },
+    { id: "ig-3", topic: "3-weather", q: "Instrument used to measure rainfall?", opts: ["Anemometer", "Barometer", "Hygrometer", "Rain gauge"], a: "Rain gauge", model: "Rain gauge collects and measures rainfall in mm." },
+    { id: "ig-4", topic: "3-weather", q: "Rainfall caused by air rising over mountains is called?", opts: ["Convectional", "Orographic", "Cyclonic", "Frontal"], a: "Orographic", model: "Air forced upward by relief (mountains) cools and rains." },
+    { id: "ig-5", topic: "4-soil", q: "Topsoil layer of a soil profile is labelled?", opts: ["O", "A", "B", "C"], a: "A", model: "O = organic litter; A = topsoil (dark, rich); B = subsoil; C = parent rock." },
+    { id: "ig-6", topic: "5-industries", q: "Jamshedpur is famous for which industry?", opts: ["Cotton textiles", "Iron and steel", "Sugar", "IT"], a: "Iron and steel", model: "TISCO at Jamshedpur — India's oldest iron & steel plant." },
+    { id: "ig-7", topic: "6-energy", q: "Which is NOT a renewable energy source?", opts: ["Solar", "Wind", "Coal", "Tidal"], a: "Coal", model: "Coal is non-renewable — takes millions of years to form." },
+    { id: "ig-8", topic: "7-continents", q: "Longest river in the world?", opts: ["Amazon", "Yangtze", "Nile", "Ganges"], a: "Nile", model: "Nile (~6,650 km) flows through North Africa." },
+    { id: "ig-9", topic: "7-continents", q: "Coldest continent?", opts: ["Asia", "Africa", "Australia", "Antarctica"], a: "Antarctica", model: "Antarctica is also the driest and windiest." },
+  ],
+  mistakes: [
+    { mistake: "Confusing weather with climate.", fix: "Weather = today/this week. Climate = average over decades." },
+    { mistake: "Saying ozone is in the troposphere.", fix: "Ozone layer is in the stratosphere — it absorbs UV." },
+    { mistake: "Mixing anemometer with hygrometer.", fix: "Anemometer → wind speed. Hygrometer → humidity. Both start with letters from their measurement." },
+    { mistake: "Calling coal renewable.", fix: "Coal is fossil — millions of years to form. Renewable = solar, wind, hydro, tidal, biomass." },
+  ],
+  cheat: [
+    { heading: "Atmosphere layers (bottom→up)", bullets: [
+      "Troposphere → Stratosphere (ozone) → Mesosphere → Thermosphere → Exosphere.",
+    ]},
+    { heading: "Weather instruments", bullets: [
+      "Temperature → Thermometer", "Pressure → Barometer", "Humidity → Hygrometer",
+      "Wind speed → Anemometer", "Wind direction → Wind vane", "Rainfall → Rain gauge",
+    ]},
+    { heading: "Soil profile", bullets: [
+      "O — Organic litter (top)", "A — Topsoil (dark, fertile)", "B — Subsoil (lighter, minerals)",
+      "C — Weathered parent rock", "R — Bedrock",
+    ]},
+    { heading: "India energy", bullets: [
+      "Coalfields: Jharia, Bokaro, Raniganj.",
+      "Hydroelectric: Bhakra-Nangal, Sardar Sarovar, Tehri.",
+      "Solar: Bhadla (Rajasthan) is one of the world's largest.",
+    ]},
+    { heading: "Continent superlatives", bullets: [
+      "Largest: Asia. Smallest: Australia.",
+      "Coldest/driest/windiest: Antarctica.",
+      "Longest river: Nile (Africa).",
+      "Largest desert: Sahara (Africa, hot); Antarctica (cold).",
+    ]},
+  ],
+};
+
+// =========================
+// COMPUTER STUDIES — Class 7 ICSE
+// =========================
+export const ICSE7_COMPUTER: ExamPack = {
+  subjectId: "icse-computer",
+  title: "Computer Studies — Class 7 ICSE",
+  context: "7 chapters · WWS Hadapsar",
+  highlights: [{ label: "Chapters", value: "7" }, { label: "Number systems", value: "Binary · Octal · Hex" }],
+  reference: { label: "ICSE 7 Computer Studies (icseportal)", url: "https://icseportal.in/class-07/computer-studies-syllabus" },
+  plan: [
+    { title: "7 chapters", hint: "Including HTML & number systems" },
+    { title: "Binary/Octal/Hex drill", hint: "Conversion practice" },
+    { title: "HTML tag list", hint: "Memorise the 12 core tags" },
+    { title: "MCQs", hint: "Hardware · viruses · ethics" },
+    { title: "Cheat sheet", hint: "Tag table + conversion shortcuts" },
+  ],
+  topics: [
+    {
+      id: "1-hw", num: 1, title: "Computer Hardware Components",
+      blurb: "Input, output, processing, storage devices.",
+      syllabus: [
+        "CPU = brain of the computer. Contains ALU (arithmetic), CU (control), registers.",
+        "Memory: RAM (volatile, fast), ROM (non-volatile, boot).",
+        "Storage: HDD, SSD, USB, CD/DVD, cloud.",
+        "Input devices: keyboard, mouse, scanner, mic, webcam, touchscreen.",
+        "Output: monitor, printer, speaker, projector.",
+        "Motherboard connects everything.",
+      ],
+    },
+    {
+      id: "2-number", num: 2, title: "Number System",
+      blurb: "Decimal · Binary · Octal · Hexadecimal — base & conversion.",
+      syllabus: [
+        "Decimal (base 10) digits 0–9. Binary (base 2) 0–1. Octal (base 8) 0–7. Hex (base 16) 0–9, A–F.",
+        "Decimal → binary: repeated ÷ 2, take remainders bottom-up.",
+        "Binary → decimal: each bit × 2^position (right-to-left, starting 0).",
+        "Decimal → octal: repeated ÷ 8.",
+        "Decimal → hex: repeated ÷ 16 (10=A, 11=B, … 15=F).",
+        "Binary ↔ hex shortcut: group 4 bits.",
+      ],
+    },
+    {
+      id: "3-virus", num: 3, title: "Computer Virus",
+      blurb: "Malware types and protection.",
+      syllabus: [
+        "Virus = malicious program that replicates and damages files.",
+        "Types: virus, worm (self-spreads over networks), Trojan horse (hides inside legit software), spyware, ransomware, adware.",
+        "Symptoms: slow PC, files missing/corrupted, programs crash, pop-ups.",
+        "Prevention: antivirus, regular updates, avoid suspicious links/attachments, use firewall, back up data.",
+      ],
+    },
+    {
+      id: "4-ethics", num: 4, title: "Ethics & Safety in Computing",
+      blurb: "Cyber ethics, privacy, netiquette.",
+      syllabus: [
+        "Use technology responsibly: no piracy, no hacking, no plagiarism.",
+        "Protect privacy: strong passwords, never share OTP, lock devices.",
+        "Netiquette: be polite, avoid all caps, do not cyberbully.",
+        "Cybercrime laws — IT Act 2000 (India).",
+      ],
+    },
+    {
+      id: "5-spreadsheet", num: 5, title: "Spreadsheets (Intro)",
+      blurb: "Rows, columns, cells, formulas.",
+      syllabus: [
+        "Worksheet = grid of cells. Row (1, 2…) × Column (A, B…) = cell address (e.g. B5).",
+        "Formula starts with `=`. Operators + − * / ^.",
+        "Functions: SUM, AVERAGE, MAX, MIN, COUNT, IF.",
+        "Charts: column, bar, line, pie.",
+      ],
+    },
+    {
+      id: "6-db", num: 6, title: "Database & DBMS (Intro)",
+      blurb: "Organised storage of data.",
+      syllabus: [
+        "Database = organised collection of data. Field, record, table.",
+        "DBMS = software to manage databases (MySQL, Oracle, MS Access).",
+        "Primary key = unique field identifying each record.",
+        "Advantages over flat files: faster search, fewer duplicates, easier updates, security.",
+      ],
+    },
+    {
+      id: "7-html", num: 7, title: "HTML — Advanced Features",
+      blurb: "Lists, images, links, forms, marquee.",
+      syllabus: [
+        "Page skeleton: <html> <head><title></title></head> <body></body> </html>.",
+        "Headings <h1>..<h6>. Paragraph <p>. Line break <br>. Horizontal rule <hr>.",
+        "Lists: <ul> with <li>, <ol> with <li>.",
+        "Image: <img src=\"file.jpg\" alt=\"…\" width height>.",
+        "Link: <a href=\"https://…\">text</a>.",
+        "Forms: <form><input><button></form>.",
+        "Marquee: <marquee>scrolling text</marquee> (deprecated but in ICSE syllabus).",
+      ],
+    },
+  ],
+  flashcards: [
+    { term: "CPU", def: "Central Processing Unit — the 'brain' that executes instructions. Contains ALU, CU, registers." },
+    { term: "RAM", def: "Random Access Memory — fast, volatile, holds programs that are running." },
+    { term: "ROM", def: "Read Only Memory — non-volatile, holds bootloader/firmware, cannot be written in normal use." },
+    { term: "Binary", def: "Base-2 number system using only digits 0 and 1." },
+    { term: "Octal", def: "Base-8 number system using digits 0–7." },
+    { term: "Hexadecimal", def: "Base-16 system using 0–9 and A (10) through F (15)." },
+    { term: "Virus", def: "Malicious self-replicating program that damages files or computer performance." },
+    { term: "Worm", def: "Malware that spreads automatically across networks without user action." },
+    { term: "Trojan horse", def: "Malware disguised as legitimate software that opens a backdoor when run." },
+    { term: "Antivirus", def: "Software that detects, prevents and removes malware from a computer." },
+    { term: "Cell (spreadsheet)", def: "Intersection of a row and a column; addressed as ColumnLetter+RowNumber (e.g. B5)." },
+    { term: "Formula (spreadsheet)", def: "Expression beginning with = that computes a value (e.g. =A1+B1)." },
+    { term: "Database", def: "An organised collection of related data, usually stored in tables." },
+    { term: "DBMS", def: "Database Management System — software to create, manage and query databases (MS Access, MySQL)." },
+    { term: "Primary key", def: "A field whose value uniquely identifies each record in a table." },
+    { term: "HTML", def: "Hypertext Markup Language — used to structure pages on the World Wide Web." },
+    { term: "Tag", def: "Keyword inside angle brackets used in HTML (<p>, <h1>, <img>) — most have an opening and a closing." },
+    { term: "Attribute", def: "Extra info given to an HTML tag (e.g. src, href, alt, width)." },
+  ],
+  questions: [
+    { id: "icp-1", topic: "1-hw", q: "Which is volatile memory?", opts: ["ROM", "RAM", "HDD", "SSD"], a: "RAM", model: "RAM loses its contents when power is off — that's what 'volatile' means." },
+    { id: "icp-2", topic: "1-hw", q: "Which is NOT an input device?", opts: ["Keyboard", "Mouse", "Speaker", "Microphone"], a: "Speaker", model: "Speaker is an output device — gives sound out." },
+    { id: "icp-3", topic: "2-number", q: "Convert decimal 13 to binary.", opts: ["1011", "1101", "1110", "1001"], a: "1101", model: "13 = 8 + 4 + 1 = 1101 in binary." },
+    { id: "icp-4", topic: "2-number", q: "Hex C equals which decimal?", opts: ["10", "11", "12", "15"], a: "12", model: "A=10, B=11, C=12, D=13, E=14, F=15." },
+    { id: "icp-5", topic: "2-number", q: "Binary 1010 = decimal?", opts: ["5", "10", "12", "20"], a: "10", model: "1×8 + 0×4 + 1×2 + 0×1 = 10." },
+    { id: "icp-6", topic: "3-virus", q: "Which malware self-replicates across networks?", opts: ["Trojan horse", "Worm", "Spyware", "Adware"], a: "Worm", model: "Worms spread by themselves; viruses need a host file; Trojans hide inside other software." },
+    { id: "icp-7", topic: "4-ethics", q: "Best password practice?", opts: ["Use birthday", "Use 'password123'", "Use long, mixed-character unique password", "Share with a friend"], a: "Use long, mixed-character unique password", model: "Mix upper, lower, numbers, symbols. Don't reuse." },
+    { id: "icp-8", topic: "5-spreadsheet", q: "Which formula adds the values in cells A1 to A5?", opts: ["=A1A5", "=SUM(A1..A5)", "=SUM(A1:A5)", "=ADD(A1:A5)"], a: "=SUM(A1:A5)", model: "Excel/Sheets syntax uses colon for range and SUM() for total." },
+    { id: "icp-9", topic: "6-db", q: "A primary key must be?", opts: ["Numeric", "Unique for each record", "The first column", "Always called ID"], a: "Unique for each record", model: "Unique identifier — no two records share the same primary key." },
+    { id: "icp-10", topic: "7-html", q: "Which tag creates an ordered (numbered) list?", opts: ["<ul>", "<ol>", "<list>", "<li>"], a: "<ol>", model: "<ol> = ordered list (1, 2, 3). <ul> = unordered (bullets). <li> = each item." },
+    { id: "icp-11", topic: "7-html", q: "Correct HTML for a link to google.com?", opts: ["<link href=\"google.com\">Google</link>", "<a href=\"https://google.com\">Google</a>", "<a url=\"google.com\">Google</a>", "<link>google.com</link>"], a: "<a href=\"https://google.com\">Google</a>", model: "<a> = anchor tag. href = hypertext reference." },
+    { id: "icp-12", topic: "7-html", q: "Which is the correct image tag?", opts: ["<image src=\"x.jpg\">", "<img>x.jpg</img>", "<img src=\"x.jpg\" alt=\"\">", "<picture file=\"x.jpg\">"], a: "<img src=\"x.jpg\" alt=\"\">", model: "<img> is a self-closing tag; src gives the file; alt gives alt text." },
+  ],
+  mistakes: [
+    { mistake: "Forgetting `=` before a spreadsheet formula.", fix: "Without `=`, the cell shows the text literally instead of computing." },
+    { mistake: "Mixing <ul> and <ol>.", fix: "<ul> = bullets (unordered). <ol> = numbered (ordered). Items are <li>." },
+    { mistake: "Confusing virus, worm, Trojan.", fix: "Virus needs a host file. Worm self-spreads on networks. Trojan disguises itself in legit software." },
+    { mistake: "Reading binary right-to-left wrong.", fix: "Place values from right: 1, 2, 4, 8, 16, 32, 64, 128. Multiply each bit and sum." },
+    { mistake: "Writing HTML tags in capitals only.", fix: "HTML is case-insensitive but standard is lowercase: <html>, <body>, <p>, <a>." },
+  ],
+  cheat: [
+    { heading: "Number system shortcuts", bullets: [
+      "Decimal places: 128 · 64 · 32 · 16 · 8 · 4 · 2 · 1.",
+      "Hex letters: A=10 · B=11 · C=12 · D=13 · E=14 · F=15.",
+      "Binary → hex: group 4 bits from right. Each group = 1 hex digit.",
+    ]},
+    { heading: "HTML 12 must-know tags", bullets: [
+      "<html> <head> <title> <body>",
+      "<h1>…<h6> <p> <br> <hr>",
+      "<ul> <ol> <li>",
+      "<a href> <img src alt> <table> <tr> <td>",
+      "<form> <input> <button> <marquee>",
+    ]},
+    { heading: "Spreadsheet quick", bullets: [
+      "Formulas start with =.",
+      "Functions: SUM, AVERAGE, MAX, MIN, COUNT, IF.",
+      "Range uses colon: A1:A10.",
+      "Absolute reference uses $: $A$1.",
+    ]},
+    { heading: "Malware difference", bullets: [
+      "Virus: attaches to a file; spreads when you run that file.",
+      "Worm: spreads itself across networks, no host needed.",
+      "Trojan: hidden inside legit-looking software.",
+      "Spyware: records your activity.",
+      "Ransomware: encrypts your files and demands money.",
+    ]},
+  ],
+};
+
+// =========================
+// REGISTRY — exposes all packs by subjectId
+// =========================
+import { ICSE7_MATHS } from "./icse7-maths";
+import { ICSE7_PHYSICS } from "./icse7-physics";
+
+export const ICSE7_PACKS: ExamPack[] = [
+  ICSE7_MATHS,
+  ICSE7_PHYSICS,
+  ICSE7_CHEMISTRY,
+  ICSE7_BIOLOGY,
+  ICSE7_HISTORY,
+  ICSE7_GEOGRAPHY,
+  ICSE7_COMPUTER,
+];
