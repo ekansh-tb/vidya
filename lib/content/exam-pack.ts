@@ -28,6 +28,8 @@ export type CheatSection = { heading: string; bullets: string[] };
 
 export type ExamPack = {
   subjectId: SubjectId;
+  /** Grade this pack targets — used to disambiguate when the same subjectId covers multiple grades. */
+  grade?: number;
   /** Display headline at top of exam-prep view */
   title: string;
   /** One-line context: board / code / school */
