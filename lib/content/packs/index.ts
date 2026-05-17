@@ -3,11 +3,13 @@ import type { SubjectId } from "../../types";
 import { IGCSE_CS_PACK } from "./igcse-cs";
 import { ICSE7_PACKS } from "./icse7-rest";
 import { ICSE6_PACKS } from "./icse6";
+import { ICSE_LANGUAGE_PACKS } from "./icse-languages";
 
 export const ALL_PACKS: ExamPack[] = [
   IGCSE_CS_PACK,
   ...ICSE7_PACKS,
   ...ICSE6_PACKS,
+  ...ICSE_LANGUAGE_PACKS,
 ];
 
 /**
