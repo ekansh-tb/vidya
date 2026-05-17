@@ -33,6 +33,7 @@ export const DEFAULT_STATE: GameState = {
   assemblyStreak: 0,
   readBooks: [],
   savedMelody: null,
+  savedCompositions: [],
   settings: {
     sound: true, music: true, voice: true,
     musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9,

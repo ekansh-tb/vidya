@@ -117,6 +117,7 @@ export type GameState = {
   assemblyStreak: number;
   readBooks: string[];
   savedMelody: number[] | null;
+  savedCompositions: Composition[];
   settings: {
     sound: boolean;
     music: boolean;
@@ -126,6 +127,14 @@ export type GameState = {
     voiceVolume: number;
   };
   onboarded: boolean;
+};
+
+export type Composition = {
+  id: string;
+  name: string;
+  notes: number[];
+  tempoMs: number;
+  createdAt: string;
 };
 
 export type FriendStreakDay = {
