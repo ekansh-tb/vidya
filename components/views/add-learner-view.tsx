@@ -39,7 +39,8 @@ type Preset = {
 const PRESETS: Preset[] = [
   { id: "advika", name: "Advika Jain",  emoji: "🦚", board: "cambridge-primary", grade: 5,  school: "CNS Pune",                       city: "Pune", desc: "Grade 5 · Cambridge Primary" },
   { id: "nevaan", name: "Nevaan Jain",  emoji: "🐯", board: "cambridge-igcse",   grade: 10, school: "CNS Pune",                       city: "Pune", desc: "Grade 10 · IGCSE · CS exam tomorrow" },
-  { id: "wws7",   name: "Wisdom World scholar", emoji: "🦉", board: "icse",       grade: 7,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 7 ICSE · WWS Hadapsar" },
+  { id: "wws6",   name: "WWS Class 6 scholar",  emoji: "🦊", board: "icse",      grade: 6,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 6 ICSE · Selina + Ancient India" },
+  { id: "wws7",   name: "WWS Class 7 scholar",  emoji: "🦉", board: "icse",      grade: 7,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 7 ICSE · Selina + Medieval India" },
 ];
 
 export function AddLearnerView({

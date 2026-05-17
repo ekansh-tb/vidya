@@ -13,7 +13,7 @@ import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators"
 import { DiyaCompanion } from "@/components/effects/diya";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import { PACK_BY_SUBJECT } from "@/lib/content/packs";
+import { packFor } from "@/lib/content/packs";
 import { xpToLevel } from "@/lib/economy";
 import { todayKey } from "@/lib/utils";
 import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
@@ -58,8 +58,8 @@ export function HomeView({
 
   const takingCS = !!learner.pickedSubjects?.includes("igcse-cs");
   const packSubjects = useMemo(
-    () => visibleSubjects.filter((s) => PACK_BY_SUBJECT[s.id]),
-    [visibleSubjects],
+    () => visibleSubjects.filter((s) => !!packFor(s.id, learner.grade)),
+    [visibleSubjects, learner.grade],
   );
   const firstPack = packSubjects[0];
   const isExamReady = packSubjects.length > 0 && !(isIgcse && takingCS); // CS banner already handles IGCSE-CS

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import type { GameState, SubjectId, ViewName } from "@/lib/types";
 import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
-import { PACK_BY_SUBJECT } from "@/lib/content/packs";
+import { packFor } from "@/lib/content/packs";
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ComponentType<{ clas
 ];
 
 export function ExamPrepView({
-  state, setState, onBack, onNavigate, subjectId, availablePackIds,
+  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
@@ -36,13 +36,15 @@ export function ExamPrepView({
   subjectId?: SubjectId;
   /** If provided, lets the learner switch between exam packs they own. */
   availablePackIds?: SubjectId[];
+  /** Learner's grade — for grade-aware pack lookup. */
+  grade?: number;
 }) {
-  const initialId = subjectId && PACK_BY_SUBJECT[subjectId]
+  const initialId = subjectId && packFor(subjectId, grade)
     ? subjectId
-    : (availablePackIds?.find((id) => PACK_BY_SUBJECT[id]) ?? (Object.keys(PACK_BY_SUBJECT)[0] as SubjectId | undefined));
+    : (availablePackIds?.find((id) => packFor(id, grade)));
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
-  const pack = currentId ? PACK_BY_SUBJECT[currentId] : undefined;
+  const pack = currentId ? packFor(currentId, grade) : undefined;
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("overview");
 
@@ -63,7 +65,7 @@ export function ExamPrepView({
   }
 
   const switchablePacks = (availablePackIds || [])
-    .map((id) => PACK_BY_SUBJECT[id])
+    .map((id) => packFor(id, grade))
     .filter((p): p is ExamPack => !!p);
 
   return (

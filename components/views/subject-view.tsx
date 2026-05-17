@@ -4,17 +4,18 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Crown, Shuffle, NotebookPen, MessageCircle, BookOpen, Sparkles } from "lucide-react";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import { PACK_BY_SUBJECT } from "@/lib/content/packs";
-import type { GameState, ViewName, SubjectId } from "@/lib/types";
+import { packFor } from "@/lib/content/packs";
+import type { GameState, LearnerProfile, ViewName, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
 import { useEffect } from "react";
 
 export function SubjectView({
-  subjectId, state, onNavigate, onBack, voiceEnabled,
+  subjectId, state, learner, onNavigate, onBack, voiceEnabled,
 }: {
   subjectId: SubjectId;
   state: GameState;
+  learner: LearnerProfile;
   onNavigate: (v: ViewName, params?: Record<string, unknown>) => void;
   onBack: () => void;
   voiceEnabled: boolean;
@@ -22,7 +23,7 @@ export function SubjectView({
   const subject = SUBJECT_MAP[subjectId];
   const quizTopics = QUESTIONS[subjectId] || {};
   const hasQuiz = Object.keys(quizTopics).length > 0;
-  const pack = PACK_BY_SUBJECT[subjectId];
+  const pack = packFor(subjectId, learner.grade);
   const Icon = subject.icon;
 
   useEffect(() => {

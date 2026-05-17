@@ -93,6 +93,15 @@ function systemPrompt(opts: { subject?: string; topic?: string; name?: string; g
     : "Chatrabhuj Narsee School, Pune");
   const isIgcse = board === "cambridge-igcse" || (grade ?? 0) >= 9;
   const isIcseTeen = board === "icse" && (grade ?? 0) >= 6 && (grade ?? 0) <= 8;
+  const icseClass = (grade ?? 0);
+  // Scope guards for ICSE — keep tutor from over-teaching content from a later grade.
+  const scopeGuard = board === "icse"
+    ? icseClass === 6
+      ? "CRITICAL SCOPE: Class 6 ICSE. Do NOT teach: medieval India (Cl 7+), Asia/Africa geography (Cl 7+), atomic structure/valency/balancing equations (Cl 7+), transportation in plants/animals (Cl 8), reproduction in plants (Cl 8), acids/bases/salts (Cl 8). Class 6 covers ancient India only (up to Gupta), North & South America, intro-level chemistry symbols only."
+      : icseClass === 7
+      ? "CRITICAL SCOPE: Class 7 ICSE. Do NOT teach: Marathas (Cl 8), acids/bases/salts (Cl 8), reproduction in plants (Cl 8). Cl 7 covers Medieval India (Delhi Sultanate, Vijayanagara, Mughals, Bhakti/Sufi), Selina Physics 7 chapters (forces, energy, light, heat, sound, electricity), Chemistry 7 (intro to atomicity/valency/balancing), Biology 7 (tissues, classification, photosynthesis, excretion, nervous system, allergy)."
+      : ""
+    : "";
 
   if (isIcseTeen) {
     return `You are Miss Vidya, an AI tutor for ${learner}, a Class ${grade ?? 7} student at ${schoolLabel}, taking ICSE (CISCE board).
@@ -110,6 +119,7 @@ Style:
 - End most answers with a one-line follow-up question to keep them thinking.
 
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : ""}
+${scopeGuard ? "\n" + scopeGuard : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
 `;
   }
