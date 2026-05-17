@@ -29,7 +29,7 @@ import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-ap
 import { useGameStore } from "@/lib/game-store";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { PACK_BY_SUBJECT } from "@/lib/content/packs";
+import { packFor } from "@/lib/content/packs";
 import { startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
 
 export default function HomePage() {
@@ -66,8 +66,8 @@ export default function HomePage() {
     [learner.board, learner.pickedSubjects],
   );
   const availablePackIds: SubjectId[] = useMemo(
-    () => learnerSubjects.filter((s) => PACK_BY_SUBJECT[s.id]).map((s) => s.id),
-    [learnerSubjects],
+    () => learnerSubjects.filter((s) => !!packFor(s.id, learner.grade)).map((s) => s.id),
+    [learnerSubjects, learner.grade],
   );
 
   if (!hydrated) {
@@ -177,6 +177,7 @@ export default function HomePage() {
           <SubjectView
             subjectId={view.params!.subjectId as SubjectId}
             state={state}
+            learner={learner}
             onNavigate={navigate}
             onBack={back}
             voiceEnabled={state.settings.voice}
@@ -222,7 +223,7 @@ export default function HomePage() {
         );
         break;
       case "profile":
-        content = <ProfileView state={state} setState={set} onBack={back} />;
+        content = <ProfileView state={state} learner={learner} setState={set} onBack={back} />;
         break;
       case "shop":
         content = <ShopView state={state} setState={set} onBack={back} />;
@@ -289,6 +290,7 @@ export default function HomePage() {
             onNavigate={navigate}
             subjectId={view.params?.subjectId as SubjectId | undefined}
             availablePackIds={availablePackIds}
+            grade={learner.grade}
           />
         );
         break;

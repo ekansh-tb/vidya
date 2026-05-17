@@ -8,14 +8,23 @@ import { XPBar } from "@/components/ui/xp-bar";
 import { AVATARS } from "@/lib/content/avatars";
 import { BADGES, TIER_STYLES } from "@/lib/content/badges";
 import { xpToLevel } from "@/lib/economy";
-import type { GameState } from "@/lib/types";
+import type { GameState, LearnerProfile } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { resizeImageFile } from "@/lib/utils";
 
+function describeBoard(board: LearnerProfile["board"]): string {
+  if (board === "cambridge-primary") return "Cambridge Primary";
+  if (board === "cambridge-igcse") return "Cambridge IGCSE";
+  if (board === "icse") return "ICSE";
+  if (board === "cbse") return "CBSE";
+  return "";
+}
+
 export function ProfileView({
-  state, setState, onBack,
+  state, learner, setState, onBack,
 }: {
   state: GameState;
+  learner: LearnerProfile;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
 }) {
@@ -57,8 +66,11 @@ export function ProfileView({
           <button onClick={() => { sfx.click(); setPickerOpen((v) => !v); }} className="inline-block active:scale-95 transition">
             <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="lg" />
           </button>
-          <div className="font-display text-3xl font-bold mt-3 text-white">{state.name}</div>
-          <div className="text-white/50 text-sm mt-0.5">Grade 5 · CNS Pune</div>
+          <div className="font-display text-3xl font-bold mt-3 text-white">{learner.name || state.name}</div>
+          <div className="text-white/50 text-sm mt-0.5">
+            Grade {learner.grade} · {describeBoard(learner.board)}
+            {learner.school ? ` · ${learner.school}` : ""}
+          </div>
           <div className="mt-5">
             <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
           </div>
