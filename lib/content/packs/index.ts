@@ -5,6 +5,7 @@ import { ICSE7_PACKS } from "./icse7-rest";
 import { ICSE6_PACKS } from "./icse6";
 import { ICSE_LANGUAGE_PACKS } from "./icse-languages";
 import { CBSE7_MATHS } from "./cbse7-maths";
+import { CBSE7_SCIENCE } from "./cbse7-science";
 
 export const ALL_PACKS: ExamPack[] = [
   IGCSE_CS_PACK,
@@ -12,6 +13,7 @@ export const ALL_PACKS: ExamPack[] = [
   ...ICSE6_PACKS,
   ...ICSE_LANGUAGE_PACKS,
   CBSE7_MATHS,
+  CBSE7_SCIENCE,
 ];
 
 /**
