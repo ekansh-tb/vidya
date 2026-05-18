@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="Georgia, 'Times New Roman', serif">
+  <!-- background -->
+  <defs>
+    <radialGradient id="cosmos" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#0d0a1c"/>
+      <stop offset="55%" stop-color="#070514"/>
+      <stop offset="100%" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="nucleus" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff7d6"/>
+      <stop offset="35%" stop-color="#f0b65f"/>
+      <stop offset="75%" stop-color="#9554d6"/>
+      <stop offset="100%" stop-color="#3a1d6e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbHuman" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffd9b3"/>
+      <stop offset="65%" stop-color="#d97a3f"/>
+      <stop offset="100%" stop-color="#3b1a0c"/>
+    </radialGradient>
+    <radialGradient id="orbAI" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#bff0ff"/>
+      <stop offset="65%" stop-color="#3aa9d6"/>
+      <stop offset="100%" stop-color="#0b2a3a"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrow-h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#e6a05a"/>
+    </marker>
+    <marker id="arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5cc1e0"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="900" fill="url(#cosmos)"/>
+
+  <!-- starfield -->
+  <g fill="#fff" opacity="0.55">
+    <circle cx="120"  cy="80"  r="1"/>
+    <circle cx="260"  cy="160" r="0.7"/>
+    <circle cx="80"   cy="320" r="1.4"/>
+    <circle cx="200"  cy="430" r="0.6"/>
+    <circle cx="340"  cy="640" r="1"/>
+    <circle cx="100"  cy="780" r="0.8"/>
+    <circle cx="540"  cy="60"  r="1"/>
+    <circle cx="780"  cy="110" r="0.7"/>
+    <circle cx="1020" cy="60"  r="1.2"/>
+    <circle cx="1240" cy="180" r="0.7"/>
+    <circle cx="1340" cy="340" r="1"/>
+    <circle cx="1280" cy="540" r="0.8"/>
+    <circle cx="1180" cy="700" r="1.1"/>
+    <circle cx="900"  cy="820" r="0.8"/>
+    <circle cx="620"  cy="780" r="1.2"/>
+    <circle cx="470"  cy="240" r="0.5"/>
+    <circle cx="1100" cy="430" r="0.6"/>
+    <circle cx="60"   cy="540" r="0.7"/>
+    <circle cx="1360" cy="80"  r="0.8"/>
+    <circle cx="1370" cy="780" r="0.7"/>
+  </g>
+
+  <!-- outer cosmic ring (universe being created) -->
+  <circle cx="700" cy="450" r="370" fill="none" stroke="#2a1f4a" stroke-width="1" stroke-dasharray="2 8" opacity="0.5"/>
+  <circle cx="700" cy="450" r="290" fill="none" stroke="#3a2a5a" stroke-width="1" stroke-dasharray="3 10" opacity="0.6"/>
+  <circle cx="700" cy="450" r="210" fill="none" stroke="#5a3f87" stroke-width="1" stroke-dasharray="4 6" opacity="0.7"/>
+
+  <!-- VIDYA nucleus -->
+  <g filter="url(#glow)">
+    <circle cx="700" cy="450" r="92" fill="url(#nucleus)"/>
+  </g>
+  <text x="700" y="442" text-anchor="middle" font-size="38" fill="#fff" font-weight="bold" letter-spacing="6">VIDYA</text>
+  <text x="700" y="475" text-anchor="middle" font-size="12" fill="#e7d5ff" letter-spacing="3" opacity="0.85">a creation that creates</text>
+
+  <!-- ─── INNER ORBIT: HUMANS ─────────────────────────────── -->
+  <!-- positions on r=210, 4 humans at NE, SE, SW, NW -->
+  <!-- Parent NE (cos 60, -sin 60) -->
+  <g transform="translate(880, 270)">
+    <circle r="42" fill="url(#orbHuman)" filter="url(#softglow)"/>
+    <text y="6" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" letter-spacing="2">PARENT</text>
+    <text y="62" text-anchor="middle" font-size="10" fill="#e0c2a0">steward · configures AI</text>
+  </g>
+  <!-- Child SE -->
+  <g transform="translate(880, 630)">
+    <circle r="42" fill="url(#orbHuman)" filter="url(#softglow)"/>
+    <text y="6" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" letter-spacing="2">CHILD</text>
+    <text y="62" text-anchor="middle" font-size="10" fill="#e0c2a0">explorer · chooses interests</text>
+  </g>
+  <!-- Teacher SW -->
+  <g transform="translate(520, 630)">
+    <circle r="42" fill="url(#orbHuman)" filter="url(#softglow)"/>
+    <text y="6" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" letter-spacing="2">TEACHER</text>
+    <text y="62" text-anchor="middle" font-size="10" fill="#e0c2a0">guide · validates content</text>
+  </g>
+  <!-- Counsellor NW -->
+  <g transform="translate(520, 270)">
+    <circle r="42" fill="url(#orbHuman)" filter="url(#softglow)"/>
+    <text y="0" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" letter-spacing="2">COUN-</text>
+    <text y="16" text-anchor="middle" font-size="14" font-weight="bold" fill="#fff" letter-spacing="2">SELLOR</text>
+    <text y="62" text-anchor="middle" font-size="10" fill="#e0c2a0">care · receives escalations</text>
+  </g>
+
+  <!-- ─── OUTER ORBIT: AI SPECIES ─────────────────────────── -->
+  <!-- positions on r=370, 4 AIs at N, E, S, W -->
+  <!-- Tutor AI — North -->
+  <g transform="translate(700, 80)">
+    <circle r="38" fill="url(#orbAI)" filter="url(#softglow)"/>
+    <text y="-3" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff" letter-spacing="2">TUTOR</text>
+    <text y="14" text-anchor="middle" font-size="10" fill="#bcdfee" letter-spacing="1">claude · gpt · gemini</text>
+    <text y="58" text-anchor="middle" font-size="10" fill="#9fcedf">teaches kid · learns parent</text>
+  </g>
+  <!-- Subject Expert — East -->
+  <g transform="translate(1140, 450)">
+    <circle r="38" fill="url(#orbAI)" filter="url(#softglow)"/>
+    <text y="-3" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff" letter-spacing="2">EXPERT</text>
+    <text y="14" text-anchor="middle" font-size="10" fill="#bcdfee" letter-spacing="1">maths · art · code</text>
+    <text y="58" text-anchor="middle" font-size="10" fill="#9fcedf">per-subject routing</text>
+  </g>
+  <!-- Analyst — South -->
+  <g transform="translate(700, 820)">
+    <circle r="38" fill="url(#orbAI)" filter="url(#softglow)"/>
+    <text y="-3" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff" letter-spacing="2">ANALYST</text>
+    <text y="14" text-anchor="middle" font-size="10" fill="#bcdfee" letter-spacing="1">opinion · never claim</text>
+    <text y="-32" text-anchor="middle" font-size="10" fill="#9fcedf">% alerts → parent</text>
+  </g>
+  <!-- Diya / Companion — West -->
+  <g transform="translate(260, 450)">
+    <circle r="38" fill="url(#orbAI)" filter="url(#softglow)"/>
+    <text y="-3" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff" letter-spacing="2">DIYA</text>
+    <text y="14" text-anchor="middle" font-size="10" fill="#bcdfee" letter-spacing="1">companion · daily</text>
+    <text y="58" text-anchor="middle" font-size="10" fill="#9fcedf">checks in · celebrates</text>
+  </g>
+
+  <!-- ─── BIDIRECTIONAL LINES (Human ↔ VIDYA ↔ AI) ─────────── -->
+  <!-- Human → Vidya (orange) -->
+  <g stroke="#d97a3f" stroke-width="1.3" fill="none" opacity="0.75">
+    <line x1="847" y1="297" x2="763" y2="397" marker-end="url(#arrow-h)"/>
+    <line x1="847" y1="603" x2="763" y2="503" marker-end="url(#arrow-h)"/>
+    <line x1="553" y1="603" x2="637" y2="503" marker-end="url(#arrow-h)"/>
+    <line x1="553" y1="297" x2="637" y2="397" marker-end="url(#arrow-h)"/>
+  </g>
+
+  <!-- Vidya → AI (blue), curved -->
+  <g stroke="#5cc1e0" stroke-width="1.3" fill="none" opacity="0.75">
+    <path d="M 700 358 Q 700 220 700 118" marker-end="url(#arrow-a)"/>
+    <path d="M 792 450 Q 950 450 1102 450" marker-end="url(#arrow-a)"/>
+    <path d="M 700 542 Q 700 680 700 782" marker-end="url(#arrow-a)"/>
+    <path d="M 608 450 Q 450 450 298 450" marker-end="url(#arrow-a)"/>
+  </g>
+
+  <!-- AI feeds back to Human (dashed, mirror) -->
+  <g stroke="#a99cd9" stroke-width="0.9" stroke-dasharray="4 4" fill="none" opacity="0.55">
+    <path d="M 660 110 Q 540 180 538 230"/>
+    <path d="M 1108 420 Q 970 340 920 290"/>
+    <path d="M 740 790 Q 860 720 880 670"/>
+    <path d="M 292 480 Q 420 560 482 600"/>
+  </g>
+
+  <!-- ─── TITLE + CAPTIONS ────────────────────────────────── -->
+  <text x="700" y="48" text-anchor="middle" font-size="22" fill="#f5e8c8" letter-spacing="10" font-style="italic">two species, one harmony</text>
+  <text x="700" y="74" text-anchor="middle" font-size="11" fill="#a99cd9" letter-spacing="4" opacity="0.8">— created by humans · created for humans · creating humans —</text>
+
+  <!-- corner mottos -->
+  <g font-size="11" fill="#bcdfee" opacity="0.7" letter-spacing="2">
+    <text x="40"   y="74">parents teach AI</text>
+    <text x="40"   y="92" opacity="0.5">to take care of children</text>
+
+    <text x="1360" y="74"  text-anchor="end">AI teaches humans</text>
+    <text x="1360" y="92"  text-anchor="end" opacity="0.5">to take care of each other</text>
+
+    <text x="40"   y="816">stars exploring stars,</text>
+    <text x="40"   y="834" opacity="0.5">discovering as they're created</text>
+
+    <text x="1360" y="816" text-anchor="end">no claims, only opinions</text>
+    <text x="1360" y="834" text-anchor="end" opacity="0.5">consent verified, then voiced</text>
+  </g>
+
+  <!-- bottom band: the four guardrails -->
+  <g transform="translate(0, 870)" font-size="10" fill="#7a6da3" letter-spacing="3">
+    <text x="200"  text-anchor="middle">STRICT ISOLATION</text>
+    <text x="525"  text-anchor="middle">OPINION-ONLY ANALYTICS</text>
+    <text x="875"  text-anchor="middle">CONSENT LEDGER</text>
+    <text x="1200" text-anchor="middle">PARENT-OWNED KEYS</text>
+  </g>
+
+  <!-- subtle "creating universe while exploring" trail -->
+  <g stroke="#ffd97a" stroke-width="0.5" fill="none" opacity="0.3">
+    <path d="M 200 200 Q 700 100 1200 200" stroke-dasharray="1 6"/>
+    <path d="M 200 700 Q 700 800 1200 700" stroke-dasharray="1 6"/>
+  </g>
+</svg>
