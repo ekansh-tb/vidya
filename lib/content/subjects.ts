@@ -457,8 +457,172 @@ export const ICSE7_GROUPS: IcseGroup[] = [
   },
 ];
 
+// =========================
+// CBSE (NCERT) — Bharatiya Vidya Bhavan Nagpur & other CBSE schools
+// Source: NCERT NCF-SE 2023 textbook lineup (verified May 2026)
+//   Grade 3: Joyful Mathematics, Marigold (English), Rimjhim (Hindi), Our Wondrous World (EVS)
+//   Grade 4: Maths Mela, Santoor (English), Veena (Hindi), Our Wondrous World (EVS)
+//   Grade 7: Ganita Prakash, Curiosity (Science), Poorvi (English), Exploring Society: India & Beyond (SST), Malhar (Hindi), Deepakam (Sanskrit), Kriti (Arts), Khel Yatra (PE), Kaushal Bodh (Vocational)
+//   Grade 8: NCF books rolling out 2026-27 — Ganit, Vigyan (Science), Samajik Vigyan (SST), English, Hindi, Sanskrit
+// =========================
+
+const CBSE_MATHS: Subject = {
+  id: "cbse-maths",
+  name: "Mathematics",
+  tagline: "Joyful Mathematics · Maths Mela · Ganita Prakash",
+  gradient: "from-amber-400 via-orange-500 to-rose-500",
+  accent: "#FBBF24",
+  soft: "rgba(251, 191, 36, 0.15)",
+  deep: "#92400E",
+  glow: "rgba(251, 191, 36, 0.5)",
+  icon: Calculator,
+};
+const CBSE_ENGLISH: Subject = {
+  id: "cbse-english",
+  name: "English",
+  tagline: "Marigold · Santoor · Poorvi",
+  gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+  accent: "#F472B6",
+  soft: "rgba(244, 114, 182, 0.15)",
+  deep: "#9F1239",
+  glow: "rgba(244, 114, 182, 0.5)",
+  icon: BookOpen,
+};
+const CBSE_HINDI: Subject = {
+  id: "cbse-hindi",
+  name: "हिंदी",
+  tagline: "रिमझिम · वीणा · मल्हार",
+  gradient: "from-violet-400 via-purple-500 to-indigo-500",
+  accent: "#A78BFA",
+  soft: "rgba(167, 139, 250, 0.15)",
+  deep: "#5B21B6",
+  glow: "rgba(167, 139, 250, 0.5)",
+  icon: Languages,
+  isDeva: true,
+};
+const CBSE_EVS: Subject = {
+  id: "cbse-evs",
+  name: "EVS",
+  tagline: "Our Wondrous World",
+  gradient: "from-lime-400 via-emerald-500 to-teal-500",
+  accent: "#84CC16",
+  soft: "rgba(132, 204, 22, 0.15)",
+  deep: "#3F6212",
+  glow: "rgba(132, 204, 22, 0.5)",
+  icon: Sprout,
+};
+const CBSE_SCIENCE: Subject = {
+  id: "cbse-science",
+  name: "Science",
+  tagline: "Curiosity · Vigyan · integrated PCB",
+  gradient: "from-emerald-400 via-teal-500 to-cyan-500",
+  accent: "#10B981",
+  soft: "rgba(16, 185, 129, 0.15)",
+  deep: "#065F46",
+  glow: "rgba(16, 185, 129, 0.5)",
+  icon: FlaskConical,
+};
+const CBSE_SOCIALSCIENCE: Subject = {
+  id: "cbse-socialscience",
+  name: "Social Science",
+  tagline: "Exploring Society: India & Beyond · H/G/C/E merged",
+  gradient: "from-amber-500 via-orange-600 to-red-600",
+  accent: "#D97706",
+  soft: "rgba(217, 119, 6, 0.15)",
+  deep: "#7C2D12",
+  glow: "rgba(217, 119, 6, 0.5)",
+  icon: Landmark,
+};
+const CBSE_SANSKRIT: Subject = {
+  id: "cbse-sanskrit",
+  name: "संस्कृत",
+  tagline: "दीपकम् · तृतीयभाषा",
+  gradient: "from-amber-400 via-orange-500 to-yellow-500",
+  accent: "#D97706",
+  soft: "rgba(217, 119, 6, 0.15)",
+  deep: "#92400E",
+  glow: "rgba(217, 119, 6, 0.45)",
+  icon: Languages,
+  isDeva: true,
+};
+const CBSE_ARTS: Subject = {
+  id: "cbse-arts",
+  name: "Arts",
+  tagline: "Kriti · drawing & craft",
+  gradient: "from-pink-400 via-rose-500 to-red-500",
+  accent: "#F43F5E",
+  soft: "rgba(244, 63, 94, 0.15)",
+  deep: "#9F1239",
+  glow: "rgba(244, 63, 94, 0.5)",
+  icon: Palette,
+};
+const CBSE_PE: Subject = {
+  id: "cbse-pe",
+  name: "PE & Wellbeing",
+  tagline: "Khel Yatra",
+  gradient: "from-cyan-400 via-sky-500 to-blue-500",
+  accent: "#22D3EE",
+  soft: "rgba(34, 211, 238, 0.15)",
+  deep: "#075985",
+  glow: "rgba(34, 211, 238, 0.45)",
+  icon: MusicIcon,
+};
+const CBSE_VOCATIONAL: Subject = {
+  id: "cbse-vocational",
+  name: "Vocational Skills",
+  tagline: "Kaushal Bodh",
+  gradient: "from-yellow-400 via-amber-500 to-orange-500",
+  accent: "#EAB308",
+  soft: "rgba(234, 179, 8, 0.15)",
+  deep: "#854D0E",
+  glow: "rgba(234, 179, 8, 0.5)",
+  icon: Briefcase,
+};
+
+// Foundational + Preparatory Stage (Grades 1–5): Maths, English, Hindi, EVS, Arts
+export const SUBJECTS_CBSE_PRIMARY: Subject[] = [
+  CBSE_MATHS, CBSE_ENGLISH, CBSE_HINDI, CBSE_EVS, CBSE_ARTS,
+];
+
+// Middle Stage (Grades 6–8): Maths, Science, SST, English, Hindi, Sanskrit, Arts, PE, Vocational
+export const SUBJECTS_CBSE_MIDDLE: Subject[] = [
+  CBSE_MATHS, CBSE_SCIENCE, CBSE_SOCIALSCIENCE,
+  CBSE_ENGLISH, CBSE_HINDI, CBSE_SANSKRIT,
+  CBSE_ARTS, CBSE_PE, CBSE_VOCATIONAL,
+];
+
+const ALL_CBSE: Subject[] = [
+  CBSE_MATHS, CBSE_ENGLISH, CBSE_HINDI, CBSE_EVS,
+  CBSE_SCIENCE, CBSE_SOCIALSCIENCE, CBSE_SANSKRIT,
+  CBSE_ARTS, CBSE_PE, CBSE_VOCATIONAL,
+];
+
+// CBSE picker groupings — Middle Stage offers electives
+export const CBSE_MIDDLE_GROUPS: IcseGroup[] = [
+  {
+    id: "core",
+    label: "Core Academics",
+    description: "Compulsory at CBSE middle school.",
+    subjects: ["cbse-maths", "cbse-science", "cbse-socialscience"],
+    compulsoryIds: ["cbse-maths", "cbse-science", "cbse-socialscience"],
+  },
+  {
+    id: "languages",
+    label: "Languages (3-language formula)",
+    description: "English + Hindi + Sanskrit (typical at CBSE schools in Maharashtra).",
+    subjects: ["cbse-english", "cbse-hindi", "cbse-sanskrit"],
+    compulsoryIds: ["cbse-english", "cbse-hindi"],
+  },
+  {
+    id: "co",
+    label: "Co-curricular",
+    description: "NCF-SE 2023 adds Arts, PE & Wellbeing, Vocational Skills.",
+    subjects: ["cbse-arts", "cbse-pe", "cbse-vocational"],
+  },
+];
+
 // Combined map for lookups
-export const SUBJECTS: Subject[] = [...SUBJECTS_PRIMARY, ...SUBJECTS_IGCSE, ...SUBJECTS_ICSE7];
+export const SUBJECTS: Subject[] = [...SUBJECTS_PRIMARY, ...SUBJECTS_IGCSE, ...SUBJECTS_ICSE7, ...ALL_CBSE];
 export const SUBJECT_MAP = Object.fromEntries(SUBJECTS.map((s) => [s.id, s])) as Record<string, Subject>;
 
 // IGCSE subject grouping (per CNS Pune Grade 9–10 page)
@@ -512,10 +676,11 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
   },
 ];
 
-/** Subjects shown to a learner, given their board + (for IGCSE/ICSE) picked subjects. */
+/** Subjects shown to a learner, given their board + (for IGCSE/ICSE/CBSE) picked subjects. */
 export function subjectsForLearner(
   board: "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse",
   pickedSubjects?: SubjectId[],
+  grade?: number,
 ): Subject[] {
   if (board === "cambridge-primary") return SUBJECTS_PRIMARY;
   if (board === "cambridge-igcse") {
@@ -528,15 +693,24 @@ export function subjectsForLearner(
     const chosen = new Set<SubjectId>([...compulsory, ...(pickedSubjects || [])]);
     return SUBJECTS_ICSE7.filter((s) => chosen.has(s.id));
   }
-  // CBSE — placeholder, future
+  if (board === "cbse") {
+    // Primary stage (Gr 1–5) — fixed lineup, no picker
+    if (grade != null && grade <= 5) return SUBJECTS_CBSE_PRIMARY;
+    // Middle stage (Gr 6–8) — core + chosen languages/co-curriculars
+    const compulsory = CBSE_MIDDLE_GROUPS.flatMap((g) => g.compulsoryIds || []);
+    const chosen = new Set<SubjectId>([...compulsory, ...(pickedSubjects || [])]);
+    return SUBJECTS_CBSE_MIDDLE.filter((s) => chosen.has(s.id));
+  }
   return [];
 }
 
 /** Returns the picker grouping for a board, if any. */
 export function pickerGroupsForBoard(
   board: "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse",
+  grade?: number,
 ): { id: string; label: string; description: string; subjects: SubjectId[]; compulsoryIds?: SubjectId[] }[] {
   if (board === "cambridge-igcse") return IGCSE_GROUPS;
   if (board === "icse") return ICSE7_GROUPS;
+  if (board === "cbse" && grade != null && grade >= 6) return CBSE_MIDDLE_GROUPS;
   return [];
 }

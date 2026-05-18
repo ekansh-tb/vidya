@@ -22,7 +22,7 @@ const BOARDS: { id: Board; label: string; description: string; defaultGrade: num
   { id: "cambridge-primary", label: "Cambridge Primary",  description: "Stages 1–6 · ages 6–11",                 defaultGrade: 5,  gradeRange: [1, 6] },
   { id: "cambridge-igcse",   label: "Cambridge IGCSE",    description: "Year 9–10 · Upper Secondary · ages 14–16", defaultGrade: 10, gradeRange: [9, 10] },
   { id: "icse",              label: "ICSE (CISCE)",       description: "Indian Council · grades 1–10",            defaultGrade: 7,  gradeRange: [1, 10] },
-  { id: "cbse",              label: "CBSE",               description: "Central Board · grades 1–12 · soon",      defaultGrade: 7,  gradeRange: [1, 12] },
+  { id: "cbse",              label: "CBSE (NCERT NCF-SE 2023)", description: "Central Board · grades 1–12 · NCERT books", defaultGrade: 7, gradeRange: [1, 12] },
 ];
 
 type Preset = {
@@ -41,6 +41,12 @@ const PRESETS: Preset[] = [
   { id: "nevaan", name: "Nevaan Jain",  emoji: "🐯", board: "cambridge-igcse",   grade: 10, school: "CNS Pune",                       city: "Pune", desc: "Grade 10 · IGCSE · CS exam tomorrow" },
   { id: "wws6",   name: "WWS Class 6 scholar",  emoji: "🦊", board: "icse",      grade: 6,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 6 ICSE · Selina + Ancient India" },
   { id: "wws7",   name: "WWS Class 7 scholar",  emoji: "🦉", board: "icse",      grade: 7,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 7 ICSE · Selina + Medieval India" },
+  // Bharatiya Vidya Bhavan, Nagpur — 4 CBSE-affiliated branches under Nagpur Kendra
+  // Sources verified May 2026: bvmcl.edu.in (Civil Lines, est. 1982), bvmskn.edu.in (Srikrishna Nagar, Aff. # 1130059)
+  { id: "bvb-cl-7",  name: "BVB Civil Lines · Gr 7",   emoji: "🦉", board: "cbse", grade: 7, school: "Bharatiya Vidya Bhavan, Civil Lines", city: "Nagpur", desc: "CBSE · Ganita Prakash + Curiosity + Poorvi" },
+  { id: "bvb-skn-3", name: "BVB Srikrishna Nagar · Gr 3", emoji: "🦊", board: "cbse", grade: 3, school: "Bharatiya Vidya Bhavan, Srikrishna Nagar", city: "Nagpur", desc: "CBSE Preparatory · Joyful Mathematics + Marigold" },
+  { id: "bvb-tn-4",  name: "BVB Trimurti Nagar · Gr 4", emoji: "🐯", board: "cbse", grade: 4, school: "Bharatiya Vidya Bhavan, Trimurti Nagar", city: "Nagpur", desc: "CBSE · Maths Mela + Santoor + Veena" },
+  { id: "bvb-as-8",  name: "BVB Ashti · Gr 8",          emoji: "🦅", board: "cbse", grade: 8, school: "Bharatiya Vidya Bhavan, Ashti", city: "Nagpur", desc: "CBSE · Ganit + Vigyan + Samajik Vigyan (NCF 26-27)" },
 ];
 
 export function AddLearnerView({
@@ -270,6 +276,7 @@ function makeLearner({
       friendStreak: null, lastQuestCorrect: null,
       passportStamps: [], notebook: {}, lastAssemblyDate: null,
       assemblyStreak: 0, readBooks: [], savedMelody: null, savedCompositions: [],
+      classRoster: [], classNotes: [], buddyId: null,
       settings: { sound: true, music: true, voice: true, musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9 },
       onboarded: true,
     },

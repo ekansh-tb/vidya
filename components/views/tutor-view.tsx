@@ -40,7 +40,7 @@ export function TutorView({
   initialSubject?: SubjectId;
   onBack: () => void;
 }) {
-  const subjectList = subjectsForLearner(learner.board, learner.pickedSubjects);
+  const subjectList = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
   const defaultSubject: SubjectId =
     initialSubject && subjectList.find((s) => s.id === initialSubject)
       ? initialSubject

@@ -14,7 +14,7 @@ export function SubjectPickerView({
   learner: LearnerProfile;
   onSave: (picked: SubjectId[]) => void;
 }) {
-  const groups = useMemo(() => pickerGroupsForBoard(learner.board), [learner.board]);
+  const groups = useMemo(() => pickerGroupsForBoard(learner.board, learner.grade), [learner.board, learner.grade]);
   const compulsory = useMemo(
     () => new Set<SubjectId>(groups.flatMap((g) => g.compulsoryIds || [])),
     [groups],

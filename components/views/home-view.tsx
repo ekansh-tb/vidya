@@ -42,8 +42,8 @@ export function HomeView({
 
   const isIgcse = learner.board === "cambridge-igcse";
   const visibleSubjects = useMemo(
-    () => subjectsForLearner(learner.board, learner.pickedSubjects),
-    [learner.board, learner.pickedSubjects],
+    () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
+    [learner.board, learner.pickedSubjects, learner.grade],
   );
 
   const subjectMastery = useMemo(() => {
