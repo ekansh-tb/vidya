@@ -20,8 +20,8 @@ cp .env.local.example .env.local
 Fill in from **Project Settings → API**:
 
 - `NEXT_PUBLIC_SUPABASE_URL` — the Project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the `anon` `public` key
-- `SUPABASE_SERVICE_ROLE_KEY` — the `service_role` `secret` key (NEVER ship to client)
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — the `sb_publishable_…` key (2025+ naming; replaces legacy `anon` key)
+- `SUPABASE_SECRET_KEY` — the `sb_secret_…` key (server-only; replaces legacy `service_role` key). Optional for sign-in flow; needed only when an API route must bypass RLS.
 
 Add the same three vars in **Vercel → Project → Settings → Environment Variables**
 for production deploys. Use Vercel Preview vars too if you want preview branches
