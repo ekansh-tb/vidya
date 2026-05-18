@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { CosmicBg } from "@/components/effects/cosmic-bg";
 
 function SignInForm() {
   const router = useRouter();
@@ -37,8 +38,9 @@ function SignInForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 text-neutral-100 px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center text-neutral-100 px-4 relative">
+      <CosmicBg mode="parent" intensity={0.85} />
+      <div className="w-full max-w-sm relative">
         <div className="mb-10 text-center">
           <div className="font-mono text-xs uppercase tracking-[0.4em] text-neutral-500">Parent Sign-In</div>
           <h1 className="font-display text-3xl font-bold mt-2 tracking-tight">

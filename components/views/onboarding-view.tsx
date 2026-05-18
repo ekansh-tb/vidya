@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AVATARS } from "@/lib/content/avatars";
 import { initAudio, startMusic, sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
+import { CosmicBg } from "@/components/effects/cosmic-bg";
 
 export function OnboardingView({
   defaultName, onComplete,
@@ -31,6 +32,7 @@ export function OnboardingView({
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
+      <CosmicBg mode="alpha" />
       <div className="max-w-xl w-full">
         <AnimatePresence mode="wait">
           {step === 0 && (

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { CosmicBg } from "@/components/effects/cosmic-bg";
 
 export default async function ParentDashboardPage() {
   const supabase = await createServerSupabase();
@@ -22,8 +23,9 @@ export default async function ParentDashboardPage() {
     .select("id", { count: "exact", head: true });
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-900">
+    <main className="min-h-screen text-neutral-100 relative">
+      <CosmicBg mode="parent" intensity={0.6} />
+      <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-neutral-500">Vidya Quest · Parent</div>
