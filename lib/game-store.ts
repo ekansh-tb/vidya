@@ -34,6 +34,9 @@ export const DEFAULT_STATE: GameState = {
   readBooks: [],
   savedMelody: null,
   savedCompositions: [],
+  classRoster: [],
+  classNotes: [],
+  buddyId: null,
   settings: {
     sound: true, music: true, voice: true,
     musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9,

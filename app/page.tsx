@@ -6,7 +6,7 @@ import { HomeView } from "@/components/views/home-view";
 import { SubjectView } from "@/components/views/subject-view";
 import { QuizView } from "@/components/views/quiz-view";
 import { MatchView } from "@/components/views/match-view";
-import { FriendsView } from "@/components/views/friends-view";
+import { ClassroomView } from "@/components/views/classroom-view";
 import { TutorView } from "@/components/views/tutor-view";
 import { FieldTripView } from "@/components/views/field-trip-view";
 import { AssemblyView } from "@/components/views/assembly-view";
@@ -62,7 +62,7 @@ export default function HomePage() {
 
   // Compute available exam packs for the current learner
   const learnerSubjects = useMemo(
-    () => subjectsForLearner(learner.board, learner.pickedSubjects),
+    () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
     [learner.board, learner.pickedSubjects],
   );
   const availablePackIds: SubjectId[] = useMemo(
@@ -235,7 +235,15 @@ export default function HomePage() {
         content = <SettingsView state={state} setState={set} onBack={back} />;
         break;
       case "friends":
-        content = <FriendsView state={state} setState={set} onBack={back} />;
+        content = (
+          <ClassroomView
+            state={state}
+            setState={set}
+            learner={learner}
+            siblings={Object.values(profiles.learners)}
+            onBack={back}
+          />
+        );
         break;
       case "tutor":
         content = (

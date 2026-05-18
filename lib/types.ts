@@ -11,7 +11,11 @@ export type SubjectId =
   // ICSE Class 7 (CISCE) — added v3
   | "icse-english-lang" | "icse-english-lit" | "icse-hindi" | "icse-marathi" | "icse-sanskrit"
   | "icse-maths" | "icse-physics" | "icse-chemistry" | "icse-biology"
-  | "icse-history-civics" | "icse-geography" | "icse-computer";
+  | "icse-history-civics" | "icse-geography" | "icse-computer"
+  // CBSE (NCERT, NCF-SE 2023) — added v4 for BVB Nagpur & other CBSE schools
+  | "cbse-maths" | "cbse-english" | "cbse-hindi" | "cbse-evs"
+  | "cbse-science" | "cbse-socialscience" | "cbse-sanskrit"
+  | "cbse-arts" | "cbse-pe" | "cbse-vocational";
 
 export type Board =
   | "cambridge-primary"
@@ -118,6 +122,9 @@ export type GameState = {
   readBooks: string[];
   savedMelody: number[] | null;
   savedCompositions: Composition[];
+  classRoster: ClassMember[];
+  classNotes: ClassNote[];
+  buddyId: string | null;
   settings: {
     sound: boolean;
     music: boolean;
@@ -127,6 +134,27 @@ export type GameState = {
     voiceVolume: number;
   };
   onboarded: boolean;
+};
+
+export type ClassMember = {
+  id: string;
+  name: string;
+  kind: "ai" | "friend";
+  avatarEmoji: string;
+  vibe: string;
+  seedXp: number;
+  /** XP gained per day for liveness on the leaderboard. */
+  weeklyXpRate: number;
+  createdAt: string;
+};
+
+export type ClassNote = {
+  id: string;
+  authorId: string;            // "me" for the active learner, else ClassMember.id
+  authorName: string;
+  text: string;
+  createdAt: string;
+  kind: "announcement" | "message" | "celebration";
 };
 
 export type Composition = {
