@@ -240,7 +240,6 @@ export default function HomePage() {
             state={state}
             setState={set}
             learner={learner}
-            siblings={Object.values(profiles.learners)}
             onBack={back}
           />
         );

@@ -277,7 +277,7 @@ function makeLearner({
       passportStamps: [], notebook: {}, lastAssemblyDate: null,
       assemblyStreak: 0, readBooks: [], savedMelody: null, savedCompositions: [],
       classRoster: [], classNotes: [], buddyId: null,
-      settings: { sound: true, music: true, voice: true, musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9 },
+      settings: { sound: true, music: false, voice: true, musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9 },
       onboarded: true,
     },
   };

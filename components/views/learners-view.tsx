@@ -52,10 +52,21 @@ export function LearnersView({
         </motion.div>
 
         <div className="space-y-3">
+          {/*
+            Strict isolation: the switcher shows only identifying info
+            (name, avatar, grade, board, school). NEVER XP / streak /
+            level / mastery — those are private to the active learner.
+            See [[strict-isolation]] memory.
+          */}
           {learners.map((l, i) => {
             const emoji = AVATAR_EMOJI[l.state.avatarId || "peacock"] || "🦚";
             const isActive = l.id === currentId;
-            const board = l.board === "cambridge-igcse" ? "Cambridge IGCSE" : "Cambridge Primary";
+            const board =
+              l.board === "cambridge-igcse" ? "Cambridge IGCSE" :
+              l.board === "cambridge-primary" ? "Cambridge Primary" :
+              l.board === "icse" ? "ICSE" :
+              l.board === "cbse" ? "CBSE" :
+              "Custom";
             return (
               <motion.button
                 key={l.id}
@@ -78,9 +89,9 @@ export function LearnersView({
                   <div className="text-xs text-white/55 truncate">
                     Grade {l.grade} · {board}
                   </div>
-                  <div className="text-[10px] text-white/40 mt-0.5">
-                    Level {Math.floor(l.state.xp / 100) + 1} · {l.state.streak}-day streak
-                  </div>
+                  {l.school ? (
+                    <div className="text-[10px] text-white/40 mt-0.5 truncate" title={l.school}>{l.school}</div>
+                  ) : null}
                 </div>
                 {isActive ? (
                   <div className="rounded-full bg-violet-500/30 ring-1 ring-violet-300 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-violet-100 flex items-center gap-1">

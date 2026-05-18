@@ -17,17 +17,18 @@ import { sfx } from "@/lib/audio";
 
 type Tab = "class" | "streak";
 
+// Note: Classroom is intentionally sealed to the active learner.
+// Sibling profiles on the same device are NEVER read here — see
+// docs/STRICT_ISOLATION.md and the per-learner-isolation memory.
 export function ClassroomView({
   state,
   setState,
   learner,
-  siblings,
   onBack,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   learner: LearnerProfile;
-  siblings: LearnerProfile[];
   onBack: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("class");
@@ -63,7 +64,7 @@ export function ClassroomView({
         </div>
 
         {tab === "class" ? (
-          <ClassTab state={state} setState={setState} learner={learner} siblings={siblings} />
+          <ClassTab state={state} setState={setState} learner={learner} />
         ) : (
           <StreakTab state={state} setState={setState} />
         )}
@@ -145,13 +146,13 @@ function ClassTab({
   state,
   setState,
   learner,
-  siblings,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   learner: LearnerProfile;
-  siblings: LearnerProfile[];
 }) {
+  // Strict isolation: only the active learner + their seeded AI classmates.
+  // No sibling profile data is ever read in here — see STRICT_ISOLATION.
   const peerRows = useMemo(() => {
     const me = {
       id: "me",
@@ -162,17 +163,6 @@ function ClassTab({
       xpLive: state.xp,
       isMe: true as const,
     };
-    const sibs = siblings
-      .filter((s) => s.id !== learner.id)
-      .map((s) => ({
-        id: s.id,
-        name: s.name.split(" ")[0],
-        emoji: "👤",
-        vibe: `Grade ${s.grade} · ${s.name.split(" ").slice(-1)[0]}`,
-        xpWeek: weeklyXpForMe(s.state),
-        xpLive: s.state.xp,
-        isMe: false as const,
-      }));
     const peers = state.classRoster.map((p) => ({
       id: p.id,
       name: p.name,
@@ -182,8 +172,8 @@ function ClassTab({
       xpLive: liveXpForPeer(p),
       isMe: false as const,
     }));
-    return [me, ...sibs, ...peers];
-  }, [state, learner, siblings]);
+    return [me, ...peers];
+  }, [state, learner]);
 
   const leaderboard = [...peerRows].sort((a, b) => b.xpWeek - a.xpWeek).slice(0, 5);
 
