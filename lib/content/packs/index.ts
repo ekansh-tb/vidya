@@ -8,6 +8,7 @@ import { CBSE7_MATHS } from "./cbse7-maths";
 import { CBSE7_SCIENCE } from "./cbse7-science";
 import { CBSE7_ENGLISH } from "./cbse7-english";
 import { CBSE7_HINDI } from "./cbse7-hindi";
+import { CBSE7_SANSKRIT } from "./cbse7-sanskrit";
 
 export const ALL_PACKS: ExamPack[] = [
   IGCSE_CS_PACK,
@@ -18,6 +19,7 @@ export const ALL_PACKS: ExamPack[] = [
   CBSE7_SCIENCE,
   CBSE7_ENGLISH,
   CBSE7_HINDI,
+  CBSE7_SANSKRIT,
 ];
 
 /**
