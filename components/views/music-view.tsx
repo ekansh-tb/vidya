@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronLeft, Music as MusicIcon, Play, Trash2, Square, Plus, Keyboard, Disc3, Edit3,
+  ChevronLeft, Music as MusicIcon, Play, Trash2, Square, Plus, Keyboard, Disc3, Edit3, Search, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Composition, GameState } from "@/lib/types";
 import { sfx } from "@/lib/audio";
+import { SONGS, searchSongs, type Song } from "@/lib/content/songs";
 
 // Western + Hindustani sargam, mapped to keyboard keys.
 const NOTES = [
@@ -354,6 +355,13 @@ export function MusicView({
           </div>
         )}
 
+        {/* Song Learner — search for a tune and see the keys */}
+        <SongLearner
+          onPlay={(notes) => playSequence(notes)}
+          onLoad={(song) => { sfx.click(); setDraft(song.notes); }}
+          isPlaying={playing}
+        />
+
         <div className="mt-6 glass-card p-4">
           <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: "var(--text-faint)" }}>Try these</div>
           <div className="space-y-2 text-xs" style={{ color: "var(--text-muted)" }}>
@@ -484,6 +492,190 @@ function CompositionRow({
             <Trash2 className="w-3 h-3" />
           </button>
         </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Keyboard letter per note id — kept in sync with the NOTES array above.
+const KEY_LETTERS = ["A", "S", "D", "F", "G", "H", "J", "K"];
+
+function SongLearner({
+  onPlay,
+  onLoad,
+  isPlaying,
+}: {
+  onPlay: (notes: number[]) => void;
+  onLoad: (song: Song) => void;
+  isPlaying: boolean;
+}) {
+  const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+
+  const results = useMemo(() => searchSongs(query), [query]);
+  const selected = results.find((s) => s.id === selectedId) ?? null;
+  const visible = expanded ? results : results.slice(0, 4);
+
+  return (
+    <div className="mt-2 glass-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpen className="w-4 h-4" style={{ color: "var(--accent)" }} />
+        <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
+          Learn a song
+        </div>
+        <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>
+          · search a tune, see the keys
+        </span>
+      </div>
+
+      <div className="relative mb-3">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setSelectedId(null); }}
+          placeholder="Try 'twinkle', 'jingle', 'ode'…"
+          className="w-full pl-9 pr-3 py-2.5 rounded-[var(--radius-md)] text-sm outline-none transition"
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            color: "var(--text)",
+          }}
+        />
+      </div>
+
+      {results.length === 0 ? (
+        <div className="text-center py-4 text-sm" style={{ color: "var(--text-muted)" }}>
+          No traditional songs match &quot;{query}&quot;. We only carry public-domain tunes (no copyrighted music).
+        </div>
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            {visible.map((song) => {
+              const isSel = song.id === selectedId;
+              return (
+                <button
+                  key={song.id}
+                  onClick={() => { sfx.click(); setSelectedId(isSel ? null : song.id); }}
+                  className="w-full text-left px-3 py-2 rounded-[var(--radius-md)] flex items-center gap-3 transition active:scale-[0.99]"
+                  style={{
+                    background: isSel ? "var(--accent-soft)" : "var(--surface)",
+                    border: `1px solid ${isSel ? "var(--accent)" : "var(--border)"}`,
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-sm truncate" style={{ color: "var(--text)" }}>{song.title}</div>
+                    <div className="text-[10px] truncate" style={{ color: "var(--text-faint)" }}>
+                      {song.tradition} · {song.notes.length} notes · {song.difficulty}
+                    </div>
+                  </div>
+                  <span
+                    className="text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: isSel ? "var(--accent)" : "var(--surface-strong)",
+                      color: isSel ? "var(--bg-base)" : "var(--text-muted)",
+                    }}
+                  >
+                    {isSel ? "open" : "show"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {results.length > 4 && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-2 text-[10px] uppercase tracking-widest font-bold"
+              style={{ color: "var(--accent)" }}
+            >
+              {expanded ? "Show fewer ↑" : `Show ${results.length - 4} more ↓`}
+            </button>
+          )}
+
+          {selected && (
+            <SelectedSong
+              song={selected}
+              onPlay={() => onPlay(selected.notes)}
+              onLoad={() => onLoad(selected)}
+              isPlaying={isPlaying}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function SelectedSong({
+  song, onPlay, onLoad, isPlaying,
+}: {
+  song: Song;
+  onPlay: () => void;
+  onLoad: () => void;
+  isPlaying: boolean;
+}) {
+  return (
+    <motion.div
+      key={song.id}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-3 rounded-[var(--radius-md)] p-3"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+    >
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="font-display font-bold text-base" style={{ color: "var(--text)" }}>{song.title}</div>
+        <div className="text-[10px]" style={{ color: "var(--text-faint)" }}>{song.notes.length} keys</div>
+      </div>
+
+      {song.sargamHint && (
+        <div className="text-xs mb-2 font-deva" style={{ color: "var(--accent)" }}>{song.sargamHint}</div>
+      )}
+
+      <div className="text-[10px] uppercase tracking-widest font-bold mb-1.5" style={{ color: "var(--text-faint)" }}>
+        Press these keys
+      </div>
+
+      {/* Note chip strip with both sargam + keyboard letter */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        {song.notes.map((id, i) => {
+          const n = NOTES[id];
+          return (
+            <div
+              key={i}
+              className="rounded px-1.5 py-1 flex flex-col items-center gap-0 leading-none"
+              style={{ background: `${n.hue}25`, border: `1px solid ${n.hue}40` }}
+            >
+              <span className="font-deva text-[11px] font-bold" style={{ color: n.hue }}>{n.sargam}</span>
+              <span className="text-[8px] font-mono font-bold uppercase" style={{ color: n.hue, opacity: 0.7 }}>
+                {KEY_LETTERS[id]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          onClick={onPlay}
+          disabled={isPlaying}
+          variant="primary"
+          className="w-full"
+        >
+          <span className="inline-flex items-center gap-2">
+            <Play className="w-4 h-4 fill-current" /> Play it for me
+          </span>
+        </Button>
+        <Button onClick={onLoad} variant="ghost" className="w-full">
+          <span className="inline-flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Load to draft
+          </span>
+        </Button>
+      </div>
+
+      <div className="text-[9px] mt-2 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+        Source: {song.source}
       </div>
     </motion.div>
   );
