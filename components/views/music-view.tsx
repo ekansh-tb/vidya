@@ -39,6 +39,7 @@ export function MusicView({
   const [showRenameId, setShowRenameId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [tempoMs, setTempoMs] = useState(320);
+  const [practice, setPractice] = useState<{ song: Song; index: number; correct: number; wrong: number } | null>(null);
   const synthRef = useRef<SynthHandle | null>(null);
   const playTimersRef = useRef<number[]>([]);
   const pressedRef = useRef<Set<string>>(new Set());
@@ -102,7 +103,35 @@ export function MusicView({
     if (recording) {
       setDraft((prev) => [...prev, id]);
     }
+    if (practice) {
+      const expected = practice.song.notes[practice.index];
+      if (id === expected) {
+        const nextIndex = practice.index + 1;
+        if (nextIndex >= practice.song.notes.length) {
+          // Done — celebrate, award XP, exit practice
+          sfx.coin();
+          setState((p) => ({ ...p, xp: p.xp + 15 }));
+          setPractice(null);
+        } else {
+          setPractice({ ...practice, index: nextIndex, correct: practice.correct + 1 });
+        }
+      } else {
+        setPractice({ ...practice, wrong: practice.wrong + 1 });
+      }
+    }
   };
+
+  const startPractice = (song: Song) => {
+    sfx.click();
+    setPractice({ song, index: 0, correct: 0, wrong: 0 });
+  };
+  const stopPractice = () => {
+    sfx.click();
+    setPractice(null);
+  };
+
+  // Next-note hint for the on-screen keyboard during practice
+  const nextHintId = practice ? practice.song.notes[practice.index] ?? null : null;
 
   const startRecording = () => {
     sfx.click();
@@ -222,21 +251,34 @@ export function MusicView({
         <div className="grid grid-cols-8 gap-1.5 mb-5">
           {NOTES.map((n) => {
             const isActive = activeNote === n.id;
+            const isNextHint = nextHintId === n.id && !isActive;
             return (
               <motion.button
                 key={n.id}
                 whileTap={{ scale: 0.92 }}
-                animate={isActive ? { scale: [1, 1.15, 1] } : { scale: 1 }}
-                transition={{ duration: 0.22 }}
+                animate={
+                  isActive
+                    ? { scale: [1, 1.15, 1] }
+                    : isNextHint
+                    ? { scale: [1, 1.06, 1] }
+                    : { scale: 1 }
+                }
+                transition={{ duration: isNextHint ? 1.1 : 0.22, repeat: isNextHint ? Infinity : 0 }}
                 onMouseDown={() => playNote(n.id)}
                 onTouchStart={() => playNote(n.id)}
                 className="relative rounded-[var(--radius-md)] py-6 px-1 flex flex-col items-center gap-1.5 transition-all"
                 style={{
                   background: isActive
                     ? `linear-gradient(180deg, ${n.hue} 0%, ${n.hue}80 100%)`
+                    : isNextHint
+                    ? `linear-gradient(180deg, ${n.hue}55 0%, ${n.hue}20 100%)`
                     : `${n.hue}1A`,
-                  border: `1px solid ${n.hue}40`,
-                  boxShadow: isActive ? `0 0 24px ${n.hue}aa` : "none",
+                  border: `1px solid ${isNextHint ? n.hue : n.hue + "40"}`,
+                  boxShadow: isActive
+                    ? `0 0 24px ${n.hue}aa`
+                    : isNextHint
+                    ? `0 0 18px ${n.hue}80`
+                    : "none",
                 }}
               >
                 <div className="font-display text-2xl font-bold font-deva text-white">{n.sargam}</div>
@@ -246,6 +288,41 @@ export function MusicView({
             );
           })}
         </div>
+
+        {/* Practice status banner */}
+        <AnimatePresence>
+          {practice && (
+            <motion.div
+              key="practice-banner"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="glass-card p-3 mb-3 flex items-center gap-3"
+              style={{ border: `1px solid var(--accent)`, background: "var(--accent-soft)" }}
+            >
+              <div className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "var(--accent)", color: "var(--bg-base)" }}>
+                <Play className="w-4 h-4 fill-current" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-bold text-sm truncate" style={{ color: "var(--text)" }}>
+                  Practicing: {practice.song.title}
+                </div>
+                <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  Note {practice.index + 1} of {practice.song.notes.length}
+                  {practice.wrong > 0 && <span className="opacity-50"> · {practice.wrong} retr{practice.wrong === 1 ? "y" : "ies"}</span>}
+                  {" · press the glowing key"}
+                </div>
+              </div>
+              <button
+                onClick={stopPractice}
+                className="text-[10px] font-bold uppercase tracking-widest rounded-[var(--radius-md)] px-3 py-1.5"
+                style={{ background: "var(--surface)", color: "var(--text-muted)" }}
+              >
+                Stop
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Draft melody strip */}
         <div className="glass-card p-4 mb-3 min-h-[80px]">
@@ -359,7 +436,9 @@ export function MusicView({
         <SongLearner
           onPlay={(notes) => playSequence(notes)}
           onLoad={(song) => { sfx.click(); setDraft(song.notes); }}
+          onPractice={startPractice}
           isPlaying={playing}
+          practicingSongId={practice?.song.id ?? null}
         />
 
         <div className="mt-6 glass-card p-4">
@@ -503,11 +582,15 @@ const KEY_LETTERS = ["A", "S", "D", "F", "G", "H", "J", "K"];
 function SongLearner({
   onPlay,
   onLoad,
+  onPractice,
   isPlaying,
+  practicingSongId,
 }: {
   onPlay: (notes: number[]) => void;
   onLoad: (song: Song) => void;
+  onPractice: (song: Song) => void;
   isPlaying: boolean;
+  practicingSongId: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -599,7 +682,9 @@ function SongLearner({
               song={selected}
               onPlay={() => onPlay(selected.notes)}
               onLoad={() => onLoad(selected)}
+              onPractice={() => onPractice(selected)}
               isPlaying={isPlaying}
+              isPracticing={practicingSongId === selected.id}
             />
           )}
         </>
@@ -609,12 +694,14 @@ function SongLearner({
 }
 
 function SelectedSong({
-  song, onPlay, onLoad, isPlaying,
+  song, onPlay, onLoad, onPractice, isPlaying, isPracticing,
 }: {
   song: Song;
   onPlay: () => void;
   onLoad: () => void;
+  onPractice: () => void;
   isPlaying: boolean;
+  isPracticing: boolean;
 }) {
   return (
     <motion.div
@@ -656,22 +743,35 @@ function SelectedSong({
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Button
           onClick={onPlay}
-          disabled={isPlaying}
+          disabled={isPlaying || isPracticing}
           variant="primary"
           className="w-full"
         >
-          <span className="inline-flex items-center gap-2">
-            <Play className="w-4 h-4 fill-current" /> Play it for me
+          <span className="inline-flex items-center gap-1.5 text-xs">
+            <Play className="w-3.5 h-3.5 fill-current" /> Play
+          </span>
+        </Button>
+        <Button
+          onClick={onPractice}
+          disabled={isPlaying || isPracticing}
+          variant="success"
+          className="w-full"
+        >
+          <span className="inline-flex items-center gap-1.5 text-xs">
+            <Keyboard className="w-3.5 h-3.5" /> {isPracticing ? "Active" : "Practice"}
           </span>
         </Button>
         <Button onClick={onLoad} variant="ghost" className="w-full">
-          <span className="inline-flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Load to draft
+          <span className="inline-flex items-center gap-1.5 text-xs">
+            <Plus className="w-3.5 h-3.5" /> Draft
           </span>
         </Button>
+      </div>
+      <div className="text-[10px] mt-2 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+        <strong style={{ color: "var(--text-muted)" }}>Practice mode</strong> highlights the next key — press it to advance, no rush. Reach the end for +15 XP.
       </div>
 
       <div className="text-[9px] mt-2 leading-relaxed" style={{ color: "var(--text-faint)" }}>
