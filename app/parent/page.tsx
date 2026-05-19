@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
+import { OpinionCard } from "@/components/parent/opinion-card";
 
 export default async function ParentDashboardPage() {
   const supabase = await createServerSupabase();
@@ -59,6 +60,43 @@ export default async function ParentDashboardPage() {
             footer="Row-level security on every sensitive table."
           />
         </div>
+
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display text-lg font-bold">Preview · how findings will look</h2>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">
+              Sample data — not yet linked to a real learner
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <OpinionCard
+              tone="academic"
+              window="Last 7 days · Mathematics"
+              observation="62% of attempted questions were on fractions; 41% accuracy there."
+              opinion="This might mean fractions are a current sticking point. Other Maths topics this week were 78%+, so it looks topic-specific, not a broad slip."
+              escalation={{ label: "Worth a chat with the class teacher", to: "teacher" }}
+            />
+            <OpinionCard
+              tone="medical"
+              window="Across the last 4 sessions"
+              observation="Average session length dropped 38% after 7pm."
+              opinion="This might mean evening sessions are tiring. Light or screen-time could be a factor — worth seeing if morning sessions feel different."
+              escalation={{ label: "Worth a doctor's note if it persists", to: "doctor" }}
+            />
+            <OpinionCard
+              tone="warm"
+              window="This week"
+              observation="3 new badges unlocked; longest streak in 6 weeks."
+              opinion="This might be a good week to celebrate out loud — momentum is real and visible to your learner."
+              escalation={{ label: "A note from you on the class noticeboard?", to: "self" }}
+            />
+          </div>
+          <p className="mt-3 text-[10px] text-neutral-600 leading-relaxed max-w-3xl">
+            Every finding the parent dashboard ever shows will be shaped exactly like this:
+            <span className="text-neutral-400"> data window + observed % + &quot;this might mean…&quot; + a human to escalate to.</span>{" "}
+            No claims. No verdicts. You stay in charge.
+          </p>
+        </section>
 
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-5">
           <h2 className="font-display text-lg font-bold mb-1">What lives here next</h2>
