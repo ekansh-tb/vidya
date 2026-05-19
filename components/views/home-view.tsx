@@ -291,6 +291,35 @@ export function HomeView({
 
       {/* Hallway: experiences */}
       <div className="px-5">
+        {/* Review-your-misses banner — only shown when the kid has unresolved misses */}
+        {(state.missedQuestions?.length ?? 0) > 0 && (
+          <motion.button
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => { sfx.click(); onNavigate("review"); }}
+            className="w-full glass-card p-3 mb-3 flex items-center gap-3 text-left active:scale-[0.99]"
+            style={{ border: "1px solid rgba(244, 114, 182, 0.35)" }}
+          >
+            <div
+              className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center text-base font-display font-bold"
+              style={{ background: "rgba(244, 114, 182, 0.18)", color: "#F472B6" }}
+            >
+              {state.missedQuestions!.length}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold text-sm" style={{ color: "var(--text)" }}>
+                Review your misses
+              </div>
+              <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                {state.missedQuestions!.length === 1 ? "1 question" : `${state.missedQuestions!.length} questions`} from past quizzes, waiting for a second try
+              </div>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#F472B6" }}>
+              Open →
+            </span>
+          </motion.button>
+        )}
+
         <div className="grid grid-cols-4 gap-2 mb-3">
           <RoomTile
             icon={<Mic className="w-5 h-5 text-fuchsia-300" />}

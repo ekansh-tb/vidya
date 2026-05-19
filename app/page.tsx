@@ -23,6 +23,7 @@ import { LearnersView } from "@/components/views/learners-view";
 import { SubjectPickerView } from "@/components/views/subject-picker-view";
 import { ExamPrepView } from "@/components/views/exam-prep-view";
 import { AddLearnerView } from "@/components/views/add-learner-view";
+import { ReviewView } from "@/components/views/review-view";
 import { ParticleField } from "@/components/effects/particles";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
@@ -233,6 +234,9 @@ export default function HomePage() {
         break;
       case "settings":
         content = <SettingsView state={state} setState={set} onBack={back} />;
+        break;
+      case "review":
+        content = <ReviewView state={state} setState={set} onBack={back} />;
         break;
       case "friends":
         content = (

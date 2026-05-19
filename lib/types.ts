@@ -125,6 +125,7 @@ export type GameState = {
   classRoster: ClassMember[];
   classNotes: ClassNote[];
   buddyId: string | null;
+  missedQuestions: MissedQuestion[];
   settings: {
     sound: boolean;
     music: boolean;
@@ -200,7 +201,8 @@ export type ViewName =
   | "shop"
   | "parent"
   | "settings"
-  | "results";
+  | "results"
+  | "review";
 
 export type ViewState = { name: ViewName; params?: Record<string, unknown> };
 
@@ -212,6 +214,19 @@ export type WrongAnswer = {
   correct: string;
   ex: string;
   isDeva?: boolean;
+};
+
+/** A wrong answer persisted into the learner's notebook for later review. */
+export type MissedQuestion = {
+  id: string;
+  q: string;
+  given: string;
+  correct: string;
+  ex: string;
+  isDeva?: boolean;
+  subjectId?: SubjectId;
+  topicId?: string;
+  missedAt: string;        // ISO timestamp
 };
 
 export type QuizResult = {

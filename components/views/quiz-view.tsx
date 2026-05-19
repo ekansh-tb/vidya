@@ -146,10 +146,13 @@ export function QuizView({
         if (wasWrong && newSince >= 5 && !badges.includes("comeback")) {
           badges.push("comeback");
         }
+        // If this same question was previously in the miss log, mastered now — remove it.
+        const missedQuestions = (prev.missedQuestions || []).filter((m) => m.q !== currentQ.q);
         return {
           ...prev,
           comeback: { wasWrong: newSince < 5 ? wasWrong : false, sinceWrongCorrect: newSince < 5 ? newSince : 0 },
           badges,
+          missedQuestions,
         };
       });
     } else {
@@ -157,11 +160,31 @@ export function QuizView({
       setCombo(0);
       setScore((s) => ({ correct: s.correct, total: s.total + 1 }));
       if (voiceEnabled && Math.random() > 0.4) vidya.wrong();
-      setState((prev) => ({ ...prev, comeback: { wasWrong: true, sinceWrongCorrect: 0 } }));
-      setWrongAnswers((prev) => [
-        ...prev,
-        { q: currentQ.q, given: option, correct: currentQ.a, ex: currentQ.ex, isDeva: !!isDeva },
-      ]);
+      const missed = { q: currentQ.q, given: option, correct: currentQ.a, ex: currentQ.ex, isDeva: !!isDeva };
+      setWrongAnswers((prev) => [...prev, missed]);
+      setState((prev) => {
+        // Persistent miss log (capped at 50 most-recent per learner)
+        const entry: import("@/lib/types").MissedQuestion = {
+          id: `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          q: missed.q,
+          given: missed.given,
+          correct: missed.correct,
+          ex: missed.ex,
+          isDeva: missed.isDeva,
+          subjectId,
+          topicId,
+          missedAt: new Date().toISOString(),
+        };
+        const existing = prev.missedQuestions || [];
+        // Dedup by exact question text — most-recent given/timestamp wins
+        const filtered = existing.filter((m) => m.q !== entry.q);
+        const next = [entry, ...filtered].slice(0, 50);
+        return {
+          ...prev,
+          comeback: { wasWrong: true, sinceWrongCorrect: 0 },
+          missedQuestions: next,
+        };
+      });
     }
   };
 
