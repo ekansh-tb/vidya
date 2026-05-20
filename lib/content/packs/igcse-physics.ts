@@ -227,6 +227,32 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
       ],
       a: "Less I²R energy is lost as heat in the cables for the same power",
       model: "P = IV. At higher V for the same power, I is smaller → I²R loss in cables drops sharply (it's squared in I)." },
+
+    // Extension round — added for Nevaan's last-night drill
+    { id: "ip10-21", topic: "4-2-quantities", q: "Charge on a single electron is 1.6 × 10⁻¹⁹ C. How many electrons pass a point in a wire carrying 0.32 A for 1.0 s?",
+      opts: ["5.0 × 10¹⁷", "2.0 × 10¹⁸", "5.0 × 10¹⁸", "2.0 × 10¹⁹"], a: "2.0 × 10¹⁸",
+      model: "Q = It = 0.32 × 1.0 = 0.32 C. n = Q / e = 0.32 / 1.6×10⁻¹⁹ = 2.0 × 10¹⁸ electrons." },
+    { id: "ip10-22", topic: "4-2-quantities", q: "A wire has resistance 4.0 Ω. A second wire of the same material, twice the length and half the cross-sectional area, has resistance …",
+      opts: ["1.0 Ω", "4.0 Ω", "8.0 Ω", "16 Ω"], a: "16 Ω",
+      model: "R ∝ L / A. New R = 4.0 × (2 / 0.5) = 4.0 × 4 = 16 Ω." },
+    { id: "ip10-23", topic: "4-3-circuits", q: "Three identical 6.0 Ω lamps are connected in parallel across a 12 V supply. Current from the supply?",
+      opts: ["2.0 A", "4.0 A", "6.0 A", "18 A"], a: "6.0 A",
+      model: "R_parallel = 6 / 3 = 2.0 Ω. I = V / R = 12 / 2.0 = 6.0 A. (Or: each lamp draws 12/6 = 2.0 A; three lamps → 6.0 A.)" },
+    { id: "ip10-24", topic: "4-3-circuits", q: "An LED in series with a resistor R is to be lit at 20 mA from a 9.0 V supply. The LED needs 2.0 V to light. R = ?",
+      opts: ["100 Ω", "350 Ω", "450 Ω", "1.0 kΩ"], a: "350 Ω",
+      model: "p.d. across R = 9.0 − 2.0 = 7.0 V. R = V / I = 7.0 / 0.020 = 350 Ω." },
+    { id: "ip10-25", topic: "4-3-circuits", q: "The output of an OR gate is fed into a NOT gate. With inputs (A, B) = (1, 0), the final output is …",
+      opts: ["0", "1", "Depends on B", "Undefined"], a: "0",
+      model: "OR(1,0) = 1. NOT(1) = 0. The two-gate combo (OR then NOT) is a NOR gate." },
+    { id: "ip10-26", topic: "4-3-circuits", q: "A thermistor sits in the top half of a potential divider; a fixed R is below. As the room cools, the thermistor's resistance rises. V_out (across the fixed R) does what?",
+      opts: ["Rises", "Falls", "Stays the same", "Reverses sign"], a: "Falls",
+      model: "V_out = V × R_fixed / (R_therm + R_fixed). R_therm rises → denominator grows → V_out falls. (If V_out were across the thermistor instead, it would rise.)" },
+    { id: "ip10-27", topic: "4-4-em-effects", q: "A bar magnet is pushed N-pole first into a coil connected to a galvanometer. The needle deflects right. The magnet is then pulled out. The needle …",
+      opts: ["Stays still", "Deflects right again", "Deflects left", "Oscillates wildly"], a: "Deflects left",
+      model: "Lenz's law: induced current direction opposes the change. Reversing the motion reverses the induced current → opposite deflection." },
+    { id: "ip10-28", topic: "4-4-em-effects", q: "A 100% efficient transformer steps 11 kV down to 230 V. If the primary has 5000 turns, how many turns on the secondary?",
+      opts: ["~22 turns", "~105 turns", "~230 turns", "~5000 turns"], a: "~105 turns",
+      model: "N_s = N_p × (V_s / V_p) = 5000 × (230 / 11000) = 5000 × 0.0209 ≈ 105 turns." },
   ],
 
   mistakes: [
@@ -285,6 +311,14 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
         "Fleming's RIGHT-hand rule → direction of induced current (generators).",
         "Transformer: V_p/V_s = N_p/N_s. Ideal: I_p V_p = I_s V_s.",
         "Step-up V → step-down I (and vice versa).",
+      ],
+    },
+    {
+      heading: "Paper 4 — structured practice (read the working line-by-line)",
+      bullets: [
+        "Q1 · Lamp on mains: A filament lamp is rated 60 W, 230 V. (a) Current at full brightness? I = P/V = 60/230 = 0.26 A. (b) Resistance when hot? R = V/I = 230/0.26 = 880 Ω. (c) Why is the cold resistance lower than 880 Ω? At room temperature the filament has fewer lattice vibrations, electrons collide less, so resistance is smaller. (d) Why does the lamp usually fail at the moment it is switched on? The cold resistance is small → a large surge current flows → the thin filament heats fastest at its weakest spot and breaks.",
+        "Q2 · Heater costing: A 2.0 kW heater runs 4 h per day, 30 days/month, at ₹8.50 per kWh. (a) Energy per month? 2.0 × 4 × 30 = 240 kWh. (b) Cost per month? 240 × 8.50 = ₹2,040. (c) Customer fits a 1.5 kW heater for the same 4 h × 30 days. New cost? 1.5 × 4 × 30 × 8.50 = ₹1,530. (d) Saving? ₹510/month.",
+        "Q3 · Logic alarm: A fire alarm should sound when (smoke detector S = 1) OR (heat detector H = 1) AND the system is armed (A = 1). (a) Boolean expression for the buzzer B? B = (S OR H) AND A. (b) Gates needed: 1 × OR, 1 × AND. (c) Truth table for (S, H, A): all 8 rows; B = 1 only when A = 1 AND at least one of S, H = 1 → rows 001, 011, 101, 111 give 0/1/1/1; rows 000, 010, 100, 110 give 0. (d) State one reason the engineer might use NAND gates only. NAND is a universal gate — one chip type lowers cost and spare-part complexity.",
       ],
     },
     {
