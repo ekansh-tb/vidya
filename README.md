@@ -96,4 +96,4 @@ MIT — see [LICENSE](./LICENSE).
 
 ---
 
-Made for two real students — Advika (Grade 5) and Nevaan (Grade 10) — and intentionally generalised so any kid can have a digital school of their own.
+Built so any kid — Cambridge Primary, IGCSE, ICSE, CBSE — can have a digital school of their own. Profiles are intentionally anonymous by default; no real names ship in the source.

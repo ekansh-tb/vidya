@@ -88,7 +88,7 @@ export default function HomePage() {
       <>
         <ThemeApplier theme={themeId} />
         <OnboardingView
-          defaultName={learner.name || "Advika Jain"}
+          defaultName={learner.name || ""}
           onComplete={async ({ name, avatarId }) => {
             set((prev) => ({ ...prev, name, avatarId, onboarded: true }));
             updateLearnerMeta(learner.id, { name });
@@ -319,8 +319,7 @@ export default function HomePage() {
             currentId={learner.id}
             onSwitch={(id) => { switchLearner(id); }}
             onBack={back}
-            onAddNevaan={() => setShowAddLearner(true)}
-            onAddOther={() => setShowAddLearner(true)}
+            onAdd={() => setShowAddLearner(true)}
           />
         );
         break;

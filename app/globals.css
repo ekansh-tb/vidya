@@ -7,12 +7,12 @@
    on <html>. Components read CSS variables so no per-component
    conditional code is needed.
 
-   - `playful` (default · ages 6–10 · Gen Alpha · Advika)
+   - `playful` (default · ages 6–10 · Gen Alpha · primary)
        Aurora gradients, rounded-3xl, Fraunces display, glassy.
-   - `vivid`    (ages 11–13 · early teen · WWS 7)
+   - `vivid`    (ages 11–13 · early teen · middle school)
        Cassette-bright. Deep navy, hot magenta + electric cyan,
        Outfit display, rounded-2xl, halftone dot texture.
-   - `terminal` (ages 14+ · Gen Z senior · Nevaan IGCSE)
+   - `terminal` (ages 14+ · Gen Z senior · IGCSE / Year 9+)
        Acid lime on near-black, JetBrains Mono UI, sharp 6px
        radii, grid-paper background, code-editor vibe.
    ============================================================ */

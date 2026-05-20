@@ -218,7 +218,7 @@ export function HomeView({
           </motion.button>
         )}
 
-        {/* IGCSE Computer Science Exam Prep — top of fold for Nevaan */}
+        {/* IGCSE Computer Science Exam Prep — top of fold for IGCSE-CS learners */}
         {isIgcse && takingCS && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}

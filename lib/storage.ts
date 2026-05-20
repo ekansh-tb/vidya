@@ -61,20 +61,29 @@ export const storage = {
     }
   },
 
-  /** Migrate legacy v1 single-state → v2 profiles, treating existing data as Advika. */
-  migrateIfNeeded(makeAdvika: (state: GameState) => LearnerProfile, defaultAdvika: () => LearnerProfile): ProfilesV2 {
+  /**
+   * Migrate legacy v1 single-state → v2 profiles. The legacy state is
+   * wrapped as the primary learner; any name the user actually typed is
+   * preserved. Fresh installs land on an empty primary profile (no
+   * default name) so onboarding always runs.
+   */
+  migrateIfNeeded(
+    wrapLegacy: (state: GameState) => LearnerProfile,
+    freshPrimary: () => LearnerProfile,
+  ): ProfilesV2 {
     if (typeof window === "undefined") {
-      return { version: 2, currentLearnerId: "advika", learners: { advika: defaultAdvika() } };
+      const fresh = freshPrimary();
+      return { version: 2, currentLearnerId: fresh.id, learners: { [fresh.id]: fresh } };
     }
     const v2 = this.loadProfiles();
     if (v2) return v2;
     // No v2 yet — try v1
     const legacy = this.load<GameState>();
-    const advika = legacy ? makeAdvika(legacy) : defaultAdvika();
+    const primary = legacy ? wrapLegacy(legacy) : freshPrimary();
     const next: ProfilesV2 = {
       version: 2,
-      currentLearnerId: advika.id,
-      learners: { [advika.id]: advika },
+      currentLearnerId: primary.id,
+      learners: { [primary.id]: primary },
     };
     this.saveProfiles(next);
     return next;

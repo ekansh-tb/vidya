@@ -4,10 +4,10 @@
 
 ## North Star
 
-**Vidya stops being a quiz app the moment Advika opens it and feels she's walked into a school, not a game.**
+**Vidya stops being a quiz app the moment a kid opens it and feels they've walked into a school, not a game.**
 A 20-year-out reading of where personal learning is going: classrooms become rooms in software, teachers become persistent AI personalities, peers become async collaborators, the curriculum becomes adaptive, and the school day becomes a ritual a child *wants* to enter.
 
-Anchor: Grade 5, Cambridge Primary Stage 5 + Maharashtra State Board (Marathi/Hindi). Single learner first (Advika). Multi-tenant ready.
+Anchor: Grade 5, Cambridge Primary Stage 5 + Maharashtra State Board (Marathi/Hindi). Single-learner first, multi-tenant ready.
 
 ---
 

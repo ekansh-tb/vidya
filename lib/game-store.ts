@@ -63,7 +63,10 @@ function applyDailyRollovers(s: GameState): GameState {
   return s;
 }
 
-function makeAdvikaFromLegacy(legacy: GameState): LearnerProfile {
+// Legacy v1 → v2 migration. Preserves the user's actual typed name if any;
+// does NOT impose any default name. New installs land on an empty profile
+// and are forced through onboarding.
+function makeLearnerFromLegacy(legacy: GameState): LearnerProfile {
   const merged: GameState = {
     ...DEFAULT_STATE,
     ...legacy,
@@ -73,8 +76,8 @@ function makeAdvikaFromLegacy(legacy: GameState): LearnerProfile {
     seenQuestions: legacy.seenQuestions || {},
   };
   return {
-    id: "advika",
-    name: merged.name?.trim() || "Advika Jain",
+    id: "learner-primary",
+    name: merged.name?.trim() || "",
     grade: 5,
     board: "cambridge-primary",
     pickedSubjects: undefined,
@@ -84,34 +87,17 @@ function makeAdvikaFromLegacy(legacy: GameState): LearnerProfile {
   };
 }
 
-function defaultAdvika(): LearnerProfile {
+// Fresh-install default: an empty profile that immediately routes through
+// onboarding. No hardcoded name, no seeded XP, no inferred school.
+function defaultPrimaryLearner(): LearnerProfile {
   return {
-    id: "advika",
-    name: "Advika Jain",
+    id: "learner-primary",
+    name: "",
     grade: 5,
     board: "cambridge-primary",
     subjectsLocked: false,
     createdAt: new Date().toISOString(),
     state: { ...DEFAULT_STATE, dailyQuest: { date: todayKey(), completed: false } },
-  };
-}
-
-function seedNevaan(): LearnerProfile {
-  return {
-    id: "nevaan",
-    name: "Nevaan Jain",
-    grade: 10,
-    board: "cambridge-igcse",
-    pickedSubjects: undefined,
-    subjectsLocked: false,
-    createdAt: new Date().toISOString(),
-    state: {
-      ...DEFAULT_STATE,
-      name: "Nevaan Jain",
-      avatarId: "tiger",
-      onboarded: true,
-      dailyQuest: { date: todayKey(), completed: false },
-    },
   };
 }
 
@@ -132,24 +118,23 @@ type Store = {
   switchLearner: (id: LearnerId) => void;
   upsertLearner: (l: LearnerProfile) => void;
   updateLearnerMeta: (id: LearnerId, patch: Partial<Omit<LearnerProfile, "state" | "id">>) => void;
-  ensureNevaan: () => void;
 };
 
 const initialProfiles: ProfilesV2 = {
   version: 2,
-  currentLearnerId: "advika",
-  learners: { advika: defaultAdvika() },
+  currentLearnerId: "learner-primary",
+  learners: { "learner-primary": defaultPrimaryLearner() },
 };
 
 export const useGameStore = create<Store>((set, get) => ({
   profiles: initialProfiles,
   hydrated: false,
-  state: initialProfiles.learners.advika.state,
-  learner: initialProfiles.learners.advika,
+  state: initialProfiles.learners["learner-primary"].state,
+  learner: initialProfiles.learners["learner-primary"],
 
   hydrate: () => {
     if (typeof window === "undefined") return;
-    const profiles = storage.migrateIfNeeded(makeAdvikaFromLegacy, defaultAdvika);
+    const profiles = storage.migrateIfNeeded(makeLearnerFromLegacy, defaultPrimaryLearner);
 
     // Roll over daily quest / streak for ALL learners
     for (const id of Object.keys(profiles.learners)) {
@@ -229,17 +214,6 @@ export const useGameStore = create<Store>((set, get) => ({
     });
   },
 
-  ensureNevaan: () => {
-    const cur = get();
-    if (cur.profiles.learners.nevaan) return;
-    const nevaan = seedNevaan();
-    const profiles: ProfilesV2 = {
-      ...cur.profiles,
-      learners: { ...cur.profiles.learners, nevaan },
-    };
-    storage.saveProfiles(profiles);
-    set({ profiles });
-  },
 }));
 
 export function boardOfGrade(board: Board): "primary" | "igcse" {

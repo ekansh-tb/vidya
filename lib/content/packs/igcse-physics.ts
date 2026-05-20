@@ -1,7 +1,6 @@
 // Cambridge IGCSE Physics 0625 — Topic 4: Electricity & Magnetism (Extended).
-// Built May 2026 for Nevaan's Grade 10 paper at CNS Pune.
-// Tightly scoped to the topic that's on the exam tomorrow; remaining physics
-// topics (Motion/Forces, Thermal, Waves, Atomic) can be added later.
+// Tightly scoped to Topic 4; remaining physics topics (Motion/Forces,
+// Thermal, Waves, Atomic) can be added later.
 //
 // Verified against the Cambridge IGCSE Physics 0625 subject page
 // (https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/).
@@ -228,7 +227,7 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
       a: "Less I²R energy is lost as heat in the cables for the same power",
       model: "P = IV. At higher V for the same power, I is smaller → I²R loss in cables drops sharply (it's squared in I)." },
 
-    // Extension round — added for Nevaan's last-night drill
+    // Extension round — last-night drill set
     { id: "ip10-21", topic: "4-2-quantities", q: "Charge on a single electron is 1.6 × 10⁻¹⁹ C. How many electrons pass a point in a wire carrying 0.32 A for 1.0 s?",
       opts: ["5.0 × 10¹⁷", "2.0 × 10¹⁸", "5.0 × 10¹⁸", "2.0 × 10¹⁹"], a: "2.0 × 10¹⁸",
       model: "Q = It = 0.32 × 1.0 = 0.32 C. n = Q / e = 0.32 / 1.6×10⁻¹⁹ = 2.0 × 10¹⁸ electrons." },

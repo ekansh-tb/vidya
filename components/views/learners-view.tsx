@@ -19,17 +19,15 @@ export function LearnersView({
   currentId,
   onSwitch,
   onBack,
-  onAddNevaan,
-  onAddOther,
+  onAdd,
 }: {
   learners: LearnerProfile[];
   currentId: LearnerId;
   onSwitch: (id: LearnerId) => void;
   onBack: () => void;
-  onAddNevaan: () => void;
-  onAddOther?: () => void;
+  onAdd: () => void;
 }) {
-  const hasNevaan = !!learners.find((l) => l.id === "nevaan");
+  const hasAny = learners.length > 0;
   return (
     <div className="min-h-screen pb-24 max-w-2xl mx-auto">
       <div className="px-5 pt-6">
@@ -108,7 +106,7 @@ export function LearnersView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            onClick={() => { sfx.click(); (onAddOther ?? onAddNevaan)(); }}
+            onClick={() => { sfx.click(); onAdd(); }}
             className="w-full p-4 flex items-center gap-4 text-left active:scale-[0.99] transition relative overflow-hidden"
             style={{
               borderRadius: "var(--radius-lg)",
@@ -121,10 +119,10 @@ export function LearnersView({
             </div>
             <div className="flex-1">
               <div className="font-display font-bold text-lg" style={{ color: "var(--text)" }}>
-                {hasNevaan ? "Add another learner" : "Add a learner"}
+                {hasAny ? "Add another learner" : "Add a learner"}
               </div>
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Quick preset (Advika · Nevaan · WWS scholar) or custom — any board, any grade.
+                Type the learner's name. Pick a school template to fill in the curriculum.
               </div>
             </div>
           </motion.button>

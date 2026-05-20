@@ -25,28 +25,33 @@ const BOARDS: { id: Board; label: string; description: string; defaultGrade: num
   { id: "cbse",              label: "CBSE (NCERT NCF-SE 2023)", description: "Central Board · grades 1–12 · NCERT books", defaultGrade: 7, gradeRange: [1, 12] },
 ];
 
-type Preset = {
+/**
+ * Anonymous school templates — board/grade/school context only.
+ * NO names are ever prefilled. Selecting a template fills the form's
+ * board / grade / school / city fields and switches the user into Custom
+ * so they type their own name. We never persist a learner without an
+ * explicit name typed by the user.
+ */
+type SchoolTemplate = {
   id: string;
-  name: string;
-  emoji: string;
+  label: string;          // e.g. "Cambridge Primary · Grade 5"
+  emoji: string;          // suggested avatar (kid can override)
   board: Board;
   grade: number;
-  school: string;
-  city: string;
+  school?: string;
+  city?: string;
   desc: string;
 };
 
-const PRESETS: Preset[] = [
-  { id: "advika", name: "Advika Jain",  emoji: "🦚", board: "cambridge-primary", grade: 5,  school: "CNS Pune",                       city: "Pune", desc: "Grade 5 · Cambridge Primary" },
-  { id: "nevaan", name: "Nevaan Jain",  emoji: "🐯", board: "cambridge-igcse",   grade: 10, school: "CNS Pune",                       city: "Pune", desc: "Grade 10 · IGCSE · CS exam tomorrow" },
-  { id: "wws6",   name: "WWS Class 6 scholar",  emoji: "🦊", board: "icse",      grade: 6,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 6 ICSE · Selina + Ancient India" },
-  { id: "wws7",   name: "WWS Class 7 scholar",  emoji: "🦉", board: "icse",      grade: 7,  school: "Wisdom World School, Hadapsar", city: "Pune", desc: "Class 7 ICSE · Selina + Medieval India" },
-  // Bharatiya Vidya Bhavan, Nagpur — 4 CBSE-affiliated branches under Nagpur Kendra
-  // Sources verified May 2026: bvmcl.edu.in (Civil Lines, est. 1982), bvmskn.edu.in (Srikrishna Nagar, Aff. # 1130059)
-  { id: "bvb-cl-7",  name: "BVB Civil Lines · Gr 7",   emoji: "🦉", board: "cbse", grade: 7, school: "Bharatiya Vidya Bhavan, Civil Lines", city: "Nagpur", desc: "CBSE · Ganita Prakash + Curiosity + Poorvi" },
-  { id: "bvb-skn-3", name: "BVB Srikrishna Nagar · Gr 3", emoji: "🦊", board: "cbse", grade: 3, school: "Bharatiya Vidya Bhavan, Srikrishna Nagar", city: "Nagpur", desc: "CBSE Preparatory · Joyful Mathematics + Marigold" },
-  { id: "bvb-tn-4",  name: "BVB Trimurti Nagar · Gr 4", emoji: "🐯", board: "cbse", grade: 4, school: "Bharatiya Vidya Bhavan, Trimurti Nagar", city: "Nagpur", desc: "CBSE · Maths Mela + Santoor + Veena" },
-  { id: "bvb-as-8",  name: "BVB Ashti · Gr 8",          emoji: "🦅", board: "cbse", grade: 8, school: "Bharatiya Vidya Bhavan, Ashti", city: "Nagpur", desc: "CBSE · Ganit + Vigyan + Samajik Vigyan (NCF 26-27)" },
+const SCHOOL_TEMPLATES: SchoolTemplate[] = [
+  { id: "cam-primary-5", label: "Cambridge Primary · Grade 5",  emoji: "🦚", board: "cambridge-primary", grade: 5,  desc: "Stage 5 · Maths · English · Science" },
+  { id: "cam-igcse-10",  label: "Cambridge IGCSE · Year 10",    emoji: "🦉", board: "cambridge-igcse",   grade: 10, desc: "Extended · pick your subjects" },
+  { id: "icse-6",        label: "ICSE · Class 6",               emoji: "🦊", board: "icse",              grade: 6,  desc: "Selina · CISCE curriculum" },
+  { id: "icse-7",        label: "ICSE · Class 7",               emoji: "🦉", board: "icse",              grade: 7,  desc: "Selina · CISCE curriculum" },
+  { id: "cbse-3",        label: "CBSE · Grade 3",               emoji: "🦊", board: "cbse",              grade: 3,  desc: "NCERT NCF-SE 2023 · Joyful Mathematics + Marigold" },
+  { id: "cbse-4",        label: "CBSE · Grade 4",               emoji: "🐯", board: "cbse",              grade: 4,  desc: "NCERT · Math Magic + Santoor + Veena" },
+  { id: "cbse-7",        label: "CBSE · Grade 7",               emoji: "🦉", board: "cbse",              grade: 7,  desc: "NCERT · Ganita Prakash + Curiosity + Poorvi" },
+  { id: "cbse-8",        label: "CBSE · Grade 8",               emoji: "🦅", board: "cbse",              grade: 8,  desc: "NCERT · Ganit + Vigyan + Samajik Vigyan" },
 ];
 
 export function AddLearnerView({
@@ -56,24 +61,28 @@ export function AddLearnerView({
   onSave: (learner: LearnerProfile) => void;
   onBack: () => void;
 }) {
-  const [step, setStep] = useState<"preset" | "custom">("preset");
+  const [step, setStep] = useState<"template" | "custom">("custom");
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
-  const [city, setCity] = useState("Pune");
+  const [city, setCity] = useState("");
   const [board, setBoard] = useState<Board>("cambridge-primary");
   const [grade, setGrade] = useState<number>(5);
   const [avatar, setAvatar] = useState<string>("peacock");
 
-  const usePreset = (p: Preset) => {
-    if (existingIds.includes(p.id)) return;
+  // Selecting a template fills the form fields and switches to Custom so the
+  // user types their own name. No template ever pre-fills a name.
+  const applyTemplate = (t: SchoolTemplate) => {
     sfx.click();
-    const themeId = themeForGrade(p.grade);
-    onSave(makeLearner({
-      id: p.id, name: p.name, board: p.board, grade: p.grade,
-      school: p.school, city: p.city,
-      avatarId: p.emoji === "🦚" ? "peacock" : p.emoji === "🐯" ? "tiger" : "owl",
-      themeId,
-    }));
+    setBoard(t.board);
+    setGrade(t.grade);
+    if (t.school) setSchool(t.school);
+    if (t.city) setCity(t.city);
+    if (t.emoji === "🦚") setAvatar("peacock");
+    else if (t.emoji === "🐯") setAvatar("tiger");
+    else if (t.emoji === "🦉") setAvatar("owl");
+    else if (t.emoji === "🦊") setAvatar("fox");
+    else if (t.emoji === "🦅") setAvatar("owl");
+    setStep("custom");
   };
 
   const onCreate = () => {
@@ -105,57 +114,49 @@ export function AddLearnerView({
           </div>
           <h1 className="font-display text-3xl font-bold" style={{ color: "var(--text)" }}>Add a learner</h1>
           <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-            Quick preset or custom — any school, any board, any grade.
+            Type the learner's name. A template can pre-fill the curriculum.
           </p>
         </motion.div>
 
         <div className="flex gap-1.5 mb-5">
-          <button onClick={() => { sfx.click(); setStep("preset"); }}
-            className="flex-1 rounded-[var(--radius-pill)] px-3 py-2 text-xs font-bold"
-            style={{
-              background: step === "preset" ? "var(--accent-soft)" : "var(--surface)",
-              color: step === "preset" ? "var(--accent)" : "var(--text-muted)",
-              boxShadow: step === "preset" ? `0 0 12px var(--accent-glow)` : "none",
-            }}>Quick presets</button>
           <button onClick={() => { sfx.click(); setStep("custom"); }}
             className="flex-1 rounded-[var(--radius-pill)] px-3 py-2 text-xs font-bold"
             style={{
               background: step === "custom" ? "var(--accent-soft)" : "var(--surface)",
               color: step === "custom" ? "var(--accent)" : "var(--text-muted)",
               boxShadow: step === "custom" ? `0 0 12px var(--accent-glow)` : "none",
-            }}>Custom</button>
+            }}>Type details</button>
+          <button onClick={() => { sfx.click(); setStep("template"); }}
+            className="flex-1 rounded-[var(--radius-pill)] px-3 py-2 text-xs font-bold"
+            style={{
+              background: step === "template" ? "var(--accent-soft)" : "var(--surface)",
+              color: step === "template" ? "var(--accent)" : "var(--text-muted)",
+              boxShadow: step === "template" ? `0 0 12px var(--accent-glow)` : "none",
+            }}>School template</button>
         </div>
 
-        {step === "preset" ? (
+        {step === "template" ? (
           <div className="space-y-3">
-            {PRESETS.map((p) => {
-              const exists = existingIds.includes(p.id);
-              return (
-                <button key={p.id} disabled={exists} onClick={() => usePreset(p)}
-                  className="w-full rounded-[var(--radius-lg)] p-4 flex items-center gap-4 text-left active:scale-[0.99] transition disabled:opacity-50"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px dashed var(--border-strong)",
-                  }}
-                >
-                  <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center text-3xl flex-shrink-0"
-                    style={{ background: "var(--accent-soft)" }}>{p.emoji}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display font-bold text-lg truncate" style={{ color: "var(--text)" }}>{p.name}</div>
-                    <div className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{p.school}</div>
-                    <div className="text-[11px]" style={{ color: "var(--text-faint)" }}>{p.desc}</div>
-                  </div>
-                  {exists ? (
-                    <div className="rounded-[var(--radius-pill)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1"
-                      style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-                      <Check className="w-3 h-3" /> added
-                    </div>
-                  ) : (
-                    <Sparkles className="w-5 h-5" style={{ color: "var(--accent)" }} />
-                  )}
-                </button>
-              );
-            })}
+            <div className="text-[11px] italic mb-2 px-1" style={{ color: "var(--text-faint)" }}>
+              Tapping a template fills the curriculum below. You still type the learner's name.
+            </div>
+            {SCHOOL_TEMPLATES.map((t) => (
+              <button key={t.id} onClick={() => applyTemplate(t)}
+                className="w-full rounded-[var(--radius-lg)] p-4 flex items-center gap-4 text-left active:scale-[0.99] transition"
+                style={{
+                  background: "var(--surface)",
+                  border: "1px dashed var(--border-strong)",
+                }}
+              >
+                <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center text-3xl flex-shrink-0"
+                  style={{ background: "var(--accent-soft)" }}>{t.emoji}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-bold text-lg truncate" style={{ color: "var(--text)" }}>{t.label}</div>
+                  <div className="text-[11px]" style={{ color: "var(--text-faint)" }}>{t.desc}</div>
+                </div>
+                <Sparkles className="w-5 h-5" style={{ color: "var(--accent)" }} />
+              </button>
+            ))}
           </div>
         ) : (
           <div className="space-y-4">
@@ -169,13 +170,13 @@ export function AddLearnerView({
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="School">
+              <Field label="School (optional)">
                 <input value={school} onChange={(e) => setSchool(e.target.value)} placeholder="School name"
                   className="w-full bg-transparent outline-none px-3 py-2.5 rounded-[var(--radius-md)] text-[15px]"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }} />
               </Field>
-              <Field label="City">
-                <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Pune"
+              <Field label="City (optional)">
+                <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City"
                   className="w-full bg-transparent outline-none px-3 py-2.5 rounded-[var(--radius-md)] text-[15px]"
                   style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }} />
               </Field>
