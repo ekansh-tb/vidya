@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +32,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">{children}</body>
+      <body className="font-body antialiased">
+        <ClerkProvider
+          appearance={{
+            variables: {
+              colorPrimary: "#A78BFA",
+              colorBackground: "#06080F",
+              colorText: "#F5F5F7",
+              colorTextSecondary: "rgba(255,255,255,0.6)",
+              colorInputBackground: "rgba(255,255,255,0.05)",
+              colorInputText: "#F5F5F7",
+              borderRadius: "0.75rem",
+            },
+          }}
+        >
+          {children}
+        </ClerkProvider>
+      </body>
     </html>
   );
 }

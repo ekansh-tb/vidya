@@ -1,27 +1,28 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/auth/sign-out-button";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { SignOutButton } from "@clerk/nextjs";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
 
+/**
+ * Parent dashboard. Clerk-gated (also enforced in proxy.ts — this server
+ * check is defence in depth so a misconfigured middleware can't expose it).
+ *
+ * Supabase reads are intentionally not wired yet — the migration's been
+ * rewritten for Clerk JWT but isn't run. Once it is, learner counts and
+ * verification-level surface here.
+ */
 export default async function ParentDashboardPage() {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in?next=/parent");
 
-  // Middleware also gates this, but a server-side check is defence in depth.
-  if (!user) redirect("/sign-in?next=/parent");
-
-  const { data: parent } = await supabase
-    .from("parents")
-    .select("display_name, created_at")
-    .eq("id", user.id)
-    .single();
-
-  const { count: learnersCount } = await supabase
-    .from("learners")
-    .select("id", { count: "exact", head: true });
+  const user = await currentUser();
+  const displayName =
+    user?.firstName?.trim() ||
+    user?.username ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    "Parent";
+  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
 
   return (
     <main className="min-h-screen text-neutral-100 relative">
@@ -29,35 +30,42 @@ export default async function ParentDashboardPage() {
       <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-neutral-500">Vidya Quest · Parent</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-neutral-500">Vidya · Parent</div>
             <h1 className="font-display text-2xl font-bold mt-1">Dashboard</h1>
           </div>
-          <SignOutButton />
+          <SignOutButton>
+            <button
+              type="submit"
+              className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
+            >
+              Sign out
+            </button>
+          </SignOutButton>
         </div>
       </header>
 
       <section className="max-w-5xl mx-auto px-6 py-10 space-y-8">
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-1">Signed in as</div>
-          <div className="text-base font-semibold">{parent?.display_name || user.email}</div>
-          <div className="text-xs text-neutral-500 mt-0.5">{user.email}</div>
+          <div className="text-base font-semibold">{displayName}</div>
+          {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card
             label="Learners on this account"
-            value={String(learnersCount ?? 0)}
-            footer="Each kid's data is sealed to their profile."
+            value="—"
+            footer="Sync activates after the Supabase migration runs and the kid-claim flow lands."
           />
           <Card
-            label="Sensitive features"
-            value="Coming"
-            footer="Health, AI keys, exam dates roll out behind PIN gate."
+            label="Verification rung"
+            value="Rung 2"
+            footer="Parent-verified once you confirm your email. Rung 3 (BYOK + incognito) needs ops review."
           />
           <Card
             label="Data isolation"
             value="Enforced"
-            footer="Row-level security on every sensitive table."
+            footer="Each kid's data sealed to their profile via Clerk role + RLS."
           />
         </div>
 
@@ -101,11 +109,12 @@ export default async function ParentDashboardPage() {
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-5">
           <h2 className="font-display text-lg font-bold mb-1">What lives here next</h2>
           <ul className="text-sm text-neutral-400 space-y-1.5 mt-3">
-            <li>· <span className="text-neutral-200">Health profile</span> per kid — advisories, doctor-recommended therapy tracks</li>
-            <li>· <span className="text-neutral-200">AI configuration</span> — bring your own keys (OpenAI / Anthropic / Grok / OpenRouter / Gemini), route by subject</li>
-            <li>· <span className="text-neutral-200">Exam schedule</span> — dates in, reminders out, revision curated automatically</li>
+            <li>· <span className="text-neutral-200">Add a learner</span> — issue a claim code that lets your kid sign in (or auto-link via same Wi-Fi)</li>
+            <li>· <span className="text-neutral-200">Health profile</span> per kid — advisories, doctor-recommended therapy tracks (rung 3)</li>
+            <li>· <span className="text-neutral-200">AI configuration</span> — bring your own keys (OpenAI / Anthropic / Grok / OpenRouter / Gemini), route by subject (rung 3)</li>
+            <li>· <span className="text-neutral-200">Exam schedule</span> — dates in, reminders out, revision curated automatically (rung 2)</li>
             <li>· <span className="text-neutral-200">Analytics</span> — opinions, never claims; every finding shows the data behind it</li>
-            <li>· <span className="text-neutral-200">Incognito toggles</span> — what each kid can and can&apos;t see in their lobby</li>
+            <li>· <span className="text-neutral-200">Incognito toggles</span> — what each kid can and can&apos;t see in their lobby (rung 3, parent-invisible)</li>
           </ul>
         </div>
 
