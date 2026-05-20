@@ -5,12 +5,14 @@ import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
 
 /**
- * Parent dashboard. Clerk-gated (also enforced in proxy.ts — this server
- * check is defence in depth so a misconfigured middleware can't expose it).
+ * Parent dashboard. Clerk-gated (also enforced in middleware.ts — this
+ * server check is defence in depth so a misconfigured middleware can't
+ * expose it).
  *
- * Supabase reads are intentionally not wired yet — the migration's been
- * rewritten for Clerk JWT but isn't run. Once it is, learner counts and
- * verification-level surface here.
+ * No durable backend is wired yet. The dashboard surfaces the signed-in
+ * identity and an OpinionCard preview. Cross-device learner state lives
+ * in localStorage on the kid's device for now; a sync layer can be
+ * added later if/when families need it.
  */
 export default async function ParentDashboardPage() {
   const { userId } = await auth();

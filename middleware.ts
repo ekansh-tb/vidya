@@ -1,6 +1,6 @@
 // Clerk + path-role gating.
 //
-// Replaces the old Supabase middleware. Two duties:
+// Two duties:
 //   1. Initialise Clerk auth on every matched request.
 //   2. Gate /parent/** to signed-in users — anonymous hits redirect
 //      to /sign-in?next=<original-path>.

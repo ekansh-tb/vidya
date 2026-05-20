@@ -2,19 +2,29 @@
 
 Last updated: 2026-05-21
 
-## Stack
+> **Status note:** As of 2026-05-21 Vidya is **Clerk-only**. Supabase
+> was removed before the migration was ever applied. The schema and
+> RLS design below are a forward-looking spec for when a durable DB
+> becomes necessary (cross-device sync, rung-3 features, multi-family
+> analytics). Today, kid GameState lives in localStorage; parent
+> identity lives in Clerk publicMetadata. See
+> [`memory/supabase-in-scope.md`](../../.claude/projects/-Users-ekanshjain-Downloads-vidya-quest/memory/supabase-in-scope.md).
 
-- **Clerk** — sign-in/sign-up UI, parent-approval UX, JWT issuance, role
-  management ("parent" vs "learner").
-- **Supabase Postgres** — durable app data (`parents`, `learners`,
-  `learner_states`, `parent_child_links`, capability flags). RLS policies
-  read the Clerk user ID from the JWT (`auth.jwt() -> 'sub'`) and enforce
-  strict per-learner isolation.
-- **Next.js App Router middleware** — gates `/parent/**` to parent role,
-  `/student/**` (formerly `/`) to learner role, redirects anonymous users
-  to `/sign-in`.
+## Stack (target — partially shipped)
 
-Clerk handles WHO; Supabase handles WHAT.
+- **Clerk** *(shipped)* — sign-in/sign-up UI, parent-approval UX, JWT
+  issuance, role management ("parent" vs "learner").
+- **Durable DB layer** *(deferred)* — schema below is the planned shape
+  when we re-introduce a server DB. Likely Supabase Postgres again
+  with Clerk JWT integration, but the choice is open.
+- **Next.js App Router middleware** *(shipped)* — gates `/parent/**` to
+  signed-in users, bounces signed-in users away from `/sign-in`. Role
+  gating against `/student/**` is wired in the design but the
+  `/student/**` route group is not yet created.
+
+Clerk handles WHO. Until a DB exists, small WHAT-state lives in Clerk
+publicMetadata (verification rung, family slug); larger state lives in
+the kid device's localStorage.
 
 ## Path topology
 

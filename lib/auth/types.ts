@@ -1,9 +1,9 @@
 // Auth + verification + capability types.
 //
-// These are forward declarations for the Clerk + Supabase wiring. They
-// describe the shape of data that lives on the server (capability_policies
-// table, learners.verification_level column) rather than in localStorage,
-// so they are intentionally kept out of lib/types.ts (which holds the
+// Forward declarations for the future durable-DB layer. Today the kid app
+// runs on localStorage + Clerk for parent auth — there is no server DB
+// yet. These types describe the shape we'll persist when a DB lands;
+// they are deliberately kept out of lib/types.ts (which holds the
 // LearnerProfile shape used by the offline-first kid app).
 //
 // See docs/AUTH_ARCHITECTURE.md for the architecture this maps to.

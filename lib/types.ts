@@ -50,7 +50,7 @@ export type LearnerProfile = {
   /** True once subject picker has been completed. */
   subjectsLocked?: boolean;
   /** 4-digit local PIN guarding the in-kid-app parent room. Speed bump only —
-   *  real auth is the Supabase /sign-in flow. */
+   *  real auth is the Clerk /sign-in flow. */
   parentPin?: string;
   /** Per-learner upcoming exams. Drives the home-view countdown banner. */
   upcomingExams?: ExamDate[];

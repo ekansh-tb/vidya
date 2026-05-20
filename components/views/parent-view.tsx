@@ -14,7 +14,7 @@ import { sfx } from "@/lib/audio";
  * Two boundaries this view enforces:
  *  1. **PIN gate** — speed bump so a kid (or sibling) tapping "Parent" on the
  *     home view can't immediately see or reset analytics. NOT real security;
- *     that lives in /sign-in via Supabase. First open prompts to set a PIN.
+ *     that lives in /sign-in via Clerk. First open prompts to set a PIN.
  *  2. **Strict subject isolation** — uses subjectsForLearner(...) not SUBJECTS,
  *     so a Cambridge Primary learner never sees IGCSE/ICSE/CBSE subjects, and
  *     vice versa.
