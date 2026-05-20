@@ -1,6 +1,7 @@
 import type { ExamPack } from "../exam-pack";
 import type { SubjectId } from "../../types";
 import { IGCSE_CS_PACK } from "./igcse-cs";
+import { IGCSE_PHYSICS_PACK } from "./igcse-physics";
 import { ICSE7_PACKS } from "./icse7-rest";
 import { ICSE6_PACKS } from "./icse6";
 import { ICSE_LANGUAGE_PACKS } from "./icse-languages";
@@ -13,6 +14,7 @@ import { CBSE7_SST } from "./cbse7-sst";
 
 export const ALL_PACKS: ExamPack[] = [
   IGCSE_CS_PACK,
+  IGCSE_PHYSICS_PACK,
   ...ICSE7_PACKS,
   ...ICSE6_PACKS,
   ...ICSE_LANGUAGE_PACKS,
