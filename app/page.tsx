@@ -24,7 +24,7 @@ import { SubjectPickerView } from "@/components/views/subject-picker-view";
 import { ExamPrepView } from "@/components/views/exam-prep-view";
 import { AddLearnerView } from "@/components/views/add-learner-view";
 import { ReviewView } from "@/components/views/review-view";
-import { ParticleField } from "@/components/effects/particles";
+import { CosmicBg, cosmicModeForGrade } from "@/components/effects/cosmic-bg";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
 import { useGameStore } from "@/lib/game-store";
@@ -87,7 +87,6 @@ export default function HomePage() {
     return (
       <>
         <ThemeApplier theme={themeId} />
-        <ParticleField />
         <OnboardingView
           defaultName={learner.name || "Advika Jain"}
           onComplete={async ({ name, avatarId }) => {
@@ -105,7 +104,7 @@ export default function HomePage() {
     return (
       <>
         <ThemeApplier theme={themeId} />
-        <ParticleField />
+        <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
         <AddLearnerView
           existingIds={Object.keys(profiles.learners)}
           onSave={(l) => {
@@ -127,7 +126,7 @@ export default function HomePage() {
     return (
       <>
         <ThemeApplier theme={themeId} />
-        <ParticleField />
+        <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
         <SubjectPickerView
           learner={learner}
           onSave={(picked) => {
@@ -344,7 +343,7 @@ export default function HomePage() {
   return (
     <>
       <ThemeApplier theme={themeId} />
-      <ParticleField />
+      <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
       {content}
       <VoiceBubble />
     </>
