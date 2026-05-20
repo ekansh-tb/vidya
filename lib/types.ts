@@ -25,6 +25,16 @@ export type Board =
 
 export type LearnerId = string;
 
+export type ExamDate = {
+  id: string;
+  /** Optional subject anchor — when set, home banner deep-links into that subject's exam-prep pack. */
+  subjectId?: SubjectId;
+  title: string;          // e.g. "Physics — Electricity & Magnetism"
+  /** ISO date YYYY-MM-DD. Time-of-day, if any, is ignored — countdown is day-grained. */
+  date: string;
+  notes?: string;
+};
+
 export type LearnerProfile = {
   id: LearnerId;
   name: string;
@@ -39,6 +49,11 @@ export type LearnerProfile = {
   pickedSubjects?: SubjectId[];
   /** True once subject picker has been completed. */
   subjectsLocked?: boolean;
+  /** 4-digit local PIN guarding the in-kid-app parent room. Speed bump only —
+   *  real auth is the Supabase /sign-in flow. */
+  parentPin?: string;
+  /** Per-learner upcoming exams. Drives the home-view countdown banner. */
+  upcomingExams?: ExamDate[];
   createdAt: string;
   state: GameState;
 };

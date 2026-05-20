@@ -77,6 +77,16 @@ export function HomeView({
     ? subjectMastery.find((s) => s.id === period.subjectId)
     : null;
 
+  // Nearest upcoming exam within 7 days — drives the countdown banner.
+  const upcomingExam = useMemo(() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dayMs = 1000 * 60 * 60 * 24;
+    return (learner.upcomingExams || [])
+      .map((e) => ({ ...e, daysAway: Math.round((new Date(e.date + "T00:00:00").getTime() - today.getTime()) / dayMs) }))
+      .filter((e) => e.daysAway >= 0 && e.daysAway <= 7)
+      .sort((a, b) => a.daysAway - b.daysAway)[0];
+  }, [learner.upcomingExams]);
+
   return (
     <div className="min-h-screen pb-28 max-w-2xl mx-auto">
       {/* Header */}
@@ -248,6 +258,58 @@ export function HomeView({
           </motion.button>
         )}
 
+        {/* Exam countdown — surfaces when the parent has logged an exam within 7 days */}
+        {upcomingExam && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => {
+              sfx.click();
+              if (upcomingExam.subjectId) onNavigate("exam-prep", { subjectId: upcomingExam.subjectId });
+              else onNavigate("exam-prep");
+            }}
+            className="w-full p-4 text-left mb-5 relative overflow-hidden rounded-3xl"
+            style={{
+              background: upcomingExam.daysAway <= 1
+                ? "linear-gradient(135deg, rgba(244,114,182,0.25) 0%, rgba(251,113,133,0.18) 100%)"
+                : "linear-gradient(135deg, rgba(251,191,36,0.22) 0%, rgba(167,139,250,0.18) 100%)",
+              border: `1.5px solid ${upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.45)" : "rgba(251,191,36,0.4)"}`,
+              boxShadow: `0 0 32px ${upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.28)" : "rgba(251,191,36,0.2)"}`,
+            }}
+          >
+            <div className="relative flex items-center gap-3">
+              <div
+                className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center flex-shrink-0"
+                style={{
+                  background: upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.3)" : "rgba(251,191,36,0.25)",
+                  color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24",
+                }}
+              >
+                <div className="font-display text-xl font-bold leading-none">{upcomingExam.daysAway}</div>
+                <div className="text-[9px] uppercase tracking-widest font-bold leading-none mt-0.5">
+                  {upcomingExam.daysAway === 0 ? "today" : upcomingExam.daysAway === 1 ? "day" : "days"}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <GraduationCap className="w-3.5 h-3.5" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }} />
+                  <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }}>
+                    {upcomingExam.daysAway === 0 ? "Exam today" : upcomingExam.daysAway === 1 ? "Exam tomorrow" : `Exam in ${upcomingExam.daysAway} days`}
+                  </span>
+                </div>
+                <div className="font-display text-xl font-bold leading-tight" style={{ color: "var(--text)" }}>
+                  {upcomingExam.title}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  Tap for syllabus · flashcards · practice
+                </div>
+              </div>
+              <ArrowRight className="w-6 h-6 flex-shrink-0" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }} />
+            </div>
+          </motion.button>
+        )}
+
         {/* Daily Quest */}
         <motion.button
           whileTap={{ scale: 0.99 }}
@@ -369,7 +431,7 @@ export function HomeView({
           />
           <RoomTile
             icon={<Users className="w-5 h-5 text-amber-300" />}
-            label="Friends"
+            label="Classroom"
             accent="rgba(251, 191, 36, 0.12)"
             onClick={() => { sfx.click(); onNavigate("friends"); }}
           />

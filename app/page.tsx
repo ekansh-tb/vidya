@@ -230,7 +230,15 @@ export default function HomePage() {
         content = <ShopView state={state} setState={set} onBack={back} />;
         break;
       case "parent":
-        content = <ParentView state={state} onBack={back} onReset={() => { reset(); back(); }} />;
+        content = (
+          <ParentView
+            state={state}
+            learner={learner}
+            onBack={back}
+            onReset={() => { reset(); back(); }}
+            onUpdateLearner={(patch) => updateLearnerMeta(learner.id, patch)}
+          />
+        );
         break;
       case "settings":
         content = <SettingsView state={state} setState={set} onBack={back} />;
