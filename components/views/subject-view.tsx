@@ -10,6 +10,7 @@ import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
 import { useEffect } from "react";
 import { useCapability } from "@/lib/capabilities/use-capability";
+import { useGameStore } from "@/lib/game-store";
 
 export function SubjectView({
   subjectId, state, learner, onNavigate, onBack, voiceEnabled,
@@ -27,6 +28,13 @@ export function SubjectView({
   const pack = packFor(subjectId, learner.grade);
   const Icon = subject.icon;
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
+  const setGameState = useGameStore((s) => s.set);
+
+  useEffect(() => {
+    // Mark this subject as the most-recently-visited so the home "Pick up
+    // where you left off" card knows where to point.
+    setGameState((s) => ({ ...s, lastSubjectId: subjectId, lastSubjectAt: new Date().toISOString() }));
+  }, [subjectId, setGameState]);
 
   useEffect(() => {
     if (voiceEnabled) {

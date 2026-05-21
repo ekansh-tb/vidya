@@ -166,6 +166,9 @@ export type GameState = {
   buddyId: string | null;
   missedQuestions: MissedQuestion[];
   dailyReflections: DailyReflection[];
+  /** Last subject the kid opened. Used for "Pick up where you left off". */
+  lastSubjectId?: SubjectId;
+  lastSubjectAt?: string;
   settings: {
     sound: boolean;
     music: boolean;

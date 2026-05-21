@@ -132,6 +132,41 @@ export function HomeView({
           <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
         </div>
 
+        {/* Pick up where you left off — shows the last subject the kid opened */}
+        {state.lastSubjectId && (() => {
+          const lastSub = visibleSubjects.find((s) => s.id === state.lastSubjectId);
+          if (!lastSub) return null;
+          const Icon = lastSub.icon;
+          return (
+            <motion.button
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => { sfx.click(); onNavigate("subject", { subjectId: lastSub.id }); }}
+              className="w-full p-3 mb-3 rounded-2xl flex items-center gap-3 text-left active:scale-[0.99]"
+              style={{
+                background: "linear-gradient(90deg, var(--surface) 0%, color-mix(in oklab, var(--accent) 12%, transparent) 100%)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0"
+                style={{ background: lastSub.soft, boxShadow: `0 0 16px ${lastSub.glow}` }}
+              >
+                <Icon className="w-5 h-5" style={{ color: lastSub.accent }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-faint)" }}>
+                  Pick up where you left off
+                </div>
+                <div className={`font-display font-bold text-base ${lastSub.isDeva ? "font-deva" : ""}`} style={{ color: "var(--text)" }}>
+                  {lastSub.name}
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: lastSub.accent }} />
+            </motion.button>
+          );
+        })()}
+
         {/* Family note from parent — top-of-fold until acknowledged */}
         {unseenNote && (
           <motion.div
