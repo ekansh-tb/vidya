@@ -428,7 +428,9 @@ export function HomeView({
           </motion.button>
         )}
 
-        <div className="grid grid-cols-4 gap-2 mb-3">
+        {/* Single fluid grid — auto-balances to 4 wide × 2 rows whether AI is
+            gated (7 tiles) or open (8 tiles). No layout holes either way. */}
+        <div className="grid grid-cols-4 gap-2 mb-5">
           <RoomTile
             icon={<Mic className="w-5 h-5 text-fuchsia-300" />}
             label="Assembly"
@@ -457,8 +459,6 @@ export function HomeView({
             accent="rgba(251, 191, 36, 0.15)"
             onClick={() => { sfx.click(); onNavigate("library"); }}
           />
-        </div>
-        <div className="grid grid-cols-4 gap-2 mb-5">
           <RoomTile
             icon={<NotebookPen className="w-5 h-5 text-rose-300" />}
             label="Notebook"
