@@ -262,6 +262,9 @@ function SelectedLearnerView({
           </div>
         </div>
 
+        {/* Weekly recap — last 7 days of activity */}
+        <WeeklyRecap learner={learner} />
+
         {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
         <OpinionCard
           tone="warm"
@@ -424,6 +427,93 @@ ${examLines}
 
 _All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims — only opines._
 `;
+}
+
+// -----------------------------------------------------------------------------
+// Weekly recap — derived from state. No DB needed; everything is on-device.
+// -----------------------------------------------------------------------------
+
+function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
+  const state = learner.state;
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const reflectionsWeek = (state.dailyReflections || []).filter((r) => new Date(r.savedAt).getTime() >= sevenDaysAgo);
+  const missesWeek = (state.missedQuestions || []).filter((m) => new Date(m.missedAt).getTime() >= sevenDaysAgo);
+  const reflectionPrivateCount = reflectionsWeek.filter((r) => r.private).length;
+
+  const hasAny = reflectionsWeek.length + missesWeek.length > 0 || state.streak > 0;
+
+  if (!hasAny) {
+    return (
+      <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-2">Last 7 days</div>
+        <div className="text-sm italic text-neutral-500">
+          Nothing yet this week. Vidya recap fills in once the kid uses any room.
+        </div>
+      </div>
+    );
+  }
+
+  const days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i));
+    return {
+      iso: d.toISOString().slice(0, 10),
+      label: d.toLocaleDateString(undefined, { weekday: "short" })[0],
+    };
+  });
+  const reflectionDates = new Set(reflectionsWeek.map((r) => r.date));
+
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Last 7 days</div>
+
+      {/* Day-of-week heatmap of reflections */}
+      <div className="flex items-end gap-1 mb-3">
+        {days.map((d) => {
+          const done = reflectionDates.has(d.iso);
+          return (
+            <div key={d.iso} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className="w-full aspect-square rounded-sm transition-all"
+                style={{
+                  background: done ? "rgba(167,139,250,0.85)" : "rgba(255,255,255,0.05)",
+                  boxShadow: done ? "0 0 6px rgba(167,139,250,0.5)" : "none",
+                }}
+                title={d.iso}
+              />
+              <div className="text-[8px] uppercase tracking-widest text-neutral-600">{d.label}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <RecapStat
+          label="Reflections"
+          value={reflectionsWeek.length}
+          sub={reflectionPrivateCount > 0 ? `${reflectionPrivateCount} private` : undefined}
+        />
+        <RecapStat
+          label="New misses"
+          value={missesWeek.length}
+        />
+        <RecapStat
+          label="Current streak"
+          value={state.streak}
+          sub={`longest ${state.longestStreak || 0}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+function RecapStat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+  return (
+    <div>
+      <div className="font-display text-2xl font-bold tracking-tight">{value}</div>
+      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mt-0.5">{label}</div>
+      {sub && <div className="text-[10px] text-neutral-600 mt-0.5">{sub}</div>}
+    </div>
+  );
 }
 
 function StatTile({ label, value }: { label: string; value: string }) {
