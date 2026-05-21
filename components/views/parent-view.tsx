@@ -170,6 +170,9 @@ export function ParentView({
           }
         />
 
+        {/* Wellness signals ---------------------------------------------- */}
+        <WellnessSignals state={state} subjectStats={subjectStats} />
+
         {/* Upcoming exams ------------------------------------------------ */}
         <ExamManager
           exams={learner.upcomingExams || []}
@@ -540,6 +543,156 @@ function boardLabel(board: LearnerProfile["board"]): string {
     case "cbse": return "CBSE / NCERT";
     default: return board;
   }
+}
+
+// -----------------------------------------------------------------------------
+// Wellness signals — Counsellor-style opinion-only digest.
+//
+// Soft observations computed from local state. Each finding is wrapped
+// in the same window / observation / opinion shape as the headline.
+// All language is non-judgemental — the kid is never "behind", they
+// have a "rhythm" or a "stretch zone" or a "backlog worth a slower
+// walk-through". Per [[analytics-opinion-only]] we never claim.
+// -----------------------------------------------------------------------------
+
+type SignalTone = "warm" | "neutral" | "concern";
+
+type Signal = {
+  windowText: string;
+  observation: string;
+  opinion: string;
+  tone: SignalTone;
+};
+
+function WellnessSignals({
+  state, subjectStats,
+}: {
+  state: GameState;
+  subjectStats: { id: SubjectId; name: string; attempts: number; correct: number; mastery: number }[];
+}) {
+  const signals = useMemo<Signal[]>(() => {
+    const out: Signal[] = [];
+
+    // Signal 1 — Streak rhythm
+    const cur = state.streak ?? 0;
+    const longest = state.longestStreak ?? 0;
+    if (longest > 0 || cur > 0) {
+      const ratio = longest > 0 ? cur / longest : 0;
+      out.push({
+        windowText: "Streak · current vs longest",
+        observation: `Current streak: ${cur} day${cur === 1 ? "" : "s"}. Longest ever: ${longest} day${longest === 1 ? "" : "s"}.`,
+        opinion:
+          longest === 0
+            ? "This might mean it's still early — give it a week or two of light use before reading anything into the numbers."
+            : ratio >= 0.7
+              ? "This might mean a strong steady rhythm — keep doing what you're doing."
+              : ratio >= 0.3
+                ? "This might mean a typical week. Streaks rise and fall; nothing here calls for action."
+                : "This might mean a recent pause — busy week, illness, or just a break. Worth a gentle check-in, not a push.",
+        tone: longest === 0 ? "neutral" : ratio >= 0.3 ? "warm" : "concern",
+      });
+    }
+
+    // Signal 2 — Review backlog (Wrong-Answer Notebook)
+    const misses = state.missedQuestions?.length ?? 0;
+    out.push({
+      windowText: "Wrong-Answer Notebook",
+      observation:
+        misses === 0
+          ? "Zero questions waiting for a second try."
+          : `${misses} question${misses === 1 ? "" : "s"} waiting for a second try.`,
+      opinion:
+        misses === 0
+          ? "This might mean either no quizzes attempted yet OR every miss has been answered correctly later — both are healthy."
+          : misses <= 5
+            ? "This might mean the kid is in their stretch zone — a small backlog of 1–5 is normal and a sign of learning, not falling behind."
+            : "This might mean a few specific topics need a slower walk-through together rather than another quiz attempt.",
+      tone: misses === 0 ? "warm" : misses <= 5 ? "neutral" : "concern",
+    });
+
+    // Signal 3 — Daily quest engagement
+    const dq = state.stats?.dailyQuestsCompleted ?? 0;
+    if (state.stats?.totalAnswered && state.stats.totalAnswered > 0) {
+      out.push({
+        windowText: "Daily quest engagement",
+        observation: `${dq} daily quest${dq === 1 ? "" : "s"} completed lifetime.`,
+        opinion:
+          dq === 0
+            ? "This might mean daily quests aren't on their radar yet — try walking them through it once together."
+            : dq < 7
+              ? "This might mean it's becoming a habit — the second week tends to be when it sticks."
+              : "This might mean a real ritual has formed. Worth celebrating out loud now and then.",
+        tone: dq === 0 ? "concern" : dq < 7 ? "neutral" : "warm",
+      });
+    }
+
+    // Signal 4 — Subject concentration
+    const totalAttempts = subjectStats.reduce((s, x) => s + x.attempts, 0);
+    if (totalAttempts >= 20) {
+      const top = subjectStats.slice().sort((a, b) => b.attempts - a.attempts)[0];
+      if (top && top.attempts > 0) {
+        const pct = Math.round((top.attempts / totalAttempts) * 100);
+        if (pct >= 60) {
+          out.push({
+            windowText: "Subject spread",
+            observation: `${pct}% of attempts have been in ${top.name}.`,
+            opinion:
+              "This might mean a current passion (great!) or quiet avoidance of other subjects. Worth checking — both are useful to know.",
+            tone: "neutral",
+          });
+        }
+      }
+    }
+
+    return out;
+  }, [state, subjectStats]);
+
+  if (signals.length === 0) return null;
+
+  return (
+    <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid var(--accent)" }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <Info className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
+          Wellness signals
+        </span>
+      </div>
+      <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
+        Soft observations from the last few sessions. Read together with your kid, not at them.
+        Nothing here is a verdict.
+      </div>
+      <div className="space-y-3">
+        {signals.map((s, i) => (
+          <SignalRow key={i} signal={s} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SignalRow({ signal }: { signal: Signal }) {
+  const palette =
+    signal.tone === "warm"
+      ? { dot: "var(--success)", bar: "rgba(52, 211, 153, 0.35)" }
+      : signal.tone === "concern"
+        ? { dot: "#FBBF24", bar: "rgba(251, 191, 36, 0.35)" }
+        : { dot: "var(--accent)", bar: "var(--border-strong)" };
+  return (
+    <div className="pl-3 py-1" style={{ borderLeft: `2px solid ${palette.bar}` }}>
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: palette.dot }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: palette.dot }}>
+          {signal.windowText}
+        </span>
+      </div>
+      <div className="text-sm font-medium mb-0.5" style={{ color: "var(--text)" }}>
+        {signal.observation}
+      </div>
+      <div className="text-xs italic" style={{ color: "var(--text-muted)" }}>
+        {signal.opinion}
+      </div>
+    </div>
+  );
 }
 
 // -----------------------------------------------------------------------------
