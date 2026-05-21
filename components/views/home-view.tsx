@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Coins, Target, ArrowRight, Trophy, Gem, BarChart3, Settings, Check, Users,
   MessageCircle, Globe, BookOpen, Clock, Mic, NotebookPen, Music, Wind,
-  Cpu, GraduationCap, Repeat,
+  Cpu, GraduationCap, Repeat, Heart,
 } from "lucide-react";
+import { useGameStore } from "@/lib/game-store";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
 import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators";
@@ -31,6 +32,17 @@ export function HomeView({
   const { level, xpInLevel, xpNeeded } = xpToLevel(state.xp);
   const todayQuestDone = state.dailyQuest?.completed && state.dailyQuest?.date === todayKey();
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
+  const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
+
+  // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
+  const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
+  const ackNote = () => {
+    if (!learner.familyNote) return;
+    sfx.coin();
+    updateLearnerMeta(learner.id, {
+      familyNote: { ...learner.familyNote, seenAt: new Date().toISOString() },
+    });
+  };
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -118,6 +130,38 @@ export function HomeView({
         <div className="glass-card p-4 mb-5">
           <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
         </div>
+
+        {/* Family note from parent — top-of-fold until acknowledged */}
+        {unseenNote && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-3xl p-5 mb-5 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, rgba(244,114,182,0.20) 0%, rgba(251,191,36,0.14) 100%)",
+              border: "1.5px solid rgba(244,114,182,0.42)",
+              boxShadow: "0 0 32px rgba(244,114,182,0.22)",
+            }}
+          >
+            <div className="flex items-center gap-1.5 mb-2">
+              <Heart className="w-3.5 h-3.5" style={{ color: "#F472B6" }} />
+              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#F472B6" }}>
+                A note for you
+              </span>
+            </div>
+            <div className="text-base font-medium leading-relaxed mb-3 whitespace-pre-wrap" style={{ color: "rgba(255,255,255,0.95)" }}>
+              {unseenNote.body}
+            </div>
+            <button
+              onClick={ackNote}
+              className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest active:scale-95"
+              style={{ background: "rgba(244,114,182,0.28)", color: "rgba(255,255,255,0.95)" }}
+            >
+              <Check className="w-3 h-3 inline -mt-0.5 mr-1" /> Got it
+            </button>
+          </motion.div>
+        )}
 
         {/* School Day banner */}
         <motion.div

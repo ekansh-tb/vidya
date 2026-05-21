@@ -35,6 +35,13 @@ export type ExamDate = {
   notes?: string;
 };
 
+/** A short message from a parent to their kid. Persists until the kid acknowledges it. */
+export type FamilyNote = {
+  body: string;
+  postedAt: string;       // ISO timestamp
+  seenAt?: string;        // ISO timestamp; set when the kid taps "Got it"
+};
+
 export type LearnerProfile = {
   id: LearnerId;
   name: string;
@@ -54,6 +61,8 @@ export type LearnerProfile = {
   parentPin?: string;
   /** Per-learner upcoming exams. Drives the home-view countdown banner. */
   upcomingExams?: ExamDate[];
+  /** A note from the parent to the kid. Shown on the kid's home until acknowledged. */
+  familyNote?: FamilyNote;
   createdAt: string;
   state: GameState;
 };

@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert } from "lucide-react";
+import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import type { ExamDate, GameState, LearnerProfile, SubjectId } from "@/lib/types";
+import type { ExamDate, FamilyNote, GameState, LearnerProfile, SubjectId } from "@/lib/types";
 import type { CapabilityKey, VerificationLevel } from "@/lib/auth/types";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { computeRung } from "@/lib/capabilities/use-capability";
@@ -168,6 +168,13 @@ export function ParentView({
               ? "Worth a calm chat with the class teacher to compare notes — this is the kind of pattern that's better untangled together than guessed at alone."
               : undefined
           }
+        />
+
+        {/* Family note --------------------------------------------------- */}
+        <FamilyNoteComposer
+          name={learner.name || "your learner"}
+          note={learner.familyNote}
+          onChange={(next) => onUpdateLearner({ familyNote: next })}
         />
 
         {/* Wellness signals ---------------------------------------------- */}
@@ -543,6 +550,113 @@ function boardLabel(board: LearnerProfile["board"]): string {
     case "cbse": return "CBSE / NCERT";
     default: return board;
   }
+}
+
+// -----------------------------------------------------------------------------
+// Family note composer — parent writes one message; kid sees it on home
+// and dismisses with "Got it". Only the most recent note is kept (saving
+// overwrites). This is the first explicit human-to-human surface inside
+// Vidya — not configuration, but a real message.
+// -----------------------------------------------------------------------------
+
+function FamilyNoteComposer({
+  name, note, onChange,
+}: {
+  name: string;
+  note?: FamilyNote;
+  onChange: (next: FamilyNote | undefined) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [editing, setEditing] = useState(!note);
+
+  const save = () => {
+    const body = draft.trim();
+    if (!body) return;
+    sfx.coin();
+    onChange({ body, postedAt: new Date().toISOString(), seenAt: undefined });
+    setDraft("");
+    setEditing(false);
+  };
+
+  const clear = () => {
+    sfx.click();
+    onChange(undefined);
+    setDraft("");
+    setEditing(true);
+  };
+
+  return (
+    <div className="glass-card p-4 mb-5" style={{ borderTop: "2px solid #F472B6" }}>
+      <div className="flex items-center gap-1.5 mb-3">
+        <Heart className="w-3.5 h-3.5" style={{ color: "#F472B6" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#F472B6" }}>
+          Note to {name}
+        </span>
+      </div>
+
+      {note && !editing ? (
+        <div>
+          <div
+            className="rounded-[var(--radius-md)] px-4 py-3 mb-3"
+            style={{ background: "rgba(244, 114, 182, 0.10)", border: "1px solid rgba(244,114,182,0.25)" }}
+          >
+            <div className="text-sm whitespace-pre-wrap" style={{ color: "var(--text)" }}>
+              {note.body}
+            </div>
+            <div className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>
+              Sent {prettyRelative(note.postedAt)} ·{" "}
+              {note.seenAt
+                ? <span style={{ color: "var(--success)" }}>seen {prettyRelative(note.seenAt)}</span>
+                : <span style={{ color: "var(--text-muted)" }}>not seen yet</span>}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => { setEditing(true); setDraft(note.body); }}>
+              <Send className="w-3.5 h-3.5" /> Replace
+            </Button>
+            <Button size="sm" variant="ghost" onClick={clear}>
+              <Trash2 className="w-3.5 h-3.5" /> Clear
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, 280))}
+            placeholder={`A short message ${name} will see at the top of their home screen. (280 chars)`}
+            rows={3}
+            className="w-full px-3 py-2 rounded-[var(--radius-md)] text-sm resize-none"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+          />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>{draft.length}/280</span>
+            <div className="flex gap-2">
+              {note && (
+                <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraft(""); }}>
+                  Cancel
+                </Button>
+              )}
+              <Button size="sm" onClick={save} disabled={!draft.trim()}>
+                <Send className="w-3.5 h-3.5" /> {note ? "Replace note" : "Send to home"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function prettyRelative(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const m = Math.round(diffMs / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
 }
 
 // -----------------------------------------------------------------------------
