@@ -26,6 +26,68 @@ const INTEREST_CHIPS: { id: string; emoji: string; label: string }[] = [
   { id: "movies",   emoji: "🎬", label: "Movies" },
 ];
 
+function isoDay(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function ReflectionRhythm({ reflections }: { reflections: { date: string }[] }) {
+  const days = 14;
+  const setOfDates = new Set(reflections.map((r) => r.date));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const rhythm = Array.from({ length: days }).map((_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - (days - 1 - i));
+    const iso = isoDay(d);
+    return { iso, done: setOfDates.has(iso), label: d.toLocaleDateString(undefined, { weekday: "short" }) };
+  });
+  const total = rhythm.filter((r) => r.done).length;
+
+  if (reflections.length === 0) return null;
+
+  return (
+    <div className="glass-card p-4 mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
+          Reflection rhythm · last {days} days
+        </div>
+        <div className="text-[11px] font-semibold text-white/60">
+          {total} of {days}
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        {rhythm.map((r) => {
+          const isToday = r.iso === isoDay(today);
+          return (
+            <div key={r.iso} className="flex-1 flex flex-col items-center gap-1">
+              <div
+                className="w-full aspect-square rounded-md transition-all"
+                style={{
+                  background: r.done
+                    ? "rgba(167,139,250,0.85)"
+                    : isToday
+                      ? "rgba(167,139,250,0.15)"
+                      : "rgba(255,255,255,0.04)",
+                  boxShadow: r.done ? "0 0 8px rgba(167,139,250,0.5)" : "none",
+                  border: isToday && !r.done ? "1px dashed rgba(167,139,250,0.4)" : "none",
+                }}
+                title={r.iso}
+              />
+              <div className="text-[8px] uppercase tracking-widest text-white/30">
+                {r.label[0]}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[10px] italic text-white/40 mt-3 text-center">
+        Each square is a day. Filled means you wrote a reflection.
+      </p>
+    </div>
+  );
+}
+
 function describeBoard(board: LearnerProfile["board"]): string {
   if (board === "cambridge-primary") return "Cambridge Primary";
   if (board === "cambridge-igcse") return "Cambridge IGCSE";
@@ -247,6 +309,9 @@ export function ProfileView({
             </motion.div>
           ))}
         </div>
+
+        {/* Reflection rhythm — last 14 days at a glance */}
+        <ReflectionRhythm reflections={state.dailyReflections || []} />
 
         <h3 className="font-display text-xl font-bold text-white mb-3 flex items-center gap-2">
           Badges
