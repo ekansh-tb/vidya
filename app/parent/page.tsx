@@ -231,6 +231,11 @@ function SelectedLearnerView({
         )}
       </div>
 
+      {/* Setup status — what the parent has and hasn't configured */}
+      <div className="md:col-span-3">
+        <SetupStatus learner={learner} />
+      </div>
+
       {/* Two-column body: communications + insights */}
       <div className="md:col-span-2 space-y-4">
         <FamilyNoteComposer
@@ -427,6 +432,114 @@ ${examLines}
 
 _All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims — only opines._
 `;
+}
+
+// -----------------------------------------------------------------------------
+// Setup status — at-a-glance "what's configured for this kid" checklist.
+// Read-only here; each row hints where to flip the bit.
+// -----------------------------------------------------------------------------
+
+function SetupStatus({ learner }: { learner: LearnerProfile }) {
+  const items = [
+    {
+      label: "Name + grade + board",
+      done: !!learner.name?.trim(),
+      hint: "Set during onboarding on the kid app.",
+    },
+    {
+      label: "Interests captured",
+      done: !!learner.interests && learner.interests.length > 0,
+      hint: learner.interests && learner.interests.length > 0
+        ? `${learner.interests.length} picked`
+        : "Kid can pick in their profile.",
+    },
+    {
+      label: "AI tone preference",
+      done: !!learner.aiTone,
+      hint: learner.aiTone ? `set to ${learner.aiTone}` : "Kid picks in their profile.",
+    },
+    {
+      label: "Parent PIN (unlocks AI tutor at rung 2)",
+      done: !!learner.parentPin,
+      hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
+    },
+    {
+      label: "Care note (parent → AI)",
+      done: !!learner.careNote?.trim(),
+      hint: learner.careNote?.trim() ? "written" : "Write a paragraph above.",
+    },
+    {
+      label: "Family note (parent → kid)",
+      done: !!learner.familyNote,
+      hint: learner.familyNote?.seenAt
+        ? `seen ${prettyRelative(learner.familyNote.seenAt)}`
+        : learner.familyNote
+          ? "sent, not seen yet"
+          : "Send one above.",
+    },
+    {
+      label: "Upcoming exam logged",
+      done: (learner.upcomingExams?.length ?? 0) > 0,
+      hint: (learner.upcomingExams?.length ?? 0) > 0
+        ? `${learner.upcomingExams!.length} on calendar`
+        : "Add one from the in-kid-app Parent room.",
+    },
+  ];
+  const doneCount = items.filter((i) => i.done).length;
+
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
+            Setup status
+          </div>
+          <div className="text-sm text-neutral-300 mt-0.5">
+            {doneCount} of {items.length} configured
+          </div>
+        </div>
+        <div
+          className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest font-bold"
+          style={{
+            background: doneCount === items.length ? "rgba(52, 211, 153, 0.15)" : "rgba(167,139,250,0.15)",
+            color: doneCount === items.length ? "#86efac" : "#c4b5fd",
+          }}
+        >
+          {doneCount === items.length ? "Complete" : `${Math.round((doneCount / items.length) * 100)}%`}
+        </div>
+      </div>
+      <ul className="space-y-2">
+        {items.map((i, idx) => (
+          <li key={idx} className="flex items-start gap-3 text-xs">
+            <span
+              className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
+              style={{
+                background: i.done ? "rgba(52, 211, 153, 0.25)" : "rgba(255,255,255,0.06)",
+                color: i.done ? "#86efac" : "#71717a",
+              }}
+            >
+              {i.done ? "✓" : "·"}
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className={i.done ? "text-neutral-200" : "text-neutral-400"}>{i.label}</div>
+              <div className="text-[11px] text-neutral-600">{i.hint}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function prettyRelative(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const m = Math.round(diffMs / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return `${d}d ago`;
 }
 
 // -----------------------------------------------------------------------------
