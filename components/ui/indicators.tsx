@@ -1,15 +1,16 @@
 "use client";
 
-import { Flame } from "lucide-react";
+import { Flame, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
-export function StreakFlame({ streak, large = false }: { streak: number; large?: boolean }) {
+export function StreakFlame({ streak, large = false, shields = 0 }: { streak: number; large?: boolean; shields?: number }) {
   if (streak === 0) {
     return (
       <div className="flex items-center gap-1.5 text-white/40">
         <Flame className={large ? "w-6 h-6" : "w-5 h-5"} />
         <span className="font-bold font-mono">0</span>
+        {shields > 0 && <ShieldBadge count={shields} dim />}
       </div>
     );
   }
@@ -22,7 +23,24 @@ export function StreakFlame({ streak, large = false }: { streak: number; large?:
         <Flame className={`${large ? "w-7 h-7" : "w-5 h-5"} text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.7)]`} fill="#FBBF24" />
       </motion.div>
       <span className={`font-bold font-display ${large ? "text-xl" : "text-base"} text-orange-300`}>{streak}</span>
+      {shields > 0 && <ShieldBadge count={shields} />}
     </div>
+  );
+}
+
+function ShieldBadge({ count, dim = false }: { count: number; dim?: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
+      style={{
+        background: dim ? "rgba(255,255,255,0.05)" : "rgba(34, 211, 238, 0.18)",
+        color: dim ? "rgba(255,255,255,0.45)" : "#67e8f9",
+      }}
+      title={`${count} streak shield${count === 1 ? "" : "s"} — protects your streak if you miss a day`}
+    >
+      <Shield className="w-2.5 h-2.5" fill="currentColor" />
+      <span>{count}</span>
+    </span>
   );
 }
 

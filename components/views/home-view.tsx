@@ -117,7 +117,7 @@ export function HomeView({
           <div className="flex items-center gap-2">
             <StatPill icon={Coins} value={state.coins} accent="#FBBF24" />
             <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-full px-3 py-1.5 active:scale-95">
-              <StreakFlame streak={state.streak} large />
+              <StreakFlame streak={state.streak} large shields={state.inventory?.freeze || 0} />
             </button>
             <button onClick={() => { sfx.click(); onNavigate("learners"); }} className="glass rounded-full w-10 h-10 flex items-center justify-center active:scale-95" aria-label="Switch learner">
               <Repeat className="w-4 h-4 text-white/70" />
