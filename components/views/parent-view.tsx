@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap } from "lucide-react";
+import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
 import type { ExamDate, GameState, LearnerProfile, SubjectId } from "@/lib/types";
+import type { CapabilityKey, VerificationLevel } from "@/lib/auth/types";
+import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
+import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
 
 /**
@@ -173,6 +176,10 @@ export function ParentView({
           subjects={learnerSubjects.map((s) => ({ id: s.id, name: s.name }))}
           onChange={(next) => onUpdateLearner({ upcomingExams: next })}
         />
+
+        {/* Capability map ------------------------------------------------ */}
+        <CapabilityMap learner={learner} />
+
 
         {/* Stat grid (filtered to this kid) ----------------------------- */}
         <h3 className="font-display text-xl font-bold mb-3" style={{ color: "var(--text)" }}>Snapshot</h3>
@@ -533,4 +540,105 @@ function boardLabel(board: LearnerProfile["board"]): string {
     case "cbse": return "CBSE / NCERT";
     default: return board;
   }
+}
+
+// -----------------------------------------------------------------------------
+// Capability map — parent-visible only. Shows what this learner can use right
+// now and what's queued at higher rungs. The kid never sees this surface.
+// See [[verification-ladder]] and [[parent-invisible-config]].
+// -----------------------------------------------------------------------------
+
+const CAPABILITY_LABEL: Record<CapabilityKey, string> = {
+  "ai.tutor.limited":    "AI tutor — rate-limited",
+  "ai.tutor.full":       "Miss Vidya — full AI tutor",
+  "share.crossNetwork":  "Share streaks across networks",
+  "byok.openai":         "Bring your own OpenAI key",
+  "byok.anthropic":      "Bring your own Anthropic key",
+  "byok.google":         "Bring your own Gemini key",
+  "byok.grok":           "Bring your own Grok key",
+  "byok.openrouter":     "Bring your own OpenRouter key",
+  "incognito.enabled":   "Incognito learner mode",
+  "health.profile":      "Health profile & care layer",
+  "exam.alertsToParent": "Exam-day alerts to your dashboard",
+};
+
+const RUNG_NAME: Record<VerificationLevel, string> = {
+  0: "open",
+  1: "same-network",
+  2: "parent-verified",
+  3: "strict-verified",
+};
+
+const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
+  0: "Default — available the moment a profile exists.",
+  1: "Auto-promotes when the kid's session matches your Wi-Fi. Coming soon.",
+  2: "Set a parent PIN on this learner. You're already here.",
+  3: "Strict review by our team. Coming when BYOK / medical features ship.",
+};
+
+function CapabilityMap({ learner }: { learner: LearnerProfile }) {
+  const rung = computeRung(learner);
+  const grouped = useMemo(() => {
+    const m: Record<VerificationLevel, CapabilityKey[]> = { 0: [], 1: [], 2: [], 3: [] };
+    for (const key of Object.keys(CAPABILITY_POLICIES) as CapabilityKey[]) {
+      const r = CAPABILITY_POLICIES[key].minRung as VerificationLevel;
+      m[r].push(key);
+    }
+    return m;
+  }, []);
+
+  return (
+    <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid var(--accent)" }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <ShieldCheck className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
+          Capabilities · this learner is at rung {rung} · {RUNG_NAME[rung]}
+        </span>
+      </div>
+      <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
+        Each capability has a verification rung. Rooms appear in the kid's lobby only when their rung meets the rule.
+        The kid never sees a locked door — features are simply present or absent.
+      </div>
+
+      <div className="space-y-4">
+        {([0, 1, 2, 3] as VerificationLevel[]).map((r) => {
+          const keys = grouped[r];
+          if (keys.length === 0) return null;
+          const open = rung >= r;
+          return (
+            <div key={r}>
+              <div className="flex items-center gap-2 mb-1.5">
+                {open ? (
+                  <ShieldCheck className="w-3.5 h-3.5" style={{ color: "var(--success)" }} />
+                ) : (
+                  <ShieldAlert className="w-3.5 h-3.5" style={{ color: "var(--text-faint)" }} />
+                )}
+                <span
+                  className="text-[10px] uppercase tracking-widest font-bold"
+                  style={{ color: open ? "var(--success)" : "var(--text-faint)" }}
+                >
+                  Rung {r} · {RUNG_NAME[r]} {open ? "· active" : "· not yet"}
+                </span>
+              </div>
+              <div className="text-[11px] italic mb-2 pl-5" style={{ color: "var(--text-faint)" }}>
+                {RUNG_HOW_TO_PROMOTE[r]}
+              </div>
+              <ul className="space-y-1 pl-5">
+                {keys.map((k) => (
+                  <li
+                    key={k}
+                    className="text-xs flex items-baseline gap-2"
+                    style={{ color: open ? "var(--text)" : "var(--text-muted)", opacity: open ? 1 : 0.55 }}
+                  >
+                    <span className="text-[10px]">{open ? "✓" : "·"}</span>
+                    <span>{CAPABILITY_LABEL[k]}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
