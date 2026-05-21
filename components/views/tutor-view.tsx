@@ -90,9 +90,10 @@ export function TutorView({
           grade: learner.grade,
           board: learner.board,
           school: learner.school,
+          interests: learner.interests,
         }),
       }),
-    [subjectId, state.name, learner.grade, learner.board],
+    [subjectId, state.name, learner.grade, learner.board, learner.interests, learner.school],
   );
 
   const { messages, sendMessage, status, error, setMessages } = useChat({ transport });

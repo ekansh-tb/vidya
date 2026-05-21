@@ -84,13 +84,31 @@ const SUBJECT_BLURBS: Record<string, string> = {
 
 type Board = "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse";
 
-function systemPrompt(opts: { subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string }) {
-  const { subject, topic, name, grade, board, school } = opts;
+const INTEREST_HINT: Record<string, string> = {
+  drawing:  "sketching, doodles, comics, art",
+  sports:   "cricket, football, athletics, scoreboards",
+  music:    "songs, instruments, beats, sargam",
+  animals:  "pets, jungle, birds, marine life",
+  coding:   "logic puzzles, computers, robots",
+  stories:  "characters, plots, adventures, books",
+  dance:    "rhythm, choreography, beats per minute",
+  cooking:  "recipes, ingredients, kitchens",
+  space:    "planets, stars, rockets, the moon",
+  movies:   "scenes, cameras, plot twists",
+};
+
+function systemPrompt(opts: { subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[] }) {
+  const { subject, topic, name, grade, board, school, interests } = opts;
   const subjBlurb = subject ? SUBJECT_BLURBS[subject] : null;
   const learner = name?.split(" ")[0] || "the student";
   const schoolLabel = school || (board === "cambridge-igcse" ? "Chatrabhuj Narsee School, Pune"
     : board === "icse" ? "Wisdom World School, Hadapsar, Pune"
     : "Chatrabhuj Narsee School, Pune");
+  // Map the kid's interest tags into a one-line "draw examples from" hint so
+  // Miss Vidya's metaphors land for THIS kid rather than the average kid.
+  const interestLine = (interests && interests.length > 0)
+    ? `Personal anchors for ${learner}: they love ${interests.map((i) => INTEREST_HINT[i] ?? i).join(" · ")}. When you need an analogy or a worked example, prefer to draw it from one of these worlds.`
+    : "";
   const isIgcse = board === "cambridge-igcse" || (grade ?? 0) >= 9;
   const isIcseTeen = board === "icse" && (grade ?? 0) >= 6 && (grade ?? 0) <= 8;
   const icseClass = (grade ?? 0);
@@ -121,6 +139,7 @@ Style:
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : ""}
 ${scopeGuard ? "\n" + scopeGuard : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
+${interestLine}
 `;
   }
 
@@ -139,6 +158,7 @@ Style:
 
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
+${interestLine}
 `;
   }
 
@@ -155,17 +175,18 @@ Style:
 
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus context: ${subjBlurb}` : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
+${interestLine}
 `;
 }
 
 export async function POST(req: Request) {
-  let payload: { messages: UIMessage[]; subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string };
+  let payload: { messages: UIMessage[]; subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[] };
   try {
     payload = await req.json();
   } catch {
     return Response.json({ error: "Bad request" }, { status: 400 });
   }
-  const { messages, subject, topic, name, grade, board, school } = payload;
+  const { messages, subject, topic, name, grade, board, school, interests } = payload;
 
   if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY) {
     return new Response(
@@ -183,7 +204,7 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
       model: anthropic("claude-haiku-4-5"),
-      system: systemPrompt({ subject, topic, name, grade, board, school }),
+      system: systemPrompt({ subject, topic, name, grade, board, school, interests }),
       messages: modelMessages,
       maxOutputTokens: 900,
       temperature: 0.6,
