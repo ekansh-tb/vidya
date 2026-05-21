@@ -258,6 +258,10 @@ export type DailyReflection = {
   date: string;          // YYYY-MM-DD
   body: string;
   savedAt: string;       // ISO timestamp
+  /** When true, the parent's RecentReflections panel hides the body and shows
+   *  only the date + a "[kept private]" placeholder. The cadence still counts
+   *  toward wellness signals — privacy doesn't break the rhythm picture. */
+  private?: boolean;
 };
 
 /** A wrong answer persisted into the learner's notebook for later review. */

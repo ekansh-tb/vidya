@@ -570,9 +570,10 @@ function boardLabel(board: LearnerProfile["board"]): string {
 export function RecentReflections({ state, name }: { state: GameState; name: string }) {
   const reflections = state.dailyReflections || [];
   const recent = useMemo(
-    () => [...reflections].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 3),
+    () => [...reflections].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 5),
     [reflections],
   );
+  const privateCount = recent.filter((r) => r.private).length;
 
   if (recent.length === 0) return null;
 
@@ -586,6 +587,7 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
       </div>
       <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
         End-of-day thoughts the kid wrote themselves. Read once, gently. Don't quote back.
+        {privateCount > 0 && ` ${privateCount} of the last ${recent.length} are private — that's the kid's choice and we respect it.`}
       </div>
       <div className="space-y-3">
         {recent.map((r, i) => (
@@ -596,10 +598,17 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
           >
             <div className="text-[10px] uppercase tracking-widest font-bold mb-0.5" style={{ color: "var(--text-faint)" }}>
               {prettyDate(r.date)} · {prettyRelative(r.savedAt)}
+              {r.private && <span style={{ color: "#F472B6" }}> · 🔒 private</span>}
             </div>
-            <div className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>
-              {r.body}
-            </div>
+            {r.private ? (
+              <div className="text-sm italic" style={{ color: "var(--text-faint)" }}>
+                kept private by {name}
+              </div>
+            ) : (
+              <div className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>
+                {r.body}
+              </div>
+            )}
           </div>
         ))}
       </div>

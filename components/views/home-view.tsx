@@ -606,6 +606,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
   const setGameState = useGameStore((s) => s.set);
   const [draft, setDraft] = useState("");
   const [justSaved, setJustSaved] = useState(false);
+  const [keepPrivate, setKeepPrivate] = useState(false);
 
   const dateKey = todayKey();
   const today = new Date();
@@ -627,10 +628,11 @@ function DailyReflectionCard({ state }: { state: GameState }) {
       xp: s.xp + 5,
       dailyReflections: [
         ...(s.dailyReflections || []),
-        { date: dateKey, body, savedAt: new Date().toISOString() },
+        { date: dateKey, body, savedAt: new Date().toISOString(), private: keepPrivate || undefined },
       ],
     }));
     setDraft("");
+    setKeepPrivate(false);
     setJustSaved(true);
     setTimeout(() => setJustSaved(false), 1800);
   };
@@ -672,10 +674,16 @@ function DailyReflectionCard({ state }: { state: GameState }) {
             className="w-full px-3 py-2 rounded-xl text-sm resize-none text-white/95 placeholder:text-white/30"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
           />
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-[10px] italic text-white/35">
-              Your parent can read this · {draft.length}/200
-            </span>
+          <div className="flex items-center justify-between mt-2 gap-2">
+            <button
+              type="button"
+              onClick={() => { sfx.click(); setKeepPrivate((v) => !v); }}
+              className="text-[10px] italic flex items-center gap-1.5 active:scale-95"
+              style={{ color: keepPrivate ? "rgba(244,114,182,0.95)" : "rgba(255,255,255,0.45)" }}
+            >
+              <span className="text-sm leading-none">{keepPrivate ? "🔒" : "🔓"}</span>
+              {keepPrivate ? "Just for me" : "Your parent can read this"} · {draft.length}/200
+            </button>
             <button
               onClick={save}
               disabled={!draft.trim()}
