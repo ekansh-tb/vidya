@@ -63,6 +63,9 @@ export type LearnerProfile = {
   upcomingExams?: ExamDate[];
   /** A note from the parent to the kid. Shown on the kid's home until acknowledged. */
   familyNote?: FamilyNote;
+  /** Capability keys the parent has explicitly turned off for this learner, even
+   *  if the rung otherwise allows them. See [[dynamic-guardrails]]. */
+  disabledCapabilities?: string[];
   createdAt: string;
   state: GameState;
 };

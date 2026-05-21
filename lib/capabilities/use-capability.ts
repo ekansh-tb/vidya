@@ -30,6 +30,13 @@ export function useCapability(key: CapabilityKey): CapabilityResolution {
     const pol = CAPABILITY_POLICIES[key];
     if (!pol) return { allowed: false, reason: "feature_disabled" };
 
+    // Parent override beats everything: if a capability is in the
+    // disabledCapabilities list, it is denied regardless of rung. This is
+    // the "parents control AI without de-PINing" path from the vision.
+    if (learner.disabledCapabilities?.includes(key)) {
+      return { allowed: false, reason: "feature_disabled" };
+    }
+
     const rung = computeRung(learner);
     if (rung < pol.minRung) {
       return { allowed: false, reason: "below_min_rung" };

@@ -191,7 +191,7 @@ export function ParentView({
         />
 
         {/* Capability map ------------------------------------------------ */}
-        <CapabilityMap learner={learner} />
+        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
 
 
         {/* Stat grid (filtered to this kid) ----------------------------- */}
@@ -909,8 +909,14 @@ const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
   3: "Strict review by our team. Coming when BYOK / medical features ship.",
 };
 
-function CapabilityMap({ learner }: { learner: LearnerProfile }) {
+function CapabilityMap({
+  learner, onUpdateLearner,
+}: {
+  learner: LearnerProfile;
+  onUpdateLearner: (patch: Partial<Omit<LearnerProfile, "state" | "id">>) => void;
+}) {
   const rung = computeRung(learner);
+  const disabled = new Set(learner.disabledCapabilities || []);
   const grouped = useMemo(() => {
     const m: Record<VerificationLevel, CapabilityKey[]> = { 0: [], 1: [], 2: [], 3: [] };
     for (const key of Object.keys(CAPABILITY_POLICIES) as CapabilityKey[]) {
@@ -919,6 +925,13 @@ function CapabilityMap({ learner }: { learner: LearnerProfile }) {
     }
     return m;
   }, []);
+
+  const toggle = (key: CapabilityKey) => {
+    sfx.click();
+    const next = new Set(disabled);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    onUpdateLearner({ disabledCapabilities: Array.from(next) });
+  };
 
   return (
     <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid var(--accent)" }}>
@@ -956,17 +969,47 @@ function CapabilityMap({ learner }: { learner: LearnerProfile }) {
               <div className="text-[11px] italic mb-2 pl-5" style={{ color: "var(--text-faint)" }}>
                 {RUNG_HOW_TO_PROMOTE[r]}
               </div>
-              <ul className="space-y-1 pl-5">
-                {keys.map((k) => (
-                  <li
-                    key={k}
-                    className="text-xs flex items-baseline gap-2"
-                    style={{ color: open ? "var(--text)" : "var(--text-muted)", opacity: open ? 1 : 0.55 }}
-                  >
-                    <span className="text-[10px]">{open ? "✓" : "·"}</span>
-                    <span>{CAPABILITY_LABEL[k]}</span>
-                  </li>
-                ))}
+              <ul className="space-y-1.5 pl-5">
+                {keys.map((k) => {
+                  const isDisabled = disabled.has(k);
+                  const effectiveOn = open && !isDisabled;
+                  return (
+                    <li key={k} className="text-xs flex items-center gap-2 justify-between">
+                      <div className="flex items-baseline gap-2 min-w-0 flex-1">
+                        <span className="text-[10px]" style={{ color: effectiveOn ? "var(--success)" : "var(--text-faint)" }}>
+                          {effectiveOn ? "✓" : isDisabled ? "✗" : "·"}
+                        </span>
+                        <span
+                          className="truncate"
+                          style={{
+                            color: effectiveOn ? "var(--text)" : isDisabled ? "var(--text-muted)" : "var(--text-muted)",
+                            opacity: open ? 1 : 0.55,
+                            textDecoration: isDisabled ? "line-through" : "none",
+                          }}
+                        >
+                          {CAPABILITY_LABEL[k]}
+                        </span>
+                      </div>
+                      {open ? (
+                        <button
+                          onClick={() => toggle(k)}
+                          className="text-[9px] uppercase tracking-widest font-bold rounded-full px-2 py-0.5 flex-shrink-0 active:scale-95"
+                          style={{
+                            background: isDisabled ? "var(--surface)" : "rgba(52, 211, 153, 0.15)",
+                            color: isDisabled ? "var(--text-faint)" : "var(--success)",
+                            border: `1px solid ${isDisabled ? "var(--border)" : "rgba(52, 211, 153, 0.4)"}`,
+                          }}
+                        >
+                          {isDisabled ? "Off" : "On"}
+                        </button>
+                      ) : (
+                        <span className="text-[9px] uppercase tracking-widest font-bold flex-shrink-0" style={{ color: "var(--text-faint)" }}>
+                          —
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           );
