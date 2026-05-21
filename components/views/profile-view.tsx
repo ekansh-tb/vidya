@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2 } from "lucide-react";
+import { ChevronLeft, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart, Check } from "lucide-react";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
 import { AVATARS } from "@/lib/content/avatars";
@@ -11,6 +11,20 @@ import { xpToLevel } from "@/lib/economy";
 import type { GameState, LearnerProfile } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { resizeImageFile } from "@/lib/utils";
+import { useGameStore } from "@/lib/game-store";
+
+const INTEREST_CHIPS: { id: string; emoji: string; label: string }[] = [
+  { id: "drawing",  emoji: "🎨", label: "Drawing" },
+  { id: "sports",   emoji: "⚽", label: "Sports" },
+  { id: "music",    emoji: "🎵", label: "Music" },
+  { id: "animals",  emoji: "🐶", label: "Animals" },
+  { id: "coding",   emoji: "💻", label: "Coding" },
+  { id: "stories",  emoji: "📚", label: "Stories" },
+  { id: "dance",    emoji: "💃", label: "Dance" },
+  { id: "cooking",  emoji: "🍳", label: "Cooking" },
+  { id: "space",    emoji: "🪐", label: "Space" },
+  { id: "movies",   emoji: "🎬", label: "Movies" },
+];
 
 function describeBoard(board: LearnerProfile["board"]): string {
   if (board === "cambridge-primary") return "Cambridge Primary";
@@ -30,7 +44,18 @@ export function ProfileView({
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [interestsEditing, setInterestsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
+
+  const currentInterests = learner.interests || [];
+  const toggleInterest = (id: string) => {
+    sfx.click();
+    const next = currentInterests.includes(id)
+      ? currentInterests.filter((x) => x !== id)
+      : [...currentInterests, id];
+    updateLearnerMeta(learner.id, { interests: next });
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,6 +161,71 @@ export function ProfileView({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Interests — editable inline. Heart icon mirrors onboarding's
+            "what do you love?" prompt. */}
+        <div className="glass-card p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Heart className="w-3.5 h-3.5 text-fuchsia-300" />
+              <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">
+                What you love
+              </span>
+            </div>
+            <button
+              onClick={() => { sfx.click(); setInterestsEditing((v) => !v); }}
+              className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white active:scale-95"
+            >
+              {interestsEditing ? "Done" : currentInterests.length > 0 ? "Edit" : "Pick some"}
+            </button>
+          </div>
+          {!interestsEditing ? (
+            currentInterests.length === 0 ? (
+              <div className="text-xs italic text-white/40">
+                Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she'll use them in her examples.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {currentInterests.map((id) => {
+                  const chip = INTEREST_CHIPS.find((c) => c.id === id);
+                  if (!chip) return null;
+                  return (
+                    <div
+                      key={id}
+                      className="rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5"
+                      style={{ background: "rgba(244,114,182,0.15)", color: "rgba(244,114,182,0.95)" }}
+                    >
+                      <span className="text-sm leading-none">{chip.emoji}</span>
+                      <span>{chip.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+              {INTEREST_CHIPS.map((c) => {
+                const active = currentInterests.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleInterest(c.id)}
+                    className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95"
+                    style={{
+                      background: active ? "rgba(244,114,182,0.18)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${active ? "rgba(244,114,182,0.5)" : "rgba(255,255,255,0.08)"}`,
+                    }}
+                  >
+                    <span className="text-2xl">{c.emoji}</span>
+                    <span className={`text-[9px] uppercase tracking-wider font-semibold ${active ? "text-white" : "text-white/55"}`}>
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[
