@@ -30,11 +30,24 @@ type Phase = "story" | "form";
 const ACT_MS = 4200;
 const STORY_ACTS = 4;
 
+const INTERESTS: { id: string; emoji: string; label: string }[] = [
+  { id: "drawing",     emoji: "🎨", label: "Drawing" },
+  { id: "sports",      emoji: "⚽", label: "Sports" },
+  { id: "music",       emoji: "🎵", label: "Music" },
+  { id: "animals",     emoji: "🐶", label: "Animals" },
+  { id: "coding",      emoji: "💻", label: "Coding" },
+  { id: "stories",     emoji: "📚", label: "Stories" },
+  { id: "dance",       emoji: "💃", label: "Dance" },
+  { id: "cooking",     emoji: "🍳", label: "Cooking" },
+  { id: "space",       emoji: "🪐", label: "Space" },
+  { id: "movies",      emoji: "🎬", label: "Movies" },
+];
+
 export function OnboardingView({
   defaultName, onComplete,
 }: {
   defaultName: string;
-  onComplete: (data: { name: string; avatarId: string }) => Promise<void> | void;
+  onComplete: (data: { name: string; avatarId: string; interests: string[] }) => Promise<void> | void;
 }) {
   const reduced = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(reduced ? "form" : "story");
@@ -43,6 +56,11 @@ export function OnboardingView({
   const [name, setName] = useState(defaultName);
   const [step, setStep] = useState(0);
   const [avatarId, setAvatarId] = useState("peacock");
+  const [interests, setInterests] = useState<string[]>([]);
+  const toggleInterest = (id: string) => {
+    sfx.click();
+    setInterests((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
 
   // Auto-advance story acts. After the last one, drop into the form.
   useEffect(() => {
@@ -57,7 +75,7 @@ export function OnboardingView({
   const handleStart = async () => {
     await initAudio();
     sfx.coin();
-    await onComplete({ name: name.trim(), avatarId });
+    await onComplete({ name: name.trim(), avatarId, interests });
     setTimeout(() => {
       startMusic();
       vidya.greet(name.trim().split(" ")[0]);
@@ -172,6 +190,55 @@ export function OnboardingView({
               </div>
               <div className="flex gap-3 justify-center">
                 <Button variant="ghost" onClick={() => setStep(0)}>
+                  <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
+                </Button>
+                <Button size="lg" onClick={() => setStep(2)}>
+                  Next <ChevronRight className="inline w-5 h-5 -mt-0.5" />
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <h2 className="font-display text-4xl font-bold text-center mb-2 text-white">
+                What do you love?
+              </h2>
+              <p className="text-center text-white/60 mb-2 italic">
+                Pick a few. Or none — you can always tell me later.
+              </p>
+              <p className="text-center text-white/35 text-[11px] mb-8">
+                Vidya uses these to make examples about worlds you actually care about.
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-10 max-w-xl mx-auto">
+                {INTERESTS.map((i) => {
+                  const active = interests.includes(i.id);
+                  return (
+                    <motion.button
+                      key={i.id}
+                      onClick={() => toggleInterest(i.id)}
+                      whileTap={{ scale: 0.92 }}
+                      className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 transition-all ${
+                        active
+                          ? "glass-strong ring-2 ring-fuchsia-400 scale-[1.04] shadow-2xl shadow-fuchsia-500/30"
+                          : "glass hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="text-3xl">{i.emoji}</span>
+                      <span className={`text-[9px] font-semibold uppercase tracking-wider ${active ? "text-white" : "text-white/55"}`}>
+                        {i.label}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3 justify-center">
+                <Button variant="ghost" onClick={() => setStep(1)}>
                   <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
                 </Button>
                 <Button size="lg" onClick={handleStart}>

@@ -89,9 +89,9 @@ export default function HomePage() {
         <ThemeApplier theme={themeId} />
         <OnboardingView
           defaultName={learner.name || ""}
-          onComplete={async ({ name, avatarId }) => {
+          onComplete={async ({ name, avatarId, interests }) => {
             set((prev) => ({ ...prev, name, avatarId, onboarded: true }));
-            updateLearnerMeta(learner.id, { name });
+            updateLearnerMeta(learner.id, { name, interests });
           }}
         />
         <VoiceBubble />

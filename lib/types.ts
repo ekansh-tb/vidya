@@ -66,6 +66,10 @@ export type LearnerProfile = {
   /** Capability keys the parent has explicitly turned off for this learner, even
    *  if the rung otherwise allows them. See [[dynamic-guardrails]]. */
   disabledCapabilities?: string[];
+  /** Free-form interest tags the kid picked during onboarding (or in profile).
+   *  Threaded into AI prompts later so examples / stories / problems are
+   *  drawn from worlds the kid cares about. */
+  interests?: string[];
   createdAt: string;
   state: GameState;
 };
