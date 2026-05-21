@@ -33,6 +33,7 @@ export function HomeView({
   const todayQuestDone = state.dailyQuest?.completed && state.dailyQuest?.date === todayKey();
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
+  const setGameState = useGameStore((s) => s.set);
 
   // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
   const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
@@ -399,6 +400,9 @@ export function HomeView({
 
       {/* Hallway: experiences */}
       <div className="px-5">
+        {/* Daily reflection — kid-authored, end-of-day prompt */}
+        <DailyReflectionCard state={state} />
+
         {/* Review-your-misses banner — only shown when the kid has unresolved misses */}
         {(state.missedQuestions?.length ?? 0) > 0 && (
           <motion.button
@@ -586,5 +590,103 @@ function RoomTile({
         </div>
       )}
     </motion.button>
+  );
+}
+
+/**
+ * DailyReflectionCard — small kid-authored prompt.
+ *
+ * Shown only after 4 PM local time AND if today has no reflection saved.
+ * The kid types 1-2 sentences ("What did you learn today?") and saves.
+ * Stored under `state.dailyReflections` for parent visibility — labelled
+ * explicitly so the kid knows the parent can read them. Transparency
+ * over surveillance.
+ */
+function DailyReflectionCard({ state }: { state: GameState }) {
+  const setGameState = useGameStore((s) => s.set);
+  const [draft, setDraft] = useState("");
+  const [justSaved, setJustSaved] = useState(false);
+
+  const dateKey = todayKey();
+  const today = new Date();
+  const hour = today.getHours();
+  const todayDone = (state.dailyReflections || []).some((r) => r.date === dateKey);
+
+  // Only show after 4 PM local — natural reflection time, end of school day.
+  // Always show if already done today (so kid sees their saved thought + tomorrow).
+  const showCard = !todayDone && hour >= 16;
+  if (!showCard && !todayDone) return null;
+  if (todayDone) return null;
+
+  const save = () => {
+    const body = draft.trim();
+    if (!body) return;
+    sfx.coin();
+    setGameState((s) => ({
+      ...s,
+      xp: s.xp + 5,
+      dailyReflections: [
+        ...(s.dailyReflections || []),
+        { date: dateKey, body, savedAt: new Date().toISOString() },
+      ],
+    }));
+    setDraft("");
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1800);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-3xl p-4 mb-3 relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(52,211,153,0.12) 100%)",
+        border: "1px solid rgba(167,139,250,0.3)",
+      }}
+    >
+      {justSaved ? (
+        <div className="flex items-center gap-2 py-2">
+          <Check className="w-5 h-5 text-emerald-300" />
+          <div>
+            <div className="text-sm font-bold text-white">Reflection saved · +5 XP</div>
+            <div className="text-[11px] text-white/60">See you tomorrow.</div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center gap-1.5 mb-2">
+            <NotebookPen className="w-3.5 h-3.5 text-violet-300" />
+            <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
+              Today's reflection
+            </span>
+          </div>
+          <div className="text-sm font-medium text-white/95 mb-2 leading-snug">
+            What did you learn today?
+          </div>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, 200))}
+            placeholder="One sentence is enough."
+            rows={2}
+            className="w-full px-3 py-2 rounded-xl text-sm resize-none text-white/95 placeholder:text-white/30"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+          />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[10px] italic text-white/35">
+              Your parent can read this · {draft.length}/200
+            </span>
+            <button
+              onClick={save}
+              disabled={!draft.trim()}
+              className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest active:scale-95 disabled:opacity-40"
+              style={{ background: "rgba(167,139,250,0.3)", color: "white" }}
+            >
+              Save · +5 XP
+            </button>
+          </div>
+        </>
+      )}
+    </motion.div>
   );
 }

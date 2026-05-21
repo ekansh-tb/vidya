@@ -38,6 +38,7 @@ export const DEFAULT_STATE: GameState = {
   classNotes: [],
   buddyId: null,
   missedQuestions: [],
+  dailyReflections: [],
   settings: {
     sound: true, music: false, voice: true,
     musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9,

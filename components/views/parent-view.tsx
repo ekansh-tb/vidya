@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2 } from "lucide-react";
+import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
@@ -176,6 +176,9 @@ export function ParentView({
           note={learner.familyNote}
           onChange={(next) => onUpdateLearner({ familyNote: next })}
         />
+
+        {/* Kid's recent reflections (verbatim) --------------------------- */}
+        <RecentReflections state={state} name={learner.name || "your learner"} />
 
         {/* Wellness signals ---------------------------------------------- */}
         <WellnessSignals state={state} subjectStats={subjectStats} />
@@ -553,6 +556,51 @@ function boardLabel(board: LearnerProfile["board"]): string {
 }
 
 // -----------------------------------------------------------------------------
+// Recent reflections — the kid's verbatim end-of-day thoughts (last 3).
+// This is the most intimate surface; treat it with care.
+// -----------------------------------------------------------------------------
+
+function RecentReflections({ state, name }: { state: GameState; name: string }) {
+  const reflections = state.dailyReflections || [];
+  const recent = useMemo(
+    () => [...reflections].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 3),
+    [reflections],
+  );
+
+  if (recent.length === 0) return null;
+
+  return (
+    <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid #A78BFA" }}>
+      <div className="flex items-center gap-1.5 mb-2">
+        <NotebookPen className="w-3.5 h-3.5" style={{ color: "#A78BFA" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#A78BFA" }}>
+          {name}'s recent reflections
+        </span>
+      </div>
+      <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
+        End-of-day thoughts the kid wrote themselves. Read once, gently. Don't quote back.
+      </div>
+      <div className="space-y-3">
+        {recent.map((r, i) => (
+          <div
+            key={i}
+            className="pl-3 py-1"
+            style={{ borderLeft: "2px solid rgba(167,139,250,0.4)" }}
+          >
+            <div className="text-[10px] uppercase tracking-widest font-bold mb-0.5" style={{ color: "var(--text-faint)" }}>
+              {prettyDate(r.date)} · {prettyRelative(r.savedAt)}
+            </div>
+            <div className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>
+              {r.body}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
 // Family note composer — parent writes one message; kid sees it on home
 // and dismisses with "Got it". Only the most recent note is kept (saving
 // overwrites). This is the first explicit human-to-human surface inside
@@ -740,7 +788,25 @@ function WellnessSignals({
       });
     }
 
-    // Signal 4 — Subject concentration
+    // Signal 4 — Reflection cadence
+    const reflections = state.dailyReflections || [];
+    if (reflections.length > 0) {
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const recent = reflections.filter((r) => new Date(r.savedAt).getTime() >= cutoff).length;
+      out.push({
+        windowText: "Reflection cadence · last 7 days",
+        observation: `${recent} reflection${recent === 1 ? "" : "s"} written in the last week.`,
+        opinion:
+          recent >= 5
+            ? "This might mean a real journaling habit is forming. They're processing the day in their own words."
+            : recent >= 2
+              ? "This might mean reflection is becoming part of the rhythm — keep noticing it out loud."
+              : "This might mean today's prompt was a one-off. Let it land naturally, no need to push.",
+        tone: recent >= 2 ? "warm" : "neutral",
+      });
+    }
+
+    // Signal 5 — Subject concentration
     const totalAttempts = subjectStats.reduce((s, x) => s + x.attempts, 0);
     if (totalAttempts >= 20) {
       const top = subjectStats.slice().sort((a, b) => b.attempts - a.attempts)[0];

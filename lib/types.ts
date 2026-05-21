@@ -150,6 +150,7 @@ export type GameState = {
   classNotes: ClassNote[];
   buddyId: string | null;
   missedQuestions: MissedQuestion[];
+  dailyReflections: DailyReflection[];
   settings: {
     sound: boolean;
     music: boolean;
@@ -238,6 +239,13 @@ export type WrongAnswer = {
   correct: string;
   ex: string;
   isDeva?: boolean;
+};
+
+/** A one-line end-of-day reflection the kid types about what they learned. */
+export type DailyReflection = {
+  date: string;          // YYYY-MM-DD
+  body: string;
+  savedAt: string;       // ISO timestamp
 };
 
 /** A wrong answer persisted into the learner's notebook for later review. */

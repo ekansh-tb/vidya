@@ -4,20 +4,37 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Volume2 } from "lucide-react";
 import { onSpeechLine } from "@/lib/speech";
+import { useCapability } from "@/lib/capabilities/use-capability";
 
+/**
+ * Floating "Miss Vidya is saying…" bubble.
+ *
+ * Gated on the same `ai.tutor.full` capability as the rest of Miss Vidya
+ * (her room, the Ask-Miss-Vidya CTAs). When AI tutor is disallowed for
+ * the current learner, this bubble simply never appears — no copy
+ * about being locked, per [[parent-invisible-config]].
+ *
+ * Note: ambient sfx (correct-answer chimes, coin) still play; those
+ * are app feedback, not the AI tutor.
+ */
 export function VoiceBubble() {
   const [line, setLine] = useState<string | null>(null);
+  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
 
   useEffect(() => {
+    if (!aiTutorAllowed) {
+      setLine(null);
+      return;
+    }
     const unsubscribe = onSpeechLine(setLine);
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [aiTutorAllowed]);
 
   return (
     <AnimatePresence>
-      {line && (
+      {line && aiTutorAllowed && (
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
