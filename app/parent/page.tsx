@@ -3,11 +3,13 @@
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser, SignOutButton } from "@clerk/nextjs";
+import { Check, Copy, FileDown } from "lucide-react";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
+import type { LearnerProfile } from "@/lib/types";
 import {
   RecentReflections,
   WellnessSignals,
@@ -237,6 +239,7 @@ function SelectedLearnerView({
         />
         <RecentReflections state={state} name={learner.name || "your learner"} />
         <WellnessSignals state={state} subjectStats={subjectStats} />
+        <ReportExport learner={learner} subjectStats={subjectStats} />
       </div>
 
       <div className="space-y-4">
@@ -267,6 +270,154 @@ function SelectedLearnerView({
       </div>
     </div>
   );
+}
+
+// -----------------------------------------------------------------------------
+// Markdown report export — for sharing with teachers / paediatricians / self.
+// Parent owns the data; we just shape it into a useful document.
+// -----------------------------------------------------------------------------
+
+function ReportExport({
+  learner, subjectStats,
+}: {
+  learner: LearnerProfile;
+  subjectStats: { id: string; name: string; attempts: number; correct: number; mastery: number }[];
+}) {
+  const [copiedAt, setCopiedAt] = useState<number | null>(null);
+
+  const report = useMemo(() => buildMarkdownReport(learner, subjectStats), [learner, subjectStats]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopiedAt(Date.now());
+      setTimeout(() => setCopiedAt(null), 2200);
+    } catch {
+      // Fallback: open a textarea in a new window? For now, silently no-op.
+    }
+  };
+
+  const download = () => {
+    const blob = new Blob([report], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safeName = (learner.name || "learner").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    a.href = url;
+    a.download = `vidya-${safeName}-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Share report</div>
+          <div className="text-sm text-neutral-300 mt-0.5">
+            One markdown document. Share with a teacher, a paediatrician, or just save it for yourself.
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={copy}
+          className="rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 active:scale-95 transition"
+          style={{
+            background: copiedAt ? "rgba(52, 211, 153, 0.2)" : "rgba(167,139,250,0.18)",
+            color: copiedAt ? "#86efac" : "#c4b5fd",
+            border: `1px solid ${copiedAt ? "rgba(52, 211, 153, 0.4)" : "rgba(167,139,250,0.35)"}`,
+          }}
+        >
+          {copiedAt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          {copiedAt ? "Copied" : "Copy to clipboard"}
+        </button>
+        <button
+          onClick={download}
+          className="rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 active:scale-95 transition"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            color: "rgba(255,255,255,0.75)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <FileDown className="w-3.5 h-3.5" /> Download .md
+        </button>
+      </div>
+      <details className="mt-3">
+        <summary className="text-[11px] uppercase tracking-widest font-bold text-neutral-500 cursor-pointer hover:text-neutral-300">
+          Preview
+        </summary>
+        <pre className="mt-2 text-[11px] text-neutral-400 whitespace-pre-wrap font-mono leading-relaxed bg-neutral-950/60 border border-neutral-800 rounded-md p-3 max-h-80 overflow-auto">
+{report}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
+function buildMarkdownReport(
+  learner: LearnerProfile,
+  subjectStats: { name: string; attempts: number; correct: number; mastery: number }[],
+): string {
+  const state = learner.state;
+  const accuracy = state.stats.totalAnswered > 0
+    ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
+    : null;
+  const today = new Date().toISOString().slice(0, 10);
+
+  const subjectLines = subjectStats
+    .filter((s) => s.attempts > 0)
+    .sort((a, b) => b.mastery - a.mastery)
+    .map((s) => `- **${s.name}** — ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
+    .join("\n") || "_No subject attempts yet._";
+
+  const reflections = state.dailyReflections || [];
+  const latestReflections = [...reflections]
+    .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
+    .slice(0, 5)
+    .map((r) => `- _${r.date}_ — "${r.body}"`)
+    .join("\n") || "_No reflections yet._";
+
+  const examLines = (learner.upcomingExams || [])
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => `- **${e.date}** — ${e.title}`)
+    .join("\n") || "_None logged._";
+
+  const missesCount = state.missedQuestions?.length ?? 0;
+
+  return `# Vidya — ${learner.name || "Learner"} report
+
+_Generated ${today} on the family device. Numbers come from local sessions only._
+
+## Profile
+- **Grade**: ${learner.grade}
+- **Board**: ${learner.board}
+- **School**: ${learner.school || "—"}${learner.city ? ` (${learner.city})` : ""}
+- **Interests**: ${(learner.interests || []).join(", ") || "—"}
+
+## Snapshot
+- **Accuracy**: ${accuracy == null ? "—" : `${accuracy}%`}
+- **Questions answered**: ${state.stats.totalAnswered}
+- **Quizzes completed**: ${state.stats.quizzesCompleted}
+- **Daily quests completed**: ${state.stats.dailyQuestsCompleted}
+- **Current streak**: ${state.streak} day${state.streak === 1 ? "" : "s"}
+- **Longest streak**: ${state.longestStreak || 0} day${state.longestStreak === 1 ? "" : "s"}
+- **Wrong-Answer Notebook**: ${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try
+
+## Subject mastery
+${subjectLines}
+
+## Recent reflections (kid's own words)
+${latestReflections}
+
+## Upcoming exams
+${examLines}
+
+---
+
+_All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims — only opines._
+`;
 }
 
 function StatTile({ label, value }: { label: string; value: string }) {
