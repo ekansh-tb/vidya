@@ -14,6 +14,7 @@ import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
 import { packFor } from "@/lib/content/packs";
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
+import { useCapability } from "@/lib/capabilities/use-capability";
 
 type SectionId = "overview" | "syllabus" | "flash" | "quiz" | "mistakes" | "cheat";
 
@@ -47,6 +48,7 @@ export function ExamPrepView({
   const pack = currentId ? packFor(currentId, grade) : undefined;
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("overview");
+  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
 
   // Reset section when pack changes
   useEffect(() => { setSection("overview"); }, [currentId]);
@@ -165,6 +167,7 @@ export function ExamPrepView({
               onJump={(s) => setSection(s)}
               onAskMissVidya={() => onNavigate("tutor", { subjectId: pack.subjectId })}
               onOpenNotebook={() => onNavigate("notebook", { subjectId: pack.subjectId })}
+              aiTutorAllowed={aiTutorAllowed}
             />
           )}
           {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} />}
@@ -182,12 +185,13 @@ export function ExamPrepView({
 // Overview
 // =====================
 function OverviewSection({
-  pack, onJump, onAskMissVidya, onOpenNotebook,
+  pack, onJump, onAskMissVidya, onOpenNotebook, aiTutorAllowed,
 }: {
   pack: ExamPack;
   onJump: (s: SectionId) => void;
   onAskMissVidya: () => void;
   onOpenNotebook: () => void;
+  aiTutorAllowed: boolean;
 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -212,14 +216,16 @@ function OverviewSection({
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        <button
-          onClick={onAskMissVidya}
-          className="rounded-[var(--radius-md)] p-3 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
-          style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-        >
-          <MessageCircle className="w-4 h-4" /> Ask Miss Vidya
-        </button>
+      <div className={`grid ${aiTutorAllowed ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-4`}>
+        {aiTutorAllowed && (
+          <button
+            onClick={onAskMissVidya}
+            className="rounded-[var(--radius-md)] p-3 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <MessageCircle className="w-4 h-4" /> Ask Miss Vidya
+          </button>
+        )}
         <button onClick={onOpenNotebook} className="rounded-[var(--radius-md)] p-3 flex items-center justify-center gap-2 text-sm font-semibold glass active:scale-95" style={{ color: "var(--text)" }}>
           <NotebookPen className="w-4 h-4" /> Notebook
         </button>

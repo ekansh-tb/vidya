@@ -14,6 +14,7 @@ import { DiyaCompanion } from "@/components/effects/diya";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
 import { packFor } from "@/lib/content/packs";
+import { useCapability } from "@/lib/capabilities/use-capability";
 import { xpToLevel } from "@/lib/economy";
 import { todayKey } from "@/lib/utils";
 import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
@@ -29,6 +30,7 @@ export function HomeView({
 }) {
   const { level, xpInLevel, xpNeeded } = xpToLevel(state.xp);
   const todayQuestDone = state.dailyQuest?.completed && state.dailyQuest?.date === todayKey();
+  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -390,13 +392,15 @@ export function HomeView({
             onClick={() => { sfx.click(); onNavigate("assembly"); }}
             badge={state.lastAssemblyDate === todayKey() ? undefined : "Today"}
           />
-          <RoomTile
-            icon={<MessageCircle className="w-5 h-5 text-violet-300" />}
-            label="Miss Vidya"
-            accent="rgba(167, 139, 250, 0.15)"
-            onClick={() => { sfx.click(); onNavigate("tutor"); }}
-            badge="AI"
-          />
+          {aiTutorAllowed && (
+            <RoomTile
+              icon={<MessageCircle className="w-5 h-5 text-violet-300" />}
+              label="Miss Vidya"
+              accent="rgba(167, 139, 250, 0.15)"
+              onClick={() => { sfx.click(); onNavigate("tutor"); }}
+              badge="AI"
+            />
+          )}
           <RoomTile
             icon={<Globe className="w-5 h-5 text-cyan-300" />}
             label="Field Trip"

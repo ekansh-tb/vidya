@@ -9,6 +9,7 @@ import type { GameState, LearnerProfile, ViewName, SubjectId } from "@/lib/types
 import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
 import { useEffect } from "react";
+import { useCapability } from "@/lib/capabilities/use-capability";
 
 export function SubjectView({
   subjectId, state, learner, onNavigate, onBack, voiceEnabled,
@@ -25,6 +26,7 @@ export function SubjectView({
   const hasQuiz = Object.keys(quizTopics).length > 0;
   const pack = packFor(subjectId, learner.grade);
   const Icon = subject.icon;
+  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
 
   useEffect(() => {
     if (voiceEnabled) {
@@ -89,7 +91,7 @@ export function SubjectView({
                 <Sparkles className="w-4 h-4" />
                 Exam Prep
               </button>
-            ) : (
+            ) : aiTutorAllowed ? (
               <button
                 onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
                 className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
@@ -97,6 +99,15 @@ export function SubjectView({
               >
                 <MessageCircle className="w-4 h-4" />
                 Ask Miss Vidya
+              </button>
+            ) : (
+              <button
+                onClick={() => { sfx.click(); onNavigate("notebook", { subjectId }); }}
+                className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
+                style={{ background: subject.soft, color: subject.accent }}
+              >
+                <NotebookPen className="w-4 h-4" />
+                Take notes
               </button>
             )}
             <button
@@ -107,7 +118,7 @@ export function SubjectView({
               Notebook
             </button>
           </div>
-          {pack && (
+          {pack && aiTutorAllowed && (
             <div className="relative mt-2">
               <button
                 onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
@@ -239,14 +250,16 @@ export function SubjectView({
               We&apos;re still writing topic-level content for this classroom. In the meantime, you can chat with Miss Vidya
               or jot notes.
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
-                className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
-                style={{ background: subject.soft, color: subject.accent }}
-              >
-                <MessageCircle className="w-4 h-4" /> Ask Miss Vidya
-              </button>
+            <div className={`grid ${aiTutorAllowed ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
+              {aiTutorAllowed && (
+                <button
+                  onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
+                  className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
+                  style={{ background: subject.soft, color: subject.accent }}
+                >
+                  <MessageCircle className="w-4 h-4" /> Ask Miss Vidya
+                </button>
+              )}
               <button
                 onClick={() => { sfx.click(); onNavigate("notebook", { subjectId }); }}
                 className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-white/85 glass active:scale-95"

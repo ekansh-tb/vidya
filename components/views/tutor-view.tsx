@@ -10,6 +10,7 @@ import { DiyaCompanion } from "@/components/effects/diya";
 import { SUBJECT_MAP, subjectsForLearner } from "@/lib/content/subjects";
 import type { GameState, LearnerProfile, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
+import { useCapability } from "@/lib/capabilities/use-capability";
 
 const SUGGESTED: Partial<Record<SubjectId, string[]>> = {
   maths:    ["What is 25% of 80?", "How do I add 1/2 + 1/4?", "Explain BODMAS in 2 lines"],
@@ -40,6 +41,8 @@ export function TutorView({
   initialSubject?: SubjectId;
   onBack: () => void;
 }) {
+  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
+
   const subjectList = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
   const defaultSubject: SubjectId =
     initialSubject && subjectList.find((s) => s.id === initialSubject)
@@ -48,6 +51,33 @@ export function TutorView({
   const [subjectId, setSubjectId] = useState<SubjectId>(defaultSubject);
   const [input, setInput] = useState("");
   const subject = SUBJECT_MAP[subjectId] || subjectList[0];
+
+  // Deep-link defense: if a kid lands here without rung-2 (no parent PIN
+  // set on this learner), render a neutral placeholder rather than
+  // exposing the AI surface. The kid sees no gate explanation — per
+  // [[parent-invisible-config]] the room is simply "preparing".
+  if (!aiTutorAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 max-w-2xl mx-auto">
+        <div className="text-center">
+          <div className="text-7xl mb-4 opacity-60">🌒</div>
+          <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
+            This room isn't open yet
+          </h2>
+          <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
+            Try the Library, Field Trip, or Music room instead — they're already waiting.
+          </p>
+          <button
+            onClick={() => { sfx.click(); onBack(); }}
+            className="rounded-[var(--radius-md)] px-5 py-2.5 text-sm font-semibold active:scale-95"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <ChevronLeft className="w-4 h-4 inline -mt-0.5" /> Back to school
+          </button>
+        </div>
+      </div>
+    );
+  }
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const transport = useMemo(
