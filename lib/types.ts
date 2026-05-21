@@ -70,6 +70,11 @@ export type LearnerProfile = {
    *  Threaded into AI prompts later so examples / stories / problems are
    *  drawn from worlds the kid cares about. */
   interests?: string[];
+  /** Short, parent-authored prose the AI tutor reads in its system prompt.
+   *  "Things to know about this kid" — accommodations, sensitivities,
+   *  tone preferences, energy levels. NOT medical (medical lives at
+   *  rung 3). 500-char limit so it stays as care guidance not a memoir. */
+  careNote?: string;
   createdAt: string;
   state: GameState;
 };

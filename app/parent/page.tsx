@@ -15,6 +15,7 @@ import {
   WellnessSignals,
   CapabilityMap,
   FamilyNoteComposer,
+  CareNoteComposer,
 } from "@/components/views/parent-view";
 
 /**
@@ -236,6 +237,11 @@ function SelectedLearnerView({
           name={learner.name || "your learner"}
           note={learner.familyNote}
           onChange={(next) => onUpdateLearner({ familyNote: next })}
+        />
+        <CareNoteComposer
+          name={learner.name || "your learner"}
+          note={learner.careNote}
+          onChange={(next) => onUpdateLearner({ careNote: next })}
         />
         <RecentReflections state={state} name={learner.name || "your learner"} />
         <WellnessSignals state={state} subjectStats={subjectStats} />

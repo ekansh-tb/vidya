@@ -177,6 +177,13 @@ export function ParentView({
           onChange={(next) => onUpdateLearner({ familyNote: next })}
         />
 
+        {/* Care note — parent teaches AI how to care for this specific kid */}
+        <CareNoteComposer
+          name={learner.name || "your learner"}
+          note={learner.careNote}
+          onChange={(next) => onUpdateLearner({ careNote: next })}
+        />
+
         {/* Kid's recent reflections (verbatim) --------------------------- */}
         <RecentReflections state={state} name={learner.name || "your learner"} />
 
@@ -687,6 +694,100 @@ export function FamilyNoteComposer({
               )}
               <Button size="sm" onClick={save} disabled={!draft.trim()}>
                 <Send className="w-3.5 h-3.5" /> {note ? "Replace note" : "Send to home"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Care note composer — short prose the AI tutor reads when teaching this kid.
+// Distinct from FamilyNote: that's a message to the kid; this is context for
+// the AI. Parents teach AI to care.
+// -----------------------------------------------------------------------------
+
+export function CareNoteComposer({
+  name, note, onChange,
+}: {
+  name: string;
+  note?: string;
+  onChange: (next: string | undefined) => void;
+}) {
+  const [draft, setDraft] = useState(note || "");
+  const [editing, setEditing] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const save = () => {
+    const trimmed = draft.trim();
+    onChange(trimmed || undefined);
+    sfx.click();
+    setSavedFlash(true);
+    setEditing(false);
+    setTimeout(() => setSavedFlash(false), 1500);
+  };
+
+  return (
+    <div className="glass-card p-4 mb-5" style={{ borderTop: "2px solid #22D3EE" }}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Heart className="w-3.5 h-3.5" style={{ color: "#22D3EE" }} />
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#22D3EE" }}>
+            How to care for {name}
+          </span>
+        </div>
+        {!editing && (
+          <button
+            onClick={() => { sfx.click(); setEditing(true); setDraft(note || ""); }}
+            className="text-[10px] uppercase tracking-widest font-bold active:scale-95"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {note ? "Edit" : "Write"}
+          </button>
+        )}
+        {savedFlash && (
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--success)" }}>
+            Saved
+          </span>
+        )}
+      </div>
+      <div className="text-[11px] italic mb-3" style={{ color: "var(--text-faint)" }}>
+        Miss Vidya reads this before talking to {name}. Tone, focus, things to encourage,
+        things to skip. Not medical — medical lives behind stricter verification.
+      </div>
+      {!editing ? (
+        note ? (
+          <div
+            className="rounded-[var(--radius-md)] px-3 py-2.5 text-sm whitespace-pre-wrap"
+            style={{ background: "rgba(34, 211, 238, 0.08)", color: "var(--text)" }}
+          >
+            {note}
+          </div>
+        ) : (
+          <div className="text-xs italic" style={{ color: "var(--text-faint)" }}>
+            Nothing written yet. Tap "Write" to give the AI tutor some context.
+          </div>
+        )
+      ) : (
+        <div>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, 500))}
+            placeholder={`e.g. "Aanya gets discouraged when corrected directly. Ask gentle leading questions instead. She loves Marathi but feels shy about her English — be extra encouraging there."`}
+            rows={5}
+            className="w-full px-3 py-2 rounded-[var(--radius-md)] text-sm resize-none"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+          />
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>{draft.length}/500</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraft(note || ""); }}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={save}>
+                Save
               </Button>
             </div>
           </div>

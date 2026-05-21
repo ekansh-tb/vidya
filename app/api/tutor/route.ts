@@ -97,8 +97,8 @@ const INTEREST_HINT: Record<string, string> = {
   movies:   "scenes, cameras, plot twists",
 };
 
-function systemPrompt(opts: { subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[] }) {
-  const { subject, topic, name, grade, board, school, interests } = opts;
+function systemPrompt(opts: { subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[]; careNote?: string }) {
+  const { subject, topic, name, grade, board, school, interests, careNote } = opts;
   const subjBlurb = subject ? SUBJECT_BLURBS[subject] : null;
   const learner = name?.split(" ")[0] || "the student";
   const schoolLabel = school || (board === "cambridge-igcse" ? "Chatrabhuj Narsee School, Pune"
@@ -108,6 +108,11 @@ function systemPrompt(opts: { subject?: string; topic?: string; name?: string; g
   // Miss Vidya's metaphors land for THIS kid rather than the average kid.
   const interestLine = (interests && interests.length > 0)
     ? `Personal anchors for ${learner}: they love ${interests.map((i) => INTEREST_HINT[i] ?? i).join(" · ")}. When you need an analogy or a worked example, prefer to draw it from one of these worlds.`
+    : "";
+  // Parent-authored care guidance — parent teaches AI to care. Treated as
+  // authoritative tone/care context, not as facts to repeat back to the kid.
+  const careLine = (careNote && careNote.trim().length > 0)
+    ? `Care guidance from ${learner}'s parent (read but do NOT quote): ${careNote.trim()}`
     : "";
   const isIgcse = board === "cambridge-igcse" || (grade ?? 0) >= 9;
   const isIcseTeen = board === "icse" && (grade ?? 0) >= 6 && (grade ?? 0) <= 8;
@@ -140,6 +145,7 @@ ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : 
 ${scopeGuard ? "\n" + scopeGuard : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
 ${interestLine}
+${careLine}
 `;
   }
 
@@ -159,6 +165,7 @@ Style:
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
 ${interestLine}
+${careLine}
 `;
   }
 
@@ -176,17 +183,18 @@ Style:
 ${subjBlurb ? `Current classroom: ${subject}.\nSyllabus context: ${subjBlurb}` : ""}
 ${topic ? `Current topic: ${topic}.` : ""}
 ${interestLine}
+${careLine}
 `;
 }
 
 export async function POST(req: Request) {
-  let payload: { messages: UIMessage[]; subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[] };
+  let payload: { messages: UIMessage[]; subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[]; careNote?: string };
   try {
     payload = await req.json();
   } catch {
     return Response.json({ error: "Bad request" }, { status: 400 });
   }
-  const { messages, subject, topic, name, grade, board, school, interests } = payload;
+  const { messages, subject, topic, name, grade, board, school, interests, careNote } = payload;
 
   if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY) {
     return new Response(
@@ -204,7 +212,7 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
       model: anthropic("claude-haiku-4-5"),
-      system: systemPrompt({ subject, topic, name, grade, board, school, interests }),
+      system: systemPrompt({ subject, topic, name, grade, board, school, interests, careNote }),
       messages: modelMessages,
       maxOutputTokens: 900,
       temperature: 0.6,
