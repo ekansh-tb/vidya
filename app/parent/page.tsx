@@ -1,24 +1,44 @@
-import { redirect } from "next/navigation";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { SignOutButton } from "@clerk/nextjs";
+"use client";
+
+import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
+import { useUser, SignOutButton } from "@clerk/nextjs";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
+import { useGameStore } from "@/lib/game-store";
+import { subjectsForLearner } from "@/lib/content/subjects";
+import { QUESTIONS } from "@/lib/content/questions";
+import {
+  RecentReflections,
+  WellnessSignals,
+  CapabilityMap,
+  FamilyNoteComposer,
+} from "@/components/views/parent-view";
 
 /**
- * Parent dashboard. Clerk-gated (also enforced in middleware.ts — this
- * server check is defence in depth so a misconfigured middleware can't
- * expose it).
+ * Parent Clerk dashboard.
  *
- * No durable backend is wired yet. The dashboard surfaces the signed-in
- * identity and an OpinionCard preview. Cross-device learner state lives
- * in localStorage on the kid's device for now; a sync layer can be
- * added later if/when families need it.
+ * Same-device contract: a parent signing into /parent on the same browser
+ * the kid uses sees that kid's localStorage learners. Cross-device sync
+ * is a future commit (needs a DB).
+ *
+ * The dashboard mirrors the in-kid-app parent room (parent-view.tsx) but
+ * with no PIN gate (Clerk auth IS the gate), a learner picker, and a
+ * desktop-friendly layout.
  */
-export default async function ParentDashboardPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in?next=/parent");
+export default function ParentDashboardPage() {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { profiles, hydrated, hydrate, updateLearnerMeta, switchLearner } = useGameStore();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const user = await currentUser();
+  useEffect(() => { hydrate(); }, [hydrate]);
+
+  const learners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
+  const selected = useMemo(
+    () => (selectedId && profiles.learners[selectedId]) || learners[0] || null,
+    [selectedId, profiles.learners, learners],
+  );
+
   const displayName =
     user?.firstName?.trim() ||
     user?.username ||
@@ -26,117 +46,244 @@ export default async function ParentDashboardPage() {
     "Parent";
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
 
+  // Loading guard
+  if (!isLoaded || !hydrated) {
+    return (
+      <main className="min-h-screen flex items-center justify-center text-neutral-400">
+        <CosmicBg mode="parent" intensity={0.6} />
+        <div className="text-sm">Loading…</div>
+      </main>
+    );
+  }
+
+  if (!isSignedIn) {
+    // Defence in depth — middleware should already gate this, but if for any
+    // reason the user isn't signed in, point them home rather than crash.
+    return (
+      <main className="min-h-screen flex items-center justify-center text-neutral-400">
+        <CosmicBg mode="parent" intensity={0.6} />
+        <div className="text-sm">
+          <Link href="/sign-in?next=/parent" className="text-violet-400 hover:text-violet-300 underline">
+            Sign in to continue →
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen text-neutral-100 relative">
       <CosmicBg mode="parent" intensity={0.6} />
-      <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm">
+      <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-neutral-500">Vidya · Parent</div>
             <h1 className="font-display text-2xl font-bold mt-1">Dashboard</h1>
           </div>
-          <SignOutButton>
-            <button
-              type="submit"
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
               className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
             >
-              Sign out
-            </button>
-          </SignOutButton>
+              Kid app →
+            </Link>
+            <SignOutButton>
+              <button
+                type="submit"
+                className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
+              >
+                Sign out
+              </button>
+            </SignOutButton>
+          </div>
         </div>
       </header>
 
-      <section className="max-w-5xl mx-auto px-6 py-10 space-y-8">
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-1">Signed in as</div>
-          <div className="text-base font-semibold">{displayName}</div>
-          {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
+      <section className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        {/* Identity strip */}
+        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-1">Signed in as</div>
+            <div className="text-base font-semibold">{displayName}</div>
+            {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
+          </div>
+          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
+            {learners.length} learner{learners.length === 1 ? "" : "s"} on this device
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card
-            label="Learners on this account"
-            value="—"
-            footer="Sync activates after the Supabase migration runs and the kid-claim flow lands."
-          />
-          <Card
-            label="Verification rung"
-            value="Rung 2"
-            footer="Parent-verified once you confirm your email. Rung 3 (BYOK + incognito) needs ops review."
-          />
-          <Card
-            label="Data isolation"
-            value="Enforced"
-            footer="Each kid's data sealed to their profile via Clerk role + RLS."
-          />
-        </div>
+        {/* Empty state — no learners yet */}
+        {learners.length === 0 && (
+          <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
+            <h2 className="font-display text-xl font-bold mb-2">No learner profiles yet on this browser</h2>
+            <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
+              The kid creates their profile from the lobby — name, avatar, what they love.
+              Once they do, this dashboard fills up with their signals automatically.
+            </p>
+            <Link
+              href="/"
+              className="inline-block rounded-md bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 transition"
+            >
+              Open the kid app →
+            </Link>
+          </div>
+        )}
 
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display text-lg font-bold">Preview · how findings will look</h2>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">
-              Sample data — not yet linked to a real learner
+        {/* Learner picker (only show if multiple) */}
+        {learners.length > 1 && selected && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 flex-shrink-0">
+              Viewing
             </span>
+            {learners.map((l) => {
+              const active = l.id === selected.id;
+              return (
+                <button
+                  key={l.id}
+                  onClick={() => { setSelectedId(l.id); switchLearner(l.id); }}
+                  className="rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition"
+                  style={{
+                    background: active ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${active ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
+                    color: active ? "rgb(196, 181, 253)" : "rgba(255,255,255,0.65)",
+                  }}
+                >
+                  {l.name || "Unnamed"} · Gr {l.grade}
+                </button>
+              );
+            })}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <OpinionCard
-              tone="academic"
-              window="Last 7 days · Mathematics"
-              observation="62% of attempted questions were on fractions; 41% accuracy there."
-              opinion="This might mean fractions are a current sticking point. Other Maths topics this week were 78%+, so it looks topic-specific, not a broad slip."
-              escalation={{ label: "Worth a chat with the class teacher", to: "teacher" }}
-            />
-            <OpinionCard
-              tone="medical"
-              window="Across the last 4 sessions"
-              observation="Average session length dropped 38% after 7pm."
-              opinion="This might mean evening sessions are tiring. Light or screen-time could be a factor — worth seeing if morning sessions feel different."
-              escalation={{ label: "Worth a doctor's note if it persists", to: "doctor" }}
-            />
-            <OpinionCard
-              tone="warm"
-              window="This week"
-              observation="3 new badges unlocked; longest streak in 6 weeks."
-              opinion="This might be a good week to celebrate out loud — momentum is real and visible to your learner."
-              escalation={{ label: "A note from you on the class noticeboard?", to: "self" }}
-            />
-          </div>
-          <p className="mt-3 text-[10px] text-neutral-600 leading-relaxed max-w-3xl">
-            Every finding the parent dashboard ever shows will be shaped exactly like this:
-            <span className="text-neutral-400"> data window + observed % + &quot;this might mean…&quot; + a human to escalate to.</span>{" "}
-            No claims. No verdicts. You stay in charge.
-          </p>
-        </section>
+        )}
 
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-5">
-          <h2 className="font-display text-lg font-bold mb-1">What lives here next</h2>
-          <ul className="text-sm text-neutral-400 space-y-1.5 mt-3">
-            <li>· <span className="text-neutral-200">Add a learner</span> — issue a claim code that lets your kid sign in (or auto-link via same Wi-Fi)</li>
-            <li>· <span className="text-neutral-200">Health profile</span> per kid — advisories, doctor-recommended therapy tracks (rung 3)</li>
-            <li>· <span className="text-neutral-200">AI configuration</span> — bring your own keys (OpenAI / Anthropic / Grok / OpenRouter / Gemini), route by subject (rung 3)</li>
-            <li>· <span className="text-neutral-200">Exam schedule</span> — dates in, reminders out, revision curated automatically (rung 2)</li>
-            <li>· <span className="text-neutral-200">Analytics</span> — opinions, never claims; every finding shows the data behind it</li>
-            <li>· <span className="text-neutral-200">Incognito toggles</span> — what each kid can and can&apos;t see in their lobby (rung 3, parent-invisible)</li>
-          </ul>
-        </div>
+        {selected && (
+          <SelectedLearnerView
+            key={selected.id}
+            learner={selected}
+            onUpdateLearner={(patch) => updateLearnerMeta(selected.id, patch)}
+          />
+        )}
 
-        <p className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6">
+        <footer className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6 mt-8">
           VIDYA is built so that AI and humans can take care of each other.
           You teach the AI how to teach your kid; the AI helps your kid
           flourish; we both observe quietly. Nothing here is ever a claim —
           only an opinion you can verify, override, or discard.
-        </p>
+        </footer>
       </section>
     </main>
   );
 }
 
-function Card({ label, value, footer }: { label: string; value: string; footer: string }) {
+function SelectedLearnerView({
+  learner, onUpdateLearner,
+}: {
+  learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
+  onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
+}) {
+  const state = learner.state;
+  const accuracy = state.stats.totalAnswered > 0
+    ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
+    : null;
+
+  const learnerSubjects = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
+  const subjectStats = useMemo(
+    () => learnerSubjects.map((s) => {
+      const topics = Object.keys(QUESTIONS[s.id] || {});
+      let attempts = 0, correct = 0, masterySum = 0;
+      topics.forEach((t) => {
+        const p = state.progress?.[s.id]?.[t];
+        if (p) { attempts += p.attempts || 0; correct += p.correct || 0; masterySum += p.mastery || 0; }
+      });
+      return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : 0 };
+    }),
+    [learnerSubjects, state.progress],
+  );
+
   return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">{label}</div>
-      <div className="font-display text-3xl font-bold mt-1.5 tracking-tight">{value}</div>
-      <div className="text-[11px] text-neutral-500 mt-1.5 leading-snug">{footer}</div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Top-of-fold opinion + identity */}
+      <div className="md:col-span-3 rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Profile</div>
+        <div className="font-display text-3xl font-bold mt-1">{learner.name || "Unnamed learner"}</div>
+        <div className="text-xs text-neutral-500 mt-0.5">
+          Grade {learner.grade} · {boardLabel(learner.board)}
+          {learner.school ? ` · ${learner.school}` : ""}
+          {learner.city ? ` · ${learner.city}` : ""}
+        </div>
+        {learner.interests && learner.interests.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 self-center mr-1">
+              loves
+            </span>
+            {learner.interests.map((i) => (
+              <span
+                key={i}
+                className="text-[11px] rounded-full px-2 py-0.5"
+                style={{ background: "rgba(167,139,250,0.12)", color: "rgba(196,181,253,0.95)" }}
+              >
+                {i}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Two-column body: communications + insights */}
+      <div className="md:col-span-2 space-y-4">
+        <FamilyNoteComposer
+          name={learner.name || "your learner"}
+          note={learner.familyNote}
+          onChange={(next) => onUpdateLearner({ familyNote: next })}
+        />
+        <RecentReflections state={state} name={learner.name || "your learner"} />
+        <WellnessSignals state={state} subjectStats={subjectStats} />
+      </div>
+
+      <div className="space-y-4">
+        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+
+        {/* Headline snapshot card */}
+        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
+          <div className="grid grid-cols-2 gap-3">
+            <StatTile label="Accuracy" value={accuracy == null ? "—" : `${accuracy}%`} />
+            <StatTile label="Quizzes" value={String(state.stats.quizzesCompleted)} />
+            <StatTile label="Streak" value={`${state.streak}d`} />
+            <StatTile label="Longest" value={`${state.longestStreak || 0}d`} />
+          </div>
+        </div>
+
+        {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
+        <OpinionCard
+          tone="warm"
+          window="Over the whole profile"
+          observation={`${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`}
+          opinion={
+            state.stats.totalAnswered === 0
+              ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
+              : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
+          }
+        />
+      </div>
     </div>
   );
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">{label}</div>
+      <div className="font-display text-2xl font-bold mt-0.5 tracking-tight">{value}</div>
+    </div>
+  );
+}
+
+function boardLabel(board: string): string {
+  switch (board) {
+    case "cambridge-primary": return "Cambridge Primary";
+    case "cambridge-igcse": return "Cambridge IGCSE";
+    case "icse": return "ICSE / CISCE";
+    case "cbse": return "CBSE / NCERT";
+    default: return board;
+  }
 }

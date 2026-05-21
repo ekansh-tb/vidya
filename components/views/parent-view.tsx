@@ -560,7 +560,7 @@ function boardLabel(board: LearnerProfile["board"]): string {
 // This is the most intimate surface; treat it with care.
 // -----------------------------------------------------------------------------
 
-function RecentReflections({ state, name }: { state: GameState; name: string }) {
+export function RecentReflections({ state, name }: { state: GameState; name: string }) {
   const reflections = state.dailyReflections || [];
   const recent = useMemo(
     () => [...reflections].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 3),
@@ -607,7 +607,7 @@ function RecentReflections({ state, name }: { state: GameState; name: string }) 
 // Vidya — not configuration, but a real message.
 // -----------------------------------------------------------------------------
 
-function FamilyNoteComposer({
+export function FamilyNoteComposer({
   name, note, onChange,
 }: {
   name: string;
@@ -726,7 +726,7 @@ type Signal = {
   tone: SignalTone;
 };
 
-function WellnessSignals({
+export function WellnessSignals({
   state, subjectStats,
 }: {
   state: GameState;
@@ -909,7 +909,7 @@ const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
   3: "Strict review by our team. Coming when BYOK / medical features ship.",
 };
 
-function CapabilityMap({
+export function CapabilityMap({
   learner, onUpdateLearner,
 }: {
   learner: LearnerProfile;
