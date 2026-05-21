@@ -75,6 +75,9 @@ export type LearnerProfile = {
    *  tone preferences, energy levels. NOT medical (medical lives at
    *  rung 3). 500-char limit so it stays as care guidance not a memoir. */
   careNote?: string;
+  /** Kid-chosen tone for Miss Vidya. Threads into the AI prompt as a
+   *  preference. Parent's careNote can override if it conflicts. */
+  aiTone?: "gentle" | "friendly" | "direct";
   createdAt: string;
   state: GameState;
 };

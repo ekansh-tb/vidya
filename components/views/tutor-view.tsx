@@ -92,9 +92,10 @@ export function TutorView({
           school: learner.school,
           interests: learner.interests,
           careNote: learner.careNote,
+          aiTone: learner.aiTone,
         }),
       }),
-    [subjectId, state.name, learner.grade, learner.board, learner.interests, learner.careNote, learner.school],
+    [subjectId, state.name, learner.grade, learner.board, learner.interests, learner.careNote, learner.aiTone, learner.school],
   );
 
   const { messages, sendMessage, status, error, setMessages } = useChat({ transport });

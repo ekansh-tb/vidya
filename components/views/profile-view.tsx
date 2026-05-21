@@ -26,6 +26,61 @@ const INTEREST_CHIPS: { id: string; emoji: string; label: string }[] = [
   { id: "movies",   emoji: "🎬", label: "Movies" },
 ];
 
+const TONE_OPTIONS: { id: "gentle" | "friendly" | "direct"; emoji: string; label: string; blurb: string }[] = [
+  { id: "gentle",   emoji: "🌸", label: "Gentle",   blurb: "Soft and patient. Lots of encouragement." },
+  { id: "friendly", emoji: "🎈", label: "Friendly", blurb: "Warm and playful. The default." },
+  { id: "direct",   emoji: "🎯", label: "Direct",   blurb: "Tight and to-the-point. No fluff." },
+];
+
+function AiTonePicker({
+  current, onChange,
+}: {
+  current?: "gentle" | "friendly" | "direct";
+  onChange: (next: "gentle" | "friendly" | "direct" | undefined) => void;
+}) {
+  return (
+    <div className="glass-card p-4 mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">
+          How Miss Vidya talks to you
+        </div>
+        {current && (
+          <button
+            onClick={() => { sfx.click(); onChange(undefined); }}
+            className="text-[10px] uppercase tracking-widest font-bold text-white/45 hover:text-white active:scale-95"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {TONE_OPTIONS.map((t) => {
+          const active = current === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => { sfx.click(); onChange(t.id); }}
+              className="rounded-2xl p-3 text-center transition active:scale-95"
+              style={{
+                background: active ? "rgba(34,211,238,0.18)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${active ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.08)"}`,
+              }}
+            >
+              <div className="text-2xl mb-1">{t.emoji}</div>
+              <div className={`text-[10px] uppercase tracking-widest font-bold ${active ? "text-cyan-200" : "text-white/65"}`}>
+                {t.label}
+              </div>
+              <div className="text-[9px] leading-tight mt-1" style={{ color: active ? "rgba(34,211,238,0.85)" : "rgba(255,255,255,0.4)" }}>
+                {t.blurb}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function isoDay(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -309,6 +364,12 @@ export function ProfileView({
             </motion.div>
           ))}
         </div>
+
+        {/* How Miss Vidya talks to you — kid-chosen AI tone */}
+        <AiTonePicker
+          current={learner.aiTone}
+          onChange={(next) => updateLearnerMeta(learner.id, { aiTone: next })}
+        />
 
         {/* Reflection rhythm — last 14 days at a glance */}
         <ReflectionRhythm reflections={state.dailyReflections || []} />
