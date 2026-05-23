@@ -143,7 +143,7 @@ export function OnboardingView({
               <h1 className="font-display text-5xl md:text-7xl font-bold mb-3 text-gradient-cosmic leading-[1]">
                 Vidya
               </h1>
-              <p className="text-white/70 text-lg mb-2 font-medium italic">An adventure into learning</p>
+              <p className="text-white/70 text-lg mb-2 font-medium italic">Future stars on a gyan journey</p>
               <p className="text-white/50 text-sm mb-10 max-w-md mx-auto">
                 A school built for one kid at a time. Set a profile, then walk in.
               </p>
@@ -486,7 +486,7 @@ function ActArrival() {
         className="text-base md:text-lg max-w-md mx-auto italic"
         style={{ color: "rgba(255,255,255,0.62)" }}
       >
-        An adventure into learning.
+        Future stars on a gyan journey.
       </motion.p>
     </motion.div>
   );
