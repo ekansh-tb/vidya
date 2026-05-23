@@ -1,5 +1,4 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -208,12 +207,16 @@ export async function POST(req: Request) {
   }
   const { messages, subject, topic, name, grade, board, school, interests, careNote, aiTone } = payload;
 
-  if (!process.env.ANTHROPIC_API_KEY && !process.env.AI_GATEWAY_API_KEY) {
+  if (
+    !process.env.AI_GATEWAY_API_KEY &&
+    !process.env.VERCEL_OIDC_TOKEN &&
+    !process.env.ANTHROPIC_API_KEY
+  ) {
     return new Response(
       "data: " +
         JSON.stringify({
           type: "text",
-          text: "Miss Vidya isn't connected yet. Ask a grown-up to add the ANTHROPIC_API_KEY in Vercel project settings, and I'll be right here.",
+          text: "Miss Vidya isn't connected yet. The AI Gateway needs setting up in Vercel — ask a grown-up.",
         }) +
         "\n\n",
       { headers: { "content-type": "text/event-stream" } },
@@ -223,7 +226,7 @@ export async function POST(req: Request) {
   try {
     const modelMessages = await convertToModelMessages(messages);
     const result = streamText({
-      model: anthropic("claude-haiku-4-5"),
+      model: "anthropic/claude-haiku-4.5",
       system: systemPrompt({ subject, topic, name, grade, board, school, interests, careNote, aiTone }),
       messages: modelMessages,
       maxOutputTokens: 900,
