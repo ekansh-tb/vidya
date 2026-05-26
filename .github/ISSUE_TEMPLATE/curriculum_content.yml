@@ -1,0 +1,62 @@
+name: Curriculum / content
+description: Request new exam packs, question banks, subjects, or grades
+title: "content: <board> <grade> <subject>"
+labels: ["content", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request new exam packs, additional grades, or corrections to existing curriculum content.
+  - type: dropdown
+    id: board
+    attributes:
+      label: Board
+      options:
+        - Cambridge Primary
+        - Cambridge IGCSE
+        - ICSE / CISCE
+        - CBSE
+        - Maharashtra State Board (Balbharati)
+        - Other (specify in description)
+    validations:
+      required: true
+  - type: input
+    id: grade
+    attributes:
+      label: Grade / Class
+      placeholder: e.g. Class 8, Grade 5, IGCSE Year 10
+    validations:
+      required: true
+  - type: input
+    id: subject
+    attributes:
+      label: Subject
+      placeholder: e.g. Physics, Marathi, Computer Science 0478
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source / syllabus reference
+      description: Link the board's syllabus page or cite the textbook (publisher, edition, ISBN).
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Which chapters / topics should the pack cover? Anything that should be explicitly out of scope so the AI tutor doesn't over-teach?
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: What kind of content?
+      multiple: true
+      options:
+        - Exam pack (overview + checklist + flashcards + MCQs + cheat sheet)
+        - Question bank only
+        - Reading list addition
+        - Correction to existing content
+    validations:
+      required: true

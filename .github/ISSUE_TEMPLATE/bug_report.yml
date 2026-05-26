@@ -1,0 +1,85 @@
+name: Bug report
+description: Report something that's broken in Vidya
+title: "fix: <short description>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out the sections below so we can reproduce and fix the issue quickly.
+
+        **Do not report security vulnerabilities here.** Use [Security Advisories](https://github.com/ekansh-tb/vidya/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: When I click X, Y happens instead of Z.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps a stranger could follow.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL where this happened
+      placeholder: https://vidya-quest.vercel.app/...
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did this happen?
+      options:
+        - Production (vidya-quest.vercel.app)
+        - Local development
+        - Preview deployment
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Which theme was active?
+      options:
+        - playful (Grade ≤ 5)
+        - vivid (Grade 6–8)
+        - terminal (Grade 9+)
+        - Not applicable
+        - Not sure
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & OS
+      placeholder: e.g. Chrome 131 on macOS 15, Safari on iOS 18
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors or screenshots
+      description: Paste any console errors (DevTools → Console) and/or drag screenshots in here.
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched [existing issues](https://github.com/ekansh-tb/vidya/issues) and didn't find a duplicate.
+          required: true
+        - label: This is not a security vulnerability (if it is, I will report it privately via Security Advisories).
+          required: true

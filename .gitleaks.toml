@@ -1,0 +1,22 @@
+# Gitleaks configuration for Vidya
+# https://github.com/gitleaks/gitleaks
+
+# Extend the default Gitleaks ruleset rather than redefining everything.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Files and patterns that are safe to ignore"
+paths = [
+  '''\.env\.local\.example$''',
+  '''(?i)\.lock$''',
+  '''package-lock\.json$''',
+  '''skills-lock\.json$''',
+]
+# Placeholder values that look like secrets but are clearly templates.
+regexes = [
+  '''<your-[a-z0-9-]+-key>''',
+  '''<your-project-ref>''',
+  '''sb_publishable_\.\.\.''',
+  '''sb_secret_\.\.\.''',
+]

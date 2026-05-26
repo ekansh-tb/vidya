@@ -1,0 +1,63 @@
+name: Feature request
+description: Suggest a new feature or enhancement
+title: "feat: <short description>"
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe the problem first, then the proposed solution.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user pain point or learning outcome you have in mind.
+      placeholder: As a Grade 7 ICSE learner, I want X because Y...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should happen? Be as concrete as you can.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you think about, and why isn't it as good?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      multiple: true
+      options:
+        - AI Tutor (Miss Vidya)
+        - AI Principal / Daily Assembly
+        - Exam Prep
+        - Quiz / Questions
+        - Music Room
+        - Field Trip Atlas
+        - Library
+        - Notebook
+        - Theming (playful / vivid / terminal)
+        - Profile / multi-learner
+        - New curriculum or grade
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: curriculum
+    attributes:
+      label: Curriculum source (if applicable)
+      description: For curriculum / content requests, link the syllabus or cite the board + textbook.
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched [existing issues](https://github.com/ekansh-tb/vidya/issues) and didn't find a duplicate.
+          required: true
+        - label: This feature is age-appropriate and aligned with Vidya's mission of curriculum-anchored learning.
+          required: true

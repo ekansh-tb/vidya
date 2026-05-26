@@ -1,0 +1,28 @@
+# Code owners for Vidya
+# Each PR requires approval from the owner(s) of the files it touches.
+# The last matching pattern wins; later rules override earlier ones.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default — everything requires the maintainer's review
+*                           @ekansh-tb
+
+# Sensitive surfaces — explicit ownership for clarity
+/app/api/                   @ekansh-tb
+/middleware.ts              @ekansh-tb
+/lib/game-store.ts          @ekansh-tb
+/lib/storage.ts             @ekansh-tb
+
+# CI, security, and repository configuration
+/.github/                   @ekansh-tb
+/SECURITY.md                @ekansh-tb
+/CODE_OF_CONDUCT.md         @ekansh-tb
+/CONTRIBUTING.md            @ekansh-tb
+/LICENSE                    @ekansh-tb
+
+# Build / dependency manifests
+/package.json               @ekansh-tb
+/package-lock.json          @ekansh-tb
+/next.config.mjs            @ekansh-tb
+/tsconfig.json              @ekansh-tb
+/tailwind.config.ts         @ekansh-tb
+/postcss.config.mjs         @ekansh-tb

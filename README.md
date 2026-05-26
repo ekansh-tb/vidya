@@ -82,6 +82,16 @@ lib/
 - **Exam packs are the right abstraction** for curriculum content. Subject ID + grade → pack. New grade = new pack file, no UI changes.
 - **AI scope guards matter.** Tell the model precisely what *not* to teach for a given grade — examiner reports are surprisingly consistent about over-teaching being a real mistake.
 
+## Contributing
+
+PRs are very welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for the branching model, commit conventions (Conventional Commits), and PR process. All PRs are squash-merged into `main` after one CODEOWNERS approval and a green CI run (lint, typecheck, build, CodeQL, dependency review, secrets scan).
+
+By participating you agree to the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+## Security
+
+To report a vulnerability, please follow the private disclosure process in [SECURITY.md](./SECURITY.md). Do not open public issues for security reports.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
