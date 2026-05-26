@@ -100,6 +100,18 @@ Enable everything GitHub offers for public repos:
   - Individual workflows escalate via per-job `permissions:` blocks
 - **Allow GitHub Actions to create and approve pull requests**: ❌ off — Dependabot uses its own token
 
+### Action pinning — follow-up
+
+Workflows currently reference actions by major version tag (e.g. `actions/checkout@v4`). Dependabot is configured to track and update them weekly.
+
+For the strictest supply-chain posture, replace each `@vX` with the full 40-char commit SHA of the desired release, leaving the tag as a trailing comment. Example:
+
+```yaml
+- uses: actions/checkout@<sha-from-the-v4.x.x-release> # v4.x.x
+```
+
+Dependabot will continue to update the SHA as new versions are tagged. Do **not** copy SHAs without verifying them against the action's release page on GitHub — invented SHAs make every workflow fail at action resolution.
+
 ---
 
 ## 5. Collaborators & teams
