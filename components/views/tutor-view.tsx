@@ -52,32 +52,6 @@ export function TutorView({
   const [input, setInput] = useState("");
   const subject = SUBJECT_MAP[subjectId] || subjectList[0];
 
-  // Deep-link defense: if a kid lands here without rung-2 (no parent PIN
-  // set on this learner), render a neutral placeholder rather than
-  // exposing the AI surface. The kid sees no gate explanation — per
-  // [[parent-invisible-config]] the room is simply "preparing".
-  if (!aiTutorAllowed) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6 max-w-2xl mx-auto">
-        <div className="text-center">
-          <div className="text-7xl mb-4 opacity-60">🌒</div>
-          <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
-            This room isn't open yet
-          </h2>
-          <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
-            Try the Library, Field Trip, or Music room instead — they're already waiting.
-          </p>
-          <button
-            onClick={() => { sfx.click(); onBack(); }}
-            className="rounded-[var(--radius-md)] px-5 py-2.5 text-sm font-semibold active:scale-95"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            <ChevronLeft className="w-4 h-4 inline -mt-0.5" /> Back to school
-          </button>
-        </div>
-      </div>
-    );
-  }
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const transport = useMemo(
@@ -108,6 +82,34 @@ export function TutorView({
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: 9_999_999, behavior: "smooth" });
   }, [messages, status]);
+
+  // Deep-link defense: if a kid lands here without rung-2 (no parent PIN
+  // set on this learner), render a neutral placeholder rather than
+  // exposing the AI surface. The kid sees no gate explanation — per
+  // [[parent-invisible-config]] the room is simply "preparing".
+  // Early return must come AFTER all hooks to satisfy rules-of-hooks.
+  if (!aiTutorAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 max-w-2xl mx-auto">
+        <div className="text-center">
+          <div className="text-7xl mb-4 opacity-60">🌒</div>
+          <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
+            This room isn't open yet
+          </h2>
+          <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
+            Try the Library, Field Trip, or Music room instead — they're already waiting.
+          </p>
+          <button
+            onClick={() => { sfx.click(); onBack(); }}
+            className="rounded-[var(--radius-md)] px-5 py-2.5 text-sm font-semibold active:scale-95"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
+          >
+            <ChevronLeft className="w-4 h-4 inline -mt-0.5" /> Back to school
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const submit = (text: string) => {
     const trimmed = text.trim();
