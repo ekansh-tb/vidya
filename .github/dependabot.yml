@@ -16,8 +16,6 @@ updates:
       prefix: "chore(deps)"
       prefix-development: "chore(deps-dev)"
       include: "scope"
-    reviewers:
-      - "ekansh-tb"
     groups:
       # Group all non-major updates together to reduce PR noise
       minor-and-patch:
@@ -56,5 +54,3 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "ci(deps)"
-    reviewers:
-      - "ekansh-tb"
