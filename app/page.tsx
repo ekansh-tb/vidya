@@ -237,7 +237,7 @@ export default function HomePage() {
         );
         break;
       case "profile":
-        content = <ProfileView state={state} learner={learner} setState={set} onBack={back} />;
+        content = <ProfileView state={state} learner={learner} setState={set} onBack={back} onNavigate={navigate} />;
         break;
       case "shop":
         content = <ShopView state={state} setState={set} onBack={back} />;

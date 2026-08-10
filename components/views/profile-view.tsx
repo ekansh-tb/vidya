@@ -2,13 +2,13 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, KeyRound, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart, Check } from "lucide-react";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
 import { AVATARS } from "@/lib/content/avatars";
 import { BADGES, TIER_STYLES } from "@/lib/content/badges";
 import { xpToLevel } from "@/lib/economy";
-import type { GameState, LearnerProfile } from "@/lib/types";
+import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { resizeImageFile } from "@/lib/utils";
 import { useGameStore } from "@/lib/game-store";
@@ -153,12 +153,13 @@ function describeBoard(board: LearnerProfile["board"]): string {
 }
 
 export function ProfileView({
-  state, learner, setState, onBack,
+  state, learner, setState, onBack, onNavigate,
 }: {
   state: GameState;
   learner: LearnerProfile;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
+  onNavigate?: (v: ViewName, params?: Record<string, unknown>) => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -204,6 +205,28 @@ export function ProfileView({
         <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
+
+        {/* Account linking. The link screen had no entry point at all, so the
+            claim-code flow — the thing that replaced the self-awarded PIN —
+            was unreachable from the kid app. Only shown when unlinked. */}
+        {onNavigate && (learner.verifiedLevel ?? 0) < 2 && (
+          <button
+            onClick={() => { sfx.click(); onNavigate("link-account"); }}
+            className="w-full glass-card p-4 mb-5 flex items-center gap-3 text-left active:scale-[0.99] transition"
+          >
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: "var(--accent-soft)" }}>
+              <KeyRound className="w-5 h-5" style={{ color: "var(--accent)" }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold text-white text-sm">Got a code?</div>
+              <div className="text-xs text-white/55 mt-0.5">
+                Link this device to keep your progress safe.
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+          </button>
+        )}
 
         <div className="glass-card p-6 text-center mb-5">
           <button onClick={() => { sfx.click(); setPickerOpen((v) => !v); }} className="inline-block active:scale-95 transition">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
@@ -201,6 +201,28 @@ export function ParentView({
 
         {/* Capability map ------------------------------------------------ */}
         <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+
+        {/* Nothing in the kid app linked to the Clerk dashboard, so the whole
+            signed-in parent experience was reachable only by typing the URL. */}
+        <a
+          href="/parent"
+          className="glass-card p-4 mb-5 flex items-center gap-3 active:scale-[0.99] transition"
+          style={{ textDecoration: "none" }}
+        >
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+               style={{ background: "var(--accent-soft)" }}>
+            <ShieldCheck className="w-5 h-5" style={{ color: "var(--accent)" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-sm" style={{ color: "var(--text)" }}>
+              Parent dashboard
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Sign in to manage learners, issue link codes and export reports.
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: "var(--text-faint)" }} />
+        </a>
 
         {/* Account linking ------------------------------------------------ */}
         {/* The adult half of what replaces the PIN: a code minted against the
