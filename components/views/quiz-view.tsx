@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Lightbulb, ScanLine, Zap, ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SUBJECT_MAP, SUBJECTS } from "@/lib/content/subjects";
+import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import type { GameState, SubjectId, QuizResult, WrongAnswer } from "@/lib/types";
+import type { GameState, Subject, SubjectId, QuizResult, WrongAnswer } from "@/lib/types";
 import { shuffle, todayKey } from "@/lib/utils";
 import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
@@ -34,9 +34,24 @@ function pickWithSeenPreference<T extends { q: string }>(items: T[], seen: strin
   return ordered.slice(0, Math.min(count, items.length));
 }
 
-function buildDailyQuiz(seen: Record<string, Record<string, string[]>>): EnrichedQuestion[] {
+/**
+ * Builds the Daily Quest from the LEARNER'S OWN subjects.
+ *
+ * This used to iterate the global SUBJECTS array — every id across all five
+ * boards. Since the QUESTIONS bank only holds the six Cambridge Primary
+ * Stage 5 subjects, a Grade 10 IGCSE learner tapping Daily Quest was asked
+ * place-value questions and given Hindi/Marathi items for subjects they do
+ * not take. Cambridge Primary was the only board where the journey was right.
+ *
+ * Returns an empty array when the learner has no subject with a question bank;
+ * callers must hide the entry point rather than opening an empty quiz.
+ */
+function buildDailyQuiz(
+  seen: Record<string, Record<string, string[]>>,
+  learnerSubjects: Subject[],
+): EnrichedQuestion[] {
   const items: EnrichedQuestion[] = [];
-  SUBJECTS.forEach((s) => {
+  learnerSubjects.forEach((s) => {
     const topics = Object.entries(QUESTIONS[s.id] || {});
     if (!topics.length) return;
     const [topicId, topic] = topics[Math.floor(Math.random() * topics.length)];
@@ -64,11 +79,13 @@ function buildTopicQuiz(
 }
 
 export function QuizView({
-  subjectId, topicId, isDaily, state, setState, onFinish, onClose, voiceEnabled,
+  subjectId, topicId, isDaily, learnerSubjects, state, setState, onFinish, onClose, voiceEnabled,
 }: {
   subjectId?: SubjectId;
   topicId?: string;
   isDaily: boolean;
+  /** The learner's own subjects — the Daily Quest pool is drawn from these. */
+  learnerSubjects: Subject[];
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onFinish: (result: QuizResult) => void;
@@ -76,11 +93,11 @@ export function QuizView({
   voiceEnabled: boolean;
 }) {
   const questions = useMemo(() => {
-    if (isDaily) return buildDailyQuiz(state.seenQuestions || {});
+    if (isDaily) return buildDailyQuiz(state.seenQuestions || {}, learnerSubjects);
     if (subjectId && topicId) return buildTopicQuiz(subjectId, topicId, state.seenQuestions || {});
     return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDaily, subjectId, topicId]);
+  }, [isDaily, subjectId, topicId, learnerSubjects]);
 
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -338,7 +355,36 @@ export function QuizView({
     else finishQuiz();
   };
 
-  if (!questions.length || !currentQ) return null;
+  // Returning null left the kid on the cosmic background with no header, no
+  // close button and no way out but a reload. Reachable when a topic's items
+  // are empty, when a subject/topic pair goes stale, and — now that the daily
+  // pool is scoped to the learner — whenever they have no subject with a
+  // question bank yet. Always give them a door.
+  if (!questions.length || !currentQ) {
+    return (
+      <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-5 pt-6">
+        <button
+          onClick={() => { sfx.click(); onClose?.(); }}
+          className="flex items-center gap-1 font-medium mb-6 active:scale-95 self-start"
+          style={{ color: "var(--text-muted)" }}
+        >
+          <X className="w-5 h-5" /> Close
+        </button>
+        <div className="glass-card p-8 text-center">
+          <div className="text-5xl mb-3 opacity-70">🌱</div>
+          <h2 className="font-display text-xl font-bold mb-2" style={{ color: "var(--text)" }}>
+            Nothing to quiz here yet
+          </h2>
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+            {isDaily
+              ? "We're still writing quests for your subjects. Try a Classroom, the Library or a Field Trip in the meantime."
+              : "This topic doesn't have questions yet. Try another one, or ask Miss Vidya about it."}
+          </p>
+          <Button onClick={() => { sfx.click(); onClose?.(); }}>Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   const isCorrectAnswer = revealed && selected === currentQ.a;
 

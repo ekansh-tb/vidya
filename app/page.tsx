@@ -201,6 +201,7 @@ export default function HomePage() {
             subjectId={view.params!.subjectId as SubjectId}
             topicId={view.params!.topicId as string}
             isDaily={false}
+            learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
             onFinish={(r) => setQuizResult(r)}
@@ -225,6 +226,7 @@ export default function HomePage() {
         content = (
           <QuizView
             isDaily={true}
+            learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
             onFinish={(r) => setQuizResult(r)}

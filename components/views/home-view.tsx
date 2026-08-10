@@ -61,6 +61,15 @@ export function HomeView({
     [learner.board, learner.pickedSubjects, learner.grade],
   );
 
+  // The Daily Quest pool is drawn from this learner's own subjects. Only the
+  // six Cambridge Primary Stage 5 subjects have question banks today, so for
+  // every other board the tile would open an empty quiz. Hide it rather than
+  // offering a quest that cannot be built.
+  const hasDailyQuest = useMemo(
+    () => visibleSubjects.some((s) => Object.keys(QUESTIONS[s.id] || {}).length > 0),
+    [visibleSubjects],
+  );
+
   const subjectMastery = useMemo(() => {
     return visibleSubjects.map((s) => {
       const topics = Object.keys(QUESTIONS[s.id] || {});
@@ -392,7 +401,8 @@ export function HomeView({
           </motion.button>
         )}
 
-        {/* Daily Quest */}
+        {/* Daily Quest — only when this learner's subjects actually have questions */}
+        {hasDailyQuest && (
         <motion.button
           whileTap={{ scale: 0.99 }}
           onClick={() => { sfx.click(); !todayQuestDone && onNavigate("daily"); }}
@@ -431,6 +441,7 @@ export function HomeView({
             </div>
           </div>
         </motion.button>
+        )}
       </div>
 
       {/* Hallway: experiences */}

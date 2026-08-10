@@ -168,6 +168,9 @@ export type GameState = {
   lastAssemblyDate: string | null;
   assemblyStreak: number;
   readBooks: string[];
+  /** Books that have EVER paid out XP/coins. Separate from `readBooks` so
+   *  un-marking and re-marking a book cannot farm rewards. */
+  rewardedBooks?: string[];
   savedMelody: number[] | null;
   savedCompositions: Composition[];
   classRoster: ClassMember[];

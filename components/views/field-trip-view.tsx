@@ -170,14 +170,20 @@ function TripView({
   };
 
   const finishTrip = () => {
-    const xpGain = 30;
-    const coinGain = 10 + correctCount * 5;
-    setState((p) => ({
-      ...p,
-      xp: p.xp + xpGain,
-      coins: p.coins + coinGain,
-      passportStamps: p.passportStamps?.includes(dest.id) ? p.passportStamps : [...(p.passportStamps || []), dest.id],
-    }));
+    setState((p) => {
+      // The stamp was deduped but the payout was not, so replaying an
+      // already-stamped destination paid +30 XP and coins again, every time.
+      // First visit pays in full; a replay still stamps and still celebrates,
+      // it just doesn't print money.
+      const firstVisit = !p.passportStamps?.includes(dest.id);
+      const coinGain = 10 + correctCount * 5;
+      return {
+        ...p,
+        xp: firstVisit ? p.xp + 30 : p.xp,
+        coins: firstVisit ? p.coins + coinGain : p.coins,
+        passportStamps: firstVisit ? [...(p.passportStamps || []), dest.id] : p.passportStamps,
+      };
+    });
     setPhase("stamp");
     sfx.coin();
   };
