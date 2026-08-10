@@ -54,6 +54,36 @@ describe("round trip", () => {
   });
 });
 
+describe("credentials never leave the device", () => {
+  it("strips parentPin from an exported backup", () => {
+    const p = profiles("a", "b");
+    p.learners.a.parentPin = "1234";
+    p.learners.b.parentPin = "9999";
+    const text = serializeBackup(p);
+    // The whole point: a backup gets emailed and copied around. It must not
+    // double as a credential dump for every learner on the device.
+    expect(text).not.toContain("parentPin");
+    expect(text).not.toContain("1234");
+    expect(text).not.toContain("9999");
+  });
+
+  it("does not mutate the live profiles while exporting", () => {
+    const p = profiles("a");
+    p.learners.a.parentPin = "4321";
+    serializeBackup(p);
+    expect(p.learners.a.parentPin, "export must not strip the in-memory copy").toBe("4321");
+  });
+
+  it("restores a stripped backup without a PIN rather than failing", () => {
+    const p = profiles("a");
+    p.learners.a.parentPin = "1234";
+    const out = parseBackup(serializeBackup(p));
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.profiles.learners.a.parentPin).toBeUndefined();
+  });
+});
+
 describe("parseBackup rejects bad input helpfully", () => {
   it("rejects non-JSON", () => {
     const out = parseBackup("this is not json");

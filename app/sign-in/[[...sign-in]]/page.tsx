@@ -12,7 +12,23 @@ import { CosmicBg } from "@/components/effects/cosmic-bg";
  * the active learner to localStorage. Adult areas (/parent/**) are
  * what require this form.
  */
-export default function SignInPage() {
+/** Only same-site paths are honoured, so `?next=` cannot become an open redirect. */
+function safeNext(next?: string): string | undefined {
+  if (!next) return undefined;
+  if (!next.startsWith("/") || next.startsWith("//")) return undefined;
+  return next;
+}
+
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  // middleware.ts sends parents here as /sign-in?next=/parent, but the param
+  // was never read — Clerk fell back to "/" and dropped them in the kid lobby,
+  // which reads as a failed sign-in. Thread it through.
+  const { next } = await searchParams;
+  const redirectTo = safeNext(next) ?? "/parent";
   return (
     <main className="min-h-screen flex items-center justify-center px-4 relative">
       <CosmicBg mode="parent" intensity={0.85} />
@@ -29,7 +45,7 @@ export default function SignInPage() {
             care-layer controls. Sign in to manage.
           </p>
         </div>
-        <SignIn signUpUrl="/sign-up" />
+        <SignIn signUpUrl="/sign-up" fallbackRedirectUrl={redirectTo} />
       </div>
     </main>
   );
