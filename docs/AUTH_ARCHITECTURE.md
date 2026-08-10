@@ -1,14 +1,20 @@
 # Auth & Verification Architecture
 
-Last updated: 2026-05-21
+Last updated: 2026-08-10 (audited against the codebase)
 
 > **Status note:** As of 2026-05-21 Vidya is **Clerk-only**. Supabase
 > was removed before the migration was ever applied. The schema and
 > RLS design below are a forward-looking spec for when a durable DB
 > becomes necessary (cross-device sync, rung-3 features, multi-family
 > analytics). Today, kid GameState lives in localStorage; parent
-> identity lives in Clerk publicMetadata. See
-> [`memory/supabase-in-scope.md`](../../.claude/projects/-Users-ekanshjain-Downloads-vidya-quest/memory/supabase-in-scope.md).
+> identity lives in Clerk publicMetadata.
+>
+> **Read this before trusting the design below.** Sections marked
+> *(spec)* describe a target that is not built. What is actually
+> enforced today is only: `middleware.ts` requiring a Clerk session on
+> `/parent(.*)`. Everything else — rungs, capability policies, rate
+> limits — is client-side and advisory. See "Implementation status"
+> at the end.
 
 ## Stack (target — partially shipped)
 
@@ -29,12 +35,12 @@ the kid device's localStorage.
 ## Path topology
 
 ```
-/                        → marketing landing + onboarding story
-/sign-in                 → Clerk SignIn component
-/sign-up                 → role chooser → Clerk SignUp
-/student/**              → kid app (current home view + all kid surfaces)
-/parent/**               → parent dashboard, BYOK config, care layer
-/auth/callback           → Clerk → Supabase JWT exchange (no UI)
+/                        → marketing landing + onboarding story   (spec)
+/sign-in                 → Clerk SignIn component                 (shipped)
+/sign-up                 → role chooser → Clerk SignUp            (shipped, no role chooser)
+/student/**              → kid app (home view + all kid surfaces) (spec — kid app is at `/`)
+/parent/**               → parent dashboard, BYOK config, care    (shipped)
+/auth/callback           → Clerk → DB JWT exchange (no UI)        (dropped with Supabase)
 ```
 
 Same domain, path isolation. Cookies are scoped by Clerk. Preview deploys
@@ -53,9 +59,9 @@ Role is stored in Clerk publicMetadata so it ships in every JWT.
 
 ## The 4-rung verification ladder
 
-See [`memory/verification-ladder.md`](../../.claude/projects/-Users-ekanshjain-Downloads-vidya-quest/memory/verification-ladder.md)
-for the canonical version. Quick reference (DEFAULTS — actual gates are
-policy-driven, see "Dynamic guardrails" below):
+The canonical version lives in the `verification-ladder` project memory.
+Quick reference (DEFAULTS — actual gates are policy-driven, see "Dynamic
+guardrails" below):
 
 | Rung | Name | Default unlocks (additive) | Trigger |
 |------|------|----------------------------|---------|
@@ -65,8 +71,8 @@ policy-driven, see "Dynamic guardrails" below):
 | 3 | strict_verified | BYOK AI providers, incognito mode for that kid, medical advisories, health profile | Manual team review (govt ID + selfie OR Stripe Identity) — operations TBD |
 
 **Critical UI rule:** the kid never sees rung gates explicitly. Locked
-features are absent, not greyed out. See
-[`memory/parent-invisible-config.md`](../../.claude/projects/-Users-ekanshjain-Downloads-vidya-quest/memory/parent-invisible-config.md).
+features are absent, not greyed out. See the `parent-invisible-config`
+project memory.
 
 ## Dynamic guardrails (policy resolution)
 
@@ -91,7 +97,12 @@ This means we can:
   observed.
 - A/B test a new feature against a subset of cohorts before global rollout.
 
-See [`memory/dynamic-guardrails.md`](../../.claude/projects/-Users-ekanshjain-Downloads-vidya-quest/memory/dynamic-guardrails.md).
+See the `dynamic-guardrails` project memory.
+
+*(spec)* — none of the four resolver inputs above are live. The shipped
+resolver (`lib/capabilities/use-capability.ts`) reads a static map and a
+locally-computed rung, and applies the parent's `disabledCapabilities`
+override. No cohorts, no jitter, no safety pin, no rate limits.
 
 ## Same-network detection (rung 1)
 
@@ -142,9 +153,12 @@ incognito, medical) immediately when ops capacity exists.
 For v1: any feature requiring rung 3 is hidden in the UI until rung is set
 manually in the DB by ops.
 
-## Data model
+## Data model *(spec — no database exists)*
 
-See `supabase/migrations/0001_init.sql` for canonical SQL. Summary:
+There is no migration file; `supabase/migrations/0001_init.sql` was deleted
+along with the rest of the Supabase scaffolding on 2026-05-21. The shape
+below is the design to build against if a server DB is reintroduced.
+`lib/auth/types.ts` mirrors the `capability_policies` row in TypeScript.
 
 ```
 parents (
@@ -220,33 +234,49 @@ RLS policies:
 
 ## Environment variables
 
-Required:
+Required today (see `.env.local.example`):
 
 ```
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY    # pk_test_... or pk_live_...
 CLERK_SECRET_KEY                     # sk_test_... or sk_live_...
-NEXT_PUBLIC_SUPABASE_URL             # already set
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY # already set (replaces ANON_KEY)
-SUPABASE_SECRET_KEY                  # service-role for server-side writes
+ANTHROPIC_API_KEY                    # or AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN
 ```
 
-After Clerk install, configure a JWT template in the Clerk dashboard named
-"supabase" that signs with the Supabase JWT secret. Supabase RLS reads the
-template's `sub` claim.
+No Supabase variables are used. If a server DB returns, its credentials plus
+a Clerk JWT template (so RLS can read the `sub` claim) get added here.
 
-## Migration plan
+## Implementation status
 
-1. **Install Clerk packages** (`@clerk/nextjs`)
-2. **Wire ClerkProvider** in `app/layout.tsx`
-3. **Replace `/sign-in` page** with Clerk `<SignIn />` component
-4. **Add `/sign-up` page** with role chooser → Clerk `<SignUp />`
-5. **Move kid app from `/` to `/student/**`** — keep `/` as marketing+onboarding story
-6. **Update middleware** — role-gate paths
-7. **Run Supabase migration** with the schema above
-8. **Configure Clerk JWT template** "supabase" in the Clerk dashboard
-9. **Replace Supabase Auth client** with Clerk-backed Supabase client (passes Clerk JWT to Supabase)
-10. **Add localStorage → Supabase sync** for existing kid profiles to migrate cleanly
+Audited against the codebase on 2026-08-10.
 
-Steps 1–9 are bounded engineering. Step 10 is the trickiest because we need
-to preserve in-progress learners on the existing localStorage path. Plan: on
-first sign-in, prompt to claim an existing local profile or start fresh.
+| # | Step | Status |
+|---|------|--------|
+| 1 | Install `@clerk/nextjs` | ✅ done |
+| 2 | Wire `ClerkProvider` in `app/layout.tsx` | ✅ done |
+| 3 | `/sign-in` page with Clerk `<SignIn />` | ✅ done |
+| 4 | `/sign-up` page | ✅ done — **no role chooser**; every signup is implicitly a parent |
+| 5 | Move kid app to `/student/**`, `/` becomes marketing | ❌ not done — `/` is still the kid app; there is no marketing landing |
+| 6 | Role-gate paths in middleware | ⚠️ partial — `/parent(.*)` requires *a* session; role is never checked because no role is ever written to `publicMetadata` |
+| 7–9 | Server DB + JWT template + DB client | ❌ dropped with Supabase |
+| 10 | localStorage → server sync | ❌ blocked on 7–9 |
+
+Known gaps beyond the table:
+
+- **Rungs 1 and 3 are unreachable.** `computeRung()` in
+  `lib/capabilities/use-capability.ts` returns only 0 or 2.
+- **Rung 2 is a local PIN, not authentication.** Any 4-digit
+  `learner.parentPin` in localStorage promotes the learner to rung 2 and
+  unlocks `ai.tutor.full`. No Clerk session is consulted. The model above
+  says rung 2 means a specific authenticated adult is responsible for this
+  kid; the code does not implement that.
+- **`ai.tutor.limited` is dead.** All five call sites check
+  `ai.tutor.full`, so the rung-1 rate-limited tier is never resolved.
+- **The API routes enforce nothing.** `/api/tutor` and `/api/assembly`
+  are public: no `auth()` call, no rate limit, no request-body validation.
+  `middleware.ts` matches `/(api|trpc)(.*)`, but `clerkMiddleware` only
+  *initialises* auth on a matched route — it does not require a session.
+  The capability hook is a UX affordance, not a security boundary.
+
+When a server DB returns, step 10 is the tricky one: in-progress learners
+live only in localStorage. Plan is to prompt on first sign-in to claim an
+existing local profile or start fresh.

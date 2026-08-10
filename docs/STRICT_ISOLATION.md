@@ -8,21 +8,30 @@ read, see, or have those values mixed into their experience.
 
 ## Allowed cross-learner UI (whitelist)
 
-Only **one** surface may read across learner profiles, and only these fields:
+Exactly **two** surfaces may read across learner profiles.
 
-- `LearnersView` — the profile switcher
+**1. `LearnersView` — the kid-facing profile switcher.** Restricted fields:
   - **Reads:** `id`, `name`, `avatarId`, `grade`, `board`, `school`
   - **NEVER reads:** `state.xp`, `state.streak`, `state.badges`,
     `state.progress`, `state.notebook`, `state.classRoster`,
     `state.savedCompositions`, any future `state.health` or `state.aiConfig`.
 
+**2. `app/parent/page.tsx` — the parent dashboard.** Full read across every
+learner on the device, by design: this is the legitimate cross-kid oversight
+case from the checklist below. It is not kid-facing and is gated in
+`middleware.ts`, which redirects anonymous hits on `/parent(.*)` to
+`/sign-in`. Note the gate is *authentication only* — any signed-in Clerk
+user reaching this device's browser sees every profile on it, because
+profiles are device-local and not owned by a Clerk account.
+
 Every other view receives **only the active learner**.
 
 ## Where this is enforced
 
-- `app/page.tsx` — `Object.values(profiles.learners)` is used in exactly two
-  places: `existingIds` for the Add Learner uniqueness check (IDs only), and
-  `learners` for the LearnersView switcher (whitelisted fields only).
+- `app/page.tsx` — `profiles.learners` is touched in exactly two places:
+  `Object.keys(...)` for the Add Learner ID-uniqueness check (IDs only), and
+  `Object.values(...)` for the LearnersView switcher (whitelisted fields only).
+- `app/parent/page.tsx` — the whitelisted exception above.
 - `components/views/learners-view.tsx` — visually renders only the whitelisted
   fields; an inline comment + this doc are the contract.
 - `components/views/classroom-view.tsx` — sealed to the active learner; AI

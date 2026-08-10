@@ -7,7 +7,12 @@
 **Vidya stops being a quiz app the moment a kid opens it and feels they've walked into a school, not a game.**
 A 20-year-out reading of where personal learning is going: classrooms become rooms in software, teachers become persistent AI personalities, peers become async collaborators, the curriculum becomes adaptive, and the school day becomes a ritual a child *wants* to enter.
 
-Anchor: Grade 5, Cambridge Primary Stage 5 + Maharashtra State Board (Marathi/Hindi). Single-learner first, multi-tenant ready.
+Original anchor: Grade 5, Cambridge Primary Stage 5 + Maharashtra State Board (Marathi/Hindi). Single-learner first, multi-tenant ready.
+
+**Where it actually landed (2026-08-10):** four boards — Cambridge Primary,
+Cambridge IGCSE, ICSE, CBSE — across grades 5–10, three age-banded themes,
+and multi-learner profiles on one device. The Grade-5 framing below is the
+origin story, not the current scope; `README.md` describes what ships today.
 
 ---
 
@@ -35,20 +40,27 @@ These are the canvas Vidya paints on. Every Classroom maps to a real textbook.
 
 ---
 
-## Phase A — Foundations (shipping now)
+## Phase A — Foundations ✅ shipped
 
-| | Pillar | Status |
-|---|---|---|
-| 1 | **Vidya Verse Lobby** — replaces home; live school clock, current period, classroom doors, companion, assembly card, field-trip teaser | ⏳ |
-| 2 | **Miss Vidya AI Tutor** — chat with an AI teacher per subject, server-side via Vercel AI Gateway | ⏳ |
-| 3 | **Diya** — persistent companion that grows with XP, reacts to events, anchors the experience | ⏳ |
-| 4 | **Field Trip mode** — explore Mars / caves / monuments with Wikipedia + facts mini-quiz + passport stamps | ⏳ |
+| | Pillar | Status | Lives in |
+|---|---|---|---|
+| 1 | **Vidya Verse Lobby** — replaces home; companion, assembly card, field-trip teaser | ✅ | `components/views/home-view.tsx` |
+| 2 | **Miss Vidya AI Tutor** — chat with an AI teacher per subject, server-side | ✅ | `components/views/tutor-view.tsx` · `app/api/tutor/route.ts` |
+| 3 | **Diya** — persistent companion that grows with XP and reacts to events | ✅ | `components/effects/diya.tsx` · `lib/diya.ts` |
+| 4 | **Field Trip mode** — Wikipedia + facts mini-quiz + passport stamps | ✅ | `components/views/field-trip-view.tsx` · `lib/content/destinations.ts` |
 
-Already shipped (last iteration): variety fix, 6/7 meme overlay, post-quest summary w/ review, custom avatar upload, skim-the-book panel, Match Quest mode, Friend Streak.
+Not yet built from the Phase A description: the *live school clock and
+current-period* part of the lobby (see Phase B).
+
+Also shipped: variety fix, 6/7 meme overlay, post-quest summary w/ review, custom avatar upload, skim-the-book panel, Match Quest mode, Friend Streak.
 
 ---
 
-## Phase B — School Day (next iteration)
+## Phase B — School Day (mostly shipped)
+
+Shipped: Notebook, Library, Music Room, Daily Assembly, Wellness break.
+Still open: **period clock & timetable**, **per-room class atmospheres**
+(ambient sound + dressed rooms), **Art Studio**.
 
 - **Period clock & timetable** — Homeroom → Maths → Recess → Science → Lunch → English → Library → Sports → Assembly. App suggests the right activity for the time of day.
 - **Class Atmospheres** — each Classroom view dresses itself: Maths chalkboard, Science lab benches, Hindi/Marathi reading corner, GK globe room. Ambient sound per room.
@@ -61,7 +73,13 @@ Already shipped (last iteration): variety fix, 6/7 meme overlay, post-quest summ
 
 ---
 
-## Phase C — Adaptive Brain
+## Phase C — Adaptive Brain ❌ not started
+
+> **This is the largest gap between the vision and the product.** Mastery
+> today is a flat per-topic `{attempts, correct, mastery}` ratio in
+> `GameState.progress` — there is no concept graph, no dependency edges, no
+> spaced-repetition queue, and no diagnostic recalibration. `missedQuestions`
+> is captured but only feeds a manual review list. Everything below is unbuilt.
 
 - **Mastery Map** — every concept (not topic) tracked. Graph of dependencies (multiplication needs addition; fractions need division; perimeter needs multiplication). Map paints itself as she progresses.
 - **Adaptive Quest** — quiz generator picks weakest concepts; Match Quest picks topics she hasn't seen in a week; spaced-repetition queue surfaces yesterday's misses.
@@ -106,6 +124,24 @@ These are the bets that pay off when the underlying tech is here. Architecting n
 
 ---
 
+## Engineering debt that gates the vision
+
+Phases C–F all assume infrastructure that does not exist yet. In rough order of
+what blocks the most:
+
+1. **Durable storage.** Everything is one `localStorage` key. The Mastery Map,
+   Diagnostic Day, Parent Portal v2, Class Buddies and the Verifiable Learning
+   Record all need state that survives a browser. This blocks the most.
+2. **Server-side capability enforcement.** The verification ladder is resolved
+   on the client, and rung 2 is a local PIN rather than authentication. Rungs 1
+   and 3 are unreachable, so every rung-3 feature above (BYOK, incognito,
+   medical) is unshippable by construction.
+3. **A content pipeline.** Exam packs are hand-authored TypeScript. That works
+   for a few grades; "procedural curriculum" and full board coverage need
+   authoring and validation tooling.
+4. **Assessment beyond MCQ.** Adaptive Quest and the Explanation Generator need
+   to know *why* an answer was wrong, which multiple choice barely captures.
+
 ## Constraints we honor
 
 - **Web only** (PWA-installable). Runs on her tablet, her dad's laptop, her phone.
@@ -120,3 +156,7 @@ These are the bets that pay off when the underlying tech is here. Architecting n
 ## How we sequence
 
 We don't try to ship 2045 today. We ship the **identity shift** in Phase A, the **daily rhythm** in Phase B, the **adaptive brain** in Phase C, then the labs and the social layer. Each phase ships in 1–3 iterations. Every iteration is deployable.
+
+**Next up:** durable storage, because it unblocks the most (see the debt list
+above), then Phase C. Curriculum breadth continues in parallel — it is additive
+and does not depend on the platform work.
