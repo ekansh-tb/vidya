@@ -1,7 +1,16 @@
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import {
+  tutorRequestSchema, totalChars, isSameOrigin,
+  clientKey, rateLimit, rateHeaders, LIMITS,
+} from "@/lib/api/guard";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
+
+/** Tutor turns per client per window. Deliberately generous for a studying
+ *  kid, tight enough that scripted abuse is not free. Best-effort — see the
+ *  caveats at the top of lib/api/guard.ts. */
+const RATE = { limit: 30, windowMs: 10 * 60 * 1000 };
 
 const SUBJECT_BLURBS: Record<string, string> = {
   // Cambridge Primary Stage 5 (Grade 5)
@@ -17,6 +26,39 @@ const SUBJECT_BLURBS: Record<string, string> = {
     "बालभारती मराठी इयत्ता ५ — २८ पाठ. नाम, सर्वनाम, क्रियापद, विशेषण, लिंग, वचन, समानार्थी, विरुद्धार्थी, म्हणी, वाक्प्रचार, छोटी रचना. विद्यार्थ्यांच्या वयानुरूप सोप्या मराठीत समजवा.",
   gk:
     "Maharashtra Balbharati Std 5 EVS + Cambridge Global Perspectives Stage 5: solar system, motions of Earth, family & community, public facilities, maps of India, food, transport, water, environment, internal organs, infectious diseases, community hygiene.",
+
+  // Cambridge Lower Secondary (Grades 6–8 = Stages 7–9).
+  // CNS Amanora maps Grades 6–8 to Lower Secondary, so Grade 6 is Stage 7.
+  "cls-maths":
+    "Cambridge Lower Secondary Mathematics (Stages 7–9): integers and powers, fractions/decimals/percentages, ratio and proportion, rounding and estimation, expressions and formulae, solving linear equations, sequences and functions, coordinates and straight-line graphs, angles and constructions, 2D/3D shapes, transformations and symmetry, perimeter/area/volume, collecting and displaying data, averages and range, probability. Thinking and Working Mathematically (specialising, generalising, conjecturing, convincing) runs through every strand.",
+  "cls-science":
+    "Cambridge Lower Secondary Science (Stages 7–9), combined: Biology (cells, human body systems, nutrition, respiration, reproduction, ecosystems, adaptation, variation and classification), Chemistry (particle model, states of matter, elements/compounds/mixtures, separation techniques, atoms and the Periodic Table, chemical reactions, acids and alkalis), Physics (forces and motion, energy, sound, light, electricity and magnetism, Earth and space). Thinking and Working Scientifically — asking questions, planning fair tests, variables, recording and interpreting results, evaluating evidence — is assessed throughout.",
+  "cls-english":
+    "Cambridge Lower Secondary English (Stages 7–9), plus Literature: reading fiction and non-fiction for explicit and implicit meaning, analysing writer's craft and structure, summarising; writing narrative, descriptive, persuasive, discursive and transactional texts with control of purpose, audience and form; grammar (clauses, tenses, active/passive, direct/indirect speech, modality), punctuation for effect, vocabulary precision; speaking and listening; poetry, prose and drama study.",
+  "cls-history":
+    "Cambridge Lower Secondary History / Global Perspectives history strand (Stages 7–9): working with sources and evidence, cause and consequence, change and continuity, significance and interpretation. Themes typically span medieval and early-modern world history, empires and encounters, revolutions, industrialisation, and 20th-century conflict. Always anchor answers in evidence and explain how a source is used, not just what it says.",
+  "cls-geography":
+    "Cambridge Lower Secondary Geography (Stages 7–9): map and atlas skills (grid references, scale, contours, GIS basics), physical geography (rivers, coasts, weather and climate, tectonics, ecosystems), human geography (population, settlement, migration, economic activity, development), and environmental issues (resources, sustainability, climate change). Use named real-world examples wherever possible.",
+  "cls-globalperspectives":
+    "Cambridge Lower Secondary Global Perspectives (Stages 7–9): a skills course, not a content course. Six skills — research, analysis, evaluation, reflection, collaboration, communication. Learners investigate global topics from personal, local/national and global perspectives, weigh evidence and different viewpoints, and present a supported argument. Coach the SKILL (how to find, judge and use a source) rather than delivering facts.",
+  "cls-ict":
+    "Cambridge Lower Secondary ICT / Digital Literacy (Stages 7–9): computational thinking and algorithms, programming constructs (sequence, selection, iteration, variables), data and databases, spreadsheets and modelling, networks and the internet, digital media creation, and e-safety / responsible digital citizenship.",
+  "cls-art":
+    "Cambridge Lower Secondary Art & Design (Stages 7–9): observational drawing, colour theory, composition, mark-making, working in mixed media, responding to artists and cultures, developing ideas through a sketchbook, and evaluating your own and others' work.",
+  "cls-hindi":
+    "कैम्ब्रिज लोअर सेकेंडरी हिंदी (द्वितीय भाषा, स्टेज ७–९): गद्य एवं पद्य पठन-बोध, व्याकरण (संज्ञा, सर्वनाम, विशेषण, क्रिया, काल, संधि, समास, मुहावरे, लोकोक्तियाँ), अनुच्छेद, पत्र-लेखन, निबंध, संवाद एवं अपठित गद्यांश। कक्षा ६–८ के स्तर पर सरल और स्पष्ट भाषा में समझाएँ।",
+  "cls-marathi":
+    "बालभारती मराठी इयत्ता ६–८ (महाराष्ट्र सक्तीचा मराठी कायदा २०२०). गद्य व पद्य पाठ, व्याकरण (नाम, सर्वनाम, क्रियापद, विशेषण, लिंग, वचन, काळ, समानार्थी, विरुद्धार्थी, म्हणी, वाक्प्रचार), पत्रलेखन, निबंधलेखन, संवाद. विद्यार्थ्यांच्या वयानुरूप सोप्या मराठीत समजवा.",
+  "cls-french":
+    "Cambridge Lower Secondary French (beginner to lower-intermediate, Stages 7–9): greetings and introductions, family, school, food, hobbies, daily routine, town and directions, holidays. Grammar: gender and articles, adjective agreement, regular -er/-ir/-re verbs plus être/avoir/aller/faire, present tense, near future (aller + infinitive), passé composé introduction, negation, question forms.",
+  "cls-spanish":
+    "Cambridge Lower Secondary Spanish (beginner to lower-intermediate, Stages 7–9): greetings, family, school, food, hobbies, daily routine, town and directions, holidays. Grammar: gender and articles, adjective agreement, regular -ar/-er/-ir verbs plus ser/estar/ir/tener, present tense, near future (ir a + infinitive), preterite introduction, negation, question forms.",
+  "cls-physics":
+    "Cambridge Lower Secondary Physics (Stage 9, taught separately in Grade 8): forces and motion (speed, acceleration, balanced/unbalanced forces), energy stores and transfers, work and power, sound and waves, light and optics, electricity (current, voltage, resistance, series and parallel), magnetism and electromagnetism, Earth and space. Emphasise units and fair-test design.",
+  "cls-chemistry":
+    "Cambridge Lower Secondary Chemistry (Stage 9, taught separately in Grade 8): particle model and states of matter, elements/compounds/mixtures, separation techniques, atomic structure and the Periodic Table, chemical reactions and word equations, acids and alkalis with pH and neutralisation, metals and reactivity, rates of reaction. Emphasise correct chemical vocabulary and balanced word equations.",
+  "cls-biology":
+    "Cambridge Lower Secondary Biology (Stage 9, taught separately in Grade 8): cells and specialised cells, human body systems (digestive, circulatory, respiratory, reproductive), nutrition and food tests, photosynthesis and respiration, plant structure and transport, health and disease, variation, inheritance and classification, ecosystems and food webs, adaptation and human impact.",
 
   // Cambridge IGCSE (Grade 10)
   "igcse-cs":
@@ -81,7 +123,7 @@ const SUBJECT_BLURBS: Record<string, string> = {
     "ICSE कक्षा 7 संस्कृत (तृतीयभाषा): शब्दरूप, धातुरूप, अव्यय, संधि (प्राथमिक), सरल अनुच्छेद, छोटे श्लोक, अनुवाद (हिंदी ↔ संस्कृत). कक्षा-स्तर के अनुसार सरल उदाहरण.",
 };
 
-type Board = "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse";
+type Board = "cambridge-primary" | "cambridge-lower-secondary" | "cambridge-igcse" | "icse" | "cbse";
 
 const INTEREST_HINT: Record<string, string> = {
   drawing:  "sketching, doodles, comics, art",
@@ -106,8 +148,8 @@ function systemPrompt(opts: { subject?: string; topic?: string; name?: string; g
   const { subject, topic, name, grade, board, school, interests, careNote, aiTone } = opts;
   const subjBlurb = subject ? SUBJECT_BLURBS[subject] : null;
   const learner = name?.split(" ")[0] || "the student";
-  const schoolLabel = school || (board === "cambridge-igcse" ? "Chatrabhuj Narsee School, Pune"
-    : board === "icse" ? "Wisdom World School, Hadapsar, Pune"
+  const schoolLabel = school || (board === "icse"
+    ? "Wisdom World School, Hadapsar, Pune"
     : "Chatrabhuj Narsee School, Pune");
   // Map the kid's interest tags into a one-line "draw examples from" hint so
   // Miss Vidya's metaphors land for THIS kid rather than the average kid.
@@ -124,6 +166,11 @@ function systemPrompt(opts: { subject?: string; topic?: string; name?: string; g
     : "";
   const isIgcse = board === "cambridge-igcse" || (grade ?? 0) >= 9;
   const isIcseTeen = board === "icse" && (grade ?? 0) >= 6 && (grade ?? 0) <= 8;
+  // Cambridge Lower Secondary covers Grades 6–8 as Stages 7–9, so the stage
+  // number is one ahead of the grade. Getting this wrong makes the tutor teach
+  // a year below where the learner actually is.
+  const isCambridgeLowerSec = board === "cambridge-lower-secondary";
+  const cambridgeStage = (grade ?? 6) + 1;
   const icseClass = (grade ?? 0);
   // Scope guards for ICSE — keep tutor from over-teaching content from a later grade.
   const scopeGuard = board === "icse"
@@ -133,6 +180,32 @@ function systemPrompt(opts: { subject?: string; topic?: string; name?: string; g
       ? "CRITICAL SCOPE: Class 7 ICSE. Do NOT teach: Marathas (Cl 8), acids/bases/salts (Cl 8), reproduction in plants (Cl 8). Cl 7 covers Medieval India (Delhi Sultanate, Vijayanagara, Mughals, Bhakti/Sufi), Selina Physics 7 chapters (forces, energy, light, heat, sound, electricity), Chemistry 7 (intro to atomicity/valency/balancing), Biology 7 (tissues, classification, photosynthesis, excretion, nervous system, allergy)."
       : ""
     : "";
+
+  if (isCambridgeLowerSec) {
+    return `You are Miss Vidya, an AI tutor for ${learner}, a Grade ${grade ?? 6} student at ${schoolLabel}, on the Cambridge Lower Secondary programme (Cambridge Stage ${cambridgeStage}).
+
+CRITICAL STAGE MAPPING: this school runs Cambridge Primary for Grades 1–5 and Cambridge Lower Secondary for Grades 6–8. So Grade ${grade ?? 6} is **Stage ${cambridgeStage}**, not Stage ${grade ?? 6}. Teach at Stage ${cambridgeStage}. Do NOT drop to Primary Stage 5/6 material, and do NOT reach up into IGCSE (Stage 10+) content.
+
+Style:
+- Speak to an 11–13 year old. Clear, friendly, a little grown-up. Never baby talk, never lecture.
+- Use Indian and Pune-anchored examples (monsoon, Mula-Mutha river, Sahyadri, cricket, ISRO, rangoli, local markets) alongside international ones.
+- For Maths: name the method, show working line by line, then the answer with units. Encourage estimating first.
+- For Science: give the mental model before the definition. Link to something they can observe or test. Name the variables in any experiment.
+- For English: analyse effect, not just the label of a device. Quote, then explain what it does to the reader.
+- For History/Geography: always anchor claims in evidence or a named real example.
+- For Global Perspectives: coach the research/evaluation SKILL rather than handing over facts.
+- If they ask in Hindi/Marathi (Devanagari), reply in the same script at Stage ${cambridgeStage} level.
+- Aim under 170 words unless they ask for more. Bullets sparingly.
+- End most answers with one short question that makes them think.
+- If a question is off-topic or unsafe, redirect gently to learning.
+
+${subjBlurb ? `Current classroom: ${subject}.\nSyllabus anchor: ${subjBlurb}` : ""}
+${topic ? `Current topic: ${topic}.` : ""}
+${interestLine}
+${toneLine}
+${careLine}
+`;
+  }
 
   if (isIcseTeen) {
     return `You are Miss Vidya, an AI tutor for ${learner}, a Class ${grade ?? 7} student at ${schoolLabel}, taking ICSE (CISCE board).
@@ -199,13 +272,42 @@ ${careLine}
 }
 
 export async function POST(req: Request) {
-  let payload: { messages: UIMessage[]; subject?: string; topic?: string; name?: string; grade?: number; board?: Board; school?: string; interests?: string[]; careNote?: string; aiTone?: "gentle" | "friendly" | "direct" };
+  // 1. Same-origin. A browser always sends Origin/Referer cross-origin, so a
+  //    request with neither is not a browser.
+  if (!isSameOrigin(req)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // 2. Rate limit before doing any work.
+  const verdict = rateLimit(`tutor:${clientKey(req)}`, RATE);
+  if (!verdict.ok) {
+    return Response.json(
+      { error: "Miss Vidya needs a short break. Try again in a few minutes." },
+      { status: 429, headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
+
+  // 3. Validate and cap the body.
+  let raw: unknown;
   try {
-    payload = await req.json();
+    raw = await req.json();
   } catch {
     return Response.json({ error: "Bad request" }, { status: 400 });
   }
-  const { messages, subject, topic, name, grade, board, school, interests, careNote, aiTone } = payload;
+
+  const parsed = tutorRequestSchema.safeParse(raw);
+  if (!parsed.success) {
+    return Response.json({ error: "Bad request" }, { status: 400 });
+  }
+
+  const { messages, subject, topic, name, grade, board, school, interests, careNote, aiTone } = parsed.data;
+
+  if (totalChars(messages) > LIMITS.maxCharsTotal) {
+    return Response.json(
+      { error: "That conversation got too long. Start a fresh chat with Miss Vidya." },
+      { status: 413, headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
 
   if (
     !process.env.AI_GATEWAY_API_KEY &&
@@ -224,7 +326,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const modelMessages = await convertToModelMessages(messages);
+    // The zod schema is deliberately permissive about UIMessage internals (the
+    // AI SDK evolves its part kinds); it enforces role, shape and size. The
+    // cast hands the validated value back to the SDK's own type.
+    const modelMessages = await convertToModelMessages(messages as unknown as UIMessage[]);
     const result = streamText({
       model: "anthropic/claude-haiku-4.5",
       system: systemPrompt({ subject, topic, name, grade, board, school, interests, careNote, aiTone }),
@@ -234,7 +339,9 @@ export async function POST(req: Request) {
     });
     return result.toUIMessageStreamResponse();
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "tutor unavailable";
-    return Response.json({ error: msg }, { status: 500 });
+    // Log server-side; never echo provider/internal error text to the client —
+    // it can carry model names, key hints and stack detail.
+    console.error("[api/tutor] generation failed:", e);
+    return Response.json({ error: "Miss Vidya is unavailable right now." }, { status: 500 });
   }
 }

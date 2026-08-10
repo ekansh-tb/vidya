@@ -8,6 +8,9 @@ import {
 
 export const IGCSE_CS_PACK: ExamPack = {
   subjectId: "igcse-cs",
+  // Without this, packFor("igcse-cs", 10) misses the exact-grade branch and
+  // only matched via the subjectId fallback.
+  grade: 10,
   title: "Computer Science — IGCSE 0478",
   context: "Cambridge IGCSE · v5 (2026–28) · CNS Pune",
   highlights: [

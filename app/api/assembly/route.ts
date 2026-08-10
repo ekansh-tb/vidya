@@ -1,7 +1,15 @@
 import { generateText } from "ai";
+import {
+  assemblyRequestSchema, isSameOrigin, clientKey, rateLimit, rateHeaders,
+} from "@/lib/api/guard";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
+
+/** Assembly is once-a-day content, so this can be tight. Denials fall back to
+ *  the hand-written local assembly rather than erroring — the kid still gets a
+ *  greeting. See lib/api/guard.ts for the best-effort caveat. */
+const RATE = { limit: 12, windowMs: 10 * 60 * 1000 };
 
 const FALLBACK_THOUGHTS = [
   { author: "A.P.J. Abdul Kalam", line: "Dream is not what you see in sleep — it is the thing that does not let you sleep." },
@@ -36,11 +44,28 @@ function dailyFallback(name?: string) {
 }
 
 export async function POST(req: Request) {
-  let body: { name?: string; streak?: number; level?: number; grade?: number; board?: string } = {};
+  if (!isSameOrigin(req)) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Over the limit, serve the offline assembly instead of an error — the kid
+  // should never see the school fail to open.
+  const verdict = rateLimit(`assembly:${clientKey(req)}`, RATE);
+
+  let raw: unknown = {};
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
-    /* ok */
+    /* body is optional for this route */
+  }
+
+  const parsed = assemblyRequestSchema.safeParse(raw ?? {});
+  const body = parsed.success ? parsed.data : {};
+
+  if (!verdict.ok) {
+    return Response.json(dailyFallback(body.name), {
+      headers: rateHeaders(verdict, RATE.limit),
+    });
   }
 
   if (
@@ -58,19 +83,34 @@ export async function POST(req: Request) {
   });
 
   const isIgcse = body.board === "cambridge-igcse" || (body.grade ?? 0) >= 9;
-  const ageHint = isIgcse
+  // Cambridge Lower Secondary = Grades 6–8 (Stages 7–9). Without this branch
+  // an 11–13 year old gets addressed as a 10-year-old.
+  const isLowerSec = body.board === "cambridge-lower-secondary";
+  const ageHint = isLowerSec
+    ? "Speak to an 11–13 year old on Cambridge Lower Secondary. Warm but not childish."
+    : isIgcse
     ? "Speak to a 15-year-old IGCSE student. Mature, motivating, but warm."
     : "Keep language simple for a 10-year-old.";
   const planHint = isIgcse
     ? "4 short bullets, max 8 words each, mixing IGCSE subjects (English, Maths, Sciences, Computer Science, ICT, Business) and one wellbeing item."
+    : isLowerSec
+    ? "4 short bullets, max 8 words each, mixing Lower Secondary subjects (English, Maths, Science, History, Geography, Global Perspectives, ICT) and one wellbeing item."
     : "4 short bullets, max 8 words each, mixing subjects and one fun item.";
+  // Never assert a school the learner does not attend. Only the learner's own
+  // school is named; with none supplied the principal stays generic.
+  const schoolLabel = body.school?.trim() || null;
+  const programmeLabel = isIgcse
+    ? "Cambridge IGCSE Upper Secondary"
+    : isLowerSec
+    ? `Cambridge Lower Secondary, Stage ${(body.grade ?? 6) + 1}`
+    : "Cambridge Primary";
 
   try {
     const result = await generateText({
       model: "anthropic/claude-haiku-4.5",
       maxOutputTokens: 600,
       temperature: 0.85,
-      system: `You are the AI Principal of Vidya, a digital school for students at Chatrabhuj Narsee School Pune. You give the daily morning assembly.
+      system: `You are the AI Principal of Vidya, a digital school${schoolLabel ? ` for students at ${schoolLabel}` : ""}. You give the daily morning assembly.
 
 Output STRICT JSON only, no markdown, with this shape:
 {
@@ -82,14 +122,16 @@ Output STRICT JSON only, no markdown, with this shape:
 }
 
 ${ageHint} Indian context welcome (festivals, weather, monsoon, cricket, ISRO).`,
-      prompt: `Today is ${today}. Student first name: ${body.name?.split(" ")[0] || "scholar"}. Grade: ${body.grade ?? 5} (${isIgcse ? "Cambridge IGCSE Upper Secondary" : "Cambridge Primary"}). Current streak: ${body.streak ?? 0} days. Level: ${body.level ?? 1}.`,
+      prompt: `Today is ${today}. Student first name: ${body.name?.split(" ")[0] || "scholar"}. Grade: ${body.grade ?? 5} (${programmeLabel}). Current streak: ${body.streak ?? 0} days. Level: ${body.level ?? 1}.`,
     });
     const text = result.text.trim();
     // Strip stray ``` fences
     const cleaned = text.replace(/^```(?:json)?/, "").replace(/```$/, "").trim();
     const parsed = JSON.parse(cleaned);
     return Response.json({ ...parsed, source: "ai" });
-  } catch {
+  } catch (e) {
+    // Non-fatal by design: the assembly always opens, AI or not.
+    console.error("[api/assembly] falling back to local assembly:", e);
     return Response.json(dailyFallback(body.name));
   }
 }

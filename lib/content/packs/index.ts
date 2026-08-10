@@ -2,6 +2,17 @@ import type { ExamPack } from "../exam-pack";
 import type { SubjectId } from "../../types";
 import { IGCSE_CS_PACK } from "./igcse-cs";
 import { IGCSE_PHYSICS_PACK } from "./igcse-physics";
+import { IGCSE_MATHS_PACK } from "./igcse-maths";
+import { IGCSE_CHEMISTRY_PACK } from "./igcse-chemistry";
+import { IGCSE_BIOLOGY_PACK } from "./igcse-biology";
+import { IGCSE_ENGLISH_PACK } from "./igcse-english";
+import { IGCSE_FRENCH_PACK } from "./igcse-french";
+// Cambridge Lower Secondary. NOTE the grade/stage offset: these packs carry
+// `grade: 6` because packFor() matches on the learner's grade, while their
+// content is Cambridge **Stage 7**. CNS maps Grades 6–8 to Stages 7–9.
+import { CLS7_MATHS_PACK } from "./cls7-maths";
+import { CLS7_SCIENCE_PACK } from "./cls7-science";
+import { CLS7_ENGLISH_PACK } from "./cls7-english";
 import { ICSE7_PACKS } from "./icse7-rest";
 import { ICSE6_PACKS } from "./icse6";
 import { ICSE_LANGUAGE_PACKS } from "./icse-languages";
@@ -15,6 +26,14 @@ import { CBSE7_SST } from "./cbse7-sst";
 export const ALL_PACKS: ExamPack[] = [
   IGCSE_CS_PACK,
   IGCSE_PHYSICS_PACK,
+  IGCSE_MATHS_PACK,
+  IGCSE_CHEMISTRY_PACK,
+  IGCSE_BIOLOGY_PACK,
+  IGCSE_ENGLISH_PACK,
+  IGCSE_FRENCH_PACK,
+  CLS7_MATHS_PACK,
+  CLS7_SCIENCE_PACK,
+  CLS7_ENGLISH_PACK,
   ...ICSE7_PACKS,
   ...ICSE6_PACKS,
   ...ICSE_LANGUAGE_PACKS,

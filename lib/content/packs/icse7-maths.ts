@@ -5,6 +5,7 @@ import type { ExamPack } from "../exam-pack";
 
 export const ICSE7_MATHS: ExamPack = {
   subjectId: "icse-maths",
+  grade: 7,
   title: "Mathematics — Class 7 ICSE",
   context: "Selina Concise · 22 chapters · Wisdom World School Hadapsar",
   highlights: [

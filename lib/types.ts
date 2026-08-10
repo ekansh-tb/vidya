@@ -3,6 +3,14 @@ import type { LucideIcon } from "lucide-react";
 export type SubjectId =
   // Cambridge Primary (Grade 5) — existing
   | "maths" | "science" | "english" | "hindi" | "marathi" | "gk"
+  // Cambridge Lower Secondary (Grades 6–8 = Stages 7–9) — added v5.
+  // CNS Amanora maps Cambridge Primary to Grades 1–5 and Cambridge Lower
+  // Secondary to Grades 6–8, so a Grade 6 learner sits at Stage 7.
+  | "cls-english" | "cls-maths" | "cls-science" | "cls-history" | "cls-geography"
+  | "cls-globalperspectives" | "cls-ict" | "cls-art"
+  | "cls-hindi" | "cls-french" | "cls-spanish" | "cls-marathi"
+  // Grade 8 (Stage 9) splits combined Science into the three sciences
+  | "cls-physics" | "cls-chemistry" | "cls-biology"
   // Cambridge IGCSE (Grade 10) — added v2
   | "igcse-maths" | "igcse-english" | "igcse-physics" | "igcse-chemistry" | "igcse-biology"
   | "igcse-cs" | "igcse-ict" | "igcse-business" | "igcse-economics" | "igcse-geography"
@@ -19,6 +27,7 @@ export type SubjectId =
 
 export type Board =
   | "cambridge-primary"
+  | "cambridge-lower-secondary"
   | "cambridge-igcse"
   | "icse"
   | "cbse";
