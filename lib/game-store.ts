@@ -88,13 +88,24 @@ function makeLearnerFromLegacy(legacy: GameState): LearnerProfile {
   };
 }
 
+/**
+ * Not a real grade. A fresh install has no idea what class the learner is in,
+ * and onboarding asks before anything reads this — `state.onboarded` is false,
+ * so app/page.tsx routes into the class step first. The sentinel exists so a
+ * placeholder can never be mistaken for a genuine Grade 5 learner, which is
+ * exactly what the old hardcoded `grade: 5` did.
+ */
+export const UNSET_GRADE = 0;
+
 // Fresh-install default: an empty profile that immediately routes through
-// onboarding. No hardcoded name, no seeded XP, no inferred school.
+// onboarding. No hardcoded name, no assumed grade, no seeded XP, no school.
 function defaultPrimaryLearner(): LearnerProfile {
   return {
     id: "learner-primary",
     name: "",
-    grade: 5,
+    grade: UNSET_GRADE,
+    // Placeholder only — onboarding overwrites it with the chosen board before
+    // the app renders anything that reads it.
     board: "cambridge-primary",
     subjectsLocked: false,
     createdAt: new Date().toISOString(),

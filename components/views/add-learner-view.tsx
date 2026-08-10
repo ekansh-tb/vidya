@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, Sparkles, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Board, LearnerProfile } from "@/lib/types";
+import { BOARDS, boardOption } from "@/lib/content/boards";
 import { todayKey } from "@/lib/utils";
 import { themeForGrade } from "@/components/theme-applier";
 import { sfx } from "@/lib/audio";
@@ -16,14 +17,6 @@ const AVATAR_CHOICES = [
   { id: "elephant", emoji: "🐘" },
   { id: "fox",      emoji: "🦊" },
   { id: "lion",     emoji: "🦁" },
-];
-
-const BOARDS: { id: Board; label: string; description: string; defaultGrade: number; gradeRange: [number, number] }[] = [
-  { id: "cambridge-primary", label: "Cambridge Primary",  description: "Grades 1–5 · Stages 1–5 · ages 6–11",     defaultGrade: 5,  gradeRange: [1, 5] },
-  { id: "cambridge-lower-secondary", label: "Cambridge Lower Secondary", description: "Grades 6–8 · Stages 7–9 · ages 11–14", defaultGrade: 6, gradeRange: [6, 8] },
-  { id: "cambridge-igcse",   label: "Cambridge IGCSE",    description: "Year 9–10 · Upper Secondary · ages 14–16", defaultGrade: 10, gradeRange: [9, 10] },
-  { id: "icse",              label: "ICSE (CISCE)",       description: "Indian Council · grades 1–10",            defaultGrade: 7,  gradeRange: [1, 10] },
-  { id: "cbse",              label: "CBSE (NCERT NCF-SE 2023)", description: "Central Board · grades 1–12 · NCERT books", defaultGrade: 7, gradeRange: [1, 12] },
 ];
 
 /**
@@ -103,7 +96,7 @@ export function AddLearnerView({
     }));
   };
 
-  const selectedBoard = BOARDS.find((b) => b.id === board)!;
+  const selectedBoard = boardOption(board);
 
   return (
     <div className="min-h-screen pb-24 max-w-2xl mx-auto">
