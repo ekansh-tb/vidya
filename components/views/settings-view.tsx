@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { ChevronLeft, Volume2, VolumeX, Music, Mic } from "lucide-react";
 import type { GameState } from "@/lib/types";
-import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
-import { stopSpeaking } from "@/lib/speech";
+import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
+import { stopSpeaking, setVoiceVolume } from "@/lib/speech";
 
 export function SettingsView({
   state, setState, onBack,
@@ -12,6 +13,19 @@ export function SettingsView({
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
 }) {
+  // Push the two settings the engines cannot see for themselves. An effect
+  // rather than a line in each handler: it also covers mount and a mid-session
+  // learner switch, both of which change these values without a toggle press.
+  // (The engines still read the persisted values at startup — this screen is
+  // usually not mounted when the first sound plays.)
+  useEffect(() => {
+    setSfxEnabled(state.settings.sound);
+  }, [state.settings.sound]);
+
+  useEffect(() => {
+    setVoiceVolume(state.settings.voiceVolume);
+  }, [state.settings.voiceVolume]);
+
   const toggleMusic = () => {
     const next = !state.settings.music;
     setState((p) => ({ ...p, settings: { ...p.settings, music: next } }));

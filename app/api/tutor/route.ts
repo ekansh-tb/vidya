@@ -3,6 +3,7 @@ import {
   tutorRequestSchema, totalChars, isSameOrigin,
   clientKey, rateLimit, rateHeaders, LIMITS,
 } from "@/lib/api/guard";
+import { resolveCapabilityServer } from "@/lib/capabilities/server";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -301,6 +302,34 @@ export async function POST(req: Request) {
   }
 
   const { messages, subject, topic, name, grade, board, school, interests, careNote, aiTone } = parsed.data;
+
+  // 3b. Capability check, server-side.
+  //
+  // OBSERVE MODE, deliberately. The kid app still runs fully anonymously and
+  // no learner has linked an account yet, so enforcing `ai.tutor.full` today
+  // would switch the tutor off for every existing user at once. We resolve the
+  // real rung and log the decision now; flipping ENFORCE_TUTOR_RUNG to true is
+  // the single, visible change that makes it binding once families have
+  // linked. Until then the client hook remains the only gate — and it is a UX
+  // affordance, not a security boundary.
+  const ENFORCE_TUTOR_RUNG = process.env.ENFORCE_TUTOR_RUNG === "true";
+  try {
+    const decision = await resolveCapabilityServer("ai.tutor.full");
+    if (!decision.allowed) {
+      if (ENFORCE_TUTOR_RUNG) {
+        return Response.json(
+          { error: "Miss Vidya isn't open for this account yet." },
+          { status: 403, headers: rateHeaders(verdict, RATE.limit) },
+        );
+      }
+      console.info(
+        `[api/tutor] would deny (${decision.reason}, identity=${decision.identity.kind}) — observe mode`,
+      );
+    }
+  } catch (e) {
+    // Never let an identity lookup take the tutor down.
+    console.error("[api/tutor] capability check failed, allowing:", e);
+  }
 
   if (totalChars(messages) > LIMITS.maxCharsTotal) {
     return Response.json(

@@ -24,6 +24,7 @@ import { SubjectPickerView } from "@/components/views/subject-picker-view";
 import { ExamPrepView } from "@/components/views/exam-prep-view";
 import { AddLearnerView } from "@/components/views/add-learner-view";
 import { ReviewView } from "@/components/views/review-view";
+import { LinkAccountView } from "@/components/views/link-account-view";
 import { CosmicBg, cosmicModeForGrade } from "@/components/effects/cosmic-bg";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
@@ -336,6 +337,9 @@ export default function HomePage() {
             onAdd={() => setShowAddLearner(true)}
           />
         );
+        break;
+      case "link-account":
+        content = <LinkAccountView learner={learner} onBack={back} />;
         break;
       case "subject-picker":
         content = (

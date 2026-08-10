@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, NotebookPen, Save, Check } from "lucide-react";
-import { SUBJECTS, SUBJECT_MAP } from "@/lib/content/subjects";
+import { SUBJECT_MAP, subjectsForLearner } from "@/lib/content/subjects";
+import { useGameStore } from "@/lib/game-store";
 import type { GameState, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 
@@ -15,20 +16,41 @@ export function NotebookView({
   onBack: () => void;
   initialSubject?: SubjectId;
 }) {
-  const [subjectId, setSubjectId] = useState<SubjectId>(initialSubject || "maths");
-  const subject = SUBJECT_MAP[subjectId];
-  const stored = state.notebook?.[subjectId] || "";
+  // The notebook used to list the global SUBJECTS union — every subject from all
+  // five boards — and default to Cambridge Primary "maths". Opening it from the
+  // home tile therefore put, say, an IGCSE learner on a Primary subject with
+  // ICSE Sanskrit and CBSE Vocational in the strip. Scope it to what this
+  // learner actually takes. Read from the store because the caller only hands
+  // us `state`.
+  const learner = useGameStore((s) => s.learner);
+  const subjects = useMemo(
+    () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
+    [learner.board, learner.pickedSubjects, learner.grade],
+  );
+
+  const [subjectId, setSubjectId] = useState<SubjectId | undefined>(() => initialSubject ?? subjects[0]?.id);
+
+  // The learner hydrates from storage after mount, so the list can still be
+  // empty on the first render. Adopt the first real subject once one arrives.
+  useEffect(() => {
+    if (!subjectId && subjects.length > 0) setSubjectId(subjects[0].id);
+  }, [subjectId, subjects]);
+
+  const subject = subjectId ? SUBJECT_MAP[subjectId] : undefined;
+  const stored = subjectId ? state.notebook?.[subjectId] || "" : "";
   const [text, setText] = useState(stored);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const debounceRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (!subjectId) return;
     setText(state.notebook?.[subjectId] || "");
   }, [subjectId, state.notebook]);
 
   // Auto-save debounced
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    if (!subjectId) return;
     if (text === (state.notebook?.[subjectId] || "")) return;
     debounceRef.current = window.setTimeout(() => {
       setState((p) => ({
@@ -46,12 +68,40 @@ export function NotebookView({
   const wordCount = useMemo(() => text.trim().split(/\s+/).filter(Boolean).length, [text]);
   const charCount = text.length;
 
+  const backButton = (
+    <button
+      onClick={() => { sfx.click(); onBack(); }}
+      className="flex items-center gap-1 min-h-[44px] -ml-1 pr-2 text-white/60 font-medium mb-1 active:scale-95"
+    >
+      <ChevronLeft className="w-5 h-5" /> Home
+    </button>
+  );
+
+  // No subjects yet (learner hasn't run the subject picker). Say so rather than
+  // falling back to a subject from a board this learner isn't on.
+  if (!subjectId || !subject) {
+    return (
+      <div className="min-h-screen pb-32 max-w-2xl mx-auto flex flex-col">
+        <div className="px-5 pt-6">
+          {backButton}
+          <div className="glass-card p-6 mt-3 text-center">
+            <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-white/[0.06]">
+              <NotebookPen className="w-6 h-6 text-white/60" />
+            </div>
+            <div className="font-display text-xl font-bold text-white mt-3">Notebook</div>
+            <p className="text-sm text-white/50 mt-1">
+              Pick your subjects first — then each one gets its own page here.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto flex flex-col">
       <div className="px-5 pt-6 pb-3">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-3 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+        {backButton}
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-4 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-30 blur-3xl" style={{ background: subject.accent }} />
@@ -74,15 +124,17 @@ export function NotebookView({
           </div>
         </motion.div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {SUBJECTS.map((s) => {
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar" role="tablist" aria-label="Notebook subjects">
+          {subjects.map((s) => {
             const Icon = s.icon;
             const active = s.id === subjectId;
             return (
               <button
                 key={s.id}
+                role="tab"
+                aria-selected={active}
                 onClick={() => { sfx.click(); setSubjectId(s.id); }}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-1.5 rounded-full px-4 min-h-[44px] text-xs font-bold whitespace-nowrap transition-all ${
                   active ? "shadow-lg" : "opacity-60"
                 } ${s.isDeva ? "font-deva" : ""}`}
                 style={{
@@ -124,7 +176,7 @@ export function NotebookView({
               setState((p) => ({ ...p, notebook: { ...(p.notebook || {}), [subjectId]: text } }));
               setSavedAt(Date.now());
             }}
-            className="flex items-center gap-1 rounded-full glass px-3 py-1 active:scale-95"
+            className="flex items-center gap-1 rounded-full glass px-4 min-h-[44px] active:scale-95"
           >
             <Save className="w-3 h-3" /> Save now
           </button>
