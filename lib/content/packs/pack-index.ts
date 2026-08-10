@@ -37,11 +37,20 @@ export const PACK_INDEX: PackEntry[] = [
   { subjectId: "igcse-biology", grade: 10, load: () => import("./igcse-biology").then((m) => m.IGCSE_BIOLOGY_PACK) },
   { subjectId: "igcse-english", grade: 10, load: () => import("./igcse-english").then((m) => m.IGCSE_ENGLISH_PACK) },
   { subjectId: "igcse-french", grade: 10, load: () => import("./igcse-french").then((m) => m.IGCSE_FRENCH_PACK) },
+  { subjectId: "igcse-ict", grade: 10, load: () => import("./igcse-ict").then((m) => m.IGCSE_ICT_PACK) },
+  { subjectId: "igcse-business", grade: 10, load: () => import("./igcse-business").then((m) => m.IGCSE_BUSINESS_PACK) },
+  { subjectId: "igcse-economics", grade: 10, load: () => import("./igcse-economics").then((m) => m.IGCSE_ECONOMICS_PACK) },
+  { subjectId: "igcse-geography", grade: 10, load: () => import("./igcse-geography").then((m) => m.IGCSE_GEOGRAPHY_PACK) },
+  { subjectId: "igcse-history", grade: 10, load: () => import("./igcse-history").then((m) => m.IGCSE_HISTORY_PACK) },
 
   // ── Cambridge Lower Secondary (Grade 6 = Stage 7) ─────────────────
   { subjectId: "cls-maths", grade: 6, load: () => import("./cls7-maths").then((m) => m.CLS7_MATHS_PACK) },
   { subjectId: "cls-science", grade: 6, load: () => import("./cls7-science").then((m) => m.CLS7_SCIENCE_PACK) },
   { subjectId: "cls-english", grade: 6, load: () => import("./cls7-english").then((m) => m.CLS7_ENGLISH_PACK) },
+  { subjectId: "cls-history", grade: 6, load: () => import("./cls7-humanities").then((m) => m.CLS7_HISTORY_PACK) },
+  { subjectId: "cls-geography", grade: 6, load: () => import("./cls7-humanities").then((m) => m.CLS7_GEOGRAPHY_PACK) },
+  { subjectId: "cls-globalperspectives", grade: 6, load: () => import("./cls7-gp-ict").then((m) => m.CLS7_GLOBAL_PERSPECTIVES_PACK) },
+  { subjectId: "cls-ict", grade: 6, load: () => import("./cls7-gp-ict").then((m) => m.CLS7_ICT_PACK) },
 
   // ── ICSE Class 7 ──────────────────────────────────────────────────
   { subjectId: "icse-maths", grade: 7, load: () => import("./icse7-maths").then((m) => m.ICSE7_MATHS) },

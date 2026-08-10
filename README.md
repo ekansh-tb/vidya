@@ -17,8 +17,8 @@ It started as a one-learner quiz app for a Grade 5 student and grew into a multi
   - **terminal** (Grade 9+) — JetBrains Mono, near-black + acid lime, grid-paper, dev-console vibe.
 - **Curriculum-anchored content** — every pack cites the syllabus code it was written against.
   - **Cambridge Primary** Stage 5 (Grade 5) — Maths, Science, English, Hindi, Marathi, GK.
-  - **Cambridge Lower Secondary** (Grades 6–8 = Stages 7–9) — Stage 7 packs for Maths (0862), Science (0893) and English (0861), plus History, Geography, Global Perspectives, ICT, Art and the Hindi/French/Spanish language choice.
-  - **Cambridge IGCSE** (Grades 9–10) — exam packs for International Mathematics **0607**, Physics 0625, Chemistry 0620, Biology 0610, First Language English 0500, French 0520 and Computer Science 0478.
+  - **Cambridge Lower Secondary** (Grades 6–8 = Stages 7–9) — Stage 7 packs for Maths (0862), Science (0893), English (0861), History, Geography, Global Perspectives and ICT, plus Art and the Hindi/French/Spanish language choice.
+  - **Cambridge IGCSE** (Grades 9–10) — exam packs for International Mathematics **0607**, Physics 0625 (full syllabus), Chemistry 0620, Biology 0610, First Language English 0500, French 0520, Computer Science 0478, ICT 0417, Business Studies 0450, Economics 0455, Geography 0460 and History 0470.
   - **ICSE / CISCE** Class 6–7 — Selina-aligned packs for Maths, Physics, Chemistry, Biology, History & Civics, Geography, Computer Studies.
   - **CBSE** Class 7 (NCERT) — Maths, Science, English, Hindi, Sanskrit, Social Science.
   - Maharashtra-mandated Marathi (Balbharati) across boards.
