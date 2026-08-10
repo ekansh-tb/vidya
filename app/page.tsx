@@ -34,6 +34,7 @@ import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
+import { useSync } from "@/lib/sync/use-sync";
 
 export default function HomePage() {
   const {
@@ -45,6 +46,10 @@ export default function HomePage() {
   const [showAddLearner, setShowAddLearner] = useState(false);
 
   useEffect(() => { hydrate(); }, [hydrate]);
+
+  // Mirrors the active learner's progress to the server once they are linked.
+  // No-op for anonymous device-local profiles, and never blocks play.
+  useSync();
 
   useEffect(() => {
     if (!hydrated) return;
