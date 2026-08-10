@@ -10,6 +10,7 @@ import type { CapabilityKey, VerificationLevel } from "@/lib/auth/types";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
+import { BackupPanel } from "@/components/parent/backup-panel";
 
 /**
  * In-kid-app Parent Room.
@@ -199,6 +200,12 @@ export function ParentView({
 
         {/* Capability map ------------------------------------------------ */}
         <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+
+        {/* Backup & restore ---------------------------------------------- */}
+        {/* Placed high enough to be found before it is needed. All progress
+            lives in this browser only; this panel is the only way to survive
+            clearing site data or moving to a new device. */}
+        <BackupPanel />
 
 
         {/* Stat grid (filtered to this kid) ----------------------------- */}

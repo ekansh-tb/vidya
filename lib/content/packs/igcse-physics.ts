@@ -1,43 +1,268 @@
-// Cambridge IGCSE Physics 0625 — Topic 4: Electricity & Magnetism (Extended).
-// Tightly scoped to Topic 4; remaining physics topics (Motion/Forces,
-// Thermal, Waves, Atomic) can be added later.
+// Cambridge IGCSE Physics 0625 — FULL Extended syllabus (all six topics:
+// 1 Motion, forces and energy · 2 Thermal physics · 3 Waves ·
+// 4 Electricity and magnetism · 5 Nuclear physics · 6 Space physics).
 //
-// Verified against the Cambridge IGCSE Physics 0625 subject page
-// (https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/).
-// Question stems are original, in the style of past Paper 2/4 (Extended).
+// Extended 2026-08-11 from the original Topic-4-only pack. The learner's
+// textbook is *Physics for Cambridge IGCSE Coursebook*, 3rd edition
+// (Sang, Follows, Tarpey — Cambridge University Press, ISBN 978-1-108-88807-3),
+// endorsed for syllabus 0625/0972 for examination from 2023.
+//
+// Every learning objective, equation and unit below was checked line by line
+// against the official Cambridge syllabus PDF for examination in 2026, 2027
+// and 2028 (https://www.cambridgeinternational.org/Images/697209-2026-2028-syllabus.pdf),
+// which is the version this learner will be examined on. Two consequences of
+// that check are worth knowing:
+//
+//   • DIGITAL ELECTRONICS / LOGIC GATES were removed from 0625 when the 2023
+//     syllabus came in. The logic-gate material inherited from the original
+//     pack has been kept (it is still good electronics) but is flagged
+//     off-syllabus wherever it appears. Skip it if you are short of time.
+//   • SPECIFIC LATENT HEAT is NOT in 0625. Topic 2.2.3 covers melting, boiling
+//     and evaporation qualitatively only, so no L = E/m calculations appear
+//     here. Likewise F = mv²/r is explicitly not required (1.5.1), barometers
+//     and manometers are not examined, and "thermal capacity" no longer exists
+//     — only specific heat capacity.
+//
+// Constants used: acceleration of free fall / gravitational field strength
+// g = 9.8 m/s² (9.8 N/kg); speed of electromagnetic waves in a vacuum
+// c = 3.0 × 10⁸ m/s; speed of sound in air ≈ 330–350 m/s; specific heat
+// capacity of water 4200 J/(kg °C); 1 light-year = 9.5 × 10¹⁵ m;
+// Hubble constant H₀ = 2.2 × 10⁻¹⁸ per second.
+//
+// Question stems are original, in the style of past Paper 2 (multiple choice)
+// and Paper 4 (theory), Extended. No past-paper wording is reproduced.
 
 import type { ExamPack } from "../exam-pack";
 
 export const IGCSE_PHYSICS_PACK: ExamPack = {
   subjectId: "igcse-physics",
   grade: 10,
-  title: "Physics — Electricity & Magnetism · IGCSE",
-  context: "Cambridge IGCSE 0625 · Extended · Topic 4 · CNS Pune",
+  title: "Physics — Full Syllabus · IGCSE",
+  context: "Cambridge IGCSE 0625 · Extended · Topics 1–6 · Papers 2 & 4",
   highlights: [
     { label: "Syllabus", value: "0625 (Extended)" },
-    { label: "Topic", value: "4 · Electricity & Magnetism" },
-    { label: "Subtopics", value: "4.1 – 4.4" },
+    { label: "Topics", value: "1 – 6 · complete" },
+    { label: "Heaviest marks", value: "Motion & energy · Waves · Electricity" },
   ],
   pinnedRule: {
     heading: "Marks live in the units",
-    body: "Every numerical answer gets a unit (C, V, A, Ω, W, J, kWh, T). State formula → substitute → final value + unit. Method marks survive a wrong final answer; missing units do not.",
+    body: "Every numerical answer gets a unit: m/s, m/s², N, kg, kg/m³, N m, J, W, Pa, °C, K, Hz, m, C, V, A, Ω, kW h. State formula → substitute → final value + unit, and convert cm/g/minutes to m/kg/seconds BEFORE substituting. Method marks survive a wrong final answer; a missing unit does not.",
   },
   reference: {
     label: "Cambridge IGCSE Physics 0625 — subject page",
     url: "https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-igcse-physics-0625/",
   },
   plan: [
-    { title: "Walk the four sub-topics", hint: "4.1 magnetism → 4.4 electromagnetism" },
-    { title: "Lock the 4 core formulas", hint: "Q=It, V=IR, P=IV, E=Pt" },
-    { title: "Drill series + parallel rules", hint: "Resistance, current, voltage" },
-    { title: "Master the potential divider", hint: "Especially with LDR / thermistor" },
-    { title: "Logic gates — recite truth tables", hint: "AND, OR, NOT, NAND, NOR" },
-    { title: "Read the cheat sheet morning of test", hint: "Last 10 minutes only" },
+    { title: "Walk the six topics", hint: "1 motion → 6 space, 15 min each" },
+    { title: "Recite the whole formula sheet", hint: "Every equation, out loud, from memory" },
+    { title: "Drill the three graph skills", hint: "d–t gradient · v–t gradient · v–t area" },
+    { title: "Do ten multi-step calculations cold", hint: "Formula → substitute → answer + unit" },
+    { title: "Rehearse the explanation answers", hint: "Convection, TIR, half-life, redshift" },
+    { title: "Read the cheat sheet morning of the exam", hint: "Last 10 minutes only" },
   ],
 
   topics: [
     {
-      id: "4-1-magnetism", num: 1, title: "4.1 Simple phenomena of magnetism",
+      id: "1-1-quantities", num: 1, title: "1.1 Physical quantities and measurement",
+      blurb: "Measuring, scalars and vectors, resultants.",
+      syllabus: [
+        "Rulers and measuring cylinders for length and volume; clocks and digital timers for time intervals.",
+        "For a small distance or a short time, measure a multiple and divide: e.g. time 20 swings of a pendulum and divide by 20 to get the period. This reduces the effect of the reaction-time uncertainty.",
+        "A scalar has magnitude (size) only. A vector has magnitude AND direction.",
+        "Scalars: distance, speed, time, mass, energy, temperature.",
+        "Vectors: force, weight, velocity, acceleration, momentum, electric field strength, gravitational field strength.",
+        "Resultant of two vectors at RIGHT ANGLES (forces or velocities only): by calculation, magnitude = √(a² + b²) and direction from tan θ = opposite/adjacent; or graphically by drawing a scale parallelogram/triangle and measuring.",
+        "Multipliers you must use: M mega, k kilo, c centi, m milli — plus (Extended) G giga, µ micro, n nano.",
+      ],
+    },
+    {
+      id: "1-2-motion", num: 2, title: "1.2 Motion",
+      blurb: "Speed, velocity, acceleration and the two graphs.",
+      syllabus: [
+        "Speed = distance travelled per unit time, v = s/t. Velocity = speed in a given direction (a vector).",
+        "Average speed = total distance travelled ÷ total time taken.",
+        "Acceleration = change in velocity per unit time, a = Δv/Δt. Unit m/s². A deceleration is a negative acceleration — put the minus sign in and keep it there.",
+        "Distance–time graph: horizontal = at rest; straight slope = constant speed; curve of increasing gradient = accelerating. GRADIENT = speed.",
+        "Speed–time graph: horizontal = constant speed; straight slope = constant acceleration; curve = changing acceleration. GRADIENT = acceleration, AREA UNDER THE LINE = distance travelled.",
+        "The acceleration of free fall g near the Earth's surface is approximately constant and approximately 9.8 m/s².",
+        "Falling with air/liquid resistance: the object accelerates, drag grows as speed grows, until drag = weight. The resultant force is then zero, the acceleration is zero and the object falls at a constant TERMINAL VELOCITY.",
+      ],
+    },
+    {
+      id: "1-3-mass-density", num: 3, title: "1.3–1.4 Mass, weight and density",
+      blurb: "Mass vs weight, gravitational field strength, ρ = m/V.",
+      syllabus: [
+        "Mass = a measure of the quantity of matter in an object at rest. Unit kg. It is the same everywhere.",
+        "Weight = the gravitational force acting on an object that has mass. Unit N. It changes with location.",
+        "Gravitational field strength g = force per unit mass, g = W/m. Unit N/kg. On Earth g ≈ 9.8 N/kg, and this is numerically equal to the acceleration of free fall.",
+        "Weight is the effect of a gravitational field on a mass. Weights (and masses) can be compared using a balance.",
+        "Density = mass per unit volume, ρ = m/V. Units g/cm³ or kg/m³; 1 g/cm³ = 1000 kg/m³.",
+        "Measuring density: liquid — mass in a measuring cylinder of known volume; regular solid — mass ÷ (length × width × height); irregular solid that sinks — mass, then volume by displacement in a measuring cylinder or displacement can.",
+        "An object floats if its density is less than the density of the fluid. One liquid floats on another (if they do not mix) if it is the less dense.",
+      ],
+    },
+    {
+      id: "1-5-forces", num: 4, title: "1.5 Forces, moments and centre of gravity",
+      blurb: "F = ma, springs, friction, turning effects, stability.",
+      syllabus: [
+        "Forces can change the size and shape of an object. Load–extension graph for a spring: straight line through the origin up to the LIMIT OF PROPORTIONALITY, then it curves.",
+        "Spring constant = force per unit extension, k = F/x. Unit N/m (or N/cm).",
+        "Resultant of forces along the same straight line: add forces in the same direction, subtract opposing ones.",
+        "An object stays at rest, or keeps moving in a straight line at constant speed, unless a resultant force acts on it.",
+        "A resultant force changes the velocity of an object — its speed, its direction of motion, or both. F = ma, with force and acceleration in the SAME direction.",
+        "Circular motion (qualitative only): a force perpendicular to the motion keeps an object on a circular path. Speed increases if force increases (mass and radius constant); radius decreases if force increases (mass and speed constant); a larger mass needs a larger force for the same speed and radius. F = mv²/r is NOT required.",
+        "Solid friction is the force between two surfaces that may impede motion and produce heating. Drag acts on objects moving through liquids and gases (air resistance).",
+        "Moment of a force = force × perpendicular distance from the pivot. Unit N m. It measures the turning effect.",
+        "Principle of moments: for an object in equilibrium, the sum of the clockwise moments about a point = the sum of the anticlockwise moments about that same point. Apply it with more than one force on each side.",
+        "Equilibrium = no resultant force AND no resultant moment.",
+        "Centre of gravity = the point at which the whole weight of the object may be taken to act. Found for a lamina by suspending it from two or three different points and drawing plumb lines.",
+        "Stability: an object is more stable with a lower centre of gravity and a wider base. It topples when the line of action of its weight falls outside the base.",
+      ],
+    },
+    {
+      id: "1-6-momentum", num: 5, title: "1.6 Momentum (Extended only)",
+      blurb: "p = mv, impulse, conservation, F = Δp/Δt.",
+      syllabus: [
+        "Momentum = mass × velocity, p = mv. Unit kg m/s. It is a VECTOR — opposite directions get opposite signs.",
+        "Impulse = force × time for which the force acts: impulse = FΔt = Δ(mv). Unit N s.",
+        "Principle of conservation of momentum: in a collision or explosion with no external resultant force, total momentum before = total momentum after (in one dimension for 0625).",
+        "Resultant force = change in momentum per unit time: F = Δp/Δt. This is why crumple zones, airbags and seat belts reduce injury — the same change in momentum spread over a longer time gives a smaller average force.",
+        "Kinetic energy is not usually conserved in a collision even though momentum always is; compare ½mv² before and after to show the difference.",
+      ],
+    },
+    {
+      id: "1-7-energy", num: 6, title: "1.7 Energy, work and power",
+      blurb: "Stores, transfers, Ek and Ep, work, energy resources, efficiency.",
+      syllabus: [
+        "Energy stores: kinetic, gravitational potential, chemical, elastic (strain), nuclear, electrostatic, internal (thermal).",
+        "Energy is transferred between stores by forces (mechanical work done), by electrical currents (electrical work done), by heating, and by electromagnetic, sound and other waves.",
+        "Kinetic energy Ek = ½mv². Change in gravitational potential energy ΔEp = mgΔh — Δh is the VERTICAL height change.",
+        "Principle of conservation of energy: energy cannot be created or destroyed, only transferred from one store to another. Apply it to multi-stage problems and read Sankey diagrams.",
+        "Mechanical or electrical work done = energy transferred. W = Fd = ΔE, where d is the distance moved in the direction of the force.",
+        "Power = work done (or energy transferred) per unit time: P = W/t = ΔE/t. Unit watt (W).",
+        "Efficiency = (useful energy output ÷ total energy input) × 100%, or (useful power output ÷ total power input) × 100%. It can never exceed 100%.",
+        "Energy resources: fossil fuels, biofuels, water (waves, tides, hydroelectric), geothermal, nuclear fuel, solar cells, solar panels, wind — with boiler, turbine and generator where used. Compare on renewability, availability, reliability, scale and environmental impact.",
+        "Radiation from the Sun is the main source of energy for all our energy resources EXCEPT geothermal, nuclear and tidal.",
+        "Energy is released by nuclear fusion in the Sun; research continues into using fusion to generate electricity on a large scale.",
+      ],
+    },
+    {
+      id: "1-8-pressure", num: 7, title: "1.8 Pressure",
+      blurb: "p = F/A and pressure in a liquid.",
+      syllabus: [
+        "Pressure = force per unit area, p = F/A. Units N/m² (= Pa, Extended) or N/cm².",
+        "Same force over a smaller area gives a greater pressure — sharp knives, drawing pins, snowshoes, tractor tyres.",
+        "Beneath the surface of a liquid, pressure increases with depth and with the density of the liquid, and acts equally in all directions.",
+        "Change in pressure beneath a liquid surface: Δp = ρgΔh. It does not depend on the shape or width of the container.",
+        "Total pressure on a submerged object = atmospheric pressure + ρgΔh.",
+      ],
+    },
+    {
+      id: "2-1-kinetic-model", num: 8, title: "2.1 Kinetic particle model of matter",
+      blurb: "Solids/liquids/gases, Brownian motion, gas pressure, pV = constant.",
+      syllabus: [
+        "Solid: particles closely packed in a regular pattern, vibrating about fixed positions — fixed shape and volume. Liquid: close together but free to move past each other — fixed volume, takes the shape of its container. Gas: far apart, fast random motion — no fixed shape or volume, easily compressed.",
+        "Changes of state: melting, boiling, evaporation, condensation, solidification (freezing).",
+        "The higher the temperature, the greater the average kinetic energy of the particles. The lowest possible temperature is −273 °C (absolute zero), where particles have the least kinetic energy.",
+        "T (in K) = θ (in °C) + 273.",
+        "Gas pressure is caused by particles colliding with the container walls; each collision exerts a force, and pressure is the total force per unit area.",
+        "Heating a gas at constant volume: particles move faster, so they hit the walls harder and more often → pressure rises.",
+        "Reducing the volume at constant temperature: the same particles hit each unit area more often → pressure rises. pV = constant for a fixed mass of gas at constant temperature; the p–V graph is a curve, and a graph of p against 1/V is a straight line through the origin.",
+        "Brownian motion: microscopic particles in a suspension (e.g. smoke particles in air) move randomly because they are struck by light, fast-moving molecules of the gas or liquid. This is evidence for the kinetic particle model. Say 'molecules' for the invisible ones and 'microscopic particles' for the ones you can see.",
+      ],
+    },
+    {
+      id: "2-2-thermal-properties", num: 9, title: "2.2 Thermal properties and temperature",
+      blurb: "Expansion, specific heat capacity, melting, boiling and evaporation.",
+      syllabus: [
+        "Thermal expansion: solids expand least, liquids more, gases most, because the particles gain kinetic energy, vibrate/move more and take up more space; the weaker the forces between the particles, the larger the expansion.",
+        "Applications and consequences: expansion gaps in bridges and railway lines, bimetallic strips in thermostats, liquid-in-glass thermometers, sagging overhead cables in summer.",
+        "A rise in the temperature of an object increases its internal energy — the average kinetic energy of ALL of its particles increases.",
+        "Specific heat capacity = the energy required per unit mass per unit temperature increase: c = ΔE / (mΔθ). Units J/(kg °C) or J/(g °C). Water is 4200 J/(kg °C).",
+        "Measuring c: heat a known mass with an immersion heater of known power for a measured time, record the temperature rise, use c = Pt/(mΔθ). Insulate the block/beaker to reduce energy lost to the surroundings — this loss is why the measured value is usually too high.",
+        "Melting and boiling take in energy WITHOUT a change in temperature; the energy separates the particles instead of speeding them up. Pure water melts at 0 °C and boils at 100 °C at standard atmospheric pressure.",
+        "Condensation and solidification: particles slow down, move closer and the forces between them pull them into a fixed arrangement.",
+        "Evaporation: the most energetic particles escape from the SURFACE of a liquid, at any temperature. The average kinetic energy of the particles left behind falls, so the liquid cools — and cools any object in contact with it.",
+        "Boiling happens at one fixed temperature throughout the liquid; evaporation happens only at the surface, over a range of temperatures.",
+        "Evaporation is faster at higher temperature, with a larger surface area, and with more air movement over the surface.",
+      ],
+    },
+    {
+      id: "2-3-thermal-transfer", num: 10, title: "2.3 Transfer of thermal energy",
+      blurb: "Conduction, convection, radiation and their applications.",
+      syllabus: [
+        "Conduction in all solids: particles vibrate more strongly and pass the vibration on through the lattice. In METALS there is a second, much faster mechanism — free (delocalised) electrons carry kinetic energy through the metal, which is why metals are the best thermal conductors.",
+        "Conduction is poor in gases and most liquids because the particles are much further apart, so collisions that pass energy on are far less frequent.",
+        "Many solids (e.g. glass, concrete) conduct better than good insulators but much worse than metals.",
+        "Convection happens in liquids and gases only. Fluid near the heat source expands, becomes less dense and rises; cooler denser fluid sinks to take its place, setting up a convection current.",
+        "Thermal radiation is infrared radiation. Every object emits it, and it is the only transfer that needs NO medium — it crosses a vacuum.",
+        "Surface matters: matt black surfaces are the best emitters and the best absorbers of infrared; shiny silver surfaces are the worst emitters and absorbers, and the best reflectors.",
+        "Rate of emission increases with the surface temperature and with the surface area of the object.",
+        "An object stays at a constant temperature when it transfers energy away at the same rate as it receives it. If it receives more than it emits its temperature rises; if it emits more than it receives its temperature falls. The Earth's temperature depends on this balance between incoming solar radiation and radiation emitted from the surface.",
+        "Applications: kitchen pans (metal base conducts, insulating handle), heating a room by convection, vacuum flasks (vacuum stops conduction and convection, silvered walls reduce radiation), a wood fire (radiation forwards, convection up the chimney), a car radiator (conduction through the metal, convection in the coolant and air, radiation from the black fins).",
+      ],
+    },
+    {
+      id: "3-1-waves", num: 11, title: "3.1 General properties of waves",
+      blurb: "v = fλ, transverse vs longitudinal, reflection, refraction, diffraction.",
+      syllabus: [
+        "Waves transfer ENERGY without transferring matter.",
+        "Wave features: wavefront, wavelength λ (crest to crest), frequency f (waves per second, Hz), amplitude (maximum displacement from the undisturbed position), crest (peak), trough, wave speed v.",
+        "Wave equation: v = fλ.",
+        "Transverse wave: vibration at right angles to the direction of propagation. Electromagnetic radiation, water waves and seismic S-waves can be modelled as transverse.",
+        "Longitudinal wave: vibration parallel to the direction of propagation. Sound waves and seismic P-waves can be modelled as longitudinal.",
+        "Reflection at a plane surface: angle of incidence = angle of reflection; speed, frequency and wavelength are unchanged.",
+        "Refraction: the wave changes SPEED when it enters a new medium (or a different water depth), so the wavelength changes and the direction changes. The FREQUENCY never changes — it is set by the source.",
+        "Diffraction: the wave spreads out on passing through a gap or round an edge. The narrower the gap the greater the spreading, and the spreading is greatest when the gap size is about equal to the wavelength. Longer wavelengths diffract more.",
+        "Ripple tank demonstrations: reflection at a plane barrier, refraction over a shallow glass plate (the waves slow, the wavelength shortens and the wavefronts bend), diffraction through a gap and diffraction at an edge.",
+      ],
+    },
+    {
+      id: "3-2-light", num: 12, title: "3.2 Light — reflection, refraction, lenses",
+      blurb: "Plane mirrors, Snell's law, critical angle, thin lenses, dispersion.",
+      syllabus: [
+        "The normal is the line drawn at 90° to the surface at the point where the ray strikes. ALL angles are measured from the normal, never from the surface.",
+        "Reflection: angle of incidence = angle of reflection. The image in a plane mirror is the same size as the object, the same distance behind the mirror as the object is in front, laterally inverted, and VIRTUAL.",
+        "Refraction: light entering a denser medium slows down and bends TOWARDS the normal; leaving a denser medium it speeds up and bends AWAY from the normal. A ray along the normal (i = 0) is not bent.",
+        "Refractive index n = the ratio of the speeds of a wave in two different regions. n = sin i / sin r, and n = speed in a vacuum ÷ speed in the medium.",
+        "Critical angle c: the angle of incidence inside the denser medium for which the angle of refraction is 90°. n = 1 / sin c.",
+        "Total internal reflection needs BOTH: light travelling from a denser to a less dense medium, AND an angle of incidence greater than the critical angle. Used in optical fibres for telecommunications and endoscopes, and in 45° prisms in periscopes and binoculars.",
+        "Thin converging lens: a parallel beam converges to the principal focus. Thin diverging lens: a parallel beam spreads out as if coming from the principal focus. Focal length f = distance from the lens to the principal focus along the principal axis.",
+        "Converging lens images — object beyond 2F: real, inverted, diminished. At 2F: real, inverted, same size. Between F and 2F: real, inverted, enlarged. Inside F: VIRTUAL, upright, enlarged — this is the magnifying glass.",
+        "A virtual image is formed where diverging rays are extrapolated backwards; it cannot be projected onto a screen.",
+        "Correcting sight: a CONVERGING lens corrects long-sightedness; a DIVERGING lens corrects short-sightedness.",
+        "Dispersion: a glass prism refracts white light into the visible spectrum because each colour travels at a slightly different speed in glass. Red, orange, yellow, green, blue, indigo, violet — red has the longest wavelength and lowest frequency, violet the shortest wavelength and highest frequency. Light of a single frequency is monochromatic.",
+      ],
+    },
+    {
+      id: "3-3-em-spectrum", num: 13, title: "3.3 The electromagnetic spectrum",
+      blurb: "The seven regions, their uses, dangers and communications.",
+      syllabus: [
+        "In order of INCREASING wavelength (and decreasing frequency): gamma rays → X-rays → ultraviolet → visible light → infrared → microwaves → radio waves.",
+        "All electromagnetic waves travel at the same high speed in a vacuum: 3.0 × 10⁸ m/s, and approximately the same in air.",
+        "Uses — radio waves: radio and television transmission, astronomy, RFID. Microwaves: satellite television, mobile phones, microwave ovens. Infrared: electric grills, TV remote controls, intruder alarms, thermal imaging, optical fibres. Visible light: vision, photography, illumination. Ultraviolet: security marking, detecting fake bank notes, sterilising water. X-rays: medical scanning, security scanners. Gamma rays: sterilising food and medical equipment, detecting and treating cancer.",
+        "Dangers of excessive exposure — microwaves: internal heating of body cells. Infrared: skin burns. Ultraviolet: damage to surface cells and eyes, leading to skin cancer and eye conditions. X-rays and gamma rays: mutation or damage to cells in the body.",
+        "Satellites: low-orbit artificial satellites are used by some satellite phones; geostationary satellites are used by some satellite phones and by direct broadcast satellite television. Communication is mainly by microwaves.",
+        "Why each carrier is chosen: mobile phones and wireless internet use microwaves because microwaves penetrate some walls and need only a short aerial; Bluetooth uses radio waves, which pass through walls but are weakened doing so; optical fibres carry visible light or infrared because glass is transparent to them and they carry very high data rates.",
+        "Analogue signals vary continuously; digital signals have only two states (on/off, 1/0). Sound can be transmitted either way. Digital signalling gives a higher rate of data transmission and greater range, because a digital signal can be regenerated accurately after noise is added.",
+      ],
+    },
+    {
+      id: "3-4-sound", num: 14, title: "3.4 Sound",
+      blurb: "Longitudinal waves, speed, pitch and loudness, echoes, ultrasound.",
+      syllabus: [
+        "Sound is produced by a vibrating source and travels as a LONGITUDINAL wave: compressions (particles pushed together, high pressure) and rarefactions (particles spread out, low pressure).",
+        "A medium is needed — sound cannot travel through a vacuum, because there are no particles to pass the vibration on.",
+        "Audible range for humans: approximately 20 Hz to 20 000 Hz.",
+        "Speed of sound in air is approximately 330–350 m/s. In general sound travels faster in solids than in liquids, and faster in liquids than in gases, because the particles are closer together and the forces between them are stronger.",
+        "Measuring the speed of sound in air: make a sound a measured distance from a large reflecting wall, time the echo, then v = 2d/t. Repeat and average.",
+        "Amplitude controls LOUDNESS; frequency controls PITCH. A bigger amplitude is a louder sound; a higher frequency is a higher-pitched sound.",
+        "An echo is a reflection of sound from a hard surface. In echo and sonar questions the wave travels there AND back, so use 2d = vt.",
+        "Ultrasound is sound with a frequency above 20 kHz. Uses: non-destructive testing of materials, medical scanning of soft tissue, and sonar for measuring depth or distance from the time taken and the wave speed.",
+      ],
+    },
+    {
+      id: "4-1-magnetism", num: 15, title: "4.1 Simple phenomena of magnetism",
       blurb: "Poles, induced magnetism, fields.",
       syllabus: [
         "Magnetic poles: like poles repel, unlike attract — only between magnetic poles.",
@@ -50,7 +275,7 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
       ],
     },
     {
-      id: "4-2-quantities", num: 2, title: "4.2 Electrical quantities",
+      id: "4-2-quantities", num: 16, title: "4.2 Electrical quantities",
       blurb: "Charge, current, e.m.f., p.d., resistance, power.",
       syllabus: [
         "Two types of charge: positive and negative. Like charges repel, unlike attract.",
@@ -66,7 +291,7 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
       ],
     },
     {
-      id: "4-3-circuits", num: 3, title: "4.3 Electric circuits",
+      id: "4-3-circuits", num: 17, title: "4.3 Electric circuits",
       blurb: "Series, parallel, components, logic gates.",
       syllabus: [
         "Circuit symbols: cell, battery, lamp, resistor (fixed/variable), ammeter (series, low R), voltmeter (parallel, high R), switch, fuse, diode, LED, LDR, thermistor, capacitor, relay.",
@@ -78,12 +303,27 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
         "Thermistor: resistance falls as temperature rises (NTC). LDR: resistance falls as light intensity rises.",
         "Diode: allows current in one direction only.",
         "Relay: small current in coil switches a separate large-current circuit.",
+        "Syllabus form of the divider rule you may be asked to quote: R₁/R₂ = V₁/V₂. A VARIABLE potential divider (a potentiometer, with a sliding contact) gives a continuously adjustable output from zero up to the supply voltage.",
+        "⚠ OFF-SYLLABUS FROM 2023 — the two lines below (digital electronics / logic gates) were REMOVED from 0625 when the current syllabus came in. They are kept here only because the original pack had them. They will not be examined; skip them if you are short of time.",
         "Logic gates — output is HIGH (1) or LOW (0). Symbols + truth tables for NOT, AND, OR, NAND, NOR.",
         "Combinations: any logic problem can be built from NAND or NOR alone (universal gates).",
       ],
     },
     {
-      id: "4-4-em-effects", num: 4, title: "4.4 Electromagnetic effects",
+      id: "4-4-safety", num: 18, title: "4.4 Electrical safety",
+      blurb: "Mains hazards, the three wires, fuses, trip switches, earthing.",
+      syllabus: [
+        "Hazards when using a mains supply: damaged insulation (exposed live wire → electric shock); overheating cables (too much current for the cable thickness → fire); damp conditions (water conducts, lowering resistance → shock); excess current from overloading plugs, extension leads and multi-way sockets.",
+        "A mains circuit has three wires: LIVE (line) — the wire at high voltage that delivers the current; NEUTRAL — completes the circuit and stays near zero volts; EARTH — a safety wire connected to the metal casing.",
+        "The switch (and the fuse) MUST be in the live wire. If they were in the neutral wire, the appliance would still be connected to the high potential of the live wire when switched off, so touching it could still give a fatal shock.",
+        "A fuse is a thin wire that melts and breaks the circuit when the current exceeds its rating. Choose the rating JUST ABOVE the normal working current of the appliance (common ratings 3 A, 5 A, 13 A).",
+        "A trip switch (circuit breaker) is an automatic electromagnetic switch that cuts the supply when the current is too large. It acts faster than a fuse and can simply be reset instead of replaced.",
+        "The outer casing of an appliance must be either EARTHED (a metal case is connected to earth, so a fault sends a large current to earth and blows the fuse) or DOUBLE-INSULATED (the case is made of an insulating material, so it can never become live and needs no earth wire).",
+        "For a double-insulated appliance the fuse still matters: without an earth wire, the fuse protects the circuit and the cabling from an excess current.",
+      ],
+    },
+    {
+      id: "4-4-em-effects", num: 19, title: "4.5 Electromagnetic effects",
       blurb: "Field around a current, motor effect, induction, transformer.",
       syllabus: [
         "Right-hand grip rule: thumb along conventional current, fingers curl in direction of B field around a wire.",
@@ -99,9 +339,125 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
         "Power transmission uses high voltage to reduce I²R heating loss in cables.",
       ],
     },
+    {
+      id: "5-1-nuclear-atom", num: 20, title: "5.1 The nuclear model of the atom",
+      blurb: "Alpha scattering, nuclide notation, isotopes, fission and fusion.",
+      syllabus: [
+        "An atom is a small, positively charged nucleus surrounded by negatively charged electrons in orbit. The nucleus contains protons and neutrons.",
+        "Relative charges: proton +1, neutron 0, electron −1. An atom becomes a positive ion by LOSING electrons and a negative ion by GAINING electrons.",
+        "Alpha-particle scattering by thin metal foil supports this model: most α-particles pass straight through → the atom is mostly empty space; a few are deflected through large angles → the centre is positively charged and repels them; a very small number bounce almost straight back → the nucleus is very small and contains most of the mass.",
+        "Proton number (atomic number) Z = number of protons. Nucleon number (mass number) A = protons + neutrons. Neutrons = A − Z.",
+        "Nuclide notation ᴬ_Z X, e.g. ²³⁵₉₂U has 92 protons and 143 neutrons.",
+        "Isotopes are atoms of the same element with the same proton number but different nucleon numbers (different numbers of neutrons).",
+        "The proton number gives the relative charge on the nucleus; the nucleon number gives the relative mass of the nucleus.",
+        "Nuclear fission: a large nucleus SPLITS into two smaller nuclei plus two or three neutrons, releasing energy — e.g. ²³⁵₉₂U + ¹₀n → ¹⁴¹₅₆Ba + ⁹²₃₆Kr + 3 ¹₀n. Used in nuclear reactors; the released neutrons can cause a chain reaction.",
+        "Nuclear fusion: two light nuclei JOIN to form a heavier nucleus, releasing energy — e.g. hydrogen nuclei fusing to helium in the Sun. It needs extremely high temperature and pressure.",
+        "In both processes the total mass of the products is slightly less than the total mass of the reactants, and this lost mass appears as released energy. Nucleon and proton numbers must still balance on both sides of the equation.",
+      ],
+    },
+    {
+      id: "5-2-radioactivity", num: 21, title: "5.2 Radioactivity",
+      blurb: "Background, α β γ, decay equations, half-life, uses and safety.",
+      syllabus: [
+        "Background radiation is the ionising radiation always present around us. Significant sources: radon gas in the air, rocks and buildings, food and drink, and cosmic rays.",
+        "Ionising nuclear radiation is measured with a detector (e.g. a Geiger–Müller tube) connected to a counter, giving a count rate in counts/s or counts/minute.",
+        "Corrected count rate = measured count rate − background count rate. Do this FIRST in any half-life question that gives a background reading.",
+        "Emission from a nucleus is SPONTANEOUS (you cannot predict or influence when a given nucleus decays) and RANDOM in direction.",
+        "Alpha (α): a helium nucleus, ⁴₂He, charge +2, very strongly ionising, stopped by a sheet of paper or a few cm of air.",
+        "Beta (β⁻): a high-speed electron emitted from the nucleus, ⁰₋₁e, charge −1, moderately ionising, stopped by a few mm of aluminium.",
+        "Gamma (γ): high-frequency electromagnetic radiation, no charge and no mass, weakly ionising, only reduced (never fully stopped) by several cm of lead or metres of concrete.",
+        "Why the ionising effects differ: α-particles have a large charge and a large mass with high kinetic energy, so they interact strongly and lose energy over a very short path. γ has no charge, interacts weakly, and travels far.",
+        "In an electric or magnetic field: α and β are deflected in OPPOSITE directions (opposite charges), β is deflected far more than α because it has a much smaller mass, and γ is not deflected at all.",
+        "A nucleus may be unstable because it has an excess of neutrons and/or is too heavy. Decay increases stability.",
+        "α-decay: A decreases by 4 and Z decreases by 2. β-decay: A is unchanged and Z increases by 1, because inside the nucleus neutron → proton + electron. γ-emission: A and Z are both unchanged — only energy is lost.",
+        "Half-life = the time taken for half the nuclei of that isotope in any sample to decay (equivalently, for the corrected count rate to halve). After n half-lives the remaining fraction is (1/2)ⁿ.",
+        "Choosing an isotope for a job — smoke alarms: an α-emitter with a long half-life (strongly ionising but cannot escape the alarm). Irradiating food and sterilising equipment: γ, which penetrates the sealed packaging. Thickness control in a rolling mill: β, because α would be absorbed completely and γ would pass straight through, so only β gives a reading that changes usefully with thickness. Diagnosis and treatment of cancer: γ.",
+        "Effects on living things: cell death, mutation and cancer.",
+        "Safety: reduce the EXPOSURE TIME, increase the DISTANCE between the source and living tissue, and use SHIELDING (lead, concrete) to absorb the radiation. Handle sources with long tongs, point them away from the body, and store them in lead-lined containers.",
+      ],
+    },
+    {
+      id: "6-1-solar-system", num: 22, title: "6.1 The Earth and the Solar System",
+      blurb: "Day, year, seasons, the eight planets, orbits and orbital speed.",
+      syllabus: [
+        "The Earth rotates once on its tilted axis in approximately 24 hours — this gives day and night and the apparent daily motion of the Sun across the sky from east to west.",
+        "The Earth orbits the Sun once in approximately 365 days; the tilt of the axis means each hemisphere is tilted towards the Sun for part of the year, giving the seasons.",
+        "The Moon orbits the Earth in approximately one month, giving the cycle of phases as we see different fractions of its sunlit half.",
+        "The Solar System contains one star (the Sun), the eight planets — Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune — minor planets including dwarf planets such as Pluto and the asteroids of the asteroid belt, moons orbiting the planets, and smaller bodies including comets and natural satellites.",
+        "The four planets nearest the Sun are small and rocky; the four furthest are large and gaseous. The accretion model explains this: an interstellar cloud of gas and dust containing many elements rotates and collapses under GRAVITY into an accretion disc; close to the young Sun it was too hot for light gases to be retained, so only rock and metal accreted, while the cold outer region kept its hydrogen and helium.",
+        "The strength of a planet's gravitational field at its surface depends on the mass of the planet, and decreases as the distance from the planet increases.",
+        "The Sun contains most of the mass of the Solar System, which is why the planets orbit the Sun; the force keeping an object in orbit is the Sun's gravitational attraction.",
+        "Average orbital speed v = 2πr / T, where r is the average orbital radius and T is the orbital period. (2πr is the circumference of the orbit.)",
+        "The Sun's gravitational field strength decreases with distance, so the orbital speeds of the planets DECREASE as distance from the Sun increases.",
+        "Planets, minor planets and comets have ELLIPTICAL orbits, and the Sun is not at the centre of the ellipse (except when the orbit is nearly circular). An object in an elliptical orbit travels faster when it is closer to the Sun: as it falls inwards its gravitational potential energy decreases and its kinetic energy increases, so its speed rises.",
+        "Light takes a measurable time to cross the Solar System: use t = d/v with v = 3.0 × 10⁸ m/s (light takes about 500 s, roughly 8.3 minutes, to reach us from the Sun).",
+      ],
+    },
+    {
+      id: "6-2-stars-universe", num: 23, title: "6.2 Stars and the Universe",
+      blurb: "The Sun, star life cycles, galaxies, redshift, CMBR and Hubble.",
+      syllabus: [
+        "The Sun is a star of medium size, made mostly of hydrogen and helium, radiating most of its energy in the infrared, visible light and ultraviolet regions.",
+        "Stars are powered by nuclear reactions that release energy; in stable stars these reactions FUSE HYDROGEN INTO HELIUM.",
+        "Galaxies are each made up of many billions of stars. The Sun is a star in the galaxy called the Milky Way, and the other stars of the Milky Way are much further from Earth than the Sun is.",
+        "One light-year = the distance travelled by light in a vacuum in one year = 9.5 × 10¹⁵ m. The Milky Way is about 100 000 light-years across, and is one of many billions of galaxies making up the Universe.",
+        "Life cycle of a star: (a) it forms from an interstellar cloud of gas and dust containing hydrogen; (b) the cloud collapses under its own gravitational attraction and heats up, becoming a PROTOSTAR; (c) it becomes a STABLE STAR when the inward force of gravitational attraction is balanced by the outward force due to the high temperature in the centre; (d) eventually all stars run out of hydrogen fuel.",
+        "Then: (e) most stars expand into a RED GIANT, and more massive stars into a RED SUPERGIANT, once most of the core hydrogen has become helium; (f) a red giant from a less massive star forms a PLANETARY NEBULA with a WHITE DWARF at its centre; (g) a red supergiant explodes as a SUPERNOVA, forming a nebula containing hydrogen and new heavier elements and leaving a NEUTRON STAR or a BLACK HOLE behind; (h) that nebula may go on to form new stars with orbiting planets.",
+        "Redshift = an increase in the observed wavelength of electromagnetic radiation emitted by receding stars and galaxies. Light from distant galaxies is redshifted compared with the same light emitted on Earth.",
+        "The further away a galaxy is, the greater its redshift — so more distant galaxies are receding faster. This is evidence that the Universe is expanding and supports the Big Bang Theory.",
+        "Cosmic microwave background radiation (CMBR): microwave radiation of a specific frequency observed at all points in space around us. It was produced shortly after the Universe formed and has been stretched into the microwave region as the Universe expanded — strong further evidence for the Big Bang.",
+        "The speed v at which a galaxy recedes is found from the change in wavelength of its starlight due to redshift; the distance d of a far galaxy is found from the brightness of a supernova in it.",
+        "Hubble constant H₀ = v / d, the ratio of a galaxy's recession speed to its distance from Earth. The current estimate is H₀ = 2.2 × 10⁻¹⁸ per second.",
+        "d/v = 1/H₀ ≈ 4.5 × 10¹⁷ s is an estimate of the AGE OF THE UNIVERSE (about 14 billion years), and is evidence that all the matter in the Universe was once present at a single point.",
+      ],
+    },
   ],
 
   flashcards: [
+    // 1 — Motion, forces and energy
+    { term: "Speed, velocity, acceleration", def: "Speed = distance per unit time, v = s/t. Velocity = speed in a given direction (vector). Acceleration = change in velocity per unit time, a = Δv/Δt, in m/s². A deceleration is a negative acceleration." },
+    { term: "Average speed", def: "total distance travelled ÷ total time taken — NOT the average of the individual speeds." },
+    { term: "Scalars vs vectors", def: "Scalar = magnitude only: distance, speed, time, mass, energy, temperature. Vector = magnitude AND direction: force, weight, velocity, acceleration, momentum, electric field strength, gravitational field strength." },
+    { term: "The two motion graphs", def: "Distance–time: GRADIENT = speed. Speed–time: GRADIENT = acceleration and AREA UNDER THE LINE = distance travelled." },
+    { term: "Acceleration of free fall", def: "g ≈ 9.8 m/s² near the Earth's surface, approximately constant and the same for all masses when air resistance is negligible." },
+    { term: "Terminal velocity", def: "A falling object accelerates, so drag increases, until drag = weight. The resultant force is then zero, so the acceleration is zero and it falls at a constant terminal velocity." },
+    { term: "Mass vs weight", def: "Mass = quantity of matter, in kg, the same everywhere. Weight = the gravitational force on that mass, in N, W = mg. Gravitational field strength g = W/m in N/kg (≈9.8 N/kg on Earth), numerically equal to the acceleration of free fall." },
+    { term: "Density", def: "ρ = m/V. Units g/cm³ or kg/m³; 1 g/cm³ = 1000 kg/m³. An object floats if its density is less than that of the fluid. Volume of an irregular solid by displacement." },
+    { term: "Spring constant", def: "Force per unit extension, k = F/x, in N/m. The load–extension graph is a straight line through the origin up to the LIMIT OF PROPORTIONALITY, then curves." },
+    { term: "Resultant force and F = ma", def: "An object stays at rest, or keeps moving in a straight line at constant speed, unless a resultant force acts. F = ma, with force and acceleration in the same direction. Zero resultant force → zero acceleration (not zero speed)." },
+    { term: "Moment of a force", def: "moment = force × perpendicular distance from the pivot. Unit N m." },
+    { term: "Principle of moments", def: "For an object in equilibrium, the sum of the clockwise moments about a point equals the sum of the anticlockwise moments about that same point. Equilibrium also needs zero resultant force." },
+    { term: "Centre of gravity and stability", def: "The point where the whole weight of the object acts. An object is more stable with a lower centre of gravity and a wider base; it topples when the line of action of its weight falls outside the base." },
+    { term: "Momentum and impulse", def: "p = mv, in kg m/s, a VECTOR. Impulse = FΔt = Δ(mv), in N s. Resultant force F = Δp/Δt." },
+    { term: "Conservation of momentum", def: "With no external resultant force, total momentum before a collision or explosion = total momentum after. Kinetic energy is usually NOT conserved; momentum always is." },
+    { term: "Kinetic and potential energy", def: "Ek = ½mv². ΔEp = mgΔh, where Δh is the VERTICAL height change. Energy stores: kinetic, gravitational potential, chemical, elastic (strain), nuclear, electrostatic, internal (thermal)." },
+    { term: "Work and power", def: "W = Fd = ΔE — d is the distance moved in the direction of the force. P = W/t = ΔE/t, in watts." },
+    { term: "Efficiency", def: "(useful energy output ÷ total energy input) × 100%, or (useful power output ÷ total power input) × 100%. Never more than 100%." },
+    { term: "Pressure", def: "p = F/A, in N/m² (Pa). Beneath a liquid surface, Δp = ρgΔh — depends on depth and density only, never on the shape or width of the container." },
+
+    // 2 — Thermal physics
+    { term: "Absolute zero and the kelvin scale", def: "T (in K) = θ (in °C) + 273. Absolute zero = −273 °C = 0 K, where particles have the least kinetic energy." },
+    { term: "Gas law at constant temperature", def: "pV = constant for a fixed mass of gas at constant temperature. Squeeze the volume and the same particles hit each unit area of the walls more often, so the pressure rises." },
+    { term: "Brownian motion", def: "The random motion of microscopic particles in a suspension, caused by collisions with light, fast-moving molecules of the surrounding gas or liquid. Evidence for the kinetic particle model." },
+    { term: "Specific heat capacity", def: "The energy required per unit mass per unit temperature increase: c = ΔE / (mΔθ), in J/(kg °C). Water = 4200 J/(kg °C). Use the temperature CHANGE, not the temperature." },
+    { term: "Evaporation vs boiling", def: "Evaporation: surface only, at any temperature, and it COOLS the liquid because the most energetic particles escape. Boiling: throughout the liquid, at one fixed temperature. Evaporation is faster with higher temperature, larger surface area and more air movement." },
+    { term: "Conduction", def: "Particles vibrate more and pass the vibration through the lattice. In METALS free (delocalised) electrons carry energy far faster — which is why metals are the best conductors. Poor in gases and most liquids because the particles are far apart." },
+    { term: "Convection", def: "Fluids only. Warmer fluid expands, becomes LESS DENSE and rises; cooler denser fluid sinks to replace it, setting up a convection current. Say 'less dense', never 'heat rises'." },
+    { term: "Thermal radiation", def: "Infrared radiation, emitted by all objects, and the only transfer that needs NO medium. Matt black surfaces are the best emitters AND absorbers; shiny silver the worst. Emission rate rises with surface temperature and surface area." },
+
+    // 3 — Waves
+    { term: "Wave equation", def: "v = fλ. Waves transfer ENERGY without transferring matter." },
+    { term: "Transverse vs longitudinal", def: "Transverse: vibration at right angles to the direction of travel — electromagnetic waves, water waves, seismic S-waves. Longitudinal: vibration parallel to the direction of travel, as compressions and rarefactions — sound, seismic P-waves." },
+    { term: "Refraction — what changes", def: "Speed changes, so wavelength changes, so direction changes. FREQUENCY NEVER CHANGES — it is fixed by the source. Into a denser medium: slower, bends towards the normal." },
+    { term: "Diffraction", def: "Spreading of a wave through a gap or round an edge. The narrower the gap the more it spreads; spreading is greatest when the gap is about equal to the wavelength. Longer wavelengths diffract more." },
+    { term: "Refractive index", def: "n = sin i / sin r, and n = speed in a vacuum ÷ speed in the medium. All angles are measured from the NORMAL." },
+    { term: "Critical angle and TIR", def: "n = 1 / sin c. Total internal reflection needs BOTH: light going from a denser to a less dense medium, AND angle of incidence greater than the critical angle. Used in optical fibres." },
+    { term: "Converging lens images", def: "Beyond 2F: real, inverted, diminished. At 2F: real, inverted, same size. Between F and 2F: real, inverted, enlarged. Inside F: VIRTUAL, upright, enlarged — the magnifying glass." },
+    { term: "Correcting sight", def: "A CONVERGING lens corrects long-sightedness. A DIVERGING lens corrects short-sightedness." },
+    { term: "Electromagnetic spectrum", def: "Increasing wavelength (decreasing frequency): gamma → X-rays → ultraviolet → visible → infrared → microwaves → radio. All travel at 3.0 × 10⁸ m/s in a vacuum." },
+    { term: "Sound — the five facts", def: "Longitudinal; needs a medium (no sound in a vacuum); audible range 20 Hz–20 000 Hz; speed in air ≈ 330–350 m/s and faster in liquids, faster still in solids; ultrasound is above 20 kHz." },
+    { term: "Loudness and pitch", def: "Amplitude controls loudness. Frequency controls pitch. An echo is reflected sound — in echo and sonar problems the wave goes there AND back, so 2d = vt." },
+
     { term: "Electric current", def: "Rate of flow of charge; I = Q/t. SI unit: ampere (A). 1 A = 1 C/s." },
     { term: "Charge (Q)", def: "Quantity of electricity that passes a point; Q = It. SI unit: coulomb (C)." },
     { term: "e.m.f.", def: "Energy converted from other forms to electrical, per unit charge driven round a complete circuit. Unit: volt." },
@@ -117,6 +473,8 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
     { term: "Thermistor", def: "Temperature-dependent resistor (NTC). Resistance decreases as temperature increases." },
     { term: "Diode", def: "Component that allows current to flow in one direction only; conducts above ~0.6 V forward bias." },
     { term: "Relay", def: "An electromagnetic switch — a small current in a coil moves contacts that switch a separate higher-current circuit." },
+    { term: "Mains safety — live, neutral, earth", def: "Switch AND fuse always go in the LIVE wire, so the appliance is isolated from the high potential when off. Fuse rating just above the normal working current. A metal case must be earthed; a double-insulated appliance needs no earth wire." },
+    { term: "⚠ Logic gates — removed from 0625 in 2023", def: "Digital electronics is no longer in the syllabus and will not be examined. The five gate cards that follow are kept from the original pack only — skip them unless your school still teaches them." },
     { term: "AND gate", def: "Output 1 only when both inputs are 1." },
     { term: "OR gate", def: "Output 1 when at least one input is 1." },
     { term: "NOT gate", def: "Output is the inverse of the single input." },
@@ -127,9 +485,236 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
     { term: "Lenz's law", def: "The induced current flows in a direction that opposes the change producing it (energy conservation)." },
     { term: "Transformer equation", def: "V_p/V_s = N_p/N_s. For ideal (100% efficient): I_p V_p = I_s V_s." },
     { term: "Step-up transformer", def: "More turns on secondary than primary → higher output voltage, lower output current." },
+
+    // 5 — Nuclear physics
+    { term: "Nuclide notation", def: "ᴬ_Z X — A = nucleon (mass) number, Z = proton (atomic) number, neutrons = A − Z. Isotopes have the same Z but different A." },
+    { term: "Alpha-particle scattering", def: "Most α pass straight through → atom is mostly empty space. A few deflect through large angles → the centre is positively charged. A very few bounce back → the nucleus is tiny and holds nearly all the mass." },
+    { term: "Alpha, beta, gamma", def: "α = helium nucleus ⁴₂He, charge +2, most ionising, stopped by paper / a few cm of air. β = fast electron ⁰₋₁e, charge −1, moderately ionising, stopped by a few mm of aluminium. γ = electromagnetic radiation, no charge, least ionising, only reduced by several cm of lead." },
+    { term: "Deflection in a field", def: "α and β bend in OPPOSITE directions (opposite charges); β bends far more because its mass is much smaller; γ is not deflected at all." },
+    { term: "Decay equations", def: "α-decay: A − 4, Z − 2. β-decay: A unchanged, Z + 1 (inside the nucleus, neutron → proton + electron). γ-emission: A and Z both unchanged." },
+    { term: "Half-life", def: "The time taken for half the nuclei of that isotope in any sample to decay — equivalently for the corrected count rate to halve. After n half-lives the fraction left is (1/2)ⁿ. Subtract the background count rate FIRST." },
+    { term: "Background radiation", def: "Always-present ionising radiation from radon gas in the air, rocks and buildings, food and drink, and cosmic rays. Corrected count rate = measured − background." },
+    { term: "Fission vs fusion", def: "Fission: a large nucleus SPLITS into smaller nuclei plus neutrons, releasing energy (reactors, chain reaction). Fusion: light nuclei JOIN to form a heavier nucleus, releasing energy (hydrogen → helium in the Sun); needs enormous temperature and pressure." },
+    { term: "Radiation safety", def: "Reduce exposure TIME, increase DISTANCE from the source, use SHIELDING (lead, concrete). Ionising radiation causes cell death, mutation and cancer." },
+
+    // 6 — Space physics
+    { term: "Orbital speed", def: "v = 2πr / T, where r is the average orbital radius and T the orbital period. The Sun's field weakens with distance, so planets further out orbit more slowly." },
+    { term: "The Solar System", def: "One star (the Sun) plus Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. The four inner planets are small and rocky, the four outer ones large and gaseous. Orbits are elliptical and the Sun is not at the centre of the ellipse." },
+    { term: "Elliptical orbits", def: "An object travels FASTER when closer to the Sun: as it falls inwards, gravitational potential energy is converted into kinetic energy, so its speed increases." },
+    { term: "Life cycle of a star", def: "Interstellar cloud → protostar (collapsing, heating under gravity) → stable star (gravity balanced by the outward force from the hot core, fusing H → He) → red giant, or red supergiant if massive → planetary nebula + white dwarf, or supernova → neutron star or black hole." },
+    { term: "Light-year", def: "The distance light travels in a vacuum in one year = 9.5 × 10¹⁵ m. The Milky Way is about 100 000 light-years across." },
+    { term: "Redshift", def: "An increase in the observed wavelength of radiation from receding stars and galaxies. More distant galaxies show greater redshift, so they recede faster — evidence that the Universe is expanding, supporting the Big Bang." },
+    { term: "CMBR", def: "Cosmic microwave background radiation — microwave radiation of a specific frequency seen from every direction. Produced shortly after the Universe formed and stretched into the microwave region as the Universe expanded." },
+    { term: "Hubble constant", def: "H₀ = v/d, current estimate 2.2 × 10⁻¹⁸ per second. d/v = 1/H₀ ≈ 4.5 × 10¹⁷ s estimates the age of the Universe (about 14 billion years), evidence that all matter was once at a single point." },
   ],
 
   questions: [
+    // 1.1 — physical quantities
+    {
+      id: "ip10-29", topic: "1-1-quantities",
+      q: "Which list contains only vector quantities?",
+      opts: [
+        "distance, speed, energy",
+        "force, velocity, momentum",
+        "mass, temperature, acceleration",
+        "time, weight, speed",
+      ],
+      a: "force, velocity, momentum",
+      model: "A vector has magnitude AND direction. The 0625 vectors are force, weight, velocity, acceleration, momentum, electric field strength and gravitational field strength.\nThe 0625 scalars are distance, speed, time, mass, energy and temperature.\nThe trap in the other options is that each one mixes in a scalar: energy, mass and temperature are scalars, and so are time and speed — even though 'weight' beside them is a vector.",
+    },
+    {
+      id: "ip10-30", topic: "1-1-quantities",
+      q: "A crate on a smooth floor is pulled by a force of 6.0 N acting due north and, at the same time, a force of 8.0 N acting due east. Determine the magnitude and the direction of the resultant force. [4]",
+      model: "The two forces are at right angles, so use Pythagoras for the magnitude and a tangent for the direction.\n\nMagnitude: R = √(6.0² + 8.0²) = √(36 + 64) = √100 = 10 N.\n\nDirection: tan θ = 8.0 / 6.0 = 1.333, so θ = 53° measured from the northward force, i.e. the resultant acts 53° east of north (equivalently 37° north of east).\n\nA scale drawing earns the same marks: draw the two forces as a rectangle to scale, draw the diagonal, then measure its length and the angle with a protractor. Quote BOTH the size and the direction — a bare '10 N' loses a mark.",
+    },
+    // 1.2 — motion
+    {
+      id: "ip10-31", topic: "1-2-motion",
+      q: "A car starts from rest and accelerates uniformly to 24 m/s in 12 s. It then travels at 24 m/s for 20 s before decelerating uniformly to rest in a further 8.0 s. (a) Calculate the acceleration during the first stage. (b) Calculate the acceleration during the final stage. (c) Use the speed–time graph to find the total distance travelled. (d) Calculate the average speed for the whole journey. [7]",
+      model: "(a) a = Δv/Δt = (24 − 0) / 12 = 2.0 m/s².\n\n(b) a = Δv/Δt = (0 − 24) / 8.0 = −3.0 m/s².\nThat is a deceleration of 3.0 m/s². Keep the minus sign if the question asks for acceleration.\n\n(c) Distance = the AREA under the speed–time graph, split into three shapes:\n  triangle:  ½ × 12 × 24 = 144 m\n  rectangle: 20 × 24     = 480 m\n  triangle:  ½ × 8.0 × 24 =  96 m\n  total = 144 + 480 + 96 = 720 m.\n\n(d) Total time = 12 + 20 + 8.0 = 40 s.\nAverage speed = total distance ÷ total time = 720 / 40 = 18 m/s.\nNote it is NOT the average of 0, 24 and 0 — average speed always means total distance over total time.",
+    },
+    {
+      id: "ip10-32", topic: "1-2-motion",
+      q: "A skydiver falls from a stationary balloon and eventually reaches terminal velocity before opening the parachute. Which statement describes the skydiver at terminal velocity?",
+      opts: [
+        "The weight has fallen to zero",
+        "Air resistance is greater than the weight, so the skydiver slows down",
+        "Air resistance equals the weight, so the resultant force and the acceleration are zero",
+        "The acceleration is constant at 9.8 m/s²",
+      ],
+      a: "Air resistance equals the weight, so the resultant force and the acceleration are zero",
+      model: "At the instant of release, air resistance is zero and the only force is the weight, so the acceleration is g ≈ 9.8 m/s².\nAs speed increases, air resistance (drag) increases, so the resultant force falls and the acceleration falls — the skydiver is still speeding up, but less and less quickly.\nWhen drag has grown until it EQUALS the weight, the resultant force is zero, so the acceleration is zero and the speed stays constant. That constant speed is the terminal velocity.\nThe weight never changes. Zero acceleration does not mean zero speed.",
+    },
+    // 1.3–1.4 — mass, weight and density
+    {
+      id: "ip10-33", topic: "1-3-mass-density",
+      q: "A solid metal cylinder has a mass of 0.216 kg. A measuring cylinder contains 40.0 cm³ of water; when the metal is lowered in, the level rises to 68.0 cm³. (a) Determine the volume of the metal. (b) Calculate its density in g/cm³ and in kg/m³. (c) State, with a reason, whether the metal would float on mercury, which has a density of 13.6 g/cm³. [5]",
+      model: "(a) Volume by displacement = 68.0 − 40.0 = 28.0 cm³.\n\n(b) Convert the mass to grams to match: 0.216 kg = 216 g.\nρ = m/V = 216 / 28.0 = 7.71 g/cm³ (3 s.f.).\nIn SI units, multiply by 1000: 7.71 g/cm³ = 7710 kg/m³.\n\n(c) It would float. Its density (7.71 g/cm³) is LESS than the density of mercury (13.6 g/cm³), and an object floats on a liquid of greater density.\n\nThe common slip is answering in g/cm³ when the question asked for kg/m³ (or the reverse). 1 g/cm³ = 1000 kg/m³ — never 1/1000.",
+    },
+    {
+      id: "ip10-34", topic: "1-3-mass-density",
+      q: "An astronaut of mass 72 kg travels from Earth, where g = 9.8 N/kg, to Mars, where g = 3.7 N/kg. Which row is correct?",
+      opts: [
+        "Mass 72 kg on both; weight 706 N on Earth and 266 N on Mars",
+        "Mass 72 kg on Earth and 27 kg on Mars; weight 706 N on both",
+        "Mass 72 kg on both; weight 72 N on Earth and 27 N on Mars",
+        "Mass 706 kg on Earth; weight 72 N on Mars",
+      ],
+      a: "Mass 72 kg on both; weight 706 N on Earth and 266 N on Mars",
+      model: "Mass is the quantity of matter, so it is 72 kg wherever the astronaut goes.\nWeight is the gravitational force on that mass, W = mg, so it changes with the field:\n  Earth: W = 72 × 9.8 = 706 N (3 s.f.)\n  Mars:  W = 72 × 3.7 = 266 N (3 s.f.)\nMass in kg, weight in N — swapping the units is the single most common lost mark in this topic.",
+    },
+    // 1.5 — forces and moments
+    {
+      id: "ip10-35", topic: "1-5-forces",
+      q: "A uniform metre rule is balanced on a pivot placed at the 50.0 cm mark. A weight of 2.0 N is hung at the 20.0 cm mark. At which mark must a 4.0 N weight be hung so that the rule balances? Show your working. [4]",
+      model: "Because the rule is uniform and the pivot is at its centre, the weight of the rule itself acts through the pivot and has no moment about it — ignore it.\n\nAnticlockwise moment (the 2.0 N weight):\ndistance from pivot = 50.0 − 20.0 = 30.0 cm = 0.300 m\nmoment = 2.0 × 0.300 = 0.60 N m\n\nPrinciple of moments — for balance, clockwise moment = anticlockwise moment:\n4.0 × d = 0.60\nd = 0.60 / 4.0 = 0.15 m = 15 cm from the pivot.\n\nThe 4.0 N weight must be on the OTHER side of the pivot, so it hangs at the 50.0 + 15 = 65.0 cm mark.\n\nAnswer the question actually asked — 'the 65.0 cm mark', not just '15 cm'.",
+    },
+    {
+      id: "ip10-36", topic: "1-5-forces",
+      q: "A car of mass 1200 kg experiences a forward driving force of 3600 N. The total resistive force (friction and air resistance) is 1200 N. (a) Calculate the resultant force. (b) Calculate the acceleration. (c) The driver keeps the driving force at 3600 N. Describe and explain what happens to the car's motion as its speed rises. [6]",
+      model: "(a) The forces act along the same straight line in opposite directions, so subtract:\nresultant = 3600 − 1200 = 2400 N in the direction of motion.\n\n(b) F = ma, so a = F/m = 2400 / 1200 = 2.0 m/s², in the same direction as the resultant force.\n\n(c) Air resistance increases as the speed increases. The driving force stays at 3600 N, so the resultant force gets smaller and the acceleration gets smaller — the car keeps speeding up, but less and less quickly. When the resistive force has grown to 3600 N, the resultant force is zero, so the acceleration is zero and the car travels at a constant maximum speed.\n\nZero resultant force means constant velocity, not being at rest.",
+    },
+    {
+      id: "ip10-37", topic: "1-5-forces",
+      q: "A spring extends by 4.0 cm when a load of 2.0 N is hung from it, and the load is within the limit of proportionality. What is the spring constant?",
+      opts: ["0.50 N/m", "8.0 N/m", "50 N/m", "80 N/m"],
+      a: "50 N/m",
+      model: "k = F / x. The extension must be in metres for an answer in N/m:\nx = 4.0 cm = 0.040 m.\nk = 2.0 / 0.040 = 50 N/m.\n(0.50 N/cm is the same spring constant written in the other allowed unit.)\nBeyond the limit of proportionality the load–extension graph stops being a straight line, so this calculation would no longer be valid.",
+    },
+    // 1.6 — momentum
+    {
+      id: "ip10-38", topic: "1-6-momentum",
+      q: "A trolley of mass 2.0 kg moving at 3.0 m/s collides with a stationary trolley of mass 1.0 kg on a smooth horizontal track. The trolleys stick together. (a) Calculate their common velocity after the collision. (b) The collision lasts 0.20 s. Calculate the average force exerted on the 1.0 kg trolley. (c) Show by calculation that kinetic energy is not conserved, and state where the missing energy has gone. [7]",
+      model: "(a) Conservation of momentum: total momentum before = total momentum after.\nBefore: p = (2.0 × 3.0) + (1.0 × 0) = 6.0 kg m/s.\nAfter: the combined mass is 2.0 + 1.0 = 3.0 kg moving at v.\n6.0 = 3.0 × v\nv = 2.0 m/s, in the original direction of motion.\n\n(b) For the 1.0 kg trolley alone:\nΔp = mΔv = 1.0 × (2.0 − 0) = 2.0 kg m/s.\nF = Δp / Δt = 2.0 / 0.20 = 10 N.\n\n(c) Ek before = ½ × 2.0 × 3.0² = ½ × 2.0 × 9.0 = 9.0 J.\nEk after = ½ × 3.0 × 2.0² = ½ × 3.0 × 4.0 = 6.0 J.\n9.0 − 6.0 = 3.0 J of kinetic energy has gone.\nIt has been transferred to the internal (thermal) energy store of the trolleys as they deform and to the surroundings as sound.\nMomentum is always conserved in a collision; kinetic energy usually is not.",
+    },
+    {
+      id: "ip10-39", topic: "1-6-momentum",
+      q: "Modern cars are built with crumple zones that increase the time taken for the car to come to rest in a crash. Using F = Δp/Δt, why does this reduce the risk of injury?",
+      opts: [
+        "The change in momentum is reduced to zero, so no force acts",
+        "The change in momentum is the same but happens over a longer time, so the average force is smaller",
+        "The momentum is converted into kinetic energy, which is safer",
+        "The crumple zone increases the mass of the car, so the acceleration is smaller",
+      ],
+      a: "The change in momentum is the same but happens over a longer time, so the average force is smaller",
+      model: "The occupants must lose all their momentum either way — from mv down to zero — so Δp is fixed by the mass and the speed before the crash.\nF = Δp / Δt. With Δp fixed, increasing Δt decreases the average force F acting on the occupants, and it is the force that causes the injury.\nSeat belts, airbags and crash mats on a landing area all work by the same argument.",
+    },
+    // 1.7 — energy, work and power
+    {
+      id: "ip10-40", topic: "1-7-energy",
+      q: "A crane lifts a steel beam of mass 250 kg through a vertical height of 12 m in 20 s at a steady speed. Take g = 9.8 N/kg. (a) Calculate the gain in gravitational potential energy of the beam. (b) Calculate the useful output power of the crane. (c) The crane's motor takes 2.5 kW from the electrical supply. Calculate the efficiency of the crane. (d) State one reason why the efficiency is less than 100%. [7]",
+      model: "(a) ΔEp = mgΔh = 250 × 9.8 × 12 = 29 400 J = 2.94 × 10⁴ J.\n\n(b) P = ΔE / t = 29 400 / 20 = 1470 W ≈ 1.5 kW.\n\n(c) efficiency = (useful power output ÷ total power input) × 100%\n= (1470 ÷ 2500) × 100 = 58.8% ≈ 59%.\n\n(d) Energy is transferred to the internal (thermal) energy store of the motor and gears by friction and by the resistance of the motor windings, and some is transferred to the surroundings as sound. That energy is not useful output.\n\nWatch the units: 2.5 kW must become 2500 W before the division, and Δh must be the VERTICAL height.",
+    },
+    {
+      id: "ip10-41", topic: "1-7-energy",
+      q: "A ball of mass 0.150 kg is dropped from rest from a height of 1.80 m above the ground. Air resistance is negligible. Take g = 9.8 N/kg. (a) Calculate the gravitational potential energy lost by the ball as it falls. (b) Calculate its speed just before it hits the ground. (c) The ball rebounds to a height of 1.20 m. Calculate the energy transferred out of the ball's kinetic and gravitational stores during the bounce. [6]",
+      model: "(a) ΔEp = mgΔh = 0.150 × 9.8 × 1.80 = 2.65 J (2.646 J before rounding).\n\n(b) All of that becomes kinetic energy, because air resistance is negligible:\n½mv² = 2.646\nv² = (2 × 2.646) ÷ 0.150 = 35.28\nv = √35.28 = 5.94 m/s.\n(Equivalently v = √(2gΔh) = √(2 × 9.8 × 1.80) = 5.94 m/s.)\n\n(c) Gravitational potential energy at the top of the rebound:\nEp = 0.150 × 9.8 × 1.20 = 1.764 J.\nEnergy transferred away = 2.646 − 1.764 = 0.88 J (2 s.f.).\nIt has gone to the internal energy store of the ball and the ground, and to the surroundings as sound.\n\nCarry the unrounded 2.646 J through the working and round only at the end.",
+    },
+    // 1.8 — pressure
+    {
+      id: "ip10-42", topic: "1-8-pressure",
+      q: "(a) A rectangular block of weight 60 N rests on a table on a face measuring 0.20 m by 0.15 m. Calculate the pressure it exerts on the table. (b) A diver descends to a depth of 25 m in seawater of density 1030 kg/m³. Calculate the increase in pressure on the diver. Take g = 9.8 N/kg. (c) Atmospheric pressure at the surface is 1.0 × 10⁵ Pa. Calculate the total pressure on the diver at 25 m. [6]",
+      model: "(a) Area = 0.20 × 0.15 = 0.030 m².\np = F / A = 60 / 0.030 = 2000 Pa (2000 N/m²).\n\n(b) Δp = ρgΔh = 1030 × 9.8 × 25 = 252 350 Pa ≈ 2.5 × 10⁵ Pa.\n\n(c) Total = atmospheric + liquid pressure = 1.0 × 10⁵ + 2.52 × 10⁵ = 3.5 × 10⁵ Pa (2 s.f.).\n\nTwo traps: Δp = ρgΔh does NOT depend on the surface area or the shape of the container, only on depth and density; and the atmosphere still presses down on the water, so part (c) is an addition, not a repeat of (b).",
+    },
+    // 2.1 — kinetic particle model
+    {
+      id: "ip10-43", topic: "2-1-kinetic-model",
+      q: "A fixed mass of gas has a volume of 250 cm³ at a pressure of 1.0 × 10⁵ Pa. It is compressed slowly to a volume of 100 cm³ at constant temperature. (a) Calculate the new pressure. (b) Explain, in terms of the particles, why the pressure changes as it does. (c) State why the compression must be carried out slowly. [6]",
+      model: "(a) For a fixed mass of gas at constant temperature, pV = constant:\np₁V₁ = p₂V₂\n(1.0 × 10⁵) × 250 = p₂ × 100\np₂ = (1.0 × 10⁵ × 250) ÷ 100 = 2.5 × 10⁵ Pa.\nThe volumes may stay in cm³ because they appear on both sides — only their RATIO matters.\n\n(b) Gas pressure is caused by particles colliding with the walls; each collision exerts a small force, and pressure is the total force per unit area. The temperature is unchanged, so the average speed and average kinetic energy of the particles are unchanged. But the same number of particles now occupies a smaller volume, so they strike each unit area of the wall MORE FREQUENTLY. More collisions per second on each unit area means a greater force per unit area, so the pressure rises.\n\n(c) Compressing a gas quickly does work on it and raises its temperature, so the condition 'constant temperature' would no longer hold. Slow compression lets the gas transfer energy to the surroundings and stay at the same temperature.",
+    },
+    {
+      id: "ip10-44", topic: "2-1-kinetic-model",
+      q: "A gas is cooled to a temperature of −23 °C. What is this temperature on the kelvin scale?",
+      opts: ["250 K", "296 K", "23 K", "−296 K"],
+      a: "250 K",
+      model: "T (in K) = θ (in °C) + 273.\nT = −23 + 273 = 250 K.\nA kelvin temperature can never be negative: 0 K = −273 °C is absolute zero, the lowest possible temperature, where the particles have the least kinetic energy. Note there is no degree sign — write '250 K', not '250 °K'.",
+    },
+    // 2.2 — thermal properties
+    {
+      id: "ip10-45", topic: "2-2-thermal-properties",
+      q: "An electric heater rated at 500 W is used to heat 2.0 kg of water in an insulated container. The temperature of the water rises from 18 °C to 38 °C in 6.0 minutes. The specific heat capacity of water is 4200 J/(kg °C). (a) Calculate the energy needed to raise the temperature of the water. (b) Calculate the energy supplied by the heater. (c) Account for the difference and calculate the efficiency of the heating. [7]",
+      model: "(a) Rearranging c = ΔE / (mΔθ) gives ΔE = mcΔθ.\nΔθ = 38 − 18 = 20 °C.\nΔE = 2.0 × 4200 × 20 = 168 000 J = 1.68 × 10⁵ J.\n\n(b) E = Pt, with the time in SECONDS: t = 6.0 × 60 = 360 s.\nE = 500 × 360 = 180 000 J = 1.80 × 10⁵ J.\n\n(c) Difference = 180 000 − 168 000 = 12 000 J.\nThat energy has been transferred to the container and to the surroundings, mainly by conduction through the walls and by evaporation from the surface, so it did not go into raising the water temperature.\nEfficiency = (168 000 ÷ 180 000) × 100 = 93.3%.\n\nTwo classic slips: using 6.0 instead of 360 for the time, and putting 38 rather than 20 into ΔE = mcΔθ — the formula uses the temperature CHANGE.",
+    },
+    // 2.3 — thermal energy transfer
+    {
+      id: "ip10-46", topic: "2-3-thermal-transfer",
+      q: "Explain each of the following. (a) A metal spoon feels colder than a wooden spoon, although both have been in the same room for hours. (b) The heating element of an electric kettle is fitted at the bottom, not at the top. (c) The water pipes on a solar water heater are painted matt black. [6]",
+      model: "(a) Both spoons are at the same temperature — room temperature — so the difference is the RATE of thermal energy transfer away from your hand. Metal is an excellent thermal conductor: as well as lattice vibrations it has free (delocalised) electrons that carry energy away from the point of contact very quickly, so your skin cools rapidly and the spoon feels cold. Wood is a thermal insulator with no free electrons, so it conducts energy away from your hand only slowly and feels warm.\n\n(b) Water near the element is heated, expands, becomes less dense and rises; cooler, denser water sinks to take its place. This convection current circulates and heats the whole body of water. If the element were at the top, the hot, less dense water would simply stay there, no convection current could form, and the rest of the water could only be heated by conduction — which is very poor in liquids.\n\n(c) Matt black surfaces are the best ABSORBERS of infrared radiation. Painting the pipes matt black means the maximum possible fraction of the Sun's radiation is absorbed rather than reflected, so the water is heated as quickly as possible. (Matt black is also the best emitter, which is why the outside of the collector is insulated and glazed.)",
+    },
+    // 3.1 — general properties of waves
+    {
+      id: "ip10-47", topic: "3-1-waves",
+      q: "Water waves in a ripple tank have a wavelength of 2.5 cm, and 12 complete waves pass a fixed point in 4.0 s. (a) Calculate the frequency. (b) Calculate the speed of the waves. (c) The waves cross into a shallower region where their speed falls to 4.5 cm/s. State what happens to the frequency and calculate the new wavelength. (d) State how the diffraction pattern changes when a gap in a barrier is made narrower. [7]",
+      model: "(a) f = number of waves ÷ time = 12 ÷ 4.0 = 3.0 Hz.\n\n(b) v = fλ = 3.0 × 2.5 = 7.5 cm/s (= 0.075 m/s).\n\n(c) The frequency is set by the source (the dipper), so it is UNCHANGED at 3.0 Hz. Only the speed and the wavelength change.\nλ = v / f = 4.5 / 3.0 = 1.5 cm.\nThe wavefronts are closer together in the shallow water, and if they enter at an angle they bend towards the normal — this is refraction.\n\n(d) The narrower the gap, the more the waves spread out. The spreading is greatest when the gap width is about equal to the wavelength.",
+    },
+    // 3.2 — light
+    {
+      id: "ip10-48", topic: "3-2-light",
+      q: "A ray of light in air strikes the flat surface of a glass block at an angle of incidence of 40°. The refractive index of the glass is 1.50. (a) Calculate the angle of refraction in the glass. (b) Calculate the critical angle for this glass. (c) State the two conditions required for total internal reflection. (d) The speed of light in a vacuum is 3.0 × 10⁸ m/s. Calculate the speed of light in the glass. [7]",
+      model: "(a) n = sin i / sin r\nsin r = sin i ÷ n = sin 40° ÷ 1.50 = 0.643 ÷ 1.50 = 0.4285\nr = 25° (25.4° before rounding).\nThe ray bends TOWARDS the normal on entering the denser medium, so r must be smaller than i — a good check.\n\n(b) n = 1 / sin c\nsin c = 1 / 1.50 = 0.667\nc = 42° (41.8° before rounding).\n\n(c) The light must be travelling from an optically denser medium into a less dense one, AND the angle of incidence inside the denser medium must be greater than the critical angle.\n\n(d) n = speed in a vacuum ÷ speed in the medium\nspeed in glass = 3.0 × 10⁸ ÷ 1.50 = 2.0 × 10⁸ m/s.\n\nAll angles are measured from the NORMAL. If a diagram gives you the angle to the surface, subtract it from 90° first.",
+    },
+    {
+      id: "ip10-49", topic: "3-2-light",
+      q: "An object is placed between a thin converging lens and its principal focus F. Which describes the image formed?",
+      opts: [
+        "real, inverted and diminished",
+        "real, inverted and enlarged",
+        "virtual, upright and enlarged",
+        "virtual, inverted and diminished",
+      ],
+      a: "virtual, upright and enlarged",
+      model: "Inside the principal focus the refracted rays still DIVERGE after leaving the lens, so they never meet on the far side. Extrapolating them backwards gives a virtual image on the same side as the object, upright and enlarged. This is exactly how a magnifying glass is used.\nThe rest of the set, for the ray diagrams: object beyond 2F → real, inverted, diminished; at 2F → real, inverted, same size; between F and 2F → real, inverted, enlarged.\nA virtual image can never be projected onto a screen.",
+    },
+    // 3.3 — electromagnetic spectrum
+    {
+      id: "ip10-50", topic: "3-3-em-spectrum",
+      q: "Which list gives regions of the electromagnetic spectrum in order of INCREASING wavelength?",
+      opts: [
+        "gamma rays, X-rays, ultraviolet, visible light, infrared, microwaves, radio waves",
+        "radio waves, microwaves, infrared, visible light, ultraviolet, X-rays, gamma rays",
+        "gamma rays, ultraviolet, X-rays, visible light, microwaves, infrared, radio waves",
+        "radio waves, infrared, microwaves, visible light, X-rays, ultraviolet, gamma rays",
+      ],
+      a: "gamma rays, X-rays, ultraviolet, visible light, infrared, microwaves, radio waves",
+      model: "Gamma rays have the shortest wavelength and the highest frequency; radio waves the longest wavelength and the lowest frequency. Increasing wavelength therefore runs gamma → X-rays → ultraviolet → visible → infrared → microwaves → radio.\nOption 2 is the same list reversed — it is the order of increasing FREQUENCY, so read the question carefully.\nAll seven regions travel at the same speed in a vacuum, 3.0 × 10⁸ m/s.",
+    },
+    {
+      id: "ip10-51", topic: "3-3-em-spectrum",
+      q: "The speed of electromagnetic waves in a vacuum is 3.0 × 10⁸ m/s. (a) A radio station transmits at a frequency of 96.0 MHz. Calculate the wavelength of these waves. (b) A geostationary satellite is 3.6 × 10⁷ m above the Earth's surface. Calculate the time taken for a microwave signal to travel from a ground station up to the satellite and back down to Earth. (c) State one harmful effect of excessive exposure to ultraviolet radiation, and one to X-rays. [6]",
+      model: "(a) λ = v / f.\n96.0 MHz = 96.0 × 10⁶ Hz.\nλ = (3.0 × 10⁸) ÷ (96.0 × 10⁶) = 3.13 m (3.125 m before rounding).\n\n(b) The signal travels up AND back, so the distance is\nd = 2 × 3.6 × 10⁷ = 7.2 × 10⁷ m.\nt = d / v = (7.2 × 10⁷) ÷ (3.0 × 10⁸) = 0.24 s.\nThis delay is why long-distance satellite phone calls sound slightly out of step.\n\n(c) Ultraviolet: damage to surface cells and to the eyes, leading to skin cancer and eye conditions.\nX-rays: mutation of or damage to cells in the body.\n\nThe M in MHz is 10⁶ — forgetting it makes the answer a million times wrong.",
+    },
+    // 3.4 — sound
+    {
+      id: "ip10-52", topic: "3-4-sound",
+      q: "(a) A student stands 165 m from a large flat wall and claps once. The echo is heard 1.00 s later. Calculate the speed of sound in air. (b) A ship sends a pulse of ultrasound vertically downwards and detects the echo from the seabed 0.090 s later. The speed of sound in seawater is 1500 m/s. Calculate the depth of the seabed. (c) Explain why sound cannot travel through a vacuum. [6]",
+      model: "(a) The sound travels to the wall AND back:\ndistance = 2 × 165 = 330 m\nv = d / t = 330 ÷ 1.00 = 330 m/s.\nThis sits inside the expected 330–350 m/s range for air, which is a good check.\n\n(b) Again the pulse goes down and back:\n2d = vt = 1500 × 0.090 = 135 m\nd = 135 ÷ 2 = 67.5 m ≈ 68 m.\n\n(c) Sound is a longitudinal wave: it travels as compressions and rarefactions, which need particles of a medium to vibrate and pass the disturbance on to their neighbours. A vacuum contains no particles, so there is nothing to carry the vibration and no sound is transmitted. (Light and other electromagnetic waves need no medium, which is why you can see through a vacuum but not hear through one.)\n\nThe halving step in (a) and (b) is worth a mark on its own — write it down explicitly.",
+    },
+    {
+      id: "ip10-53", topic: "3-4-sound",
+      q: "A note is played on a guitar. The string is then plucked harder, but the same string is used and its length and tension are unchanged. Compared with the first note, the second note is",
+      opts: [
+        "louder, with the same pitch",
+        "higher in pitch, with the same loudness",
+        "louder and higher in pitch",
+        "quieter, with a lower pitch",
+      ],
+      a: "louder, with the same pitch",
+      model: "Plucking harder gives the string a larger AMPLITUDE of vibration. Amplitude controls loudness, so the note is louder.\nThe FREQUENCY of the string is set by its length, tension and mass per unit length, none of which have changed, so the pitch is the same.\nRemember the pairing: amplitude → loudness, frequency → pitch.",
+    },
+    // 4.1 — magnetism
+    {
+      id: "ip10-65", topic: "4-1-magnetism",
+      q: "An electromagnet in a scrapyard crane must pick up steel car bodies and then drop them on command. Which core material should be used, and why?",
+      opts: [
+        "Steel, because it stays magnetised when the current is switched off",
+        "Soft iron, because it magnetises strongly when the current flows and loses its magnetism when the current is switched off",
+        "Copper, because it is the best electrical conductor",
+        "Aluminium, because it is light and non-magnetic",
+      ],
+      a: "Soft iron, because it magnetises strongly when the current flows and loses its magnetism when the current is switched off",
+      model: "Soft iron is easily magnetised AND easily demagnetised, so it makes a temporary magnet — exactly what an electromagnet needs. Switch the current off and the load is released.\nSteel retains its magnetism, so it makes permanent magnets; a steel core would keep hold of the car body after the current was cut.\nCopper and aluminium are not magnetic materials at all (the magnetic materials in 0625 are iron, steel, cobalt and nickel), so neither would work as a core.",
+    },
+
     // 4.2 — quantities
     { id: "ip10-1", topic: "4-2-quantities", q: "A current of 0.40 A flows for 5.0 minutes. How much charge has flowed?",
       opts: ["2.0 C", "12 C", "120 C", "1200 C"], a: "120 C",
@@ -252,9 +837,103 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
     { id: "ip10-28", topic: "4-4-em-effects", q: "A 100% efficient transformer steps 11 kV down to 230 V. If the primary has 5000 turns, how many turns on the secondary?",
       opts: ["~22 turns", "~105 turns", "~230 turns", "~5000 turns"], a: "~105 turns",
       model: "N_s = N_p × (V_s / V_p) = 5000 × (230 / 11000) = 5000 × 0.0209 ≈ 105 turns." },
+
+    // 4.4 — electrical safety
+    {
+      id: "ip10-54", topic: "4-4-safety",
+      q: "An electric heater rated at 2.0 kW is designed for a 230 V mains supply. Fuses of 3 A, 5 A and 13 A are available. (a) Calculate the normal operating current. (b) State which fuse should be fitted and justify your choice. (c) Explain why both the switch and the fuse must be connected in the live wire rather than the neutral wire. (d) The heater's casing is made entirely of plastic and it has no earth wire. Explain why this is safe. [8]",
+      model: "(a) I = P / V = 2000 ÷ 230 = 8.7 A (2 s.f.).\n\n(b) The 13 A fuse. A fuse must carry the normal working current without melting, but blow as soon as the current becomes dangerously large — so its rating must be just ABOVE the normal current. Both the 3 A and the 5 A fuses are below 8.7 A and would melt every time the heater was switched on; 13 A is the smallest available rating above 8.7 A.\n\n(c) The live wire is the one at high voltage. If the switch or fuse were in the neutral wire, then when the switch was off (or the fuse had melted) the appliance would still be connected to the live wire and its internal parts would still be at a high potential. Anyone touching them would complete a path to earth and receive a severe or fatal shock. Putting the switch and fuse in the live wire disconnects the appliance from that high potential.\n\n(d) The heater is double-insulated: the whole outer casing is an insulating material, so no accessible part can ever become live even if a wire works loose inside. There is no conducting case to earth, so no earth wire is needed. The fuse is still fitted, because without an earth wire it is what protects the circuit and the cabling from an excess current.",
+    },
+    // 5.1 — the nuclear model of the atom
+    {
+      id: "ip10-55", topic: "5-1-nuclear-atom",
+      q: "An isotope of uranium is written ²³⁵₉₂U. How many neutrons are there in one of its nuclei?",
+      opts: ["92", "143", "235", "327"],
+      a: "143",
+      model: "The lower number is the proton number Z = 92; the upper number is the nucleon number A = 235.\nneutrons = A − Z = 235 − 92 = 143.\nA neutral atom of this isotope also has 92 electrons. ²³⁸₉₂U is a different isotope of the same element: same 92 protons, but 146 neutrons.",
+    },
+    {
+      id: "ip10-56", topic: "5-1-nuclear-atom",
+      q: "(a) In the alpha-particle scattering experiment a beam of α-particles was fired at a very thin sheet of gold. State what each of these three observations tells us about the atom: most α-particles passed straight through; a few were deflected through large angles; a very small number came back towards the source. (b) One fission reaction is ²³⁵₉₂U + ¹₀n → ¹⁴¹₅₆Ba + ⁹²₃₆Kr + x ¹₀n. Determine x, showing how you know. (c) State one difference between nuclear fission and nuclear fusion. [7]",
+      model: "(a) Most passed straight through → the atom is mostly EMPTY SPACE.\nA few were deflected through large angles → there is a concentrated POSITIVE CHARGE in the atom that repels the positive α-particles.\nA very small number came back → that positive region is extremely SMALL and contains almost all of the MASS of the atom, because only something both massive and small could reverse an α-particle.\nTogether these give the nuclear model: a tiny, dense, positively charged nucleus with electrons in orbit far away.\n\n(b) Nucleon numbers must balance:\nleft = 235 + 1 = 236\nright = 141 + 92 + x(1) = 233 + x\n236 = 233 + x, so x = 3.\nCheck the proton numbers too: left = 92 + 0 = 92; right = 56 + 36 + 0 = 92. ✓\nSo three neutrons are released, and these can go on to cause further fissions — a chain reaction.\n\n(c) Fission is the SPLITTING of one large nucleus into two smaller nuclei plus neutrons; fusion is the JOINING of two light nuclei to make a heavier one. Both release energy, but fusion needs extremely high temperature and pressure, such as in the core of the Sun.",
+    },
+    // 5.2 — radioactivity
+    {
+      id: "ip10-57", topic: "5-2-radioactivity",
+      q: "A radium nucleus ²²⁶₈₈Ra decays by emitting an α-particle. Which nuclide is the daughter nucleus?",
+      opts: ["²²²₈₆Rn", "²²²₉₀Th", "²²⁶₈₉Ac", "²²⁶₈₇Fr"],
+      a: "²²²₈₆Rn",
+      model: "An α-particle is a helium nucleus ⁴₂He, so the decaying nucleus loses 4 nucleons and 2 protons:\nA: 226 − 4 = 222\nZ: 88 − 2 = 86\nThe full equation is ²²⁶₈₈Ra → ²²²₈₆Rn + ⁴₂He.\nCompare with β-decay, where A is unchanged and Z INCREASES by 1 because a neutron becomes a proton plus the emitted electron. γ-emission changes neither number.",
+    },
+    {
+      id: "ip10-58", topic: "5-2-radioactivity",
+      q: "A detector connected to a counter records 512 counts/minute when placed near a radioactive sample. With the sample removed, it records 32 counts/minute. (a) Calculate the corrected count rate due to the sample. (b) State the count rate the detector would record, including background, after three half-lives. (c) The total reading is found to be 92 counts/minute exactly 6.0 hours after the first measurement. Determine the half-life of the sample. [6]",
+      model: "(a) corrected count rate = measured − background = 512 − 32 = 480 counts/minute.\n\n(b) The corrected rate halves each half-life:\n480 → 240 → 120 → 60 counts/minute.\nThe detector always also picks up the background, so it would READ 60 + 32 = 92 counts/minute.\n\n(c) Correct the 6.0-hour reading first: 92 − 32 = 60 counts/minute.\n480 ÷ 60 = 8 = 2³, so exactly three half-lives have passed.\nhalf-life = 6.0 ÷ 3 = 2.0 hours.\n\nSubtracting the background BEFORE halving is the whole question. Do it first, every time — and remember decay is random, so these are average figures.",
+    },
+    {
+      id: "ip10-59", topic: "5-2-radioactivity",
+      q: "(a) State the nature, the relative ionising effect and the penetrating ability of α-particles, β-particles and γ-radiation. (b) A household smoke alarm uses a source that emits α-particles and has a half-life of many years. Explain why both of those properties are suitable. (c) State three precautions a laboratory technician should take when handling radioactive sources. [9]",
+      model: "(a) α — a helium nucleus, ⁴₂He, charge +2. The most strongly ionising of the three. Stopped by a sheet of paper or a few centimetres of air.\nβ — a high-speed electron emitted from the nucleus, ⁰₋₁e, charge −1. Moderately ionising, about a hundredth as strongly as α. Stopped by a few millimetres of aluminium.\nγ — high-frequency electromagnetic radiation, no charge and no mass. The most weakly ionising. Never fully stopped, but greatly reduced by several centimetres of lead or metres of concrete.\n\n(b) α-particles are very strongly ionising, so they ionise the air inside the alarm's detection chamber and allow a small current to flow. Smoke particles absorb the α-particles, the current falls and the alarm sounds — so a strongly ionising radiation is exactly what is needed. Their very short range also means they cannot escape from the alarm's casing to reach the people in the house.\nA long half-life means the activity falls only very slowly, so the alarm stays sensitive for years without needing the source replaced or recalibrated.\n\n(c) Any three of: keep the exposure TIME as short as possible; keep the source at a DISTANCE, handling it with long tongs and never with bare hands; use SHIELDING — store sources in lead-lined containers and stand behind a lead screen; point the source away from the body and from other people; wear a film badge to monitor the dose received.",
+    },
+    // 6.1 — the Earth and the Solar System
+    {
+      id: "ip10-60", topic: "6-1-solar-system",
+      q: "The Earth orbits the Sun once in 365 days at an average orbital radius of 1.5 × 10¹¹ m. (a) Calculate the Earth's average orbital speed in m/s. (b) Calculate the time taken for light from the Sun to reach the Earth, given that light travels at 3.0 × 10⁸ m/s. (c) Explain why Neptune, which is much further from the Sun, has a smaller orbital speed than the Earth. [7]",
+      model: "(a) v = 2πr / T.\nFirst convert the period to seconds:\nT = 365 × 24 × 60 × 60 = 3.15 × 10⁷ s.\nThe orbital circumference is 2πr = 2 × π × 1.5 × 10¹¹ = 9.42 × 10¹¹ m.\nv = (9.42 × 10¹¹) ÷ (3.15 × 10⁷) = 3.0 × 10⁴ m/s (about 30 km/s).\n\n(b) t = d / v = (1.5 × 10¹¹) ÷ (3.0 × 10⁸) = 500 s, which is about 8.3 minutes.\n\n(c) The force that keeps a planet in orbit is the gravitational attraction of the Sun, and the strength of the Sun's gravitational field DECREASES as the distance from the Sun increases. Neptune therefore experiences a much weaker attraction and moves round its orbit more slowly. (Its orbit is also far longer, so its orbital period is very much greater — about 165 Earth years.)\n\nThe standard lost mark is leaving T in days. 2πr/T needs seconds for an answer in m/s.",
+    },
+    {
+      id: "ip10-61", topic: "6-1-solar-system",
+      q: "Which statement about the Solar System is correct?",
+      opts: [
+        "The four planets nearest the Sun are large and gaseous",
+        "The four planets nearest the Sun are small and rocky, and the four furthest are large and gaseous",
+        "The Sun lies at the exact centre of every planet's elliptical orbit",
+        "A comet travels fastest when it is furthest from the Sun",
+      ],
+      a: "The four planets nearest the Sun are small and rocky, and the four furthest are large and gaseous",
+      model: "Mercury, Venus, Earth and Mars are small and rocky; Jupiter, Saturn, Uranus and Neptune are large and gaseous. The accretion model explains this: close to the young Sun it was too hot for the light gases to be held, so only rock and metal accreted, while the cold outer region retained its hydrogen and helium.\nThe Sun is NOT at the centre of an elliptical orbit, except where the orbit happens to be nearly circular.\nA comet travels FASTEST when it is CLOSEST to the Sun — moving inwards, its gravitational potential energy is converted into kinetic energy.",
+    },
+    // 6.2 — stars and the Universe
+    {
+      id: "ip10-62", topic: "6-2-stars-universe",
+      q: "Describe the life cycle of a star that is much more massive than the Sun, from the interstellar cloud it forms in to its final state. [6]",
+      model: "1. The star forms from an interstellar cloud of gas and dust containing hydrogen.\n2. The cloud collapses under its own gravitational attraction and its temperature rises as it does so; this collapsing cloud is a PROTOSTAR.\n3. When the core is hot enough, hydrogen nuclei fuse into helium and release energy. The protostar becomes a STABLE STAR once the inward force of gravitational attraction is balanced by the outward force due to the very high temperature at the centre.\n4. Eventually most of the hydrogen in the core has been converted to helium. Because this star is very massive, it then expands to become a RED SUPERGIANT.\n5. The red supergiant explodes as a SUPERNOVA, throwing out a nebula that contains hydrogen and the new heavier elements made in the star.\n6. What is left at the centre is a NEUTRON STAR, or a BLACK HOLE if the star was massive enough. The nebula may later collapse to form new stars with orbiting planets.\n\nFor a star like the Sun, steps 4–6 differ: it expands to a red giant, then forms a planetary nebula with a WHITE DWARF at its centre — no supernova.",
+    },
+    {
+      id: "ip10-63", topic: "6-2-stars-universe",
+      q: "(a) State what is meant by redshift and explain how observations of redshift provide evidence that the Universe is expanding. (b) A distant galaxy is 4.0 × 10²⁴ m from the Earth. Taking the Hubble constant as H₀ = 2.2 × 10⁻¹⁸ per second, calculate the speed at which it is receding. (c) Estimate the age of the Universe in seconds. (d) State what cosmic microwave background radiation is and why it supports the Big Bang Theory. [9]",
+      model: "(a) Redshift is an increase in the observed wavelength of the electromagnetic radiation reaching us from a star or galaxy, caused by that object receding from the Earth. The light from distant galaxies is redshifted compared with the same light produced on Earth, so those galaxies are moving away from us. The further away a galaxy is, the greater its redshift and so the faster it is receding — that pattern, seen in every direction, is evidence that the whole Universe is expanding and supports the Big Bang Theory.\n\n(b) H₀ = v / d, so v = H₀ d.\nv = (2.2 × 10⁻¹⁸) × (4.0 × 10²⁴) = 8.8 × 10⁶ m/s.\n\n(c) age ≈ d/v = 1 / H₀ = 1 ÷ (2.2 × 10⁻¹⁸) = 4.5 × 10¹⁷ s.\n(That is roughly 1.4 × 10¹⁰ years — about 14 billion years.) Because every galaxy gives the same figure, it suggests all the matter in the Universe was present at a single point at that time.\n\n(d) Cosmic microwave background radiation (CMBR) is microwave radiation of one specific frequency that is detected at all points in space, from every direction. It was produced shortly after the Universe formed, when it was extremely hot, and has been stretched into the microwave region of the spectrum as the Universe expanded — exactly what the Big Bang Theory predicts.\n\nIn (c) you must INVERT H₀. Multiplying by it instead is the most common error on this question.",
+    },
+    {
+      id: "ip10-64", topic: "6-2-stars-universe",
+      q: "One light-year is",
+      opts: [
+        "the time taken for light to travel from the Sun to the Earth",
+        "the distance travelled by light in a vacuum in one year, about 9.5 × 10¹⁵ m",
+        "the diameter of the Milky Way",
+        "a period of 9.5 × 10¹⁵ seconds",
+      ],
+      a: "the distance travelled by light in a vacuum in one year, about 9.5 × 10¹⁵ m",
+      model: "Despite the name, a light-year is a DISTANCE, not a time: it is how far light travels through the vacuum of space in one year, 9.5 × 10¹⁵ m.\nCheck it yourself: d = vt = (3.0 × 10⁸) × (365 × 24 × 60 × 60) = (3.0 × 10⁸) × (3.15 × 10⁷) ≈ 9.5 × 10¹⁵ m. ✓\nThe Milky Way is about 100 000 light-years across, and it is one of many billions of galaxies in the Universe.",
+    },
   ],
 
   mistakes: [
+    { mistake: "Mixing up mass and weight, or their units.", fix: "Mass is the quantity of matter, in kg, and never changes. Weight is a force, in N, and equals mg. 'The weight is 5 kg' scores nothing." },
+    { mistake: "Reading a distance–time graph as if it were a speed–time graph.", fix: "Check the y-axis label first. On d–t the gradient is speed and a horizontal line means AT REST. On v–t the gradient is acceleration, a horizontal line means CONSTANT SPEED, and the area under the line is the distance." },
+    { mistake: "Forgetting to convert cm, g and minutes before substituting.", fix: "Do every conversion the moment you write the data down: cm → m (÷100), cm³ → m³ (÷10⁶), g → kg (÷1000), minutes → seconds (×60), kW → W (×1000), MHz → Hz (×10⁶)." },
+    { mistake: "Using the slope distance instead of the vertical height in ΔEp = mgΔh.", fix: "Δh is always the VERTICAL height change. For a ramp, that is the height gained, not the length of the ramp." },
+    { mistake: "Treating momentum as a scalar and adding two opposite velocities.", fix: "Momentum is a vector. Pick a positive direction, write it down, and give anything moving the other way a negative velocity — then add." },
+    { mistake: "Writing 'heat rises' to explain convection.", fix: "The warmed fluid EXPANDS, becomes LESS DENSE and rises; cooler denser fluid sinks to replace it. Name density in the answer or the mark is not given." },
+    { mistake: "Saying evaporation happens at the boiling point or throughout the liquid.", fix: "Evaporation happens only at the SURFACE and at ANY temperature; the most energetic particles escape, so the liquid cools. Boiling happens throughout the liquid at one fixed temperature." },
+    { mistake: "Putting the temperature, not the temperature change, into ΔE = mcΔθ.", fix: "Δθ is the RISE or FALL: final − initial. Heating water from 18 °C to 38 °C gives Δθ = 20, never 38." },
+    { mistake: "Saying the frequency changes when a wave refracts.", fix: "Only the speed and the wavelength change. The frequency is fixed by the source and is the same in every medium." },
+    { mistake: "Measuring angles of incidence and refraction from the surface.", fix: "Every angle in reflection and refraction is measured from the NORMAL — the line at 90° to the surface. If a diagram gives you the angle to the surface, subtract it from 90° first." },
+    { mistake: "Writing n = sin c for the critical angle.", fix: "It is n = 1 / sin c. Sanity check with glass: n = 1.5 gives sin c = 0.667 and c ≈ 42°, so the critical angle must come out under 90°." },
+    { mistake: "Forgetting that echo and sonar pulses travel there AND back.", fix: "Use 2d = vt, then halve. Write the halving line explicitly — it is usually worth a mark by itself." },
+    { mistake: "Doing half-life work without subtracting the background count rate.", fix: "Corrected count rate = measured − background. Subtract FIRST, then halve. A reading never falls below the background level." },
+    { mistake: "Getting α-decay and β-decay the wrong way round in nuclide equations.", fix: "α: A − 4 and Z − 2. β: A unchanged and Z + 1 (a neutron becomes a proton plus the emitted electron). γ: nothing changes. Always check that both numbers balance across the arrow." },
+    { mistake: "Multiplying by the Hubble constant to get the age of the Universe.", fix: "v = H₀d gives a SPEED. The age is 1/H₀ = 1 ÷ (2.2 × 10⁻¹⁸) ≈ 4.5 × 10¹⁷ s. If your answer is a tiny number, you have forgotten to invert." },
     { mistake: "Forgetting units on numerical answers.", fix: "Always finish with C, V, A, Ω, W, J or kWh. Examiner gives zero for a bare number." },
     { mistake: "Confusing e.m.f. with p.d.", fix: "e.m.f. = source (energy per coulomb supplied by battery). p.d. = component (energy per coulomb transferred to it). Both in volts." },
     { mistake: "Adding parallel resistors directly.", fix: "Use 1/R = 1/R₁ + 1/R₂ + … then invert. Or for two equal Rs: parallel = R/2." },
@@ -266,6 +945,61 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
   ],
 
   cheat: [
+    {
+      heading: "FORMULA SHEET — every equation in 0625 Extended",
+      bullets: [
+        "MOTION: v = s/t · average speed = total distance ÷ total time · a = Δv/Δt · g ≈ 9.8 m/s² · resultant of two perpendicular vectors R = √(a² + b²), direction from tan θ.",
+        "FORCES: W = mg (and g = W/m in N/kg) · ρ = m/V · k = F/x · F = ma · moment = force × perpendicular distance from the pivot · Σclockwise moments = Σanticlockwise moments.",
+        "MOMENTUM: p = mv · impulse = FΔt = Δ(mv) · F = Δp/Δt · total momentum before = total momentum after.",
+        "ENERGY: Ek = ½mv² · ΔEp = mgΔh · W = Fd = ΔE · P = W/t = ΔE/t · efficiency = (useful output ÷ total input) × 100%.",
+        "PRESSURE: p = F/A · Δp = ρgΔh.",
+        "THERMAL: T(K) = θ(°C) + 273 · pV = constant (fixed mass, constant temperature) · c = ΔE/(mΔθ), so ΔE = mcΔθ.",
+        "WAVES: v = fλ · n = sin i / sin r · n = 1 / sin c · n = speed in vacuum ÷ speed in medium · c = 3.0 × 10⁸ m/s in a vacuum.",
+        "ELECTRICITY: I = Q/t · E = W/Q (e.m.f.) · V = W/Q (p.d.) · R = V/I · P = IV · E = IVt · series R = ΣR · parallel 1/R = Σ(1/Rᵢ) · divider R₁/R₂ = V₁/V₂.",
+        "ELECTROMAGNETISM: V_p/V_s = N_p/N_s · I_p V_p = I_s V_s (100% efficient) · P = I²R (why transmission losses fall at high voltage).",
+        "SPACE: v = 2πr/T · H₀ = v/d, H₀ = 2.2 × 10⁻¹⁸ s⁻¹ · age of the Universe ≈ 1/H₀ ≈ 4.5 × 10¹⁷ s · 1 light-year = 9.5 × 10¹⁵ m.",
+      ],
+    },
+    {
+      heading: "Units, symbols and prefixes",
+      bullets: [
+        "Prefixes for everyone: M mega (×10⁶) · k kilo (×10³) · c centi (×10⁻²) · m milli (×10⁻³). Extended also: G giga (×10⁹) · µ micro (×10⁻⁶) · n nano (×10⁻⁹).",
+        "Mechanics: length m · area m² · volume m³, cm³, dm³ · mass kg, g · weight and force N · density g/cm³, kg/m³ · speed m/s · acceleration m/s² · gravitational field strength N/kg · spring constant N/m · momentum kg m/s · impulse N s · moment N m.",
+        "Energy and pressure: work done and energy J, kJ, MJ, kW h · power W, kW, MW · pressure N/m² = Pa · specific heat capacity J/(kg °C).",
+        "Waves and thermal: frequency Hz, kHz · wavelength m, cm, nm · temperature °C and K (write 250 K, never 250 °K) · angles in degrees · refractive index has NO unit.",
+        "Electricity and nuclear: p.d. V, mV, kV · current A, mA · e.m.f. V · resistance Ω · charge C · count rate counts/s or counts/minute · half-life s, min, h, days, years · Hubble constant s⁻¹.",
+        "Conversions that cost marks: 1 g/cm³ = 1000 kg/m³ · 1 cm = 0.01 m · 1 cm³ = 1 × 10⁻⁶ m³ · 1 minute = 60 s · 1 kW h = 3.6 × 10⁶ J.",
+      ],
+    },
+    {
+      heading: "Motion, forces and energy — the lines that earn marks",
+      bullets: [
+        "Distance–time: gradient = speed. Speed–time: gradient = acceleration, AREA = distance. Say which graph you are reading before you start.",
+        "Terminal velocity script: drag increases with speed → drag eventually equals weight → resultant force zero → acceleration zero → constant speed.",
+        "Equilibrium needs BOTH zero resultant force and zero resultant moment. For a uniform rule pivoted at its centre, the rule's own weight has no moment about the pivot.",
+        "Stability: low centre of gravity + wide base. It topples when the line of action of the weight falls outside the base.",
+        "Momentum is conserved in every collision; kinetic energy usually is not. Compare ½mv² before and after to find the energy transferred to internal and sound stores.",
+        "Crumple zones, airbags, seat belts, crash mats: same Δp over a longer Δt → smaller F.",
+        "Efficiency can never exceed 100%. Losses are almost always 'transferred to the internal (thermal) energy store by friction/resistance, and to the surroundings as sound'.",
+        "Energy resources: the Sun is the original source of ALL of them except geothermal, nuclear and tidal. Compare on renewability, availability, reliability, scale and environmental impact.",
+        "Pressure in a liquid depends on depth and density ONLY — not on the shape, width or surface area of the container. Add atmospheric pressure when the question asks for the total.",
+      ],
+    },
+    {
+      heading: "Thermal physics and waves — recite these",
+      bullets: [
+        "Gas pressure rises when you heat it (particles faster → harder and more frequent collisions) or squeeze it (same particles hit each unit area more often). Constant temperature → pV = constant.",
+        "Conduction: lattice vibrations everywhere, PLUS free delocalised electrons in metals — that second mechanism is why metals win. Poor in gases and most liquids (particles far apart).",
+        "Convection: fluids only. Warm fluid expands → less dense → rises. Radiation: infrared, needs no medium, matt black best emitter AND absorber, shiny silver worst.",
+        "Vacuum flask, all three at once: vacuum stops conduction and convection, silvered surfaces reflect radiation, the stopper stops evaporation.",
+        "Refraction changes speed and wavelength but NEVER frequency. Denser medium → slower → bends towards the normal.",
+        "Diffraction: narrower gap → more spreading; greatest when gap ≈ wavelength; longer wavelengths spread more.",
+        "TIR needs denser → less dense AND i > c. n = 1/sin c. Optical fibres, 45° prisms, endoscopes.",
+        "Lens images: beyond 2F real/inverted/diminished · at 2F real/inverted/same size · between F and 2F real/inverted/enlarged · inside F virtual/upright/enlarged. Converging lens fixes long sight, diverging lens fixes short sight.",
+        "EM spectrum, short wavelength first: gamma · X-rays · ultraviolet · visible · infrared · microwaves · radio. All 3.0 × 10⁸ m/s in a vacuum.",
+        "Sound: longitudinal, needs a medium, 20 Hz–20 kHz audible, 330–350 m/s in air, faster in liquids and faster still in solids, ultrasound above 20 kHz. Amplitude → loudness, frequency → pitch. Echo/sonar: 2d = vt.",
+      ],
+    },
     {
       heading: "The four formulas that unlock 60% of the paper",
       bullets: [
@@ -295,6 +1029,7 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
     {
       heading: "Logic gates — recite these four truth tables",
       bullets: [
+        "⚠ OFF-SYLLABUS SINCE 2023 — digital electronics was removed from 0625 and will NOT be examined. Kept from the original pack; skip this whole section unless your school still teaches it.",
         "NOT: 0→1, 1→0.",
         "AND: 00→0, 01→0, 10→0, 11→1.",
         "OR : 00→0, 01→1, 10→1, 11→1.",
@@ -313,6 +1048,34 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
       ],
     },
     {
+      heading: "Electrical safety — the four answers examiners want",
+      bullets: [
+        "Three wires: LIVE (high voltage, delivers current) · NEUTRAL (completes the circuit, near 0 V) · EARTH (safety wire to the metal casing).",
+        "Switch and fuse go in the LIVE wire. In the neutral wire the appliance would stay at high potential when switched off → still lethal to touch.",
+        "Fuse rating = the next value ABOVE the normal working current. Work out I = P/V first, then pick 3 A / 5 A / 13 A.",
+        "Trip switch (circuit breaker) beats a fuse: acts faster and can be reset instead of replaced.",
+        "Casing must be EARTHED (fault current flows to earth and blows the fuse) or DOUBLE-INSULATED (insulating case can never become live, so no earth wire is needed — but the fuse still protects the cable).",
+        "Hazards to name: damaged insulation · overheating cables · damp conditions · excess current from overloaded plugs, extension leads and sockets.",
+      ],
+    },
+    {
+      heading: "Nuclear and space physics — last-hour recall",
+      bullets: [
+        "α = ⁴₂He, +2, most ionising, stopped by paper. β = ⁰₋₁e, −1, stopped by a few mm of aluminium. γ = EM wave, no charge, only reduced by several cm of lead.",
+        "In a field: α and β deflect OPPOSITE ways, β much more (smaller mass), γ not at all.",
+        "Decay: α → A−4, Z−2. β → A same, Z+1 (neutron → proton + electron). γ → no change. Balance both numbers across the arrow.",
+        "Half-life = time for half the nuclei (or the CORRECTED count rate) to decay. Subtract background first. After n half-lives, (1/2)ⁿ remains.",
+        "Choosing a source: smoke alarm → α, long half-life. Sterilising and food irradiation → γ. Thickness control in a rolling mill → β (α is absorbed completely, γ passes straight through).",
+        "Safety trio: less TIME, more DISTANCE, more SHIELDING. Background comes from radon, rocks and buildings, food and drink, cosmic rays.",
+        "Fission SPLITS a heavy nucleus (+ 2–3 neutrons → chain reaction). Fusion JOINS light nuclei (H → He in stars), needs huge temperature and pressure.",
+        "Solar System order: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune. Inner four small and rocky, outer four large and gaseous (accretion model). Orbits elliptical, Sun not at the centre; fastest when closest.",
+        "v = 2πr/T — convert the period to SECONDS before dividing.",
+        "Star life cycle: cloud → protostar → stable star (gravity balanced by outward force from the hot core) → red giant → planetary nebula + white dwarf, OR red supergiant → supernova → neutron star / black hole.",
+        "Redshift → the Universe is expanding → Big Bang. CMBR = microwaves from every direction, stretched into the microwave region as the Universe expanded.",
+        "H₀ = v/d = 2.2 × 10⁻¹⁸ s⁻¹. Age of the Universe ≈ 1/H₀ ≈ 4.5 × 10¹⁷ s. INVERT it — do not multiply.",
+      ],
+    },
+    {
       heading: "Paper 4 — structured practice (read the working line-by-line)",
       bullets: [
         "Q1 · Lamp on mains: A filament lamp is rated 60 W, 230 V. (a) Current at full brightness? I = P/V = 60/230 = 0.26 A. (b) Resistance when hot? R = V/I = 230/0.26 = 880 Ω. (c) Why is the cold resistance lower than 880 Ω? At room temperature the filament has fewer lattice vibrations, electrons collide less, so resistance is smaller. (d) Why does the lamp usually fail at the moment it is switched on? The cold resistance is small → a large surge current flows → the thin filament heats fastest at its weakest spot and breaks.",
@@ -327,7 +1090,11 @@ export const IGCSE_PHYSICS_PACK: ExamPack = {
         "Write formula → substitute → answer + UNIT.",
         "Sketch the circuit even if the question gives words only.",
         "If you can't finish, show the formula and substitution — method marks survive.",
+        "Convert every value to SI units the moment you copy the data down, before you touch the calculator.",
+        "Round to 2 or 3 significant figures at the END only, and carry the unrounded value through the working.",
+        "Sketch it — circuit, ray diagram, free-body forces, speed–time graph — even when the question gives words only.",
         "Two pens. Working calculator. Sleep eight hours.",
+        "Deliberately omitted from this pack because they are NOT in 0625: specific latent heat (L = E/m), F = mv²/r, barometers and manometers, thermal capacity, and stellar luminosity / radiant flux. Logic gates are included but flagged — they were removed from the syllabus in 2023. If something is not here, check your own copy of the syllabus before revising it.",
       ],
     },
   ],

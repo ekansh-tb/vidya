@@ -26,6 +26,7 @@ import { AddLearnerView } from "@/components/views/add-learner-view";
 import { ReviewView } from "@/components/views/review-view";
 import { CosmicBg, cosmicModeForGrade } from "@/components/effects/cosmic-bg";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
+import { SaveErrorBanner } from "@/components/effects/save-error-banner";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
 import { useGameStore } from "@/lib/game-store";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
@@ -95,6 +96,7 @@ export default function HomePage() {
           }}
         />
         <VoiceBubble />
+        <SaveErrorBanner />
       </>
     );
   }
@@ -115,6 +117,7 @@ export default function HomePage() {
           onBack={() => setShowAddLearner(false)}
         />
         <VoiceBubble />
+        <SaveErrorBanner />
       </>
     );
   }
@@ -139,6 +142,7 @@ export default function HomePage() {
           }}
         />
         <VoiceBubble />
+        <SaveErrorBanner />
       </>
     );
   }
@@ -350,6 +354,7 @@ export default function HomePage() {
       <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
       {content}
       <VoiceBubble />
+      <SaveErrorBanner />
     </>
   );
 }
