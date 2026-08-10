@@ -145,6 +145,7 @@ function ReflectionRhythm({ reflections }: { reflections: { date: string }[] }) 
 
 function describeBoard(board: LearnerProfile["board"]): string {
   if (board === "cambridge-primary") return "Cambridge Primary";
+  if (board === "cambridge-lower-secondary") return "Cambridge Lower Secondary";
   if (board === "cambridge-igcse") return "Cambridge IGCSE";
   if (board === "icse") return "ICSE";
   if (board === "cbse") return "CBSE";
@@ -299,7 +300,7 @@ export function ProfileView({
           {!interestsEditing ? (
             currentInterests.length === 0 ? (
               <div className="text-xs italic text-white/40">
-                Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she'll use them in her examples.
+                Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she&apos;ll use them in her examples.
               </div>
             ) : (
               <div className="flex flex-wrap gap-1.5">

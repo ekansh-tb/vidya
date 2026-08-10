@@ -3,7 +3,7 @@ import {
   Atom, Beaker, Sprout, Cpu, Monitor, Briefcase, LineChart,
   Map, Landmark, Palette, Music as MusicIcon,
 } from "lucide-react";
-import type { Subject, SubjectId } from "../types";
+import type { Board, Subject, SubjectId } from "../types";
 
 // =========================
 // Cambridge Primary (Grade 5)
@@ -621,11 +621,214 @@ export const CBSE_MIDDLE_GROUPS: IcseGroup[] = [
   },
 ];
 
+// =========================
+// Cambridge Lower Secondary (Grades 6–8 = Stages 7–9)
+// =========================
+// Verified 2026-08-11 against the CNS Amanora "Cambridge Lower Secondary
+// Grade 6 to 8" page: Cambridge Primary is Grades 1–5 and Lower Secondary is
+// Grades 6–8, so Grade 6 is Stage 7 — NOT Primary Stage 6. Grades 6 & 7 take
+// combined Science; Grade 8 splits it into Physics, Chemistry and Biology and
+// drops Marathi, Global Perspectives and Art.
+// https://amanora.cns.ac.in/cambridge-lower-secondary-grade-6-to-8/
+
+export const SUBJECTS_CLS: Subject[] = [
+  {
+    id: "cls-english", name: "English", tagline: "Language & literature",
+    gradient: "from-rose-400 via-pink-500 to-fuchsia-500",
+    accent: "#F472B6", soft: "rgba(244, 114, 182, 0.15)", deep: "#9D174D",
+    glow: "rgba(244, 114, 182, 0.5)", icon: BookOpen,
+  },
+  {
+    id: "cls-maths", name: "Maths", tagline: "Algebra · ratio · geometry",
+    gradient: "from-amber-400 via-orange-500 to-rose-500",
+    accent: "#FBBF24", soft: "rgba(251, 191, 36, 0.15)", deep: "#92400E",
+    glow: "rgba(251, 191, 36, 0.5)", icon: Calculator,
+  },
+  {
+    id: "cls-science", name: "Science", tagline: "Biology · chemistry · physics",
+    gradient: "from-emerald-400 via-teal-500 to-cyan-500",
+    accent: "#10B981", soft: "rgba(16, 185, 129, 0.15)", deep: "#065F46",
+    glow: "rgba(16, 185, 129, 0.5)", icon: FlaskConical,
+  },
+  {
+    id: "cls-history", name: "History", tagline: "Empires · evidence · change",
+    gradient: "from-amber-500 via-yellow-600 to-orange-700",
+    accent: "#D97706", soft: "rgba(217, 119, 6, 0.15)", deep: "#78350F",
+    glow: "rgba(217, 119, 6, 0.5)", icon: Landmark,
+  },
+  {
+    id: "cls-geography", name: "Geography", tagline: "Places · people · planet",
+    gradient: "from-lime-400 via-green-500 to-emerald-600",
+    accent: "#84CC16", soft: "rgba(132, 204, 22, 0.15)", deep: "#3F6212",
+    glow: "rgba(132, 204, 22, 0.5)", icon: Map,
+  },
+  {
+    id: "cls-globalperspectives", name: "Global Perspectives", tagline: "Research · reflect · collaborate",
+    gradient: "from-sky-400 via-blue-500 to-indigo-600",
+    accent: "#38BDF8", soft: "rgba(56, 189, 248, 0.15)", deep: "#075985",
+    glow: "rgba(56, 189, 248, 0.5)", icon: Globe2,
+  },
+  {
+    id: "cls-ict", name: "ICT", tagline: "Computing & digital literacy",
+    gradient: "from-slate-400 via-gray-500 to-zinc-600",
+    accent: "#94A3B8", soft: "rgba(148, 163, 184, 0.15)", deep: "#334155",
+    glow: "rgba(148, 163, 184, 0.5)", icon: Monitor,
+  },
+  {
+    id: "cls-art", name: "Art", tagline: "Draw · design · make",
+    gradient: "from-fuchsia-400 via-purple-500 to-violet-600",
+    accent: "#E879F9", soft: "rgba(232, 121, 249, 0.15)", deep: "#701A75",
+    glow: "rgba(232, 121, 249, 0.5)", icon: Palette,
+  },
+  {
+    id: "cls-hindi", name: "हिंदी", tagline: "भाषा · व्याकरण · रचना",
+    gradient: "from-orange-400 via-red-500 to-rose-600",
+    accent: "#FB923C", soft: "rgba(251, 146, 60, 0.15)", deep: "#7C2D12",
+    glow: "rgba(251, 146, 60, 0.5)", icon: Languages, isDeva: true,
+  },
+  {
+    id: "cls-marathi", name: "मराठी", tagline: "भाषा · व्याकरण · लेखन",
+    gradient: "from-violet-400 via-purple-500 to-indigo-600",
+    accent: "#A78BFA", soft: "rgba(167, 139, 250, 0.15)", deep: "#4C1D95",
+    glow: "rgba(167, 139, 250, 0.5)", icon: Languages, isDeva: true,
+  },
+  {
+    id: "cls-french", name: "French", tagline: "Bonjour · grammaire · culture",
+    gradient: "from-blue-400 via-indigo-500 to-violet-600",
+    accent: "#818CF8", soft: "rgba(129, 140, 248, 0.15)", deep: "#3730A3",
+    glow: "rgba(129, 140, 248, 0.5)", icon: Languages,
+  },
+  {
+    id: "cls-spanish", name: "Spanish", tagline: "Hola · gramática · cultura",
+    gradient: "from-red-400 via-orange-500 to-amber-500",
+    accent: "#F87171", soft: "rgba(248, 113, 113, 0.15)", deep: "#7F1D1D",
+    glow: "rgba(248, 113, 113, 0.5)", icon: Languages,
+  },
+  // Grade 8 (Stage 9) only — combined Science splits into three
+  {
+    id: "cls-physics", name: "Physics", tagline: "Forces · energy · waves",
+    gradient: "from-cyan-400 via-blue-500 to-indigo-600",
+    accent: "#22D3EE", soft: "rgba(34, 211, 238, 0.15)", deep: "#164E63",
+    glow: "rgba(34, 211, 238, 0.5)", icon: Atom,
+  },
+  {
+    id: "cls-chemistry", name: "Chemistry", tagline: "Atoms · reactions · matter",
+    gradient: "from-teal-400 via-emerald-500 to-green-600",
+    accent: "#2DD4BF", soft: "rgba(45, 212, 191, 0.15)", deep: "#134E4A",
+    glow: "rgba(45, 212, 191, 0.5)", icon: Beaker,
+  },
+  {
+    id: "cls-biology", name: "Biology", tagline: "Cells · bodies · ecosystems",
+    gradient: "from-green-400 via-emerald-500 to-teal-600",
+    accent: "#4ADE80", soft: "rgba(74, 222, 128, 0.15)", deep: "#14532D",
+    glow: "rgba(74, 222, 128, 0.5)", icon: Sprout,
+  },
+];
+
+/** Grades 6–7 (Stages 7–8) take combined Science, Marathi, Global Perspectives and Art. */
+export const CLS_GROUPS_6_7: IcseGroup[] = [
+  {
+    id: "core",
+    label: "Core Academics",
+    description: "Taken by every Lower Secondary learner.",
+    subjects: ["cls-english", "cls-maths", "cls-science"],
+    compulsoryIds: ["cls-english", "cls-maths", "cls-science"],
+  },
+  {
+    id: "humanities",
+    label: "Humanities",
+    description: "History and Geography run all through Lower Secondary.",
+    subjects: ["cls-history", "cls-geography", "cls-globalperspectives"],
+    compulsoryIds: ["cls-history", "cls-geography", "cls-globalperspectives"],
+  },
+  {
+    id: "languages",
+    label: "Second language",
+    description: "Pick the language option you take at school — Hindi, French or Spanish.",
+    subjects: ["cls-hindi", "cls-french", "cls-spanish"],
+  },
+  {
+    id: "state",
+    label: "Maharashtra mandate",
+    description: "Marathi is legally required at all Maharashtra schools (Compulsory Marathi Act 2020).",
+    subjects: ["cls-marathi"],
+    compulsoryIds: ["cls-marathi"],
+  },
+  {
+    id: "creative",
+    label: "ICT & Art",
+    description: "Part of the timetable at CNS through Grades 6–7.",
+    subjects: ["cls-ict", "cls-art"],
+    compulsoryIds: ["cls-ict"],
+  },
+];
+
+/** Grade 8 (Stage 9) splits Science and drops Marathi / Global Perspectives / Art. */
+export const CLS_GROUPS_8: IcseGroup[] = [
+  {
+    id: "core",
+    label: "Core Academics",
+    description: "Taken by every Grade 8 learner.",
+    subjects: ["cls-english", "cls-maths"],
+    compulsoryIds: ["cls-english", "cls-maths"],
+  },
+  {
+    id: "sciences",
+    label: "Sciences",
+    description: "Grade 8 splits combined Science into the three separate sciences.",
+    subjects: ["cls-physics", "cls-chemistry", "cls-biology"],
+    compulsoryIds: ["cls-physics", "cls-chemistry", "cls-biology"],
+  },
+  {
+    id: "humanities",
+    label: "Humanities",
+    description: "History and Geography continue into Grade 8.",
+    subjects: ["cls-history", "cls-geography"],
+    compulsoryIds: ["cls-history", "cls-geography"],
+  },
+  {
+    id: "languages",
+    label: "Second language",
+    description: "Pick the language option you take at school.",
+    subjects: ["cls-hindi", "cls-french", "cls-spanish"],
+  },
+  {
+    id: "creative",
+    label: "ICT",
+    description: "Runs through Grade 8.",
+    subjects: ["cls-ict"],
+    compulsoryIds: ["cls-ict"],
+  },
+];
+
+/** Picks the right Lower Secondary grouping for a grade. Grade 8 = Stage 9. */
+export function clsGroupsForGrade(grade?: number): IcseGroup[] {
+  return (grade ?? 6) >= 8 ? CLS_GROUPS_8 : CLS_GROUPS_6_7;
+}
+
+/** Cambridge stage number for a Lower Secondary grade — Grade 6 → Stage 7. */
+export function cambridgeStageForGrade(board: Board, grade?: number): number | undefined {
+  if (grade == null) return undefined;
+  if (board === "cambridge-primary") return grade;           // Grades 1–5 → Stages 1–5
+  if (board === "cambridge-lower-secondary") return grade + 1; // Grades 6–8 → Stages 7–9
+  return undefined;
+}
+
 // Combined map for lookups
-export const SUBJECTS: Subject[] = [...SUBJECTS_PRIMARY, ...SUBJECTS_IGCSE, ...SUBJECTS_ICSE7, ...ALL_CBSE];
+export const SUBJECTS: Subject[] = [...SUBJECTS_PRIMARY, ...SUBJECTS_CLS, ...SUBJECTS_IGCSE, ...SUBJECTS_ICSE7, ...ALL_CBSE];
 export const SUBJECT_MAP = Object.fromEntries(SUBJECTS.map((s) => [s.id, s])) as Record<string, Subject>;
 
-// IGCSE subject grouping (per CNS Pune Grade 9–10 page)
+// IGCSE subject grouping (per the CNS Amanora Grade 9–10 page, re-verified
+// 2026-08-11: https://amanora.cns.ac.in/cambridge-upper-secondary-igcse-grade-9-to-10/).
+//
+// CNS rules: Mathematics – International is compulsory; a subject runs only
+// with 10+ takers; and a student needs 6 subjects excluding Drama, PE and
+// Global Perspectives to apply to Indian colleges.
+//
+// Still unmodelled from the school's published list — these have no SubjectId
+// yet, so a student taking them cannot select them: Literature in English,
+// Environmental Management (counts as Group 2 OR 3), Accounting, Additional
+// Mathematics, Music, Drama, Physical Education.
 export type IgcseGroup = {
   id: string;
   label: string;
@@ -646,7 +849,7 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
     id: "g2",
     label: "Group 2 · Humanities & Social Sciences",
     description: "Pick one (if taking 6+ subjects).",
-    subjects: ["igcse-history", "igcse-geography", "igcse-economics"],
+    subjects: ["igcse-history", "igcse-geography", "igcse-economics", "igcse-globalperspectives"],
   },
   {
     id: "g3",
@@ -678,11 +881,19 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
 
 /** Subjects shown to a learner, given their board + (for IGCSE/ICSE/CBSE) picked subjects. */
 export function subjectsForLearner(
-  board: "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse",
+  board: Board,
   pickedSubjects?: SubjectId[],
   grade?: number,
 ): Subject[] {
   if (board === "cambridge-primary") return SUBJECTS_PRIMARY;
+  if (board === "cambridge-lower-secondary") {
+    const groups = clsGroupsForGrade(grade);
+    const compulsory = groups.flatMap((g) => g.compulsoryIds || []);
+    const chosen = new Set<SubjectId>([...compulsory, ...(pickedSubjects || [])]);
+    // Preserve SUBJECTS_CLS order, but only surface subjects offered at this grade.
+    const offered = new Set<SubjectId>(groups.flatMap((g) => g.subjects));
+    return SUBJECTS_CLS.filter((s) => chosen.has(s.id) && offered.has(s.id));
+  }
   if (board === "cambridge-igcse") {
     const compulsory = IGCSE_GROUPS.flatMap((g) => g.compulsoryIds || []);
     const chosen = new Set<SubjectId>([...compulsory, ...(pickedSubjects || [])]);
@@ -706,10 +917,11 @@ export function subjectsForLearner(
 
 /** Returns the picker grouping for a board, if any. */
 export function pickerGroupsForBoard(
-  board: "cambridge-primary" | "cambridge-igcse" | "icse" | "cbse",
+  board: Board,
   grade?: number,
 ): { id: string; label: string; description: string; subjects: SubjectId[]; compulsoryIds?: SubjectId[] }[] {
   if (board === "cambridge-igcse") return IGCSE_GROUPS;
+  if (board === "cambridge-lower-secondary") return clsGroupsForGrade(grade);
   if (board === "icse") return ICSE7_GROUPS;
   if (board === "cbse" && grade != null && grade >= 6) return CBSE_MIDDLE_GROUPS;
   return [];

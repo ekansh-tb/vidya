@@ -30,7 +30,7 @@ import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-ap
 import { useGameStore } from "@/lib/game-store";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { packFor } from "@/lib/content/packs";
+import { hasPack } from "@/lib/content/packs/pack-index";
 import { startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
 
 export default function HomePage() {
@@ -67,7 +67,7 @@ export default function HomePage() {
     [learner.board, learner.pickedSubjects],
   );
   const availablePackIds: SubjectId[] = useMemo(
-    () => learnerSubjects.filter((s) => !!packFor(s.id, learner.grade)).map((s) => s.id),
+    () => learnerSubjects.filter((s) => hasPack(s.id, learner.grade)).map((s) => s.id),
     [learnerSubjects, learner.grade],
   );
 
@@ -119,9 +119,13 @@ export default function HomePage() {
     );
   }
 
-  // Subject-picker gate — IGCSE & ICSE both require picking subjects first
+  // Subject-picker gate — IGCSE, ICSE and Cambridge Lower Secondary all
+  // require picking subjects first (Lower Secondary needs the language choice:
+  // Hindi vs French vs Spanish).
   const needsPicker =
-    (learner.board === "cambridge-igcse" || learner.board === "icse") && !learner.subjectsLocked;
+    (learner.board === "cambridge-igcse" ||
+      learner.board === "icse" ||
+      learner.board === "cambridge-lower-secondary") && !learner.subjectsLocked;
   if (needsPicker) {
     return (
       <>
@@ -277,6 +281,7 @@ export default function HomePage() {
             voiceEnabled={state.settings.voice}
             grade={learner.grade}
             board={learner.board}
+            school={learner.school}
           />
         );
         break;

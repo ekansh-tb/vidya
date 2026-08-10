@@ -9,6 +9,7 @@ import type { ExamPack } from "../exam-pack";
 // =========================
 export const ICSE7_CHEMISTRY: ExamPack = {
   subjectId: "icse-chemistry",
+  grade: 7,
   title: "Chemistry — Class 7 ICSE",
   context: "Selina Concise · 7 chapters · WWS Hadapsar",
   highlights: [
@@ -158,6 +159,7 @@ export const ICSE7_CHEMISTRY: ExamPack = {
 // =========================
 export const ICSE7_BIOLOGY: ExamPack = {
   subjectId: "icse-biology",
+  grade: 7,
   title: "Biology — Class 7 ICSE",
   context: "Selina Concise · 7 chapters · 3 units · WWS Hadapsar",
   highlights: [
@@ -314,6 +316,7 @@ export const ICSE7_BIOLOGY: ExamPack = {
 // =========================
 export const ICSE7_HISTORY: ExamPack = {
   subjectId: "icse-history-civics",
+  grade: 7,
   title: "History & Civics — Class 7 ICSE",
   context: "Medieval India · UN · WWS Hadapsar",
   highlights: [
@@ -487,6 +490,7 @@ export const ICSE7_HISTORY: ExamPack = {
 // =========================
 export const ICSE7_GEOGRAPHY: ExamPack = {
   subjectId: "icse-geography",
+  grade: 7,
   title: "Geography — Class 7 ICSE",
   context: "7 themes · WWS Hadapsar",
   highlights: [{ label: "Themes", value: "7" }],
@@ -638,6 +642,7 @@ export const ICSE7_GEOGRAPHY: ExamPack = {
 // =========================
 export const ICSE7_COMPUTER: ExamPack = {
   subjectId: "icse-computer",
+  grade: 7,
   title: "Computer Studies — Class 7 ICSE",
   context: "7 chapters · WWS Hadapsar",
   highlights: [{ label: "Chapters", value: "7" }, { label: "Number systems", value: "Binary · Octal · Hex" }],

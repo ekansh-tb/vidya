@@ -2,25 +2,30 @@
 
 // Audio engine: procedural background music + sound effects using Tone.js.
 // All audio requires a user gesture to start (browser autoplay policy).
+//
+// Tone is imported dynamically so it never lands in the server bundle and
+// only loads once a learner actually triggers sound.
+
+import type * as ToneT from "tone";
+
+type ToneModule = typeof import("tone");
 
 let started = false;
-let music: any = null;
-let synth: any = null;
-let bell: any = null;
-let kick: any = null;
-let noiseSnap: any = null;
-let masterVolume: any = null;
-let musicVolume: any = null;
-let sfxVolume: any = null;
-let pattern: any = null;
-let bassSeq: any = null;
-let melodySeq: any = null;
+let synth: ToneT.PolySynth | null = null;
+let bell: ToneT.MetalSynth | null = null;
+let kick: ToneT.MembraneSynth | null = null;
+let noiseSnap: ToneT.NoiseSynth | null = null;
+let masterVolume: ToneT.Volume | null = null;
+let musicVolume: ToneT.Volume | null = null;
+let sfxVolume: ToneT.Volume | null = null;
+let pattern: ToneT.Loop | null = null;
+let bassSeq: ToneT.Loop | null = null;
+let melodySeq: ToneT.Sequence<string> | null = null;
 let isMusicPlaying = false;
 
-async function ensureTone() {
+async function ensureTone(): Promise<ToneModule | null> {
   if (typeof window === "undefined") return null;
-  const Tone = (await import("tone")) as any;
-  return Tone;
+  return import("tone");
 }
 
 export async function initAudio(opts: { musicVol?: number; sfxVol?: number } = {}) {
@@ -39,11 +44,11 @@ export async function initAudio(opts: { musicVol?: number; sfxVol?: number } = {
   const reverb = new Tone.Reverb({ decay: 5, wet: 0.5 }).connect(musicVolume);
   const delay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.3, wet: 0.25 }).connect(reverb);
 
-  music = new Tone.PolySynth(Tone.Synth, {
+  const pad = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: "sine8" },
     envelope: { attack: 0.6, decay: 0.4, sustain: 0.7, release: 1.6 },
   }).connect(reverb);
-  music.volume.value = -10;
+  pad.volume.value = -10;
 
   const bassSynth = new Tone.MonoSynth({
     oscillator: { type: "triangle" },
@@ -58,7 +63,7 @@ export async function initAudio(opts: { musicVol?: number; sfxVol?: number } = {
   }).connect(delay);
   bellSynth.volume.value = -14;
 
-  Tone.Transport.bpm.value = 78;
+  Tone.getTransport().bpm.value = 78;
 
   // Pentatonic C minor (calm, oriental feel)
   const padChords = [
@@ -68,21 +73,21 @@ export async function initAudio(opts: { musicVol?: number; sfxVol?: number } = {
     ["G2", "Bb2", "D3", "F3"],
   ];
   let chordIndex = 0;
-  pattern = new Tone.Loop((time: number) => {
-    music.triggerAttackRelease(padChords[chordIndex], "1m", time);
+  pattern = new Tone.Loop((time) => {
+    pad.triggerAttackRelease(padChords[chordIndex], "1m", time);
     chordIndex = (chordIndex + 1) % padChords.length;
   }, "1m");
 
   const bassNotes = ["C2", "Ab1", "F2", "G2"];
   let bassIdx = 0;
-  bassSeq = new Tone.Loop((time: number) => {
+  bassSeq = new Tone.Loop((time) => {
     bassSynth.triggerAttackRelease(bassNotes[bassIdx], "2n", time);
     bassIdx = (bassIdx + 1) % bassNotes.length;
   }, "1m");
 
   // Sparse bell arpeggio
   const bellNotes = ["C5", "Eb5", "G5", "C6", "Bb5", "G5", "Eb5", "C5"];
-  melodySeq = new Tone.Sequence((time: number, note: string) => {
+  melodySeq = new Tone.Sequence((time, note: string) => {
     if (Math.random() > 0.4) bellSynth.triggerAttackRelease(note, "16n", time);
   }, bellNotes, "4n");
 
@@ -119,7 +124,7 @@ export async function startMusic() {
   pattern?.start(0);
   bassSeq?.start("1m");
   melodySeq?.start("2m");
-  Tone.Transport.start();
+  Tone.getTransport().start();
   isMusicPlaying = true;
 }
 
@@ -129,7 +134,7 @@ export async function stopMusic() {
   pattern?.stop();
   bassSeq?.stop();
   melodySeq?.stop();
-  Tone.Transport.stop();
+  Tone.getTransport().stop();
   isMusicPlaying = false;
 }
 
@@ -146,9 +151,14 @@ export const sfx = {
     if (!started || !synth) return;
     synth.triggerAttackRelease("E5", "32n");
   },
-  correct: () => {
+  correct: async () => {
     if (!started || !synth) return;
-    const now = (window as any).Tone?.now?.() ?? 0;
+    const Tone = await ensureTone();
+    if (!Tone || !synth) return;
+    // Previously read `(window as any).Tone?.now?.() ?? 0`. Tone is loaded as
+    // a dynamic ES module and never attached to window, so that always fell
+    // through to 0 and collapsed the arpeggio into a single instant chord.
+    const now = Tone.now();
     synth.triggerAttackRelease("C5", "8n", now);
     synth.triggerAttackRelease("E5", "8n", now + 0.08);
     synth.triggerAttackRelease("G5", "4n", now + 0.16);
@@ -156,17 +166,17 @@ export const sfx = {
   wrong: () => {
     if (!started || !synth) return;
     synth.triggerAttackRelease("E4", "8n");
-    setTimeout(() => synth.triggerAttackRelease("Bb3", "4n"), 90);
+    setTimeout(() => synth?.triggerAttackRelease("Bb3", "4n"), 90);
   },
   coin: () => {
     if (!started || !bell) return;
     bell.triggerAttackRelease("C6", "32n");
-    setTimeout(() => bell.triggerAttackRelease("E6", "16n"), 50);
+    setTimeout(() => bell?.triggerAttackRelease("E6", "16n"), 50);
   },
   levelUp: async () => {
     if (!started || !synth) return;
     const Tone = await ensureTone();
-    if (!Tone) return;
+    if (!Tone || !synth) return;
     const now = Tone.now();
     synth.triggerAttackRelease("C5", "8n", now);
     synth.triggerAttackRelease("E5", "8n", now + 0.1);
@@ -176,7 +186,7 @@ export const sfx = {
   badge: async () => {
     if (!started || !bell) return;
     const Tone = await ensureTone();
-    if (!Tone) return;
+    if (!Tone || !bell) return;
     const now = Tone.now();
     bell.triggerAttackRelease("E5", "8n", now);
     bell.triggerAttackRelease("G5", "8n", now + 0.12);
@@ -193,7 +203,7 @@ export const sfx = {
   sixSeven: async () => {
     if (!started || !synth || !bell) return;
     const Tone = await ensureTone();
-    if (!Tone) return;
+    if (!Tone || !synth || !bell) return;
     const now = Tone.now();
     synth.triggerAttackRelease("G4", "16n", now);
     synth.triggerAttackRelease("B4", "16n", now + 0.09);

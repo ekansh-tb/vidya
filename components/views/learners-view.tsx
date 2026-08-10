@@ -62,6 +62,7 @@ export function LearnersView({
             const board =
               l.board === "cambridge-igcse" ? "Cambridge IGCSE" :
               l.board === "cambridge-primary" ? "Cambridge Primary" :
+              l.board === "cambridge-lower-secondary" ? "Cambridge Lower Sec." :
               l.board === "icse" ? "ICSE" :
               l.board === "cbse" ? "CBSE" :
               "Custom";
@@ -122,7 +123,7 @@ export function LearnersView({
                 {hasAny ? "Add another learner" : "Add a learner"}
               </div>
               <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Type the learner's name. Pick a school template to fill in the curriculum.
+                Type the learner&apos;s name. Pick a school template to fill in the curriculum.
               </div>
             </div>
           </motion.button>

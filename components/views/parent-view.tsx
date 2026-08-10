@@ -47,10 +47,10 @@ export function ParentView({
     return (
       <PinScaffold onBack={onBack} title="Set a parent PIN" subtitle={`For ${learner.name}'s parent view`}>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-          4 digits. The kid won't see this. Use it whenever you open the parent room.
+          4 digits. The kid won&apos;t see this. Use it whenever you open the parent room.
           <br />
           <span style={{ color: "var(--text-faint)" }}>
-            This is a local speed bump — not real security. Real auth is the Supabase sign-in flow.
+            This is a local speed bump — not real security. Real auth is the Clerk sign-in flow.
           </span>
         </p>
         <PinField label="New PIN" value={setPinValue} onChange={setSetPinValue} show={showSetPin} onToggleShow={() => setShowSetPin((s) => !s)} />
@@ -254,7 +254,7 @@ export function ParentView({
         {/* Reset (last) -------------------------------------------------- */}
         <div className="glass-card p-4" style={{ border: "1px solid rgba(244, 114, 182, 0.35)" }}>
           <div className="font-bold mb-2 flex items-center gap-1.5" style={{ color: "#F472B6" }}>
-            <RotateCcw className="w-4 h-4" /> Reset {learner.name}'s progress
+            <RotateCcw className="w-4 h-4" /> Reset {learner.name}&apos;s progress
           </div>
           <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
             Clears XP, badges, missed-questions, streaks — for this learner only. Other learners are untouched. Cannot be undone.
@@ -555,6 +555,7 @@ function prettyDate(iso: string): string {
 function boardLabel(board: LearnerProfile["board"]): string {
   switch (board) {
     case "cambridge-primary": return "Cambridge Primary";
+    case "cambridge-lower-secondary": return "Cambridge Lower Secondary";
     case "cambridge-igcse": return "Cambridge IGCSE";
     case "icse": return "ICSE / CISCE";
     case "cbse": return "CBSE / NCERT";
@@ -582,11 +583,11 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
       <div className="flex items-center gap-1.5 mb-2">
         <NotebookPen className="w-3.5 h-3.5" style={{ color: "#A78BFA" }} />
         <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#A78BFA" }}>
-          {name}'s recent reflections
+          {name}&apos;s recent reflections
         </span>
       </div>
       <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
-        End-of-day thoughts the kid wrote themselves. Read once, gently. Don't quote back.
+        End-of-day thoughts the kid wrote themselves. Read once, gently. Don&apos;t quote back.
         {privateCount > 0 && ` ${privateCount} of the last ${recent.length} are private — that's the kid's choice and we respect it.`}
       </div>
       <div className="space-y-3">
@@ -776,7 +777,7 @@ export function CareNoteComposer({
           </div>
         ) : (
           <div className="text-xs italic" style={{ color: "var(--text-faint)" }}>
-            Nothing written yet. Tap "Write" to give the AI tutor some context.
+            Nothing written yet. Tap &quot;Write&quot; to give the AI tutor some context.
           </div>
         )
       ) : (
@@ -1052,7 +1053,7 @@ export function CapabilityMap({
         </span>
       </div>
       <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
-        Each capability has a verification rung. Rooms appear in the kid's lobby only when their rung meets the rule.
+        Each capability has a verification rung. Rooms appear in the kid&apos;s lobby only when their rung meets the rule.
         The kid never sees a locked door — features are simply present or absent.
       </div>
 

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { clerkConfigured } from "@/lib/auth/clerk-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,6 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-body antialiased">
+        {/* Without keys, mounting ClerkProvider would fail the whole tree. The
+            kid app needs no auth, so render it plain; middleware.ts closes the
+            parent area in the same condition. */}
+        {!clerkConfigured ? children : (
         <ClerkProvider
           appearance={{
             variables: {
@@ -48,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           {children}
         </ClerkProvider>
+        )}
       </body>
     </html>
   );

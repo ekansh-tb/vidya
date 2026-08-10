@@ -22,7 +22,7 @@ type Briefing = {
 };
 
 export function AssemblyView({
-  state, setState, onBack, voiceEnabled, grade, board,
+  state, setState, onBack, voiceEnabled, grade, board, school,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
@@ -30,6 +30,9 @@ export function AssemblyView({
   voiceEnabled: boolean;
   grade?: number;
   board?: string;
+  /** The learner's own school. Sent so the AI principal never names a school
+   *  this learner does not attend. */
+  school?: string;
 }) {
   const today = todayKey();
   const alreadyAttended = state.lastAssemblyDate === today;
@@ -46,7 +49,7 @@ export function AssemblyView({
     fetch("/api/assembly", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: state.name, streak: state.streak, level, grade, board }),
+      body: JSON.stringify({ name: state.name, streak: state.streak, level, grade, board, school }),
     })
       .then((r) => r.json())
       .then((data) => {

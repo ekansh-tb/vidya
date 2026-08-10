@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Crown, Shuffle, NotebookPen, MessageCircle, BookOpen, Sparkles } from "lucide-react";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import { packFor } from "@/lib/content/packs";
+import { usePack } from "@/lib/content/packs/use-pack";
 import type { GameState, LearnerProfile, ViewName, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
@@ -25,7 +25,9 @@ export function SubjectView({
   const subject = SUBJECT_MAP[subjectId];
   const quizTopics = QUESTIONS[subjectId] || {};
   const hasQuiz = Object.keys(quizTopics).length > 0;
-  const pack = packFor(subjectId, learner.grade);
+  // `hasExamPack` is synchronous so the layout never flashes an empty state;
+  // `pack` arrives from its own chunk. See lib/content/packs/pack-index.ts.
+  const { exists: hasExamPack, pack } = usePack(subjectId, learner.grade);
   const Icon = subject.icon;
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const setGameState = useGameStore((s) => s.set);
@@ -90,7 +92,7 @@ export function SubjectView({
 
           {/* Action row: Exam Prep is primary if pack exists */}
           <div className="relative mt-4 grid grid-cols-2 gap-2">
-            {pack ? (
+            {hasExamPack ? (
               <button
                 onClick={() => { sfx.click(); onNavigate("exam-prep", { subjectId }); }}
                 className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-bold active:scale-95"
@@ -126,7 +128,7 @@ export function SubjectView({
               Notebook
             </button>
           </div>
-          {pack && aiTutorAllowed && (
+          {hasExamPack && aiTutorAllowed && (
             <div className="relative mt-2">
               <button
                 onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
@@ -202,12 +204,29 @@ export function SubjectView({
               })}
             </div>
           </>
-        ) : pack ? (
+        ) : hasExamPack ? (
           <>
             <div className="flex items-center justify-between mb-3 mt-5">
               <h3 className="font-display text-xl font-bold text-white">Today&apos;s lessons</h3>
-              <span className="text-xs font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">{pack.topics.length} chapters</span>
+              {pack && (
+                <span className="text-xs font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">{pack.topics.length} chapters</span>
+              )}
             </div>
+            {!pack ? (
+              // Chapter list lives in a lazily-loaded chunk. Placeholder rows keep
+              // the layout stable instead of collapsing then jumping.
+              <div className="space-y-3" aria-busy="true" aria-label="Loading chapters">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="glass-card p-4 flex items-center gap-4 animate-pulse">
+                    <div className="w-12 h-12 rounded-2xl flex-shrink-0" style={{ background: subject.soft }} />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="h-3.5 rounded bg-white/10 w-2/3" />
+                      <div className="h-2.5 rounded bg-white/[0.07] w-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="space-y-3">
               {pack.topics.map((t, i) => (
                 <motion.button
@@ -237,15 +256,18 @@ export function SubjectView({
                 </motion.button>
               ))}
             </div>
+            )}
 
-            <div className="mt-5 glass-card p-4 flex items-center gap-3">
-              <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: subject.accent }} />
-              <div className="text-xs text-white/70 leading-relaxed">
-                Quizzes for {subject.name} aren&apos;t in the bank yet — the chapter list is sourced from{" "}
-                <span className="font-semibold text-white/90">{pack.context}</span>. Tap any chapter to open Exam Prep, or
-                ask Miss Vidya for a question on it.
+            {pack && (
+              <div className="mt-5 glass-card p-4 flex items-center gap-3">
+                <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: subject.accent }} />
+                <div className="text-xs text-white/70 leading-relaxed">
+                  Quizzes for {subject.name} aren&apos;t in the bank yet — the chapter list is sourced from{" "}
+                  <span className="font-semibold text-white/90">{pack.context}</span>. Tap any chapter to open Exam Prep, or
+                  ask Miss Vidya for a question on it.
+                </div>
               </div>
-            </div>
+            )}
           </>
         ) : (
           // No quiz + no pack — kind empty state
