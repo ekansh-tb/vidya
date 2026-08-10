@@ -2,7 +2,7 @@
 
 > A digital school that fits in a browser. Curriculum-anchored, age-aware, AI-tutored.
 
-**Live**: https://vidya-quest.vercel.app
+**Live**: https://vidyagyan.study
 
 Vidya is an experiment in what a personal school could look like if it lived entirely in a web app: structured around a real curriculum (Cambridge Primary, Cambridge IGCSE, ICSE — multiple grades supported), narrated by an AI tutor, gamified for retention, and skinned differently for every age band.
 
@@ -65,6 +65,31 @@ Every key is optional for local poking:
 - **No Clerk keys** — Clerk starts in keyless dev mode under `next dev` and writes a temporary key into `.clerk/` (gitignored). A **production** build has no such fallback, so the app detects the missing key and degrades: the kid app runs normally while `/parent` and the auth pages are closed off (fail-closed — an unconfigured deployment must never expose a dashboard that can read every profile on the device). Set real keys before deploying.
 
 There is no database to set up — learner state lives in the browser's `localStorage`.
+
+## Deployment
+
+Production is the Vercel project **`vidya`** (team `techbirdit-ej`), serving
+`vidyagyan.study`, `parents.vidyagyan.study`, `teacher.vidyagyan.study` and
+`vidya-quest.vercel.app`. Pushes to `main` deploy automatically.
+
+> The earlier `vidya-quest` project is **dead** — every build failed with
+> `BUILD_FAILED: Resource provisioning failed` before a build machine was ever
+> allocated, for ~76 days, while GitHub Actions built the same commits green.
+> It has been unlinked from GitHub. Don't deploy to it.
+
+Two things are **not** configured on the live deployment:
+
+- **No AI key.** Neither `ANTHROPIC_API_KEY` nor `AI_GATEWAY_API_KEY` is set,
+  so the Daily Assembly serves its offline fallback (`source: "local"`) and
+  Miss Vidya shows the "ask a grown-up" message. The AI tutor does not work in
+  production until one is added.
+- **Clerk is using test keys** (`pk_test_` / `sk_test_`) on a real custom
+  domain. Swap for live keys before treating this as a real product.
+
+If you ever copy env vars between Vercel projects, use
+`vercel env pull --environment=production`. The API's `?decrypt=true` returns
+the *encrypted* blob despite its name; copying that re-encrypts ciphertext and
+produces a runtime `Publishable key not valid` 500.
 
 ## Quality gates
 
