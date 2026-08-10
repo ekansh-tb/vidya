@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import {
   ChevronLeft, Music as MusicIcon, Play, Trash2, Square, Plus, Keyboard, Disc3, Edit3, Search, BookOpen,
 } from "lucide-react";
@@ -224,246 +225,248 @@ export function MusicView({
   };
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
+            <ChevronLeft className="w-5 h-5" /> Home
+          </button>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "var(--accent)" }} />
-          <div className="relative flex items-center gap-3">
-            <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "var(--accent-soft)" }}>
-              <MusicIcon className="w-7 h-7" style={{ color: "var(--accent)" }} />
-            </div>
-            <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>Music Room</div>
-              <div className="font-display text-2xl font-bold" style={{ color: "var(--text)" }}>Sargam & Solfège</div>
-              <div className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
-                <Keyboard className="w-3.5 h-3.5" />
-                Tap notes or use keyboard <span className="font-mono font-bold" style={{ color: "var(--text)" }}>A S D F G H J K</span>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "var(--accent)" }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "var(--accent-soft)" }}>
+                <MusicIcon className="w-7 h-7" style={{ color: "var(--accent)" }} />
               </div>
+              <div className="flex-1">
+                <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>Music Room</div>
+                <div className="font-display text-2xl font-bold" style={{ color: "var(--text)" }}>Sargam & Solfège</div>
+                <div className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-muted)" }}>
+                  <Keyboard className="w-3.5 h-3.5" />
+                  Tap notes or use keyboard <span className="font-mono font-bold" style={{ color: "var(--text)" }}>A S D F G H J K</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Keyboard */}
+          <div className="grid grid-cols-8 gap-1.5 mb-5">
+            {NOTES.map((n) => {
+              const isActive = activeNote === n.id;
+              const isNextHint = nextHintId === n.id && !isActive;
+              return (
+                <motion.button
+                  key={n.id}
+                  whileTap={{ scale: 0.92 }}
+                  animate={
+                    isActive
+                      ? { scale: [1, 1.15, 1] }
+                      : isNextHint
+                      ? { scale: [1, 1.06, 1] }
+                      : { scale: 1 }
+                  }
+                  transition={{ duration: isNextHint ? 1.1 : 0.22, repeat: isNextHint ? Infinity : 0 }}
+                  onMouseDown={() => playNote(n.id)}
+                  onTouchStart={() => playNote(n.id)}
+                  className="relative rounded-[var(--radius-md)] py-6 px-1 flex flex-col items-center gap-1.5 transition-all"
+                  style={{
+                    background: isActive
+                      ? `linear-gradient(180deg, ${n.hue} 0%, ${n.hue}80 100%)`
+                      : isNextHint
+                      ? `linear-gradient(180deg, ${n.hue}55 0%, ${n.hue}20 100%)`
+                      : `${n.hue}1A`,
+                    border: `1px solid ${isNextHint ? n.hue : n.hue + "40"}`,
+                    boxShadow: isActive
+                      ? `0 0 24px ${n.hue}aa`
+                      : isNextHint
+                      ? `0 0 18px ${n.hue}80`
+                      : "none",
+                  }}
+                >
+                  <div className="font-display text-2xl font-bold font-deva text-white">{n.sargam}</div>
+                  <div className="text-[10px] uppercase tracking-widest font-bold text-white/65">{n.west}</div>
+                  <div className="absolute bottom-1 right-1.5 text-[9px] font-mono font-bold text-white/40 uppercase">{n.key}</div>
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Practice status banner */}
+          <AnimatePresence>
+            {practice && (
+              <motion.div
+                key="practice-banner"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="glass-card p-3 mb-3 flex items-center gap-3"
+                style={{ border: `1px solid var(--accent)`, background: "var(--accent-soft)" }}
+              >
+                <div className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "var(--accent)", color: "var(--bg-base)" }}>
+                  <Play className="w-4 h-4 fill-current" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-bold text-sm truncate" style={{ color: "var(--text)" }}>
+                    Practicing: {practice.song.title}
+                  </div>
+                  <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                    Note {practice.index + 1} of {practice.song.notes.length}
+                    {practice.wrong > 0 && <span className="opacity-50"> · {practice.wrong} retr{practice.wrong === 1 ? "y" : "ies"}</span>}
+                    {" · press the glowing key"}
+                  </div>
+                </div>
+                <button
+                  onClick={stopPractice}
+                  className="text-[10px] font-bold uppercase tracking-widest rounded-[var(--radius-md)] px-3 py-1.5"
+                  style={{ background: "var(--surface)", color: "var(--text-muted)" }}
+                >
+                  Stop
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Draft melody strip */}
+          <div className="glass-card p-4 mb-3 min-h-[80px]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-faint)" }}>
+                {recording ? <span style={{ color: "var(--error)" }}>● Recording</span> : "Draft"} · {draft.length} note{draft.length === 1 ? "" : "s"}
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--text-faint)" }}>
+                tempo {tempoMs}ms
+              </div>
+            </div>
+            {draft.length === 0 ? (
+              <div className="text-sm italic" style={{ color: "var(--text-faint)" }}>
+                {recording ? "Tap any note or press A–K." : "Hit Record, then play notes."}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {draft.map((id, i) => {
+                  const n = NOTES[id];
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0, y: -4 }}
+                      animate={{ scale: 1, y: 0 }}
+                      className="rounded-lg px-2 py-1 text-xs font-bold font-deva"
+                      style={{ background: `${n.hue}30`, color: n.hue }}
+                    >
+                      {n.sargam}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Tempo slider */}
+          <div className="glass-card p-3 mb-3">
+            <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-bold mb-1.5" style={{ color: "var(--text-faint)" }}>
+              <span>Playback tempo</span>
+              <span>{tempoMs <= 200 ? "fast" : tempoMs <= 360 ? "normal" : "slow"}</span>
+            </div>
+            <input
+              type="range"
+              min={120} max={600} step={20}
+              value={tempoMs}
+              onChange={(e) => setTempoMs(parseInt(e.target.value, 10))}
+              className="w-full accent-[color:var(--accent)]"
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {!recording ? (
+              <Button onClick={startRecording} className="w-full" variant="primary">
+                <span className="inline-flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-300" /> Record</span>
+              </Button>
+            ) : (
+              <Button onClick={stopRecording} className="w-full" variant="danger">
+                <span className="inline-flex items-center gap-2"><Square className="w-4 h-4 fill-current" /> Stop</span>
+              </Button>
+            )}
+            {!playing ? (
+              <Button onClick={() => playSequence(draft)} disabled={!draft.length} className="w-full" variant="secondary">
+                <span className="inline-flex items-center gap-2"><Play className="w-4 h-4 fill-current" /> Preview</span>
+              </Button>
+            ) : (
+              <Button onClick={stopPlayback} className="w-full" variant="secondary">
+                <span className="inline-flex items-center gap-2"><Square className="w-4 h-4 fill-current" /> Stop</span>
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            <Button onClick={openSaveModal} disabled={!draft.length} className="w-full" variant="success">
+              <span className="inline-flex items-center gap-2"><Plus className="w-4 h-4" /> Save composition</span>
+            </Button>
+            <Button onClick={clearDraft} disabled={!draft.length} className="w-full" variant="ghost">
+              <span className="inline-flex items-center gap-2"><Trash2 className="w-4 h-4" /> Clear draft</span>
+            </Button>
+          </div>
+
+          {/* Saved compositions */}
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-display text-lg font-bold" style={{ color: "var(--text)" }}>Your compositions</h3>
+            <span className="text-xs font-medium rounded-full px-2 py-0.5" style={{ background: "var(--surface)", color: "var(--text-muted)" }}>{compositions.length}</span>
+          </div>
+          {compositions.length === 0 ? (
+            <div className="glass-card p-5 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+              <Disc3 className="w-6 h-6 mx-auto mb-2" style={{ color: "var(--accent)" }} />
+              No saved tunes yet. Record a melody, give it a name, and it&apos;ll live here forever.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {compositions.map((c) => (
+                <CompositionRow
+                  key={c.id}
+                  composition={c}
+                  onPlay={() => playSequence(c.notes)}
+                  onLoad={() => { sfx.click(); setDraft(c.notes); setTempoMs(c.tempoMs); }}
+                  onDelete={() => deleteComposition(c.id)}
+                  onRename={(name) => renameComposition(c.id, name)}
+                  isPlaying={playing}
+                  rename={showRenameId === c.id}
+                  onStartRename={() => setShowRenameId(c.id)}
+                  onCancelRename={() => setShowRenameId(null)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Song Learner — search for a tune and see the keys */}
+          <SongLearner
+            onPlay={(notes) => playSequence(notes)}
+            onLoad={(song) => { sfx.click(); setDraft(song.notes); }}
+            onPractice={startPractice}
+            isPlaying={playing}
+            practicingSongId={practice?.song.id ?? null}
+          />
+
+          <div className="mt-6 glass-card p-4">
+            <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: "var(--text-faint)" }}>Try these</div>
+            <div className="space-y-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा रे ग म प ध नि सां</span> — full ascending scale</div>
+              <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा ग प सां</span> — the major chord arpeggio</div>
+              <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा रे ग रे सा</span> — a simple little phrase</div>
+              <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा सा ग सा प म ग रे सा</span> — try this folk hook</div>
             </div>
           </div>
-        </motion.div>
-
-        {/* Keyboard */}
-        <div className="grid grid-cols-8 gap-1.5 mb-5">
-          {NOTES.map((n) => {
-            const isActive = activeNote === n.id;
-            const isNextHint = nextHintId === n.id && !isActive;
-            return (
-              <motion.button
-                key={n.id}
-                whileTap={{ scale: 0.92 }}
-                animate={
-                  isActive
-                    ? { scale: [1, 1.15, 1] }
-                    : isNextHint
-                    ? { scale: [1, 1.06, 1] }
-                    : { scale: 1 }
-                }
-                transition={{ duration: isNextHint ? 1.1 : 0.22, repeat: isNextHint ? Infinity : 0 }}
-                onMouseDown={() => playNote(n.id)}
-                onTouchStart={() => playNote(n.id)}
-                className="relative rounded-[var(--radius-md)] py-6 px-1 flex flex-col items-center gap-1.5 transition-all"
-                style={{
-                  background: isActive
-                    ? `linear-gradient(180deg, ${n.hue} 0%, ${n.hue}80 100%)`
-                    : isNextHint
-                    ? `linear-gradient(180deg, ${n.hue}55 0%, ${n.hue}20 100%)`
-                    : `${n.hue}1A`,
-                  border: `1px solid ${isNextHint ? n.hue : n.hue + "40"}`,
-                  boxShadow: isActive
-                    ? `0 0 24px ${n.hue}aa`
-                    : isNextHint
-                    ? `0 0 18px ${n.hue}80`
-                    : "none",
-                }}
-              >
-                <div className="font-display text-2xl font-bold font-deva text-white">{n.sargam}</div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-white/65">{n.west}</div>
-                <div className="absolute bottom-1 right-1.5 text-[9px] font-mono font-bold text-white/40 uppercase">{n.key}</div>
-              </motion.button>
-            );
-          })}
         </div>
 
-        {/* Practice status banner */}
+        {/* Save modal */}
         <AnimatePresence>
-          {practice && (
-            <motion.div
-              key="practice-banner"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="glass-card p-3 mb-3 flex items-center gap-3"
-              style={{ border: `1px solid var(--accent)`, background: "var(--accent-soft)" }}
-            >
-              <div className="w-9 h-9 rounded-[var(--radius-md)] flex items-center justify-center" style={{ background: "var(--accent)", color: "var(--bg-base)" }}>
-                <Play className="w-4 h-4 fill-current" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-display font-bold text-sm truncate" style={{ color: "var(--text)" }}>
-                  Practicing: {practice.song.title}
-                </div>
-                <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                  Note {practice.index + 1} of {practice.song.notes.length}
-                  {practice.wrong > 0 && <span className="opacity-50"> · {practice.wrong} retr{practice.wrong === 1 ? "y" : "ies"}</span>}
-                  {" · press the glowing key"}
-                </div>
-              </div>
-              <button
-                onClick={stopPractice}
-                className="text-[10px] font-bold uppercase tracking-widest rounded-[var(--radius-md)] px-3 py-1.5"
-                style={{ background: "var(--surface)", color: "var(--text-muted)" }}
-              >
-                Stop
-              </button>
-            </motion.div>
+          {showSaveModal && (
+            <SaveModal
+              initial={draftName}
+              onCancel={() => setShowSaveModal(false)}
+              onSave={(n) => { setDraftName(n); saveDraft(); }}
+              noteCount={draft.length}
+            />
           )}
         </AnimatePresence>
-
-        {/* Draft melody strip */}
-        <div className="glass-card p-4 mb-3 min-h-[80px]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-faint)" }}>
-              {recording ? <span style={{ color: "var(--error)" }}>● Recording</span> : "Draft"} · {draft.length} note{draft.length === 1 ? "" : "s"}
-            </div>
-            <div className="text-[10px]" style={{ color: "var(--text-faint)" }}>
-              tempo {tempoMs}ms
-            </div>
-          </div>
-          {draft.length === 0 ? (
-            <div className="text-sm italic" style={{ color: "var(--text-faint)" }}>
-              {recording ? "Tap any note or press A–K." : "Hit Record, then play notes."}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {draft.map((id, i) => {
-                const n = NOTES[id];
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ scale: 0, y: -4 }}
-                    animate={{ scale: 1, y: 0 }}
-                    className="rounded-lg px-2 py-1 text-xs font-bold font-deva"
-                    style={{ background: `${n.hue}30`, color: n.hue }}
-                  >
-                    {n.sargam}
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Tempo slider */}
-        <div className="glass-card p-3 mb-3">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-bold mb-1.5" style={{ color: "var(--text-faint)" }}>
-            <span>Playback tempo</span>
-            <span>{tempoMs <= 200 ? "fast" : tempoMs <= 360 ? "normal" : "slow"}</span>
-          </div>
-          <input
-            type="range"
-            min={120} max={600} step={20}
-            value={tempoMs}
-            onChange={(e) => setTempoMs(parseInt(e.target.value, 10))}
-            className="w-full accent-[color:var(--accent)]"
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          {!recording ? (
-            <Button onClick={startRecording} className="w-full" variant="primary">
-              <span className="inline-flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-300" /> Record</span>
-            </Button>
-          ) : (
-            <Button onClick={stopRecording} className="w-full" variant="danger">
-              <span className="inline-flex items-center gap-2"><Square className="w-4 h-4 fill-current" /> Stop</span>
-            </Button>
-          )}
-          {!playing ? (
-            <Button onClick={() => playSequence(draft)} disabled={!draft.length} className="w-full" variant="secondary">
-              <span className="inline-flex items-center gap-2"><Play className="w-4 h-4 fill-current" /> Preview</span>
-            </Button>
-          ) : (
-            <Button onClick={stopPlayback} className="w-full" variant="secondary">
-              <span className="inline-flex items-center gap-2"><Square className="w-4 h-4 fill-current" /> Stop</span>
-            </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <Button onClick={openSaveModal} disabled={!draft.length} className="w-full" variant="success">
-            <span className="inline-flex items-center gap-2"><Plus className="w-4 h-4" /> Save composition</span>
-          </Button>
-          <Button onClick={clearDraft} disabled={!draft.length} className="w-full" variant="ghost">
-            <span className="inline-flex items-center gap-2"><Trash2 className="w-4 h-4" /> Clear draft</span>
-          </Button>
-        </div>
-
-        {/* Saved compositions */}
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-display text-lg font-bold" style={{ color: "var(--text)" }}>Your compositions</h3>
-          <span className="text-xs font-medium rounded-full px-2 py-0.5" style={{ background: "var(--surface)", color: "var(--text-muted)" }}>{compositions.length}</span>
-        </div>
-        {compositions.length === 0 ? (
-          <div className="glass-card p-5 text-center text-sm" style={{ color: "var(--text-muted)" }}>
-            <Disc3 className="w-6 h-6 mx-auto mb-2" style={{ color: "var(--accent)" }} />
-            No saved tunes yet. Record a melody, give it a name, and it&apos;ll live here forever.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {compositions.map((c) => (
-              <CompositionRow
-                key={c.id}
-                composition={c}
-                onPlay={() => playSequence(c.notes)}
-                onLoad={() => { sfx.click(); setDraft(c.notes); setTempoMs(c.tempoMs); }}
-                onDelete={() => deleteComposition(c.id)}
-                onRename={(name) => renameComposition(c.id, name)}
-                isPlaying={playing}
-                rename={showRenameId === c.id}
-                onStartRename={() => setShowRenameId(c.id)}
-                onCancelRename={() => setShowRenameId(null)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Song Learner — search for a tune and see the keys */}
-        <SongLearner
-          onPlay={(notes) => playSequence(notes)}
-          onLoad={(song) => { sfx.click(); setDraft(song.notes); }}
-          onPractice={startPractice}
-          isPlaying={playing}
-          practicingSongId={practice?.song.id ?? null}
-        />
-
-        <div className="mt-6 glass-card p-4">
-          <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: "var(--text-faint)" }}>Try these</div>
-          <div className="space-y-2 text-xs" style={{ color: "var(--text-muted)" }}>
-            <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा रे ग म प ध नि सां</span> — full ascending scale</div>
-            <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा ग प सां</span> — the major chord arpeggio</div>
-            <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा रे ग रे सा</span> — a simple little phrase</div>
-            <div><span className="font-bold font-deva" style={{ color: "var(--accent)" }}>सा सा ग सा प म ग रे सा</span> — try this folk hook</div>
-          </div>
-        </div>
       </div>
-
-      {/* Save modal */}
-      <AnimatePresence>
-        {showSaveModal && (
-          <SaveModal
-            initial={draftName}
-            onCancel={() => setShowSaveModal(false)}
-            onSave={(n) => { setDraftName(n); saveDraft(); }}
-            noteCount={draft.length}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+    </ReducedMotionProvider>
   );
 }
 
@@ -619,6 +622,7 @@ function SongLearner({
           value={query}
           onChange={(e) => { setQuery(e.target.value); setSelectedId(null); }}
           placeholder="Try 'twinkle', 'jingle', 'ode'…"
+          aria-label="Search tunes"
           className="w-full pl-9 pr-3 py-2.5 rounded-[var(--radius-md)] text-sm outline-none transition"
           style={{
             background: "var(--surface)",
@@ -790,23 +794,30 @@ function SaveModal({
   noteCount: number;
 }) {
   const [name, setName] = useState(initial);
+  const titleId = `${useId()}-save-title`;
   return (
     <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onCancel} aria-hidden="true" className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", stiffness: 280, damping: 24 }}
-        className="fixed inset-x-0 bottom-0 z-[81] max-w-2xl mx-auto rounded-t-[var(--radius-lg)] glass-strong p-6 pb-8"
+        className="fixed inset-x-0 bottom-0 z-[81] max-w-2xl mx-auto rounded-t-[var(--radius-lg)] glass-strong p-6 pb-[calc(2rem+env(safe-area-inset-bottom))]"
       >
         <div className="w-12 h-1 rounded-full mx-auto mb-5" style={{ background: "var(--border-strong)" }} />
         <div className="text-[10px] uppercase tracking-widest font-bold mb-2" style={{ color: "var(--accent)" }}>Save composition</div>
-        <div className="font-display text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Name your tune</div>
+        <div id={titleId} className="font-display text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Name your tune</div>
         <div className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>{noteCount} note{noteCount === 1 ? "" : "s"} · saved to your library forever.</div>
         <input
           autoFocus
           value={name}
+          // "Name your tune" is a heading, not a label — the input had no
+          // accessible name of its own.
+          aria-label="Name your tune"
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) onSave(name.trim());

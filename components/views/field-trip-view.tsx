@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, ArrowLeft, MapPin, Stamp, Sparkles, Check, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DESTINATIONS, type Destination } from "@/lib/content/destinations";
@@ -39,79 +40,81 @@ export function FieldTripView({
   }
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+            <ChevronLeft className="w-5 h-5" /> Home
+          </button>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#22D3EE" }} />
-          <div className="relative flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(34,211,238,0.15)" }}>
-              <MapPin className="w-7 h-7 text-cyan-300" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">Field Trip</div>
-              <div className="font-display text-2xl font-bold text-white">Pick where to go</div>
-              <div className="text-sm text-white/60">
-                {state.passportStamps?.length || 0} of {DESTINATIONS.length} stamps · {(state.passportStamps?.length || 0) * 30} explorer XP earned
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#22D3EE" }} />
+            <div className="relative flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(34,211,238,0.15)" }}>
+                <MapPin className="w-7 h-7 text-cyan-300" />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">Field Trip</div>
+                <div className="font-display text-2xl font-bold text-white">Pick where to go</div>
+                <div className="text-sm text-white/60">
+                  {state.passportStamps?.length || 0} of {DESTINATIONS.length} stamps · {(state.passportStamps?.length || 0) * 30} explorer XP earned
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {REGIONS.map((r) => {
-          const list = DESTINATIONS.filter((d) => d.region === r.id);
-          if (list.length === 0) return null;
-          return (
-            <div key={r.id} className="mb-6">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-6 rounded-full" style={{ background: r.color }} />
-                <h3 className="font-display text-xl font-bold text-white">{r.label}</h3>
-              </div>
-              <div className="space-y-3">
-                {list.map((d, i) => {
-                  const visited = state.passportStamps?.includes(d.id);
-                  return (
-                    <motion.button
-                      key={d.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                      whileTap={{ scale: 0.99 }}
-                      onClick={() => { sfx.click(); setActiveId(d.id); }}
-                      className="w-full glass-card p-4 flex items-center gap-4 text-left active:scale-[0.99] transition"
-                    >
-                      <div
-                        className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden"
-                        style={{ background: `${r.color}25` }}
+          {REGIONS.map((r) => {
+            const list = DESTINATIONS.filter((d) => d.region === r.id);
+            if (list.length === 0) return null;
+            return (
+              <div key={r.id} className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-6 rounded-full" style={{ background: r.color }} />
+                  <h3 className="font-display text-xl font-bold text-white">{r.label}</h3>
+                </div>
+                <div className="space-y-3">
+                  {list.map((d, i) => {
+                    const visited = state.passportStamps?.includes(d.id);
+                    return (
+                      <motion.button
+                        key={d.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => { sfx.click(); setActiveId(d.id); }}
+                        className="w-full glass-card p-4 flex items-center gap-4 text-left active:scale-[0.99] transition"
                       >
-                        {d.imageUrl ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={d.imageUrl} alt="" className="w-full h-full object-cover" />
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden"
+                          style={{ background: `${r.color}25` }}
+                        >
+                          {d.imageUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={d.imageUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            d.emoji
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-display font-bold text-lg text-white truncate">{d.name}</div>
+                          <div className="text-xs text-white/55 truncate">{d.tagline}</div>
+                        </div>
+                        {visited ? (
+                          <Stamp className="w-5 h-5 text-amber-300 flex-shrink-0" />
                         ) : (
-                          d.emoji
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-white/40">Visit</div>
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-display font-bold text-lg text-white truncate">{d.name}</div>
-                        <div className="text-xs text-white/55 truncate">{d.tagline}</div>
-                      </div>
-                      {visited ? (
-                        <Stamp className="w-5 h-5 text-amber-300 flex-shrink-0" />
-                      ) : (
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-white/40">Visit</div>
-                      )}
-                    </motion.button>
-                  );
-                })}
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }
 

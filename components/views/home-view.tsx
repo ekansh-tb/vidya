@@ -11,6 +11,7 @@ import { useGameStore } from "@/lib/game-store";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
 import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators";
+import { TiltCard } from "@/components/effects/tilt-card";
 import { DiyaCompanion } from "@/components/effects/diya";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
@@ -568,16 +569,22 @@ export function HomeView({
             const Icon = s.icon;
             const isNow = period.subjectId === s.id;
             return (
-              <motion.button
+              <motion.div
                 key={s.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => { sfx.click(); onNavigate("subject", { subjectId: s.id }); }}
-                className="glass-card p-4 text-left relative overflow-hidden group"
-                style={isNow ? { boxShadow: `0 0 30px ${s.glow}, 0 0 0 1.5px ${s.accent}` } : {}}
               >
+                {/* Tilt gives each classroom door physical presence — it reads
+                    as an object you reach into rather than a flat rectangle.
+                    Disabled entirely under prefers-reduced-motion. */}
+                <TiltCard
+                  onClick={() => { sfx.click(); onNavigate("subject", { subjectId: s.id }); }}
+                  className="glass-card p-4 text-left relative overflow-hidden group w-full"
+                  style={isNow ? { boxShadow: `0 0 30px ${s.glow}, 0 0 0 1.5px ${s.accent}` } : {}}
+                  glow={s.glow}
+                  ariaLabel={`Open ${s.name}`}
+                >
                 <div
                   className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-30 group-hover:opacity-50 transition-opacity blur-2xl"
                   style={{ background: s.accent }}
@@ -610,7 +617,8 @@ export function HomeView({
                     )}
                   </div>
                 </div>
-              </motion.button>
+                </TiltCard>
+              </motion.div>
             );
           })}
         </div>

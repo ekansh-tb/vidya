@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import {
   ChevronLeft, Cpu, Clock, AlertTriangle, BookOpen, Sparkles,
   CircleHelp, Code2, ListChecks, Brain, Check, X, ChevronRight,
@@ -75,24 +76,84 @@ export function ExamPrepView({
   const switchableIds = (availablePackIds || []).filter((id) => hasPack(id, grade));
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
+            <ChevronLeft className="w-5 h-5" /> Home
+          </button>
 
-        {switchableIds.length > 1 && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 no-scrollbar">
-            {switchableIds.map((id) => {
-              const s = SUBJECT_MAP[id];
-              const active = id === currentId;
-              const Icon = s?.icon ?? Sparkles;
+          {switchableIds.length > 1 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 no-scrollbar">
+              {switchableIds.map((id) => {
+                const s = SUBJECT_MAP[id];
+                const active = id === currentId;
+                const Icon = s?.icon ?? Sparkles;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => { sfx.click(); setCurrentId(id); }}
+                    aria-pressed={active}
+                    className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 min-h-11 text-xs font-bold whitespace-nowrap transition-all ${
+                      active ? "ring-1" : "opacity-65 hover:opacity-100"
+                    }`}
+                    style={{
+                      background: active ? "var(--accent-soft)" : "var(--surface)",
+                      color: active ? "var(--accent)" : "var(--text-muted)",
+                      boxShadow: active ? `0 0 12px var(--accent-glow)` : "none",
+                    }}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span className={s?.isDeva ? "font-deva" : ""}>{s?.name ?? id}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="rounded-[var(--radius-lg)] p-5 mb-4 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%)",
+              border: "1px solid var(--border-strong)",
+            }}
+          >
+            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: "var(--accent)" }} />
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-2">
+                <Cpu className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
+                  {pack ? pack.context : "Loading\u2026"}
+                </span>
+              </div>
+              <div className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
+                {pack ? pack.title : subject.name}
+              </div>
+              {pack?.highlights && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {pack.highlights.map((h, i) => (
+                    <div key={i} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1 text-[11px] font-semibold glass">
+                      <span style={{ color: "var(--text-muted)" }}>{h.label}</span>
+                      <span style={{ color: "var(--text)" }}>{h.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Tabs */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar">
+            {SECTIONS.map((s) => {
+              const Icon = s.icon;
+              const active = s.id === section;
               return (
                 <button
-                  key={id}
-                  onClick={() => { sfx.click(); setCurrentId(id); }}
+                  key={s.id}
+                  onClick={() => { sfx.click(); setSection(s.id); }}
                   className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
-                    active ? "ring-1" : "opacity-65 hover:opacity-100"
+                    active ? "ring-1" : ""
                   }`}
                   style={{
                     background: active ? "var(--accent-soft)" : "var(--surface)",
@@ -101,98 +162,47 @@ export function ExamPrepView({
                   }}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span className={s?.isDeva ? "font-deva" : ""}>{s?.name ?? id}</span>
+                  {s.label}
                 </button>
               );
             })}
           </div>
-        )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-[var(--radius-lg)] p-5 mb-4 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%)",
-            border: "1px solid var(--border-strong)",
-          }}
-        >
-          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full opacity-30 blur-3xl" style={{ background: "var(--accent)" }} />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Cpu className="w-4 h-4" style={{ color: "var(--accent)" }} />
-              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
-                {pack ? pack.context : "Loading\u2026"}
-              </span>
+          {/* The pack is fetched, so the skeleton swapping for content is a
+              silent change unless it is announced. */}
+          <div aria-live="polite" className="sr-only">
+            {pack ? "Exam pack ready." : "Loading exam pack."}
+          </div>
+
+          {!pack ? (
+            <div className="glass-card p-6 space-y-3 animate-pulse" aria-busy="true" aria-label="Loading exam pack">
+              <div className="h-3.5 rounded bg-white/10 w-1/2" />
+              <div className="h-2.5 rounded bg-white/[0.07] w-full" />
+              <div className="h-2.5 rounded bg-white/[0.07] w-5/6" />
+              <div className="h-2.5 rounded bg-white/[0.07] w-2/3" />
             </div>
-            <div className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
-              {pack ? pack.title : subject.name}
-            </div>
-            {pack?.highlights && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {pack.highlights.map((h, i) => (
-                  <div key={i} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1 text-[11px] font-semibold glass">
-                    <span style={{ color: "var(--text-muted)" }}>{h.label}</span>
-                    <span style={{ color: "var(--text)" }}>{h.value}</span>
-                  </div>
-                ))}
-              </div>
+          ) : (
+          <AnimatePresence mode="wait">
+            {section === "overview" && (
+              <OverviewSection
+                key="overview"
+                pack={pack}
+                onJump={(s) => setSection(s)}
+                onAskMissVidya={() => onNavigate("tutor", { subjectId: pack.subjectId })}
+                onOpenNotebook={() => onNavigate("notebook", { subjectId: pack.subjectId })}
+                aiTutorAllowed={aiTutorAllowed}
+              />
             )}
-          </div>
-        </motion.div>
-
-        {/* Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar">
-          {SECTIONS.map((s) => {
-            const Icon = s.icon;
-            const active = s.id === section;
-            return (
-              <button
-                key={s.id}
-                onClick={() => { sfx.click(); setSection(s.id); }}
-                className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
-                  active ? "ring-1" : ""
-                }`}
-                style={{
-                  background: active ? "var(--accent-soft)" : "var(--surface)",
-                  color: active ? "var(--accent)" : "var(--text-muted)",
-                  boxShadow: active ? `0 0 12px var(--accent-glow)` : "none",
-                }}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {!pack ? (
-          <div className="glass-card p-6 space-y-3 animate-pulse" aria-busy="true" aria-label="Loading exam pack">
-            <div className="h-3.5 rounded bg-white/10 w-1/2" />
-            <div className="h-2.5 rounded bg-white/[0.07] w-full" />
-            <div className="h-2.5 rounded bg-white/[0.07] w-5/6" />
-            <div className="h-2.5 rounded bg-white/[0.07] w-2/3" />
-          </div>
-        ) : (
-        <AnimatePresence mode="wait">
-          {section === "overview" && (
-            <OverviewSection
-              key="overview"
-              pack={pack}
-              onJump={(s) => setSection(s)}
-              onAskMissVidya={() => onNavigate("tutor", { subjectId: pack.subjectId })}
-              onOpenNotebook={() => onNavigate("notebook", { subjectId: pack.subjectId })}
-              aiTutorAllowed={aiTutorAllowed}
-            />
+            {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} />}
+            {section === "flash" && <FlashSection key="flash" pack={pack} />}
+            {section === "quiz" && <QuizSection key="quiz" pack={pack} />}
+            {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
+            {section === "cheat" && <CheatSheetSection key="cheat" pack={pack} />}
+          </AnimatePresence>
           )}
-          {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} />}
-          {section === "flash" && <FlashSection key="flash" pack={pack} />}
-          {section === "quiz" && <QuizSection key="quiz" pack={pack} />}
-          {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
-          {section === "cheat" && <CheatSheetSection key="cheat" pack={pack} />}
-        </AnimatePresence>
-        )}
+        </div>
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }
 
@@ -394,8 +404,11 @@ function FlashSection({ pack }: { pack: ExamPack }) {
         {pack.flashcards.length} must-know definitions. Tap to flip.
       </div>
       <div className="text-center mb-2 text-xs font-semibold" style={{ color: "var(--text-faint)" }}>{idx + 1} / {pack.flashcards.length}</div>
+      {/* The card swaps term for definition in place; without this a screen
+          reader gets no signal that the button is a two-state control. */}
       <button
         onClick={() => { sfx.click(); setFlipped((f) => !f); }}
+        aria-pressed={flipped}
         className="w-full min-h-[260px] rounded-[var(--radius-lg)] p-6 flex items-center justify-center text-center relative overflow-hidden active:scale-[0.99] transition"
         style={{
           background: flipped

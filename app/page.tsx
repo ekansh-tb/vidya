@@ -26,6 +26,7 @@ import { AddLearnerView } from "@/components/views/add-learner-view";
 import { ReviewView } from "@/components/views/review-view";
 import { LinkAccountView } from "@/components/views/link-account-view";
 import { CosmicBg, cosmicModeForGrade } from "@/components/effects/cosmic-bg";
+import { RoomTransition } from "@/components/effects/room-transition";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
@@ -366,7 +367,16 @@ export default function HomePage() {
     <>
       <ThemeApplier theme={themeId} />
       <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
-      {content}
+      {/* Each view change reads as stepping into a different room, which is the
+          metaphor the whole product is built on (see VISION.md). `door` marks
+          the transitions that are genuinely entering a learning space rather
+          than flipping a settings panel. */}
+      <RoomTransition
+        roomKey={quizResult ? "results" : view.name}
+        door={!quizResult && ["subject", "classroom", "tutor", "field-trip", "assembly", "library", "music", "exam-prep"].includes(view.name)}
+      >
+        {content}
+      </RoomTransition>
       <VoiceBubble />
       <SaveErrorBanner />
     </>

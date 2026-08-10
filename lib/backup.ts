@@ -14,6 +14,7 @@
 import { z } from "zod";
 import type { LearnerProfile } from "./types";
 import type { ProfilesV2 } from "./storage";
+import { dayKeyOf } from "./utils";
 
 export const BACKUP_FORMAT = "vidya.backup" as const;
 export const BACKUP_VERSION = 1 as const;
@@ -96,7 +97,8 @@ export function serializeBackup(profiles: ProfilesV2): string {
 /** `vidya-backup-2026-08-11-3-learners.json` */
 export function backupFilename(profiles: ProfilesV2, now = new Date()): string {
   const n = Object.keys(profiles.learners).length;
-  const date = now.toISOString().slice(0, 10);
+  // Local date — the filename should read as the day the parent made it.
+  const date = dayKeyOf(now);
   return `vidya-backup-${date}-${n}-learner${n === 1 ? "" : "s"}.json`;
 }
 
