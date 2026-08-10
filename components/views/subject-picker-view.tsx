@@ -40,6 +40,14 @@ export function SubjectPickerView({
   // Read the label off the shared board list — the old hardcoded ladder fell
   // through to "Cambridge Primary" for Lower Secondary and CBSE learners.
   const boardLabel = boardOption(learner.board).label;
+  const isIgcse = learner.board === "cambridge-igcse";
+  // Marathi is state-mandated in Maharashtra, but it is only a subject this
+  // learner can see if their board's picker actually offers it — don't explain
+  // a subject that isn't on the page.
+  const offersMarathi = useMemo(
+    () => groups.some((g) => g.subjects.some((sid) => sid.includes("marathi"))),
+    [groups],
+  );
 
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto">
@@ -60,7 +68,12 @@ export function SubjectPickerView({
             <span className="text-white font-bold">{totalChosen}</span> chosen
             <span className="text-white/40"> · {optionalCount} optional</span>
           </div>
-          <div className="text-white/40">Min 6 · ICE award needs 7 across groups</div>
+          {/* The ICE award and the 6-subject minimum are Cambridge IGCSE rules —
+              they were being shown to ICSE, CBSE and Cambridge school learners
+              too, none of whom sit an ICE. */}
+          {isIgcse
+            ? <div className="text-white/40">Min 6 · ICE award needs 7 across groups</div>
+            : <div className="text-white/40">{compulsory.size} required</div>}
         </div>
 
         {groups.map((g, gi) => (
@@ -124,12 +137,20 @@ export function SubjectPickerView({
           </motion.div>
         ))}
 
-        <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-white/60">
-          <Info className="w-4 h-4 flex-shrink-0 text-cyan-300 mt-0.5" />
-          <div>
-            Marathi is mandated by the Maharashtra Compulsory Marathi Act 2020 for all schools in Maharashtra through Std 10. From AY 2025–26 it&apos;s marks-based for IGCSE students. Verify with school office if it&apos;s assessed at CNS.
+        {/* The assessment detail here is IGCSE/CNS-specific — it was being shown
+            to every board. The Act itself applies to all of them, so keep the
+            fact and drop the framing that doesn't apply. */}
+        {offersMarathi && (
+          <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-white/60">
+            <Info className="w-4 h-4 flex-shrink-0 text-cyan-300 mt-0.5" />
+            <div>
+              Marathi is mandated by the Maharashtra Compulsory Marathi Act 2020 for all schools in Maharashtra through Std 10.
+              {isIgcse
+                ? " From AY 2025–26 it's marks-based for IGCSE students. Verify with the school office if it's assessed at CNS."
+                : " Check with the school office how it's assessed on your board."}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="fixed bottom-0 inset-x-0 z-40">

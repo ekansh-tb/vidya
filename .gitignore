@@ -8,3 +8,7 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
+# Any local env file. `vercel env pull` writes real secrets into these.
+.env*
+# ...except the committed template, which contains no values.
+!.env.local.example

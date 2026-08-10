@@ -47,21 +47,34 @@ export function useCapability(key: CapabilityKey): CapabilityResolution {
 }
 
 /**
- * Compute the active learner's verification rung from local state.
+ * The active learner's verification rung.
  *
- *   Rung 2 — `parentPin` set on the learner profile (parent has been
- *            present enough to lock the parent room).
- *   Rung 1 — same-network auto-verify. NOT IMPLEMENTED yet; will land
- *            with the durable DB so we can store one-way fingerprints
- *            of parent sessions.
- *   Rung 0 — default. A brand-new learner profile.
- *   Rung 3 — strict-verified. NOT IMPLEMENTED; manual ops review.
+ * THIS USED TO READ THE PIN, AND THAT WAS THE BUG:
  *
- * Promotion is monotonic in v1: setting a PIN promotes to rung 2;
- * un-PINing demotes to rung 0 (rung 1 needs the fingerprint table).
+ *     if (learner.parentPin && /^\d{4}$/.test(learner.parentPin)) return 2;
+ *
+ * The parent room opens in "set a PIN" mode on a fresh profile — it *invites*
+ * whoever is holding the device to choose one. So a child tapped Parent, typed
+ * any four digits twice, and promoted themselves to rung 2, which unlocks the
+ * full AI tutor. No adult, no network, no server ever involved. A local secret
+ * stored next to the data it guards is not authentication.
+ *
+ * The rung now comes from the server: a learner reaches rung 2 only by
+ * redeeming a claim code their parent issued from an authenticated session
+ * (see lib/db/queries.ts `redeemClaimCode`). `verifiedLevel` is written onto
+ * the profile when the device links, and is the client's read-only mirror of
+ * `learners.verification_level`.
+ *
+ * The PIN still exists, and is still worth having — it keeps a younger sibling
+ * out of the analytics screen. It is a speed bump on a local UI, which is all
+ * it ever honestly was.
+ *
+ * Rungs 1 and 3 remain unreachable: rung 1 needs the network-fingerprint
+ * table, rung 3 needs manual ops review.
  */
 export function computeRung(learner: LearnerProfile): VerificationLevel {
-  if (learner.parentPin && /^\d{4}$/.test(learner.parentPin)) return 2;
+  const level = learner.verifiedLevel;
+  if (level === 1 || level === 2 || level === 3) return level;
   return 0;
 }
 

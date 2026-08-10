@@ -65,9 +65,17 @@ export type LearnerProfile = {
   pickedSubjects?: SubjectId[];
   /** True once subject picker has been completed. */
   subjectsLocked?: boolean;
-  /** 4-digit local PIN guarding the in-kid-app parent room. Speed bump only —
-   *  real auth is the Clerk /sign-in flow. */
+  /** 4-digit local PIN guarding the in-kid-app parent room. A speed bump that
+   *  keeps a younger sibling out of the analytics screen — nothing more. It
+   *  used to grant verification rung 2 (and therefore the AI tutor), which a
+   *  child could self-award; see computeRung in lib/capabilities/use-capability. */
   parentPin?: string;
+  /** Read-only mirror of `learners.verification_level` from the server, written
+   *  when this device links to a real account. The ONLY source of a rung above
+   *  0. Absent means anonymous device-local play. */
+  verifiedLevel?: 0 | 1 | 2 | 3;
+  /** Server learner id, once linked. Enables state sync. */
+  remoteId?: string;
   /** Per-learner upcoming exams. Drives the home-view countdown banner. */
   upcomingExams?: ExamDate[];
   /** A note from the parent to the kid. Shown on the kid's home until acknowledged. */
@@ -251,6 +259,7 @@ export type ViewName =
   | "exam-prep"
   | "learners"
   | "subject-picker"
+  | "link-account"
   | "daily"
   | "profile"
   | "shop"

@@ -11,6 +11,7 @@ import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
 import { BackupPanel } from "@/components/parent/backup-panel";
+import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 
 /**
  * In-kid-app Parent Room.
@@ -200,6 +201,11 @@ export function ParentView({
 
         {/* Capability map ------------------------------------------------ */}
         <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+
+        {/* Account linking ------------------------------------------------ */}
+        {/* The adult half of what replaces the PIN: a code minted against the
+            parent's own session, which is the only path to the AI tutor. */}
+        <LearnerLinkPanel learner={learner} />
 
         {/* Backup & restore ---------------------------------------------- */}
         {/* Placed high enough to be found before it is needed. All progress

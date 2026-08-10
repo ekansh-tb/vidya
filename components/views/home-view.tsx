@@ -22,6 +22,20 @@ import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 
+/** Whole days from local midnight today to an ISO `YYYY-MM-DD` exam date. */
+function daysUntil(isoDate: string): number {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dayMs = 1000 * 60 * 60 * 24;
+  return Math.round((new Date(isoDate + "T00:00:00").getTime() - today.getTime()) / dayMs);
+}
+
+/** "Exam today" / "Exam tomorrow" / "Exam in 5 days" — one phrasing, every banner. */
+function examCountdownLabel(daysAway: number): string {
+  if (daysAway === 0) return "Exam today";
+  if (daysAway === 1) return "Exam tomorrow";
+  return `Exam in ${daysAway} days`;
+}
+
 export function HomeView({
   state, learner, onNavigate,
 }: {
@@ -101,15 +115,21 @@ export function HomeView({
     ? subjectMastery.find((s) => s.id === period.subjectId)
     : null;
 
-  // Nearest upcoming exam within 7 days — drives the countdown banner.
-  const upcomingExam = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const dayMs = 1000 * 60 * 60 * 24;
+  // Every logged exam, still to come, nearest first — one date calculation for
+  // both the countdown banner and the IGCSE Computer Science banner.
+  const examsAhead = useMemo(() => {
     return (learner.upcomingExams || [])
-      .map((e) => ({ ...e, daysAway: Math.round((new Date(e.date + "T00:00:00").getTime() - today.getTime()) / dayMs) }))
-      .filter((e) => e.daysAway >= 0 && e.daysAway <= 7)
-      .sort((a, b) => a.daysAway - b.daysAway)[0];
+      .map((e) => ({ ...e, daysAway: daysUntil(e.date) }))
+      .filter((e) => e.daysAway >= 0)
+      .sort((a, b) => a.daysAway - b.daysAway);
   }, [learner.upcomingExams]);
+
+  // Nearest upcoming exam within 7 days — drives the countdown banner.
+  const upcomingExam = useMemo(() => examsAhead.filter((e) => e.daysAway <= 7)[0], [examsAhead]);
+
+  // The CS banner used to read "Exam Tomorrow" as static copy, asserting an
+  // urgency that was permanently false. Say what the learner's own schedule says.
+  const csExam = useMemo(() => examsAhead.find((e) => e.subjectId === "igcse-cs"), [examsAhead]);
 
   return (
     <div className="min-h-screen pb-28 max-w-2xl mx-auto">
@@ -335,10 +355,13 @@ export function HomeView({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <GraduationCap className="w-3.5 h-3.5 text-violet-300" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">IGCSE 0478 · Exam Tomorrow</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
+                    IGCSE 0478 {csExam ? `· ${examCountdownLabel(csExam.daysAway)}` : "· Computer Science"}
+                  </span>
                 </div>
                 <div className="font-display text-xl font-bold text-white leading-tight">
-                  Computer Science — Final Prep
+                  {/* "Final Prep" is only true when there's a paper coming. */}
+                  Computer Science — {csExam ? "Final Prep" : "Exam prep"}
                 </div>
                 <div className="text-xs text-white/70 mt-0.5">
                   Syllabus · flashcards · 25 questions · pseudocode · cheat sheet
@@ -386,7 +409,7 @@ export function HomeView({
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <GraduationCap className="w-3.5 h-3.5" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }} />
                   <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }}>
-                    {upcomingExam.daysAway === 0 ? "Exam today" : upcomingExam.daysAway === 1 ? "Exam tomorrow" : `Exam in ${upcomingExam.daysAway} days`}
+                    {examCountdownLabel(upcomingExam.daysAway)}
                   </span>
                 </div>
                 <div className="font-display text-xl font-bold leading-tight" style={{ color: "var(--text)" }}>
@@ -659,11 +682,20 @@ function DailyReflectionCard({ state }: { state: GameState }) {
   const hour = today.getHours();
   const todayDone = (state.dailyReflections || []).some((r) => r.date === dateKey);
 
+  // Saving writes today's reflection into state, which flips `todayDone` true on
+  // the very next render — so the "saved · +5 XP" confirmation below could never
+  // appear and the card just vanished under the kid's finger. Hold the card open
+  // while `justSaved` is set so the acknowledgement is actually seen.
+  useEffect(() => {
+    if (!justSaved) return;
+    const t = setTimeout(() => setJustSaved(false), 1800);
+    return () => clearTimeout(t);
+  }, [justSaved]);
+
   // Only show after 4 PM local — natural reflection time, end of school day.
-  // Always show if already done today (so kid sees their saved thought + tomorrow).
-  const showCard = !todayDone && hour >= 16;
-  if (!showCard && !todayDone) return null;
-  if (todayDone) return null;
+  // Once today's is saved the card retires until tomorrow.
+  if (todayDone && !justSaved) return null;
+  if (hour < 16) return null;
 
   const save = () => {
     const body = draft.trim();
@@ -679,8 +711,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
     }));
     setDraft("");
     setKeepPrivate(false);
-    setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 1800);
+    setJustSaved(true); // the effect above clears it, and cleans up on unmount
   };
 
   return (
@@ -733,7 +764,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
             <button
               onClick={save}
               disabled={!draft.trim()}
-              className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest active:scale-95 disabled:opacity-40"
+              className="rounded-full px-4 min-h-[44px] text-xs font-bold uppercase tracking-widest active:scale-95 disabled:opacity-40"
               style={{ background: "rgba(167,139,250,0.3)", color: "white" }}
             >
               Save · +5 XP

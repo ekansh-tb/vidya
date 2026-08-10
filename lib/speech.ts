@@ -3,6 +3,8 @@
 // Miss Vidya — the in-app teacher. Uses the browser's SpeechSynthesis API.
 // Picks an Indian English voice when available, otherwise a UK/US English voice.
 
+import { readPersistedAudioSettings } from "./audio-bootstrap";
+
 let voiceCache: SpeechSynthesisVoice[] | null = null;
 let currentLine: string | null = null;
 const listeners = new Set<(line: string | null) => void>();
@@ -45,9 +47,35 @@ function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   return voices[0];
 }
 
+const DEFAULT_VOICE_VOLUME = 0.9;
+
+// `settings.voiceVolume` was written by the slider and read by nobody: speak()
+// hardcoded 0.9 and every caller took the default, so the slider was purely
+// decorative. It now lives here as a module-level default, which keeps all the
+// existing call sites (`vidya.correct()` and friends) working untouched.
+let voiceVolume: number | null = null;
+
+/** Mirrors `settings.voiceVolume`. 0–1, clamped. */
+export function setVoiceVolume(v: number) {
+  voiceVolume = Math.min(1, Math.max(0, v));
+}
+
+function currentVoiceVolume(): number {
+  // Resolved lazily on first speech: the first line can be spoken before the
+  // Settings screen has ever mounted, so fall back to the saved preference
+  // rather than to full volume.
+  if (voiceVolume === null) {
+    const saved = readPersistedAudioSettings();
+    voiceVolume = typeof saved?.voiceVolume === "number"
+      ? Math.min(1, Math.max(0, saved.voiceVolume))
+      : DEFAULT_VOICE_VOLUME;
+  }
+  return voiceVolume;
+}
+
 export function speak(text: string, opts: { lang?: string; rate?: number; pitch?: number; volume?: number; onEnd?: () => void } = {}) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const { lang = "en-IN", rate = 0.95, pitch = 1.1, volume = 0.9, onEnd } = opts;
+  const { lang = "en-IN", rate = 0.95, pitch = 1.1, volume = currentVoiceVolume(), onEnd } = opts;
 
   // Cancel any ongoing speech
   window.speechSynthesis.cancel();
