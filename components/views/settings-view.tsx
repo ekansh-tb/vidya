@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import { ChevronLeft, Volume2, VolumeX, Music, Mic } from "lucide-react";
-import type { GameState } from "@/lib/types";
+import { ChevronLeft, ChevronRight, BarChart3, Volume2, VolumeX, Music, Mic } from "lucide-react";
+import type { GameState, ViewName } from "@/lib/types";
 import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
 import { stopSpeaking, setVoiceVolume } from "@/lib/speech";
 
 export function SettingsView({
-  state, setState, onBack,
+  state, setState, onBack, onNavigate,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
+  onNavigate?: (v: ViewName, params?: Record<string, unknown>) => void;
 }) {
   // Push the two settings the engines cannot see for themselves. An effect
   // rather than a line in each handler: it also covers mount and a mid-session
@@ -141,6 +142,27 @@ export function SettingsView({
             )}
           </div>
         </div>
+
+        {/* Grown-ups. The parent surface used to be a tile on the child's home
+            screen; it now lives here, one step out of the child's main flow,
+            and full analytics live at vidyagyan.study/parent. */}
+        {onNavigate && (
+          <button
+            onClick={() => { sfx.click(); onNavigate("parent"); }}
+            className="w-full glass-card p-4 mt-6 flex items-center gap-3 text-left active:scale-[0.99] transition"
+          >
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 bg-cyan-400/15">
+              <BarChart3 className="w-5 h-5 text-cyan-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold text-white text-sm">For grown-ups</div>
+              <div className="text-xs text-white/55 mt-0.5">
+                Progress, exam dates, backups and account linking.
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+          </button>
+        )}
 
         <div className="glass-card p-4 mt-6 text-xs text-white/50">
           <div className="font-bold text-white/70 mb-1">About audio</div>

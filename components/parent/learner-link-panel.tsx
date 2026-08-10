@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeyRound, Copy, Check, AlertTriangle, Link2 } from "lucide-react";
 import type { LearnerProfile } from "@/lib/types";
+import { copyText } from "@/lib/clipboard";
 
 type Issued = { code: string; expiresAt: string };
 
@@ -24,6 +25,7 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const remoteId = learner.remoteId;
   const alreadyLinked = (learner.verifiedLevel ?? 0) >= 2;
@@ -48,12 +50,15 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
 
   const copy = async () => {
     if (!issued) return;
-    try {
-      await navigator.clipboard.writeText(issued.code);
+    const ok = await copyText(issued.code);
+    if (ok) {
+      setCopyFailed(false);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      /* clipboard blocked — the code is on screen anyway */
+    } else {
+      // Say so. The code is on screen and selectable, so there is a real
+      // answer to give rather than leaving a dead button.
+      setCopyFailed(true);
     }
   };
 
@@ -92,8 +97,10 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
                 style={{ background: "var(--accent-soft)", border: "1px solid var(--border-strong)" }}
               >
                 <div
-                  className="font-mono text-3xl font-bold tracking-[0.35em]"
-                  style={{ color: "var(--accent)" }}
+                  className="font-mono text-3xl font-bold tracking-[0.35em] select-all cursor-text"
+                  style={{ color: "var(--accent)", userSelect: "all", WebkitUserSelect: "all" }}
+                  // select-all lets a parent long-press the code and copy it by
+                  // hand on any device where the clipboard API is blocked.
                 >
                   {issued.code}
                 </div>
@@ -111,6 +118,12 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
                   Expires {new Date(issued.expiresAt).toLocaleString()}
                 </span>
               </div>
+              {copyFailed && (
+                <div role="status" className="mt-2 text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  This browser wouldn&apos;t let Vidya use the clipboard. Press and hold the
+                  code above to copy it, or just read it out.
+                </div>
+              )}
             </div>
           ) : (
             <button

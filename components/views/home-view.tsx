@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Coins, Target, ArrowRight, Trophy, Gem, BarChart3, Settings, Check, Users,
+  Coins, Target, ArrowRight, Trophy, Gem, Settings, Check, Users,
   MessageCircle, Globe, BookOpen, Clock, Mic, NotebookPen, Music, Wind,
   Cpu, GraduationCap, Repeat, Heart,
 } from "lucide-react";
@@ -615,8 +615,12 @@ export function HomeView({
           })}
         </div>
 
-        {/* Bottom strip */}
-        <div className="mt-6 grid grid-cols-3 gap-2">
+        {/* Bottom strip — kid-facing only.
+            The "Parent" tile used to sit here, which put an adult surface on
+            the child's home screen and, worse, was the entry to the PIN room
+            that a child could set the PIN for. Grown-up controls now live on
+            their own screen, reached from Settings or vidyagyan.study/parent. */}
+        <div className="mt-6 grid grid-cols-2 gap-2">
           <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-2xl p-3 text-center active:scale-95">
             <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-300" />
             <div className="text-xs font-semibold text-white/80">Badges</div>
@@ -624,10 +628,6 @@ export function HomeView({
           <button onClick={() => { sfx.click(); onNavigate("shop"); }} className="glass rounded-2xl p-3 text-center active:scale-95">
             <Gem className="w-5 h-5 mx-auto mb-1 text-violet-300" />
             <div className="text-xs font-semibold text-white/80">Power-ups</div>
-          </button>
-          <button onClick={() => { sfx.click(); onNavigate("parent"); }} className="glass rounded-2xl p-3 text-center active:scale-95">
-            <BarChart3 className="w-5 h-5 mx-auto mb-1 text-cyan-300" />
-            <div className="text-xs font-semibold text-white/80">Parent</div>
           </button>
         </div>
       </div>
