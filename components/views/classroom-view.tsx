@@ -108,6 +108,8 @@ function ClassHeader({ learner, section }: { learner: LearnerProfile; section: s
   const board =
     learner.board === "cambridge-primary"
       ? "Cambridge Primary"
+      : learner.board === "cambridge-lower-secondary"
+      ? "Cambridge Lower Secondary"
       : learner.board === "cambridge-igcse"
       ? "Cambridge IGCSE"
       : learner.board === "icse"

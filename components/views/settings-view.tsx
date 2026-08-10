@@ -132,7 +132,7 @@ export function SettingsView({
           <div className="font-bold text-white/70 mb-1">About audio</div>
           <ul className="space-y-1 list-disc list-inside">
             <li>Music is generated live by your browser, no files needed</li>
-            <li>Miss Vidya uses your device's built-in voice synthesis</li>
+            <li>Miss Vidya uses your device&apos;s built-in voice synthesis</li>
             <li>Best voice quality on Mac and recent iOS / Android</li>
           </ul>
         </div>

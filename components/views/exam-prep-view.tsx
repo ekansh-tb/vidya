@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import type { GameState, SubjectId, ViewName } from "@/lib/types";
 import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
-import { packFor } from "@/lib/content/packs";
+import { hasPack } from "@/lib/content/packs/pack-index";
+import { usePack } from "@/lib/content/packs/use-pack";
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 import { useCapability } from "@/lib/capabilities/use-capability";
@@ -40,12 +41,13 @@ export function ExamPrepView({
   /** Learner's grade — for grade-aware pack lookup. */
   grade?: number;
 }) {
-  const initialId = subjectId && packFor(subjectId, grade)
+  const initialId = subjectId && hasPack(subjectId, grade)
     ? subjectId
-    : (availablePackIds?.find((id) => packFor(id, grade)));
+    : (availablePackIds?.find((id) => hasPack(id, grade)));
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
-  const pack = currentId ? packFor(currentId, grade) : undefined;
+  // Pack bodies are large and load as their own chunk — see pack-index.ts.
+  const { exists: packExists, pack } = usePack(currentId, grade);
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("overview");
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
@@ -53,7 +55,9 @@ export function ExamPrepView({
   // Reset section when pack changes
   useEffect(() => { setSection("overview"); }, [currentId]);
 
-  if (!pack || !subject) {
+  // Distinguish "no pack written yet" from "pack still downloading" — the
+  // first is a real empty state, the second must not look like one.
+  if (!packExists || !subject) {
     return (
       <div className="min-h-screen pb-24 max-w-2xl mx-auto px-5 pt-6">
         <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
@@ -66,9 +70,9 @@ export function ExamPrepView({
     );
   }
 
-  const switchablePacks = (availablePackIds || [])
-    .map((id) => packFor(id, grade))
-    .filter((p): p is ExamPack => !!p);
+  // Tabs only need identity, so they render from the light index without
+  // pulling in any other subject's pack body.
+  const switchableIds = (availablePackIds || []).filter((id) => hasPack(id, grade));
 
   return (
     <div className="min-h-screen pb-24 max-w-2xl mx-auto">
@@ -77,16 +81,16 @@ export function ExamPrepView({
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
 
-        {switchablePacks.length > 1 && (
+        {switchableIds.length > 1 && (
           <div className="flex gap-1.5 overflow-x-auto pb-1 mb-3 no-scrollbar">
-            {switchablePacks.map((p) => {
-              const s = SUBJECT_MAP[p.subjectId];
-              const active = p.subjectId === currentId;
+            {switchableIds.map((id) => {
+              const s = SUBJECT_MAP[id];
+              const active = id === currentId;
               const Icon = s?.icon ?? Sparkles;
               return (
                 <button
-                  key={p.subjectId}
-                  onClick={() => { sfx.click(); setCurrentId(p.subjectId); }}
+                  key={id}
+                  onClick={() => { sfx.click(); setCurrentId(id); }}
                   className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
                     active ? "ring-1" : "opacity-65 hover:opacity-100"
                   }`}
@@ -97,7 +101,7 @@ export function ExamPrepView({
                   }}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  <span className={s?.isDeva ? "font-deva" : ""}>{s?.name ?? p.title}</span>
+                  <span className={s?.isDeva ? "font-deva" : ""}>{s?.name ?? id}</span>
                 </button>
               );
             })}
@@ -116,12 +120,14 @@ export function ExamPrepView({
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <Cpu className="w-4 h-4" style={{ color: "var(--accent)" }} />
-              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>{pack.context}</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
+                {pack ? pack.context : "Loading\u2026"}
+              </span>
             </div>
             <div className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
-              {pack.title}
+              {pack ? pack.title : subject.name}
             </div>
-            {pack.highlights && (
+            {pack?.highlights && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {pack.highlights.map((h, i) => (
                   <div key={i} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1 text-[11px] font-semibold glass">
@@ -159,6 +165,14 @@ export function ExamPrepView({
           })}
         </div>
 
+        {!pack ? (
+          <div className="glass-card p-6 space-y-3 animate-pulse" aria-busy="true" aria-label="Loading exam pack">
+            <div className="h-3.5 rounded bg-white/10 w-1/2" />
+            <div className="h-2.5 rounded bg-white/[0.07] w-full" />
+            <div className="h-2.5 rounded bg-white/[0.07] w-5/6" />
+            <div className="h-2.5 rounded bg-white/[0.07] w-2/3" />
+          </div>
+        ) : (
         <AnimatePresence mode="wait">
           {section === "overview" && (
             <OverviewSection
@@ -176,6 +190,7 @@ export function ExamPrepView({
           {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
           {section === "cheat" && <CheatSheetSection key="cheat" pack={pack} />}
         </AnimatePresence>
+        )}
       </div>
     </div>
   );

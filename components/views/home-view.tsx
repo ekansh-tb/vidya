@@ -14,7 +14,7 @@ import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators"
 import { DiyaCompanion } from "@/components/effects/diya";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import { packFor } from "@/lib/content/packs";
+import { hasPack } from "@/lib/content/packs/pack-index";
 import { useCapability } from "@/lib/capabilities/use-capability";
 import { xpToLevel } from "@/lib/economy";
 import { todayKey } from "@/lib/utils";
@@ -73,7 +73,7 @@ export function HomeView({
 
   const takingCS = !!learner.pickedSubjects?.includes("igcse-cs");
   const packSubjects = useMemo(
-    () => visibleSubjects.filter((s) => !!packFor(s.id, learner.grade)),
+    () => visibleSubjects.filter((s) => hasPack(s.id, learner.grade)),
     [visibleSubjects, learner.grade],
   );
   const firstPack = packSubjects[0];
@@ -695,7 +695,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
           <div className="flex items-center gap-1.5 mb-2">
             <NotebookPen className="w-3.5 h-3.5 text-violet-300" />
             <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
-              Today's reflection
+              Today&apos;s reflection
             </span>
           </div>
           <div className="text-sm font-medium text-white/95 mb-2 leading-snug">

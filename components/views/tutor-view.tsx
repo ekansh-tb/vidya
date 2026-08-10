@@ -43,29 +43,26 @@ export function TutorView({
 }) {
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
 
-  const subjectList = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
-  const defaultSubject: SubjectId =
-    initialSubject && subjectList.find((s) => s.id === initialSubject)
-      ? initialSubject
-      : (subjectList[0]?.id || "maths");
-  const [subjectId, setSubjectId] = useState<SubjectId>(defaultSubject);
-  const [input, setInput] = useState("");
-  const subject = SUBJECT_MAP[subjectId] || subjectList[0];
-
   // Deep-link defense: if a kid lands here without rung-2 (no parent PIN
   // set on this learner), render a neutral placeholder rather than
   // exposing the AI surface. The kid sees no gate explanation — per
   // [[parent-invisible-config]] the room is simply "preparing".
+  //
+  // The gate MUST live in this outer component, not as an early return
+  // inside TutorRoom. TutorRoom opens a chat transport and five hooks; an
+  // early return above them made the hook count vary between renders, so
+  // flipping this capability while the view was mounted crashed React with
+  // "Rendered more hooks than during the previous render".
   if (!aiTutorAllowed) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 max-w-2xl mx-auto">
         <div className="text-center">
           <div className="text-7xl mb-4 opacity-60">🌒</div>
           <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
-            This room isn't open yet
+            This room isn&apos;t open yet
           </h2>
           <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
-            Try the Library, Field Trip, or Music room instead — they're already waiting.
+            Try the Library, Field Trip, or Music room instead — they&apos;re already waiting.
           </p>
           <button
             onClick={() => { sfx.click(); onBack(); }}
@@ -78,6 +75,34 @@ export function TutorView({
       </div>
     );
   }
+
+  return (
+    <TutorRoom
+      state={state}
+      learner={learner}
+      initialSubject={initialSubject}
+      onBack={onBack}
+    />
+  );
+}
+
+function TutorRoom({
+  state, learner, initialSubject, onBack,
+}: {
+  state: GameState;
+  learner: LearnerProfile;
+  initialSubject?: SubjectId;
+  onBack: () => void;
+}) {
+  const subjectList = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
+  const defaultSubject: SubjectId =
+    initialSubject && subjectList.find((s) => s.id === initialSubject)
+      ? initialSubject
+      : (subjectList[0]?.id || "maths");
+  const [subjectId, setSubjectId] = useState<SubjectId>(defaultSubject);
+  const [input, setInput] = useState("");
+  const subject = SUBJECT_MAP[subjectId] || subjectList[0];
+
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const transport = useMemo(
@@ -146,7 +171,7 @@ export function TutorView({
                 Miss Vidya · {subject.name}
               </div>
               <div className="text-sm text-white/70">
-                Ask anything. I'll explain at your pace.
+                Ask anything. I&apos;ll explain at your pace.
               </div>
             </div>
             <DiyaCompanion state={state} size="sm" showNudge={false} />

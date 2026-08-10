@@ -142,7 +142,7 @@ export function QuizView({
       setState((prev) => {
         const wasWrong = prev.comeback?.wasWrong || false;
         const newSince = wasWrong ? (prev.comeback?.sinceWrongCorrect || 0) + 1 : 0;
-        let badges = [...prev.badges];
+        const badges = [...prev.badges];
         if (wasWrong && newSince >= 5 && !badges.includes("comeback")) {
           badges.push("comeback");
         }
@@ -236,7 +236,7 @@ export function QuizView({
         };
       }
 
-      let badges = [...prev.badges];
+      const badges = [...prev.badges];
       const stats = {
         totalAnswered: prev.stats.totalAnswered + score.total,
         totalCorrect: prev.stats.totalCorrect + score.correct,

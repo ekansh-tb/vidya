@@ -115,7 +115,7 @@ export function MatchView({
     let oldLevel = 1;
     let leveledUp = false;
     let finishedStreak = 0;
-    let newBadges: string[] = [];
+    const newBadges: string[] = [];
 
     setState((prev) => {
       const today = todayKey();

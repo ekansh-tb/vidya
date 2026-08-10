@@ -19,7 +19,8 @@ const AVATAR_CHOICES = [
 ];
 
 const BOARDS: { id: Board; label: string; description: string; defaultGrade: number; gradeRange: [number, number] }[] = [
-  { id: "cambridge-primary", label: "Cambridge Primary",  description: "Stages 1–6 · ages 6–11",                 defaultGrade: 5,  gradeRange: [1, 6] },
+  { id: "cambridge-primary", label: "Cambridge Primary",  description: "Grades 1–5 · Stages 1–5 · ages 6–11",     defaultGrade: 5,  gradeRange: [1, 5] },
+  { id: "cambridge-lower-secondary", label: "Cambridge Lower Secondary", description: "Grades 6–8 · Stages 7–9 · ages 11–14", defaultGrade: 6, gradeRange: [6, 8] },
   { id: "cambridge-igcse",   label: "Cambridge IGCSE",    description: "Year 9–10 · Upper Secondary · ages 14–16", defaultGrade: 10, gradeRange: [9, 10] },
   { id: "icse",              label: "ICSE (CISCE)",       description: "Indian Council · grades 1–10",            defaultGrade: 7,  gradeRange: [1, 10] },
   { id: "cbse",              label: "CBSE (NCERT NCF-SE 2023)", description: "Central Board · grades 1–12 · NCERT books", defaultGrade: 7, gradeRange: [1, 12] },
@@ -45,6 +46,9 @@ type SchoolTemplate = {
 
 const SCHOOL_TEMPLATES: SchoolTemplate[] = [
   { id: "cam-primary-5", label: "Cambridge Primary · Grade 5",  emoji: "🦚", board: "cambridge-primary", grade: 5,  desc: "Stage 5 · Maths · English · Science" },
+  { id: "cam-lsec-6",    label: "Cambridge Lower Sec · Grade 6", emoji: "🦋", board: "cambridge-lower-secondary", grade: 6, desc: "Stage 7 · combined Science · pick a language" },
+  { id: "cam-lsec-7",    label: "Cambridge Lower Sec · Grade 7", emoji: "🐬", board: "cambridge-lower-secondary", grade: 7, desc: "Stage 8 · combined Science · pick a language" },
+  { id: "cam-lsec-8",    label: "Cambridge Lower Sec · Grade 8", emoji: "🦅", board: "cambridge-lower-secondary", grade: 8, desc: "Stage 9 · Physics · Chemistry · Biology · Checkpoint" },
   { id: "cam-igcse-10",  label: "Cambridge IGCSE · Year 10",    emoji: "🦉", board: "cambridge-igcse",   grade: 10, desc: "Extended · pick your subjects" },
   { id: "icse-6",        label: "ICSE · Class 6",               emoji: "🦊", board: "icse",              grade: 6,  desc: "Selina · CISCE curriculum" },
   { id: "icse-7",        label: "ICSE · Class 7",               emoji: "🦉", board: "icse",              grade: 7,  desc: "Selina · CISCE curriculum" },
@@ -114,7 +118,7 @@ export function AddLearnerView({
           </div>
           <h1 className="font-display text-3xl font-bold" style={{ color: "var(--text)" }}>Add a learner</h1>
           <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-            Type the learner's name. A template can pre-fill the curriculum.
+            Type the learner&apos;s name. A template can pre-fill the curriculum.
           </p>
         </motion.div>
 
@@ -138,7 +142,7 @@ export function AddLearnerView({
         {step === "template" ? (
           <div className="space-y-3">
             <div className="text-[11px] italic mb-2 px-1" style={{ color: "var(--text-faint)" }}>
-              Tapping a template fills the curriculum below. You still type the learner's name.
+              Tapping a template fills the curriculum below. You still type the learner&apos;s name.
             </div>
             {SCHOOL_TEMPLATES.map((t) => (
               <button key={t.id} onClick={() => applyTemplate(t)}
