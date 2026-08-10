@@ -90,9 +90,12 @@ export default function HomePage() {
         <ThemeApplier theme={themeId} />
         <OnboardingView
           defaultName={learner.name || ""}
-          onComplete={async ({ name, avatarId, interests }) => {
+          onComplete={async ({ name, avatarId, interests, board, grade }) => {
+            // Curriculum first, then flip `onboarded`. By the time this render
+            // path falls through to the picker gate / home, the learner's board
+            // and grade are the ones they actually chose.
+            updateLearnerMeta(learner.id, { name, interests, board, grade });
             set((prev) => ({ ...prev, name, avatarId, onboarded: true }));
-            updateLearnerMeta(learner.id, { name, interests });
           }}
         />
         <VoiceBubble />

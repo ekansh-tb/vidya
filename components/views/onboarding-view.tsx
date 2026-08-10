@@ -5,9 +5,12 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AVATARS } from "@/lib/content/avatars";
+import { BOARDS, gradesForBoard } from "@/lib/content/boards";
+import { cambridgeStageForGrade } from "@/lib/content/subjects";
 import { initAudio, startMusic, sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
+import type { Board } from "@/lib/types";
 
 /**
  * Cinematic onboarding.
@@ -23,7 +26,11 @@ import { CosmicBg } from "@/components/effects/cosmic-bg";
  * (renders Act IV only). Tone is not aimed only at small kids — the language
  * is reflective so the same intro works for parents on first run.
  *
- * After the story, the existing name + avatar form runs unchanged.
+ * After the story comes the form: name → class → buddy → interests.
+ *
+ * The class step is not skippable and has no preselected answer. Vidya used to
+ * assume Cambridge Primary Grade 5 for every first-run learner, which handed a
+ * Grade 6 kid the wrong content and the wrong tutor voice without ever asking.
  */
 type Phase = "story" | "form";
 
@@ -47,7 +54,10 @@ export function OnboardingView({
   defaultName, onComplete,
 }: {
   defaultName: string;
-  onComplete: (data: { name: string; avatarId: string; interests: string[] }) => Promise<void> | void;
+  onComplete: (data: {
+    name: string; avatarId: string; interests: string[];
+    board: Board; grade: number;
+  }) => Promise<void> | void;
 }) {
   const reduced = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(reduced ? "form" : "story");
@@ -55,11 +65,23 @@ export function OnboardingView({
 
   const [name, setName] = useState(defaultName);
   const [step, setStep] = useState(0);
+  // Both start null on purpose: nothing is assumed, the learner chooses.
+  const [board, setBoard] = useState<Board | null>(null);
+  const [grade, setGrade] = useState<number | null>(null);
   const [avatarId, setAvatarId] = useState("peacock");
   const [interests, setInterests] = useState<string[]>([]);
   const toggleInterest = (id: string) => {
     sfx.click();
     setInterests((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  // Changing board drops the grade — a grade only means something inside a
+  // board's own range, so we never carry one across.
+  const chooseBoard = (id: Board) => {
+    sfx.click();
+    if (id === board) return;
+    setBoard(id);
+    setGrade(null);
   };
 
   // Auto-advance story acts. After the last one, drop into the form.
@@ -72,10 +94,22 @@ export function OnboardingView({
     return () => clearTimeout(t);
   }, [phase, act]);
 
+  const classChosen = board !== null && grade !== null;
+  // Cambridge Lower Secondary Grade 6 is Stage 7 — worth saying out loud so a
+  // parent can check the choice against the school's own wording.
+  const cambridgeStage = board && grade != null ? cambridgeStageForGrade(board, grade) : undefined;
+  const stageHint =
+    cambridgeStage != null && cambridgeStage !== grade
+      ? `Grade ${grade} here is Cambridge Stage ${cambridgeStage}.`
+      : null;
+
   const handleStart = async () => {
+    // Belt and braces: the button is disabled until both are chosen, so a
+    // learner can never reach the app on an assumed board or grade.
+    if (!board || grade == null) return;
     await initAudio();
     sfx.coin();
-    await onComplete({ name: name.trim(), avatarId, interests });
+    await onComplete({ name: name.trim(), avatarId, interests, board, grade });
     setTimeout(() => {
       startMusic();
       vidya.greet(name.trim().split(" ")[0]);
@@ -167,6 +201,102 @@ export function OnboardingView({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
+              <h2 className="font-display text-4xl font-bold text-center mb-2 text-white">
+                Which class are you in?
+              </h2>
+              <p className="text-center text-white/60 mb-2 italic">
+                Pick your board — then the grade you&apos;re in right now.
+              </p>
+              <p className="text-center text-white/35 text-[11px] mb-8">
+                This decides your subjects and how Miss Vidya talks to you, so it has to be yours — not a guess.
+              </p>
+
+              <div role="group" aria-label="Board" className="mb-7">
+                <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2 px-1">Board</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {BOARDS.map((b) => {
+                    const active = board === b.id;
+                    return (
+                      <motion.button
+                        key={b.id}
+                        type="button"
+                        onClick={() => chooseBoard(b.id)}
+                        aria-pressed={active}
+                        whileTap={reduced ? undefined : { scale: 0.97 }}
+                        className={`min-h-[56px] rounded-2xl p-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 ${
+                          active
+                            ? "glass-strong ring-2 ring-fuchsia-400 shadow-2xl shadow-fuchsia-500/30"
+                            : "glass hover:bg-white/10"
+                        }`}
+                      >
+                        <div className={`font-display font-bold text-sm ${active ? "text-white" : "text-white/80"}`}>{b.label}</div>
+                        <div className="text-[11px] text-white/45">{b.description}</div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div role="group" aria-label="Grade" className="mb-9">
+                <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2 px-1">Grade</div>
+                {board ? (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {gradesForBoard(board).map((g) => {
+                        const active = grade === g;
+                        return (
+                          <motion.button
+                            key={g}
+                            type="button"
+                            onClick={() => { sfx.click(); setGrade(g); }}
+                            aria-pressed={active}
+                            aria-label={`Grade ${g}`}
+                            whileTap={reduced ? undefined : { scale: 0.92 }}
+                            className={`w-12 h-12 rounded-2xl font-display font-bold text-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 ${
+                              active
+                                ? "glass-strong ring-2 ring-fuchsia-400 text-white shadow-2xl shadow-fuchsia-500/30"
+                                : "glass hover:bg-white/10 text-white/70"
+                            }`}
+                          >
+                            {g}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                    {stageHint && (
+                      <p className="text-white/40 text-[11px] mt-3 px-1">{stageHint}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-white/35 text-[11px] px-1">
+                    Pick a board first — then we&apos;ll show the grades it covers.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 justify-center">
+                <Button variant="ghost" onClick={() => setStep(0)}>
+                  <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
+                </Button>
+                <Button size="lg" onClick={() => setStep(2)} disabled={!classChosen}>
+                  Next <ChevronRight className="inline w-5 h-5 -mt-0.5" />
+                </Button>
+              </div>
+              {!classChosen && (
+                <p className="text-center text-white/40 text-xs mt-5">
+                  Choose a board and a grade to keep going.
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
               <h2 className="font-display text-5xl font-bold text-center mb-2 text-white">
                 Hey <span className="text-gradient-sunset">{name.split(" ")[0]}</span>
               </h2>
@@ -189,19 +319,19 @@ export function OnboardingView({
                 ))}
               </div>
               <div className="flex gap-3 justify-center">
-                <Button variant="ghost" onClick={() => setStep(0)}>
+                <Button variant="ghost" onClick={() => setStep(1)}>
                   <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
                 </Button>
-                <Button size="lg" onClick={() => setStep(2)}>
+                <Button size="lg" onClick={() => setStep(3)}>
                   Next <ChevronRight className="inline w-5 h-5 -mt-0.5" />
                 </Button>
               </div>
             </motion.div>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <motion.div
-              key="step2"
+              key="step3"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -238,10 +368,10 @@ export function OnboardingView({
                 })}
               </div>
               <div className="flex gap-3 justify-center">
-                <Button variant="ghost" onClick={() => setStep(1)}>
+                <Button variant="ghost" onClick={() => setStep(2)}>
                   <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
                 </Button>
-                <Button size="lg" onClick={handleStart}>
+                <Button size="lg" onClick={handleStart} disabled={!classChosen}>
                   <Sparkles className="inline w-5 h-5 -mt-0.5 mr-1" /> Walk into Vidya
                 </Button>
               </div>

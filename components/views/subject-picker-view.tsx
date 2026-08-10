@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check, ChevronRight, GraduationCap, Lock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP, pickerGroupsForBoard } from "@/lib/content/subjects";
+import { boardOption } from "@/lib/content/boards";
 import type { SubjectId, LearnerProfile } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 
@@ -36,10 +37,9 @@ export function SubjectPickerView({
 
   const totalChosen = picked.size;
   const optionalCount = totalChosen - compulsory.size;
-  const boardLabel =
-    learner.board === "cambridge-igcse" ? "Cambridge IGCSE"
-    : learner.board === "icse" ? "ICSE (CISCE)"
-    : "Cambridge Primary";
+  // Read the label off the shared board list — the old hardcoded ladder fell
+  // through to "Cambridge Primary" for Lower Secondary and CBSE learners.
+  const boardLabel = boardOption(learner.board).label;
 
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto">

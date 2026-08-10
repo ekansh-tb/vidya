@@ -553,6 +553,18 @@
       "skillPath": "skills/07-by-ui-element/navigation-menus/SKILL.md",
       "computedHash": "ea979bdd07ffe92fce609d72a606f57f5f2250ccc644c720a85c07e4e2efa29e"
     },
+    "neon": {
+      "source": "neondatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/neon/SKILL.md",
+      "computedHash": "6338251b632f9d362c845d0c2a6eb03cf8e5cede98904dee4e3633718d77284f"
+    },
+    "neon-postgres": {
+      "source": "neondatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/neon-postgres/SKILL.md",
+      "computedHash": "58b7ffd550cc8a17c86250999cbdd0020bcb839d2389d423227272743c8d2fb8"
+    },
     "notifications-toasts": {
       "source": "dylantarre/animation-principles",
       "sourceType": "github",

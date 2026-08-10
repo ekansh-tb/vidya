@@ -7,7 +7,20 @@ import { CosmicBg } from "@/components/effects/cosmic-bg";
  * Kids do not self-sign-up; their profile is created from inside the
  * parent dashboard with a claim code. See docs/AUTH_ARCHITECTURE.md.
  */
-export default function SignUpPage() {
+/** Only same-site paths are honoured, so `?next=` cannot become an open redirect. */
+function safeNext(next?: string): string | undefined {
+  if (!next) return undefined;
+  if (!next.startsWith("/") || next.startsWith("//")) return undefined;
+  return next;
+}
+
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+  const redirectTo = safeNext(next) ?? "/parent";
   return (
     <main className="min-h-screen flex items-center justify-center px-4 relative">
       <CosmicBg mode="parent" intensity={0.85} />
@@ -24,7 +37,7 @@ export default function SignUpPage() {
             of what each kid can see.
           </p>
         </div>
-        <SignUp signInUrl="/sign-in" />
+        <SignUp signInUrl="/sign-in" fallbackRedirectUrl={redirectTo} />
       </div>
     </main>
   );

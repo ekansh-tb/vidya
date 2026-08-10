@@ -385,12 +385,25 @@ function buildMarkdownReport(
     .map((s) => `- **${s.name}** — ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
     .join("\n") || "_No subject attempts yet._";
 
+  // PRIVACY: reflections the kid marked "Just for me" must never appear here.
+  // The kid is shown a lock and told their parent cannot read it; the on-screen
+  // parent view honours that, but this report — the one feature built for
+  // sharing onward with a teacher or doctor — used to quote every private body
+  // verbatim. Filter first, then say how many were withheld so the parent is
+  // not misled about completeness.
   const reflections = state.dailyReflections || [];
-  const latestReflections = [...reflections]
-    .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
-    .slice(0, 5)
-    .map((r) => `- _${r.date}_ — "${r.body}"`)
-    .join("\n") || "_No reflections yet._";
+  const shareable = reflections.filter((r) => !r.private);
+  const privateCount = reflections.length - shareable.length;
+  const latestReflections =
+    (shareable
+      .slice()
+      .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
+      .slice(0, 5)
+      .map((r) => `- _${r.date}_ — "${r.body}"`)
+      .join("\n") || "_No reflections yet._") +
+    (privateCount > 0
+      ? `\n\n_${privateCount} reflection${privateCount === 1 ? "" : "s"} kept private by ${learner.name || "your learner"} and excluded from this report._`
+      : "");
 
   const examLines = (learner.upcomingExams || [])
     .slice()

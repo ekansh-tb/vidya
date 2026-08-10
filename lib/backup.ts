@@ -57,13 +57,35 @@ const backupSchema = z.object({
   profiles: profilesSchema,
 });
 
+/**
+ * Strips credentials before anything leaves the device.
+ *
+ * A backup is meant to be emailed to yourself, dropped in cloud storage, or
+ * handed to another device — so it must not be a credential dump. `parentPin`
+ * is the one secret stored on a LearnerProfile, and exporting it verbatim
+ * meant any sibling who could open the export (see the PIN room) walked away
+ * with every other learner's parent PIN in plaintext.
+ *
+ * Restore therefore never carries a PIN either; the parent re-sets it on the
+ * new device, which is the correct behaviour anyway.
+ */
+function withoutCredentials(profiles: ProfilesV2): ProfilesV2 {
+  const learners: ProfilesV2["learners"] = {};
+  for (const [id, learner] of Object.entries(profiles.learners)) {
+    const { parentPin: _omit, ...safe } = learner;
+    learners[id] = safe as LearnerProfile;
+  }
+  return { ...profiles, learners };
+}
+
 export function buildBackup(profiles: ProfilesV2): BackupFile {
+  const safe = withoutCredentials(profiles);
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    learnerCount: Object.keys(profiles.learners).length,
-    profiles,
+    learnerCount: Object.keys(safe.learners).length,
+    profiles: safe,
   };
 }
 
