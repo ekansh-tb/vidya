@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, RefreshCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -101,7 +101,16 @@ export function MatchView({
     setFlipped((prev) => [...prev, id]);
   };
 
+  // The "All matched!" panel and its button mount the instant isComplete flips
+  // true — 600ms BEFORE the auto-finish timer fires. Tapping the button in that
+  // window ran finishMatch twice, double-counting xp, coins and every stat.
+  // The button sits exactly where the kid's thumb already is, so this was easy
+  // to hit by accident.
+  const finishedRef = useRef(false);
+
   const finishMatch = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     const secs = Math.round((Date.now() - startTime) / 1000);
     const total = totalPairs;
     const correct = total;

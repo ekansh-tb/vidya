@@ -21,6 +21,53 @@ type Briefing = {
   source: "ai" | "local";
 };
 
+/** Structural check before we trust a response. `plan` matters most — the
+ *  render maps over it, so a missing array is a crash rather than a blank. */
+function isBriefing(v: unknown): v is Briefing {
+  if (!v || typeof v !== "object") return false;
+  const b = v as Partial<Briefing>;
+  return (
+    typeof b.greeting === "string" &&
+    typeof b.thought === "string" &&
+    typeof b.closing === "string" &&
+    Array.isArray(b.plan)
+  );
+}
+
+/**
+ * Client-side fallback assembly.
+ *
+ * The route has its own offline fallback, but it cannot help when the request
+ * never reaches it (offline, blocked, 403 from the origin check). The school
+ * should always open, so we mirror it here rather than showing a dead room.
+ */
+function localBriefing(name?: string): Briefing {
+  const learner = name?.split(" ")[0] || "scholar";
+  const thoughts = [
+    { line: "Dream is not what you see in sleep — it is the thing that does not let you sleep.", by: "A.P.J. Abdul Kalam" },
+    { line: "Live as if you were to die tomorrow. Learn as if you were to live forever.", by: "Mahatma Gandhi" },
+    { line: "You can't cross the sea merely by standing and staring at the water.", by: "Rabindranath Tagore" },
+    { line: "Go, get education. Be self-reliant, be industrious.", by: "Savitribai Phule" },
+  ];
+  // Stable per-day pick so the thought doesn't change on every re-render.
+  const today = todayKey();
+  const seed = [...today].reduce((s, c) => s + c.charCodeAt(0), 0);
+  const t = thoughts[seed % thoughts.length]!;
+  return {
+    greeting: `Good morning, ${learner}. The Vidya assembly begins.`,
+    thought: t.line,
+    attribution: t.by,
+    plan: [
+      "Pick one subject to warm up",
+      "Try today's quest",
+      "Read something in the Library",
+      "Take a wellness break",
+    ],
+    closing: "Let's make today a good one. Diya is waiting in the lobby.",
+    source: "local",
+  };
+}
+
 export function AssemblyView({
   state, setState, onBack, voiceEnabled, grade, board, school,
 }: {
@@ -46,18 +93,33 @@ export function AssemblyView({
   useEffect(() => {
     let cancel = false;
     setLoading(true);
-    fetch("/api/assembly", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: state.name, streak: state.streak, level, grade, board, school }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
+
+    // The route can legitimately answer non-200 — 403 when the same-origin
+    // check rejects (some webviews strip Origin AND Referer), 429 when rate
+    // limited. Previously the error JSON was assigned straight to `briefing`,
+    // so `briefing.plan.map(...)` threw and, with no error boundary in the
+    // tree, whitescreened the whole app. Validate before trusting it, and
+    // fall back to a local assembly so the school always opens.
+    (async () => {
+      try {
+        const res = await fetch("/api/assembly", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: state.name, streak: state.streak, level, grade, board, school }),
+        });
+        if (!res.ok) throw new Error(`assembly ${res.status}`);
+        const data: unknown = await res.json();
+        if (!isBriefing(data)) throw new Error("assembly payload malformed");
         if (cancel) return;
         setBriefing(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } catch {
+        if (cancel) return;
+        setBriefing(localBriefing(state.name));
+      } finally {
+        if (!cancel) setLoading(false);
+      }
+    })();
+
     return () => { cancel = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

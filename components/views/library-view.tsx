@@ -24,12 +24,25 @@ export function LibraryView({
       const list = p.readBooks || [];
       const already = list.includes(bookId);
       const next = already ? list.filter((x) => x !== bookId) : [...list, bookId];
-      // Reward XP only on first time read
+
+      // Pay out ONCE per book, ever — tracked separately from `readBooks` so
+      // un-marking and re-marking cannot farm rewards. Previously un-marking
+      // removed the book without deducting, and re-marking paid again, so
+      // tap-tap was +20 XP / +5 coins on repeat. That inflates level, badges
+      // and every parent-facing metric derived from XP.
+      // Profiles created before `rewardedBooks` existed are grandfathered from
+      // `readBooks`: anything already marked read has already been paid for, so
+      // it must not become farmable by the upgrade itself.
+      const rewarded = p.rewardedBooks ?? list;
+      const alreadyRewarded = rewarded.includes(bookId);
+      const earns = !already && !alreadyRewarded;
+
       return {
         ...p,
         readBooks: next,
-        xp: already ? p.xp : p.xp + 20,
-        coins: already ? p.coins : p.coins + 5,
+        rewardedBooks: earns ? [...rewarded, bookId] : rewarded,
+        xp: earns ? p.xp + 20 : p.xp,
+        coins: earns ? p.coins + 5 : p.coins,
       };
     });
   };
