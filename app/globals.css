@@ -56,6 +56,23 @@
     --radius-lg: 1.5rem;
     --radius-pill: 9999px;
 
+    /* ── Motion vocabulary ──────────────────────────────────────
+       Shared across components/effects/* so every piece of motion
+       in the app speaks with one accent. Durations follow the
+       education-learning timing table: feedback fast, celebration
+       generous, transitions in between.
+
+       These are theme-independent on purpose — a classroom door
+       should open the same way for a 10-year-old and a 15-year-old,
+       even though it is painted differently. */
+    --ease-enter: cubic-bezier(0.16, 0.84, 0.28, 1);  /* arrivals: quick in, long settle */
+    --ease-exit:  cubic-bezier(0.4, 0, 1, 1);         /* departures: get out of the way */
+    --ease-door:  cubic-bezier(0.65, 0, 0.35, 1);     /* heavy things: slow, swing, slow */
+    --ease-pop:   cubic-bezier(0.34, 1.56, 0.64, 1);  /* overshoot for small rewards */
+    --dur-tap: 120ms;        /* touch feedback — must feel instant */
+    --dur-transition: 340ms; /* room to room */
+    --dur-celebrate: 760ms;  /* the full anticipation → release → settle beat */
+
     /* Effects */
     --blur-card: 24px;
     --shadow-card: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4);
@@ -355,10 +372,31 @@
   50%, 100% { opacity: 0; }
 }
 
-/* Reduced-motion fallback */
+/* Reduced-motion fallback.
+   This is a child-safety requirement, not a polish item: a kid whose parent
+   has set "reduce motion" on the tablet has usually set it for a reason.
+
+   Collapsing durations alone is not enough — a surviving *delay* leaves an
+   element sitting in its from-state (invisible, off-screen) for the length of
+   the delay, so content can appear broken rather than merely still. Zeroing
+   delays too guarantees every element lands on its final, readable state
+   immediately.
+
+   Iteration count is capped so nothing loops forever in the corner of the
+   eye (WCAG 2.2.2), and perspective is dropped so no 3D-tilted surface can
+   be left rotated. JS-driven motion (Framer) is handled separately, at each
+   component, via useReducedMotion. */
 @media (prefers-reduced-motion: reduce) {
   .aurora-bg, .shimmer-bg { animation: none !important; }
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+    perspective: none !important;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }

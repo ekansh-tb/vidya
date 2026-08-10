@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Send, Sparkles, BookOpen } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -10,6 +10,7 @@ import { DiyaCompanion } from "@/components/effects/diya";
 import { SUBJECT_MAP, subjectsForLearner } from "@/lib/content/subjects";
 import type { GameState, LearnerProfile, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
+import { ThinkingVidya } from "@/components/effects/thinking-vidya";
 import { useCapability } from "@/lib/capabilities/use-capability";
 
 const SUGGESTED: Partial<Record<SubjectId, string[]>> = {
@@ -102,6 +103,7 @@ function TutorRoom({
   const [subjectId, setSubjectId] = useState<SubjectId>(defaultSubject);
   const [input, setInput] = useState("");
   const subject = SUBJECT_MAP[subjectId] || subjectList[0];
+  const reduced = useReducedMotion();
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,6 +136,20 @@ function TutorRoom({
     scrollerRef.current?.scrollTo({ top: 9_999_999, behavior: "smooth" });
   }, [messages, status]);
 
+  // Screen readers get one announcement per reply instead of a running
+  // commentary on every streamed token: the region holds the "thinking" cue
+  // while the answer is in flight and the finished reply once it settles.
+  const liveAnnouncement = useMemo(() => {
+    if (status === "submitted") return "Miss Vidya is thinking…";
+    if (status === "streaming") return "";
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return "";
+    return last.parts
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join("");
+  }, [messages, status]);
+
   const submit = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -156,7 +172,8 @@ function TutorRoom({
 
       <div className="px-5">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          // Reduced motion: cross-fade only, no vertical travel on a large panel.
+          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl p-5 mb-4 relative overflow-hidden"
           style={{
@@ -185,6 +202,9 @@ function TutorRoom({
                 <button
                   key={s.id}
                   onClick={() => { sfx.click(); setSubjectId(s.id); }}
+                  // Which classroom is selected is conveyed only by colour and
+                  // glow, so the selected state needs to be exposed too.
+                  aria-pressed={active}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
                     active ? "shadow-lg" : "opacity-60 hover:opacity-100"
                   } ${s.isDeva ? "font-deva" : ""}`}
@@ -210,7 +230,7 @@ function TutorRoom({
         <AnimatePresence>
           {messages.length === 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="glass-card p-4 mb-3"
@@ -244,9 +264,10 @@ function TutorRoom({
             return (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 8, scale: 0.99 }}
+                // Springs overshoot; under reduced motion the bubble just fades in.
+                initial={reduced ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.99 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                transition={reduced ? { duration: 0.2 } : { type: "spring", stiffness: 320, damping: 26 }}
                 className={`flex ${isUser ? "justify-end" : "justify-start"}`}
               >
                 <div
@@ -268,17 +289,22 @@ function TutorRoom({
           })}
           {status === "submitted" && (
             <div className="flex justify-start">
-              <div className="glass rounded-2xl px-4 py-3 text-white/60 text-sm">
-                <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.2, repeat: Infinity }}>
-                  Miss Vidya is thinking…
-                </motion.span>
-              </div>
+              {/* A named character thinking, rather than a generic spinner —
+                  it keeps Miss Vidya present during the wait. Honours
+                  reduced motion internally. */}
+              <ThinkingVidya />
             </div>
           )}
         </div>
 
+        {/* Replies arrive asynchronously and nothing else moves focus, so they
+            would otherwise land silently for a screen reader. */}
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {liveAnnouncement}
+        </div>
+
         {error && (
-          <div className="mt-3 rounded-2xl bg-rose-500/10 border border-rose-400/30 px-4 py-3 text-sm text-rose-200">
+          <div role="alert" className="mt-3 rounded-2xl bg-rose-500/10 border border-rose-400/30 px-4 py-3 text-sm text-rose-200">
             Something went wrong. {error.message ? `(${error.message})` : "Try again in a moment."}
           </div>
         )}
@@ -286,7 +312,9 @@ function TutorRoom({
 
       {/* Composer */}
       <div className="fixed bottom-0 inset-x-0 z-40">
-        <div className="max-w-2xl mx-auto px-5 pb-5 pt-2" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(10,4,32,0.9) 30%, rgba(10,4,32,1) 100%)" }}>
+        {/* The composer is fixed to the bottom edge, so on iOS it sits under the
+            home indicator without an inset. */}
+        <div className="max-w-2xl mx-auto px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))]" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(10,4,32,0.9) 30%, rgba(10,4,32,1) 100%)" }}>
           <form
             onSubmit={(e) => { e.preventDefault(); submit(input); }}
             className="flex items-end gap-2 rounded-3xl glass-strong p-2 pr-1"
@@ -302,6 +330,8 @@ function TutorRoom({
               }}
               rows={1}
               placeholder={`Ask Miss Vidya about ${subject.name}…`}
+              // A placeholder disappears as soon as typing starts and is not a label.
+              aria-label={`Ask Miss Vidya about ${subject.name}`}
               className={`flex-1 bg-transparent outline-none px-3 py-2 text-white placeholder-white/30 resize-none max-h-32 ${subject.isDeva ? "font-deva" : ""}`}
             />
             <button

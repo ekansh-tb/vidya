@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, Users, Trophy, Megaphone, Heart, Send, Sparkles, Flame } from "lucide-react";
 import type { GameState, LearnerProfile, ClassMember, ClassNote, FriendStreak } from "@/lib/types";
 import {
@@ -12,7 +13,7 @@ import {
   randomEncouragement,
 } from "@/lib/content/classmates";
 import { Button } from "@/components/ui/button";
-import { todayKey } from "@/lib/utils";
+import { todayKey, dayKeyOf } from "@/lib/utils";
 import { sfx } from "@/lib/audio";
 
 type Tab = "class" | "streak";
@@ -44,32 +45,34 @@ export function ClassroomView({
   const sectionLetter = sectionForLearner(learner);
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button
-          onClick={() => {
-            sfx.click();
-            onBack();
-          }}
-          className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95"
-        >
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button
+            onClick={() => {
+              sfx.click();
+              onBack();
+            }}
+            className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95"
+          >
+            <ChevronLeft className="w-5 h-5" /> Home
+          </button>
 
-        <ClassHeader learner={learner} section={sectionLetter} />
+          <ClassHeader learner={learner} section={sectionLetter} />
 
-        <div className="grid grid-cols-2 gap-2 my-4 p-1 rounded-2xl bg-white/[0.04] border border-white/5">
-          <TabPill active={tab === "class"} onClick={() => setTab("class")} icon={<Users className="w-4 h-4" />} label="Class" />
-          <TabPill active={tab === "streak"} onClick={() => setTab("streak")} icon={<Flame className="w-4 h-4" />} label="Friend Streak" />
+          <div className="grid grid-cols-2 gap-2 my-4 p-1 rounded-2xl bg-white/[0.04] border border-white/5">
+            <TabPill active={tab === "class"} onClick={() => setTab("class")} icon={<Users className="w-4 h-4" />} label="Class" />
+            <TabPill active={tab === "streak"} onClick={() => setTab("streak")} icon={<Flame className="w-4 h-4" />} label="Friend Streak" />
+          </div>
+
+          {tab === "class" ? (
+            <ClassTab state={state} setState={setState} learner={learner} />
+          ) : (
+            <StreakTab state={state} setState={setState} />
+          )}
         </div>
-
-        {tab === "class" ? (
-          <ClassTab state={state} setState={setState} learner={learner} />
-        ) : (
-          <StreakTab state={state} setState={setState} />
-        )}
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }
 
@@ -304,6 +307,7 @@ function Noticeboard({
   learner: LearnerProfile;
 }) {
   const [draft, setDraft] = useState("");
+  const reduced = useReducedMotion();
 
   const post = (text: string, authorId: string, authorName: string, emoji?: string) => {
     const note: ClassNote = {
@@ -357,6 +361,7 @@ function Noticeboard({
             if (e.key === "Enter") sendMine();
           }}
           placeholder="Share something with the class…"
+          aria-label="Share something with the class"
           maxLength={140}
           className="flex-1 rounded-xl bg-white/[0.06] border border-white/10 px-3 py-2 text-white text-sm outline-none focus:border-violet-400 placeholder-white/30"
         />
@@ -370,32 +375,36 @@ function Noticeboard({
         </button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {notes.length === 0 && (
-          <div className="text-center text-sm text-white/40 py-4">No notes yet — say hi to your class!</div>
-        )}
-        {notes.map((n) => (
-          <motion.div
-            key={n.id}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            className={`p-3 rounded-xl mb-2 ${
-              n.kind === "announcement"
-                ? "bg-emerald-500/10 border border-emerald-300/20"
-                : n.authorId === "me"
-                ? "bg-violet-500/10 border border-violet-300/20"
-                : "bg-white/[0.04]"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-bold text-white/80">{n.authorName}</div>
-              <div className="text-[10px] text-white/40">{prettyTime(n.createdAt)}</div>
-            </div>
-            <div className="text-sm text-white/85 leading-snug">{n.text}</div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {/* Classmate notes appear without the learner having posted them (the
+          "Tap me" button), so new entries need announcing. */}
+      <div aria-live="polite">
+        <AnimatePresence initial={false}>
+          {notes.length === 0 && (
+            <div className="text-center text-sm text-white/40 py-4">No notes yet — say hi to your class!</div>
+          )}
+          {notes.map((n) => (
+            <motion.div
+              key={n.id}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className={`p-3 rounded-xl mb-2 ${
+                n.kind === "announcement"
+                  ? "bg-emerald-500/10 border border-emerald-300/20"
+                  : n.authorId === "me"
+                  ? "bg-violet-500/10 border border-violet-300/20"
+                  : "bg-white/[0.04]"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs font-bold text-white/80">{n.authorName}</div>
+                <div className="text-[10px] text-white/40">{prettyTime(n.createdAt)}</div>
+              </div>
+              <div className="text-sm text-white/85 leading-snug">{n.text}</div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -403,7 +412,9 @@ function Noticeboard({
 function prettyTime(iso: string): string {
   const d = new Date(iso);
   const today = todayKey();
-  const dayKey = d.toISOString().slice(0, 10);
+  // Must be the LOCAL date: todayKey() is local, and a UTC slice here would
+  // make notes posted this evening read as an old date the next morning.
+  const dayKey = dayKeyOf(d);
   if (dayKey === today) {
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
@@ -456,8 +467,11 @@ function StreakSetup({ setState }: { setState: (updater: (s: GameState) => GameS
       </div>
       <div className="glass-card p-4 space-y-3">
         <div>
-          <label className="text-[11px] uppercase tracking-widest font-bold text-white/50 block mb-1.5">Friend&apos;s name</label>
+          {/* The label had no htmlFor, so it was decorative text rather than
+              an accessible name for the input. */}
+          <label htmlFor="friend-name" className="text-[11px] uppercase tracking-widest font-bold text-white/50 block mb-1.5">Friend&apos;s name</label>
           <input
+            id="friend-name"
             value={friendName}
             onChange={(e) => setFriendName(e.target.value)}
             placeholder="e.g. Ananya"
@@ -466,9 +480,10 @@ function StreakSetup({ setState }: { setState: (updater: (s: GameState) => GameS
           />
         </div>
         <div>
-          <label className="text-[11px] uppercase tracking-widest font-bold text-white/50 block mb-1.5">Shared code</label>
+          <label htmlFor="shared-code" className="text-[11px] uppercase tracking-widest font-bold text-white/50 block mb-1.5">Shared code</label>
           <div className="flex gap-2">
             <input
+              id="shared-code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
               className="flex-1 rounded-xl bg-white/[0.06] border border-white/10 px-3 py-2.5 text-white font-mono tracking-[0.3em] text-sm outline-none focus:border-rose-400"
@@ -510,12 +525,14 @@ function StreakDashboard({
     if (fs.days.length === 0) return 0;
     const dates = new Set(fs.days.map((d) => d.date));
     let count = 0;
-    const cursor = new Date(today);
+    // Walk back in UTC. The keys are plain calendar dates, so stepping them
+    // with local getters would drop or repeat a day across a DST boundary.
+    const cursor = new Date(`${today}T00:00:00Z`);
     while (true) {
       const key = cursor.toISOString().slice(0, 10);
       if (dates.has(key)) {
         count += 1;
-        cursor.setDate(cursor.getDate() - 1);
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
       } else break;
     }
     return count;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, Mic, Sparkles, Check, Calendar, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DiyaCompanion } from "@/components/effects/diya";
@@ -172,156 +173,158 @@ export function AssemblyView({
   };
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+            <ChevronLeft className="w-5 h-5" /> Home
+          </button>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl p-6 mb-5 text-center relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(244, 114, 182, 0.18) 0%, rgba(167, 139, 250, 0.18) 50%, rgba(34, 211, 238, 0.18) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
           <motion.div
-            className="absolute inset-0 aurora-bg opacity-15"
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 14, repeat: Infinity }}
-          />
-          <div className="relative">
-            <Mic className="w-7 h-7 mx-auto text-fuchsia-300 mb-2" />
-            <div className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">Morning Assembly</div>
-            <div className="font-display text-3xl font-bold text-white mt-1">
-              {new Date().toLocaleDateString("en-IN", { weekday: "long" })}
-            </div>
-            <div className="text-sm text-white/60 mt-0.5">
-              {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
-            </div>
-            <div className="mt-4 inline-flex items-center gap-3 glass rounded-2xl px-4 py-2">
-              <div className="flex items-center gap-1.5 text-amber-300 text-sm font-semibold">
-                <Calendar className="w-4 h-4" /> {state.assemblyStreak || 0} day streak
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl p-6 mb-5 text-center relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, rgba(244, 114, 182, 0.18) 0%, rgba(167, 139, 250, 0.18) 50%, rgba(34, 211, 238, 0.18) 100%)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <motion.div
+              className="absolute inset-0 aurora-bg opacity-15"
+              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+              transition={{ duration: 14, repeat: Infinity }}
+            />
+            <div className="relative">
+              <Mic className="w-7 h-7 mx-auto text-fuchsia-300 mb-2" />
+              <div className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">Morning Assembly</div>
+              <div className="font-display text-3xl font-bold text-white mt-1">
+                {new Date().toLocaleDateString("en-IN", { weekday: "long" })}
+              </div>
+              <div className="text-sm text-white/60 mt-0.5">
+                {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+              </div>
+              <div className="mt-4 inline-flex items-center gap-3 glass rounded-2xl px-4 py-2">
+                <div className="flex items-center gap-1.5 text-amber-300 text-sm font-semibold">
+                  <Calendar className="w-4 h-4" /> {state.assemblyStreak || 0} day streak
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {loading && (
-          <div className="glass-card p-10 text-center">
-            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-white/70">
-              Gathering everyone…
-            </motion.div>
-          </div>
-        )}
-
-        {briefing && !loading && (
-          <>
-            {stage === "intro" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-5 mb-4 flex items-center gap-4"
-              >
-                <Mascot avatarId="owl" size="md" />
-                <div className="flex-1">
-                  <div className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300 mb-1">
-                    Principal Vidya
-                  </div>
-                  <div className="text-lg font-display font-bold text-white leading-snug">
-                    {briefing.greeting}
-                  </div>
-                </div>
+          {loading && (
+            <div className="glass-card p-10 text-center">
+              <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-white/70">
+                Gathering everyone…
               </motion.div>
-            )}
-
-            {stage === "thought" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-6 mb-4 relative"
-              >
-                <Quote className="absolute top-4 left-4 w-8 h-8 text-fuchsia-400/30" />
-                <div className="text-[10px] uppercase tracking-widest font-bold text-amber-300 mb-3 text-center">
-                  Thought for the day
-                </div>
-                <div className="font-display text-xl text-white leading-relaxed text-center px-4 italic">
-                  &ldquo;{briefing.thought}&rdquo;
-                </div>
-                <div className="text-sm text-white/60 text-center mt-3">
-                  — {briefing.attribution}
-                </div>
-              </motion.div>
-            )}
-
-            {stage === "plan" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-5 mb-4"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-cyan-300" />
-                  <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">
-                    Today at Vidya
-                  </div>
-                </div>
-                <ul className="space-y-2.5">
-                  {briefing.plan.map((p, i) => (
-                    <motion.li
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.08 }}
-                      className="flex items-start gap-3 text-sm text-white/85"
-                    >
-                      <div className="w-6 h-6 flex-shrink-0 rounded-full bg-cyan-500/15 flex items-center justify-center text-[10px] font-bold text-cyan-300">
-                        {i + 1}
-                      </div>
-                      <span>{p}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
-
-            {stage === "closing" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-5 mb-4 flex items-center gap-4"
-              >
-                <DiyaCompanion state={state} size="md" showNudge={false} />
-                <div className="flex-1">
-                  <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-300 mb-1">
-                    Off you go
-                  </div>
-                  <div className="text-base text-white font-semibold leading-snug">{briefing.closing}</div>
-                </div>
-              </motion.div>
-            )}
-
-            <Button size="lg" className="w-full" onClick={next}>
-              {stage === "intro"
-                ? "Continue"
-                : stage === "thought"
-                ? "Today's plan"
-                : stage === "plan"
-                ? "Almost done"
-                : attended
-                ? "Back to lobby"
-                : "Mark attended · +15 XP"}
-              {!attended && stage === "closing" && <Check className="w-5 h-5 ml-2 inline" />}
-            </Button>
-
-            <div className="text-center mt-3 text-[10px] text-white/30">
-              {briefing.source === "ai" ? "Generated by Principal Vidya AI" : "Today's classic thought"}
             </div>
-          </>
-        )}
+          )}
+
+          {briefing && !loading && (
+            <>
+              {stage === "intro" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-5 mb-4 flex items-center gap-4"
+                >
+                  <Mascot avatarId="owl" size="md" />
+                  <div className="flex-1">
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300 mb-1">
+                      Principal Vidya
+                    </div>
+                    <div className="text-lg font-display font-bold text-white leading-snug">
+                      {briefing.greeting}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {stage === "thought" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-6 mb-4 relative"
+                >
+                  <Quote className="absolute top-4 left-4 w-8 h-8 text-fuchsia-400/30" />
+                  <div className="text-[10px] uppercase tracking-widest font-bold text-amber-300 mb-3 text-center">
+                    Thought for the day
+                  </div>
+                  <div className="font-display text-xl text-white leading-relaxed text-center px-4 italic">
+                    &ldquo;{briefing.thought}&rdquo;
+                  </div>
+                  <div className="text-sm text-white/60 text-center mt-3">
+                    — {briefing.attribution}
+                  </div>
+                </motion.div>
+              )}
+
+              {stage === "plan" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-5 mb-4"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-cyan-300" />
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">
+                      Today at Vidya
+                    </div>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {briefing.plan.map((p, i) => (
+                      <motion.li
+                        key={i}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        className="flex items-start gap-3 text-sm text-white/85"
+                      >
+                        <div className="w-6 h-6 flex-shrink-0 rounded-full bg-cyan-500/15 flex items-center justify-center text-[10px] font-bold text-cyan-300">
+                          {i + 1}
+                        </div>
+                        <span>{p}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+
+              {stage === "closing" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-5 mb-4 flex items-center gap-4"
+                >
+                  <DiyaCompanion state={state} size="md" showNudge={false} />
+                  <div className="flex-1">
+                    <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-300 mb-1">
+                      Off you go
+                    </div>
+                    <div className="text-base text-white font-semibold leading-snug">{briefing.closing}</div>
+                  </div>
+                </motion.div>
+              )}
+
+              <Button size="lg" className="w-full" onClick={next}>
+                {stage === "intro"
+                  ? "Continue"
+                  : stage === "thought"
+                  ? "Today's plan"
+                  : stage === "plan"
+                  ? "Almost done"
+                  : attended
+                  ? "Back to lobby"
+                  : "Mark attended · +15 XP"}
+                {!attended && stage === "closing" && <Check className="w-5 h-5 ml-2 inline" />}
+              </Button>
+
+              <div className="text-center mt-3 text-[10px] text-white/30">
+                {briefing.source === "ai" ? "Generated by Principal Vidya AI" : "Today's classic thought"}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }

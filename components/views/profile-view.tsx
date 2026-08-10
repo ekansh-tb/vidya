@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, ChevronRight, KeyRound, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart, Check } from "lucide-react";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
@@ -200,230 +201,243 @@ export function ProfileView({
   const locked = BADGES.filter((b) => !state.badges.includes(b.id));
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
-        </button>
-
-        {/* Account linking. The link screen had no entry point at all, so the
-            claim-code flow — the thing that replaced the self-awarded PIN —
-            was unreachable from the kid app. Only shown when unlinked. */}
-        {onNavigate && (learner.verifiedLevel ?? 0) < 2 && (
-          <button
-            onClick={() => { sfx.click(); onNavigate("link-account"); }}
-            className="w-full glass-card p-4 mb-5 flex items-center gap-3 text-left active:scale-[0.99] transition"
-          >
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-                 style={{ background: "var(--accent-soft)" }}>
-              <KeyRound className="w-5 h-5" style={{ color: "var(--accent)" }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-bold text-white text-sm">Got a code?</div>
-              <div className="text-xs text-white/55 mt-0.5">
-                Link this device to keep your progress safe.
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-6">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+            <ChevronLeft className="w-5 h-5" /> Home
           </button>
-        )}
 
-        <div className="glass-card p-6 text-center mb-5">
-          <button onClick={() => { sfx.click(); setPickerOpen((v) => !v); }} className="inline-block active:scale-95 transition">
-            <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="lg" />
-          </button>
-          <div className="font-display text-3xl font-bold mt-3 text-white">{learner.name || state.name}</div>
-          <div className="text-white/50 text-sm mt-0.5">
-            Grade {learner.grade} · {describeBoard(learner.board)}
-            {learner.school ? ` · ${learner.school}` : ""}
-          </div>
-          <div className="mt-5">
-            <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {pickerOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="glass-card p-4 mb-5 overflow-hidden"
+          {/* Account linking. The link screen had no entry point at all, so the
+              claim-code flow — the thing that replaced the self-awarded PIN —
+              was unreachable from the kid app. Only shown when unlinked. */}
+          {onNavigate && (learner.verifiedLevel ?? 0) < 2 && (
+            <button
+              onClick={() => { sfx.click(); onNavigate("link-account"); }}
+              className="w-full glass-card p-4 mb-5 flex items-center gap-3 text-left active:scale-[0.99] transition"
             >
-              <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">Change buddy</div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                {AVATARS.map((a) => (
-                  <motion.button
-                    key={a.id}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => { sfx.click(); setState((p) => ({ ...p, avatarId: a.id, customAvatar: null })); setPickerOpen(false); }}
-                    className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all ${
-                      !state.customAvatar && state.avatarId === a.id
-                        ? "glass-strong ring-2 ring-fuchsia-400"
-                        : "glass hover:bg-white/10"
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
+                   style={{ background: "var(--accent-soft)" }}>
+                <KeyRound className="w-5 h-5" style={{ color: "var(--accent)" }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-bold text-white text-sm">Got a code?</div>
+                <div className="text-xs text-white/55 mt-0.5">
+                  Link this device to keep your progress safe.
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+            </button>
+          )}
+
+          <div className="glass-card p-6 text-center mb-5">
+            {/* The mascot is purely graphical, so this button had no name at
+                all, and nothing told a screen reader it opens the picker. */}
+            <button
+              onClick={() => { sfx.click(); setPickerOpen((v) => !v); }}
+              aria-expanded={pickerOpen}
+              aria-label="Change buddy"
+              className="inline-block active:scale-95 transition"
+            >
+              <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="lg" />
+            </button>
+            {/* A learner's full name is essential, so it wraps rather than
+                truncating — break-words keeps a long unbroken one in the card. */}
+            <div className="font-display text-3xl font-bold mt-3 text-white break-words">{learner.name || state.name}</div>
+            <div className="text-white/50 text-sm mt-0.5">
+              Grade {learner.grade} · {describeBoard(learner.board)}
+              {learner.school ? ` · ${learner.school}` : ""}
+            </div>
+            <div className="mt-5">
+              <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {pickerOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="glass-card p-4 mb-5 overflow-hidden"
+              >
+                <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">Change buddy</div>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                  {AVATARS.map((a) => (
+                    <motion.button
+                      key={a.id}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => { sfx.click(); setState((p) => ({ ...p, avatarId: a.id, customAvatar: null })); setPickerOpen(false); }}
+                      aria-pressed={!state.customAvatar && state.avatarId === a.id}
+                      aria-label={`${a.name} the ${a.id}`}
+                      className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all ${
+                        !state.customAvatar && state.avatarId === a.id
+                          ? "glass-strong ring-2 ring-fuchsia-400"
+                          : "glass hover:bg-white/10"
+                      }`}
+                    >
+                      <span className="text-3xl">{a.emoji}</span>
+                    </motion.button>
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleUpload}
+                  />
+                  <button
+                    onClick={() => { sfx.click(); fileInputRef.current?.click(); }}
+                    className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold transition-all ${
+                      state.customAvatar
+                        ? "glass-strong ring-2 ring-cyan-300 text-white"
+                        : "glass text-white/80 hover:bg-white/10"
                     }`}
                   >
-                    <span className="text-3xl">{a.emoji}</span>
-                  </motion.button>
-                ))}
-              </div>
-              <div className="mt-3 flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                />
-                <button
-                  onClick={() => { sfx.click(); fileInputRef.current?.click(); }}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold transition-all ${
-                    state.customAvatar
-                      ? "glass-strong ring-2 ring-cyan-300 text-white"
-                      : "glass text-white/80 hover:bg-white/10"
-                  }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  {state.customAvatar ? "Replace your photo" : "Upload your own"}
-                </button>
-                {state.customAvatar && (
-                  <button
-                    onClick={() => { sfx.click(); setState((p) => ({ ...p, customAvatar: null })); }}
-                    className="rounded-2xl px-3 glass text-rose-300 hover:bg-rose-500/10"
-                    aria-label="Remove custom icon"
-                  >
-                    <Trash2 className="w-4 h-4" />
+                    <Upload className="w-4 h-4" />
+                    {state.customAvatar ? "Replace your photo" : "Upload your own"}
                   </button>
-                )}
-              </div>
-              {uploadError && (
-                <div className="mt-2 text-xs text-rose-300 text-center">{uploadError}</div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Interests — editable inline. Heart icon mirrors onboarding's
-            "what do you love?" prompt. */}
-        <div className="glass-card p-4 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Heart className="w-3.5 h-3.5 text-fuchsia-300" />
-              <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">
-                What you love
-              </span>
-            </div>
-            <button
-              onClick={() => { sfx.click(); setInterestsEditing((v) => !v); }}
-              className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white active:scale-95"
-            >
-              {interestsEditing ? "Done" : currentInterests.length > 0 ? "Edit" : "Pick some"}
-            </button>
-          </div>
-          {!interestsEditing ? (
-            currentInterests.length === 0 ? (
-              <div className="text-xs italic text-white/40">
-                Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she&apos;ll use them in her examples.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {currentInterests.map((id) => {
-                  const chip = INTEREST_CHIPS.find((c) => c.id === id);
-                  if (!chip) return null;
-                  return (
-                    <div
-                      key={id}
-                      className="rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5"
-                      style={{ background: "rgba(244,114,182,0.15)", color: "rgba(244,114,182,0.95)" }}
+                  {state.customAvatar && (
+                    <button
+                      onClick={() => { sfx.click(); setState((p) => ({ ...p, customAvatar: null })); }}
+                      className="rounded-2xl px-3 glass text-rose-300 hover:bg-rose-500/10"
+                      aria-label="Remove custom icon"
                     >
-                      <span className="text-sm leading-none">{chip.emoji}</span>
-                      <span>{chip.label}</span>
-                    </div>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {uploadError && (
+                  <div className="mt-2 text-xs text-rose-300 text-center">{uploadError}</div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Interests — editable inline. Heart icon mirrors onboarding's
+              "what do you love?" prompt. */}
+          <div className="glass-card p-4 mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-fuchsia-300" />
+                <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">
+                  What you love
+                </span>
+              </div>
+              <button
+                onClick={() => { sfx.click(); setInterestsEditing((v) => !v); }}
+                className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white active:scale-95"
+              >
+                {interestsEditing ? "Done" : currentInterests.length > 0 ? "Edit" : "Pick some"}
+              </button>
+            </div>
+            {!interestsEditing ? (
+              currentInterests.length === 0 ? (
+                <div className="text-xs italic text-white/40">
+                  Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she&apos;ll use them in her examples.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {currentInterests.map((id) => {
+                    const chip = INTEREST_CHIPS.find((c) => c.id === id);
+                    if (!chip) return null;
+                    return (
+                      <div
+                        key={id}
+                        className="rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5"
+                        style={{ background: "rgba(244,114,182,0.15)", color: "rgba(244,114,182,0.95)" }}
+                      >
+                        <span className="text-sm leading-none">{chip.emoji}</span>
+                        <span>{chip.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                {INTEREST_CHIPS.map((c) => {
+                  const active = currentInterests.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleInterest(c.id)}
+                      className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95"
+                      style={{
+                        background: active ? "rgba(244,114,182,0.18)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${active ? "rgba(244,114,182,0.5)" : "rgba(255,255,255,0.08)"}`,
+                      }}
+                    >
+                      <span className="text-2xl">{c.emoji}</span>
+                      <span className={`text-[9px] uppercase tracking-wider font-semibold ${active ? "text-white" : "text-white/55"}`}>
+                        {c.label}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
-            )
-          ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-              {INTEREST_CHIPS.map((c) => {
-                const active = currentInterests.includes(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => toggleInterest(c.id)}
-                    className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95"
-                    style={{
-                      background: active ? "rgba(244,114,182,0.18)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${active ? "rgba(244,114,182,0.5)" : "rgba(255,255,255,0.08)"}`,
-                    }}
-                  >
-                    <span className="text-2xl">{c.emoji}</span>
-                    <span className={`text-[9px] uppercase tracking-wider font-semibold ${active ? "text-white" : "text-white/55"}`}>
-                      {c.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {[
-            { Icon: Flame, value: state.streak, label: "Day Streak", color: "text-orange-300" },
-            { Icon: TrendingUp, value: `${accuracy}%`, label: "Accuracy", color: "text-emerald-300" },
-            { Icon: Brain, value: state.stats.totalAnswered, label: "Questions", color: "text-violet-300" },
-            { Icon: Trophy, value: earned.length, label: "Badges", color: "text-amber-300" },
-          ].map(({ Icon, value, label, color }, i) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.05 }}
-              className="glass-card p-4"
-            >
-              <Icon className={`w-5 h-5 ${color} mb-1.5`} />
-              <div className="font-display text-3xl font-bold text-white">{value}</div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{label}</div>
-            </motion.div>
-          ))}
-        </div>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            {[
+              { Icon: Flame, value: state.streak, label: "Day Streak", color: "text-orange-300" },
+              { Icon: TrendingUp, value: `${accuracy}%`, label: "Accuracy", color: "text-emerald-300" },
+              { Icon: Brain, value: state.stats.totalAnswered, label: "Questions", color: "text-violet-300" },
+              { Icon: Trophy, value: earned.length, label: "Badges", color: "text-amber-300" },
+            ].map(({ Icon, value, label, color }, i) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05 }}
+                className="glass-card p-4"
+              >
+                <Icon className={`w-5 h-5 ${color} mb-1.5`} />
+                <div className="font-display text-3xl font-bold text-white">{value}</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{label}</div>
+              </motion.div>
+            ))}
+          </div>
 
-        {/* How Miss Vidya talks to you — kid-chosen AI tone */}
-        <AiTonePicker
-          current={learner.aiTone}
-          onChange={(next) => updateLearnerMeta(learner.id, { aiTone: next })}
-        />
+          {/* How Miss Vidya talks to you — kid-chosen AI tone */}
+          <AiTonePicker
+            current={learner.aiTone}
+            onChange={(next) => updateLearnerMeta(learner.id, { aiTone: next })}
+          />
 
-        {/* Reflection rhythm — last 14 days at a glance */}
-        <ReflectionRhythm reflections={state.dailyReflections || []} />
+          {/* Reflection rhythm — last 14 days at a glance */}
+          <ReflectionRhythm reflections={state.dailyReflections || []} />
 
-        <h3 className="font-display text-xl font-bold text-white mb-3 flex items-center gap-2">
-          Badges
-          <span className="text-xs font-body font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">
-            {earned.length}/{BADGES.length}
-          </span>
-        </h3>
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-          {[...earned, ...locked].map((b) => {
-            const isEarned = state.badges.includes(b.id);
-            const tier = TIER_STYLES[b.tier];
-            return (
-              <div key={b.id} className={`glass-card p-3 text-center ${isEarned ? "" : "opacity-50"}`}>
-                <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-2 ${
-                  isEarned ? `bg-gradient-to-br ${tier.gradient} shadow-lg ${tier.glow}` : "bg-white/[0.04] grayscale"
-                }`}>
-                  {isEarned ? b.icon : <Lock className="w-5 h-5 text-white/30" />}
+          <h3 className="font-display text-xl font-bold text-white mb-3 flex items-center gap-2">
+            Badges
+            <span className="text-xs font-body font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">
+              {earned.length}/{BADGES.length}
+            </span>
+          </h3>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            {[...earned, ...locked].map((b) => {
+              const isEarned = state.badges.includes(b.id);
+              const tier = TIER_STYLES[b.tier];
+              return (
+                <div key={b.id} className={`glass-card p-3 text-center ${isEarned ? "" : "opacity-50"}`}>
+                  <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-2 ${
+                    isEarned ? `bg-gradient-to-br ${tier.gradient} shadow-lg ${tier.glow}` : "bg-white/[0.04] grayscale"
+                  }`}>
+                    {isEarned ? b.icon : <Lock className="w-5 h-5 text-white/30" />}
+                  </div>
+                  <div className={`text-xs font-bold leading-tight ${isEarned ? "text-white" : "text-white/40"} ${(b.id === "bhasha-premi" || b.id === "marathi-mitra") ? "font-deva" : ""}`}>
+                    {b.name}
+                  </div>
+                  <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{b.desc}</div>
                 </div>
-                <div className={`text-xs font-bold leading-tight ${isEarned ? "text-white" : "text-white/40"} ${(b.id === "bhasha-premi" || b.id === "marathi-mitra") ? "font-deva" : ""}`}>
-                  {b.name}
-                </div>
-                <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{b.desc}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }

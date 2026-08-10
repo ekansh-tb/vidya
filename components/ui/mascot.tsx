@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AVATAR_MAP } from "@/lib/content/avatars";
 
@@ -21,10 +21,14 @@ export function Mascot({
   glow?: boolean;
 }) {
   const avatar = AVATAR_MAP[avatarId] || AVATAR_MAP.peacock;
+  const reduced = useReducedMotion();
   return (
+    // The mascot bobs forever, and at xl it is a 192px block. An infinite
+    // animation is the clearest case for stopping outright rather than
+    // shortening — the mascot reads fine standing still.
     <motion.div
-      animate={{ y: [0, -6, 0] }}
-      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      animate={reduced ? { y: 0 } : { y: [0, -6, 0] }}
+      transition={reduced ? { duration: 0 } : { duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       className={cn(
         "relative inline-flex items-center justify-center rounded-full glass-strong overflow-hidden",
         glow && "shadow-2xl shadow-fuchsia-500/20",
@@ -38,15 +42,15 @@ export function Mascot({
         <motion.img
           src={customAvatar}
           alt=""
-          animate={mood === "celebrate" ? { rotate: [-6, 6, -6, 0] } : { rotate: 0 }}
-          transition={mood === "celebrate" ? { duration: 0.6 } : {}}
+          animate={mood === "celebrate" && !reduced ? { rotate: [-6, 6, -6, 0] } : { rotate: 0 }}
+          transition={mood === "celebrate" && !reduced ? { duration: 0.6 } : {}}
           className="w-full h-full object-cover rounded-full"
           draggable={false}
         />
       ) : (
         <motion.span
-          animate={mood === "celebrate" ? { rotate: [-6, 6, -6, 0] } : { rotate: 0 }}
-          transition={mood === "celebrate" ? { duration: 0.6 } : {}}
+          animate={mood === "celebrate" && !reduced ? { rotate: [-6, 6, -6, 0] } : { rotate: 0 }}
+          transition={mood === "celebrate" && !reduced ? { duration: 0.6 } : {}}
         >
           {avatar.emoji}
         </motion.span>

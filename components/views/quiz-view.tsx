@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { X, Check, Lightbulb, ScanLine, Zap, ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
@@ -113,6 +114,7 @@ export function QuizView({
   const [sixSevenShown, setSixSevenShown] = useState<Set<number>>(() => new Set());
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([]);
   const [bookOpen, setBookOpen] = useState(false);
+  const reduced = useReducedMotion();
 
   const currentQ = questions[qIdx];
   const currentSubject = currentQ ? SUBJECT_MAP[currentQ.subjectId] : null;
@@ -389,173 +391,193 @@ export function QuizView({
   const isCorrectAnswer = revealed && selected === currentQ.a;
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <AnimatePresence>
-        {sixSeven !== null && (
-          <SixSevenOverlay score={sixSeven} onDone={() => setSixSeven(null)} />
-        )}
-      </AnimatePresence>
-      {currentQ && (
-        <BookPanel
-          open={bookOpen}
-          subjectId={currentQ.subjectId}
-          topicId={currentQ.topicId}
-          onClose={() => setBookOpen(false)}
-        />
-      )}
-      <div className="px-5 pt-5">
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => { sfx.click(); onClose?.(); }} className="text-white/50 active:scale-95">
-            <X className="w-6 h-6" />
-          </button>
-          <div className="flex-1 mx-4">
-            <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${((qIdx + 1) / questions.length) * 100}%` }}
-                transition={{ duration: 0.4 }}
-                className="h-full rounded-full"
-                style={{ background: currentSubject?.accent || "#22D3EE", boxShadow: `0 0 8px ${currentSubject?.glow || "#22D3EE99"}` }}
-              />
-            </div>
-          </div>
-          <div className="text-xs font-mono text-white/50">
-            {qIdx + 1}/{questions.length}
-          </div>
-          {currentQ && (
-            <button
-              onClick={() => { sfx.click(); setBookOpen(true); }}
-              className="ml-3 w-9 h-9 rounded-full glass flex items-center justify-center text-white/70 active:scale-95"
-              style={currentSubject ? { color: currentSubject.accent, background: currentSubject.soft } : undefined}
-              aria-label="Open book"
-              title="Skim the book"
-            >
-              <BookOpen className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {isDaily && currentSubject && (
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: currentSubject.soft }}>
-              <currentSubject.icon className="w-4 h-4" style={{ color: currentSubject.accent }} />
-            </div>
-            <div className="text-sm font-semibold" style={{ color: currentSubject.accent }}>{currentSubject.name}</div>
-            <div className="text-xs text-white/40">·</div>
-            <div className={`text-xs text-white/60 ${currentSubject.isDeva ? "font-deva" : ""}`}>{currentQ.topicTitle}</div>
-          </div>
-        )}
-
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <AnimatePresence>
-          {combo >= 2 && (
-            <motion.div
-              initial={{ scale: 0, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0 }}
-              className="flex items-center justify-center gap-1.5 mb-3"
-            >
-              <Zap className="w-4 h-4 text-amber-300" fill="#FBBF24" />
-              <span className="text-sm font-bold text-gradient-sunset">{combo}× Combo</span>
-            </motion.div>
+          {sixSeven !== null && (
+            <SixSevenOverlay score={sixSeven} onDone={() => setSixSeven(null)} />
           )}
         </AnimatePresence>
-
-        <motion.div
-          key={qIdx}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="glass-card p-6 mb-4"
-        >
-          <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2">Question</div>
-          <h2 className={`font-display text-2xl font-bold text-white leading-snug ${isDeva ? "font-deva" : ""}`}>
-            {currentQ.q}
-          </h2>
-          {hintUsed && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mt-4 p-3 rounded-2xl bg-amber-400/10 border border-amber-400/30"
+        {currentQ && (
+          <BookPanel
+            open={bookOpen}
+            subjectId={currentQ.subjectId}
+            topicId={currentQ.topicId}
+            onClose={() => setBookOpen(false)}
+          />
+        )}
+        <div className="px-5 pt-5">
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-4">
+            {/* Icon-only, and the padding is what lifts a 24px glyph to a 44px
+                target for small fingers. */}
+            <button
+              onClick={() => { sfx.click(); onClose?.(); }}
+              className="text-white/50 active:scale-95 w-11 h-11 -ml-2.5 flex items-center justify-center"
+              aria-label="Close quiz"
             >
-              <div className="flex gap-2">
-                <Lightbulb className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
-                <div className={`text-sm text-amber-100 ${isDeva ? "font-deva" : ""}`}>
-                  Hint: {currentQ.ex.split(".")[0]}.
-                </div>
+              <X className="w-6 h-6" />
+            </button>
+            <div className="flex-1 mx-4">
+              <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((qIdx + 1) / questions.length) * 100}%` }}
+                  transition={{ duration: 0.4 }}
+                  className="h-full rounded-full"
+                  style={{ background: currentSubject?.accent || "#22D3EE", boxShadow: `0 0 8px ${currentSubject?.glow || "#22D3EE99"}` }}
+                />
               </div>
+            </div>
+            <div className="text-xs font-mono text-white/50">
+              {qIdx + 1}/{questions.length}
+            </div>
+            {currentQ && (
+              <button
+                onClick={() => { sfx.click(); setBookOpen(true); }}
+                className="ml-3 w-11 h-11 rounded-full glass flex items-center justify-center text-white/70 active:scale-95"
+                style={currentSubject ? { color: currentSubject.accent, background: currentSubject.soft } : undefined}
+                aria-label="Open book"
+                title="Skim the book"
+              >
+                <BookOpen className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {isDaily && currentSubject && (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: currentSubject.soft }}>
+                <currentSubject.icon className="w-4 h-4" style={{ color: currentSubject.accent }} />
+              </div>
+              {/* Hindi/Marathi/Sanskrit subject names are Devanagari; the topic
+                  title beside this already switches font, this did not. */}
+              <div className={`text-sm font-semibold ${currentSubject.isDeva ? "font-deva" : ""}`} style={{ color: currentSubject.accent }}>{currentSubject.name}</div>
+              <div className="text-xs text-white/40">·</div>
+              <div className={`text-xs text-white/60 ${currentSubject.isDeva ? "font-deva" : ""}`}>{currentQ.topicTitle}</div>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {combo >= 2 && (
+              <motion.div
+                initial={reduced ? { opacity: 0 } : { scale: 0, y: 10 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={reduced ? { opacity: 0 } : { scale: 0 }}
+                className="flex items-center justify-center gap-1.5 mb-3"
+              >
+                <Zap className="w-4 h-4 text-amber-300" fill="#FBBF24" />
+                <span className="text-sm font-bold text-gradient-sunset">{combo}× Combo</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.div
+            key={qIdx}
+            // The question card is most of the screen; zooming and sliding it on
+            // every question is the sort of large-area motion reduced motion is for.
+            initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="glass-card p-6 mb-4"
+          >
+            <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2">Question</div>
+            <h2 className={`font-display text-2xl font-bold text-white leading-snug ${isDeva ? "font-deva" : ""}`}>
+              {currentQ.q}
+            </h2>
+            {hintUsed && (
+              <motion.div
+                initial={reduced ? { opacity: 0 } : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mt-4 p-3 rounded-2xl bg-amber-400/10 border border-amber-400/30"
+              >
+                <div className="flex gap-2">
+                  <Lightbulb className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
+                  <div className={`text-sm text-amber-100 ${isDeva ? "font-deva" : ""}`}>
+                    Hint: {currentQ.ex.split(".")[0]}.
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+
+          <div className="space-y-2.5">
+            {shuffledOpts.map((opt, i) => {
+              const isElim = eliminated.includes(opt);
+              const isSelected = selected === opt;
+              const isAnswer = opt === currentQ.a;
+              let style = "glass border-white/10 text-white hover:bg-white/[0.09]";
+              if (revealed) {
+                if (isAnswer) style = "bg-emerald-500/15 border-emerald-400/60 text-white ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30";
+                else if (isSelected) style = "bg-rose-500/15 border-rose-400/60 text-white ring-2 ring-rose-400 shadow-lg shadow-rose-500/30";
+                else style = "glass border-white/5 text-white/40";
+              } else if (isElim) {
+                style = "bg-white/[0.02] border-white/5 text-white/20 line-through cursor-not-allowed";
+              }
+              return (
+                <motion.button
+                  key={opt + i}
+                  whileTap={reduced ? undefined : { scale: revealed ? 1 : 0.98 }}
+                  onClick={() => !isElim && handleAnswer(opt)}
+                  disabled={revealed || isElim}
+                  className={`w-full p-4 rounded-2xl border text-left font-semibold transition-all flex items-center gap-3 ${style} ${isDeva ? "font-deva" : ""}`}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                    revealed && isAnswer ? "bg-emerald-500 text-white"
+                    : revealed && isSelected ? "bg-rose-500 text-white"
+                    : "bg-white/[0.08] text-white/70"
+                  }`}>
+                    {String.fromCharCode(65 + i)}
+                  </div>
+                  <div className="flex-1">{opt}</div>
+                  {revealed && isAnswer && <Check className="w-5 h-5 text-emerald-400" />}
+                  {revealed && isSelected && !isAnswer && <X className="w-5 h-5 text-rose-400" />}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Right vs wrong is carried by colour, a ring and an icon, none of
+              which reach a screen reader. This region is always mounted so the
+              verdict is announced the moment it is filled in. */}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {revealed ? `${isCorrectAnswer ? "Correct." : "Not quite."} ${currentQ.ex}` : ""}
+          </div>
+
+          {!revealed && (
+            <div className="mt-5 flex gap-2 justify-center">
+              {/* min-h-11 keeps the lifelines at a 44px target for small fingers. */}
+              <button
+                onClick={useHint}
+                disabled={hintUsed || state.inventory.hint < 1}
+                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-amber-300 disabled:opacity-30 active:scale-95"
+              >
+                <Lightbulb className="w-4 h-4" /> Hint · {state.inventory.hint}
+              </button>
+              <button
+                onClick={useFifty}
+                disabled={fiftyUsed || state.inventory.fiftyFifty < 1}
+                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-violet-300 disabled:opacity-30 active:scale-95"
+              >
+                <ScanLine className="w-4 h-4" /> 50:50 · {state.inventory.fiftyFifty}
+              </button>
+            </div>
+          )}
+
+          {revealed && (
+            <motion.div initial={reduced ? { opacity: 0 } : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-5">
+              <div className={`rounded-3xl p-4 mb-3 ${isCorrectAnswer ? "bg-emerald-500/15 border border-emerald-400/30" : "bg-rose-500/15 border border-rose-400/30"}`}>
+                <div className={`flex items-center gap-2 mb-1.5 font-bold ${isCorrectAnswer ? "text-emerald-300" : "text-rose-300"}`}>
+                  {isCorrectAnswer ? <><Check className="w-5 h-5" /> Correct!</> : <><X className="w-5 h-5" /> Not quite</>}
+                </div>
+                <div className={`text-sm text-white/80 ${isDeva ? "font-deva" : ""}`}>{currentQ.ex}</div>
+              </div>
+              <Button size="lg" className="w-full" onClick={nextQuestion}>
+                {qIdx + 1 < questions.length ? "Next Question" : "Finish Quiz"} <ArrowRight className="inline w-5 h-5 ml-1" />
+              </Button>
             </motion.div>
           )}
-        </motion.div>
-
-        <div className="space-y-2.5">
-          {shuffledOpts.map((opt, i) => {
-            const isElim = eliminated.includes(opt);
-            const isSelected = selected === opt;
-            const isAnswer = opt === currentQ.a;
-            let style = "glass border-white/10 text-white hover:bg-white/[0.09]";
-            if (revealed) {
-              if (isAnswer) style = "bg-emerald-500/15 border-emerald-400/60 text-white ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30";
-              else if (isSelected) style = "bg-rose-500/15 border-rose-400/60 text-white ring-2 ring-rose-400 shadow-lg shadow-rose-500/30";
-              else style = "glass border-white/5 text-white/40";
-            } else if (isElim) {
-              style = "bg-white/[0.02] border-white/5 text-white/20 line-through cursor-not-allowed";
-            }
-            return (
-              <motion.button
-                key={opt + i}
-                whileTap={{ scale: revealed ? 1 : 0.98 }}
-                onClick={() => !isElim && handleAnswer(opt)}
-                disabled={revealed || isElim}
-                className={`w-full p-4 rounded-2xl border text-left font-semibold transition-all flex items-center gap-3 ${style} ${isDeva ? "font-deva" : ""}`}
-              >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                  revealed && isAnswer ? "bg-emerald-500 text-white"
-                  : revealed && isSelected ? "bg-rose-500 text-white"
-                  : "bg-white/[0.08] text-white/70"
-                }`}>
-                  {String.fromCharCode(65 + i)}
-                </div>
-                <div className="flex-1">{opt}</div>
-                {revealed && isAnswer && <Check className="w-5 h-5 text-emerald-400" />}
-                {revealed && isSelected && !isAnswer && <X className="w-5 h-5 text-rose-400" />}
-              </motion.button>
-            );
-          })}
         </div>
-
-        {!revealed && (
-          <div className="mt-5 flex gap-2 justify-center">
-            <button
-              onClick={useHint}
-              disabled={hintUsed || state.inventory.hint < 1}
-              className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5 text-sm font-semibold text-amber-300 disabled:opacity-30 active:scale-95"
-            >
-              <Lightbulb className="w-4 h-4" /> Hint · {state.inventory.hint}
-            </button>
-            <button
-              onClick={useFifty}
-              disabled={fiftyUsed || state.inventory.fiftyFifty < 1}
-              className="flex items-center gap-1.5 glass rounded-full px-3 py-1.5 text-sm font-semibold text-violet-300 disabled:opacity-30 active:scale-95"
-            >
-              <ScanLine className="w-4 h-4" /> 50:50 · {state.inventory.fiftyFifty}
-            </button>
-          </div>
-        )}
-
-        {revealed && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-5">
-            <div className={`rounded-3xl p-4 mb-3 ${isCorrectAnswer ? "bg-emerald-500/15 border border-emerald-400/30" : "bg-rose-500/15 border border-rose-400/30"}`}>
-              <div className={`flex items-center gap-2 mb-1.5 font-bold ${isCorrectAnswer ? "text-emerald-300" : "text-rose-300"}`}>
-                {isCorrectAnswer ? <><Check className="w-5 h-5" /> Correct!</> : <><X className="w-5 h-5" /> Not quite</>}
-              </div>
-              <div className={`text-sm text-white/80 ${isDeva ? "font-deva" : ""}`}>{currentQ.ex}</div>
-            </div>
-            <Button size="lg" className="w-full" onClick={nextQuestion}>
-              {qIdx + 1 < questions.length ? "Next Question" : "Finish Quiz"} <ArrowRight className="inline w-5 h-5 ml-1" />
-            </Button>
-          </motion.div>
-        )}
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }

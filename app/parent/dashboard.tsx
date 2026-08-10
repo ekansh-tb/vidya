@@ -7,6 +7,7 @@ import { Check, Copy, FileDown } from "lucide-react";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
 import { copyText } from "@/lib/clipboard";
+import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { useGameStore } from "@/lib/game-store";
@@ -337,7 +338,7 @@ function ReportExport({
     const a = document.createElement("a");
     const safeName = (learner.name || "learner").toLowerCase().replace(/[^a-z0-9]+/g, "-");
     a.href = url;
-    a.download = `vidya-${safeName}-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `vidya-${safeName}-${dayKeyOf(new Date())}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -397,7 +398,8 @@ function buildMarkdownReport(
   const accuracy = state.stats.totalAnswered > 0
     ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
     : null;
-  const today = new Date().toISOString().slice(0, 10);
+  // Local date: this is stamped on a report a parent reads in their own timezone.
+  const today = dayKeyOf(new Date());
 
   const subjectLines = subjectStats
     .filter((s) => s.attempts > 0)
@@ -602,7 +604,11 @@ function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
   const days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i));
     return {
-      iso: d.toISOString().slice(0, 10),
+      // dayKeyOf, not toISOString: `d` is LOCAL midnight, which in IST is
+      // 18:30 UTC the previous day — so the UTC form labelled every column
+      // with yesterday's date and none of them matched `reflectionDates`,
+      // whose keys are written from the local todayKey().
+      iso: dayKeyOf(d),
       label: d.toLocaleDateString(undefined, { weekday: "short" })[0],
     };
   });

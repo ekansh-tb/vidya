@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { X, RefreshCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
@@ -177,93 +178,95 @@ export function MatchView({
   if (!topic) return null;
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
-      <div className="px-5 pt-5">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => { sfx.click(); onClose(); }} className="text-white/50 active:scale-95">
-            <X className="w-6 h-6" />
-          </button>
-          <div className="flex items-center gap-3 text-xs font-mono text-white/60">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5" /> {elapsed}s
+    <ReducedMotionProvider>
+      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+        <div className="px-5 pt-5">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => { sfx.click(); onClose(); }} className="text-white/50 active:scale-95">
+              <X className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-3 text-xs font-mono text-white/60">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> {elapsed}s
+              </div>
+              <div className="text-white/20">·</div>
+              <div className="flex items-center gap-1.5">
+                <RefreshCcw className="w-3.5 h-3.5 text-rose-300" /> {mistakes}
+              </div>
             </div>
-            <div className="text-white/20">·</div>
-            <div className="flex items-center gap-1.5">
-              <RefreshCcw className="w-3.5 h-3.5 text-rose-300" /> {mistakes}
+          </div>
+
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: subject?.soft }}>
+              <subject.icon className="w-4 h-4" style={{ color: subject?.accent }} />
             </div>
+            <div className={`text-sm font-semibold ${isDeva ? "font-deva" : ""}`} style={{ color: subject?.accent }}>
+              Match Quest
+            </div>
+            <div className="text-xs text-white/40">·</div>
+            <div className={`text-xs text-white/60 ${isDeva ? "font-deva" : ""}`}>{topic.title}</div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: subject?.soft }}>
-            <subject.icon className="w-4 h-4" style={{ color: subject?.accent }} />
+          <div className="text-[11px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">
+            {matched.size} of {totalPairs} pairs found
           </div>
-          <div className={`text-sm font-semibold ${isDeva ? "font-deva" : ""}`} style={{ color: subject?.accent }}>
-            Match Quest
-          </div>
-          <div className="text-xs text-white/40">·</div>
-          <div className={`text-xs text-white/60 ${isDeva ? "font-deva" : ""}`}>{topic.title}</div>
-        </div>
 
-        <div className="text-[11px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">
-          {matched.size} of {totalPairs} pairs found
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          {cards.map((card) => {
-            const isFlipped = flipped.includes(card.id) || matched.has(card.pairId);
-            const isMatched = matched.has(card.pairId);
-            return (
-              <button
-                key={card.id}
-                onClick={() => handleFlip(card.id)}
-                disabled={isMatched}
-                className="relative aspect-[4/3] [perspective:1000px] focus:outline-none"
-                aria-label={isFlipped ? card.text : "Hidden card"}
-              >
-                <motion.div
-                  animate={{ rotateY: isFlipped ? 180 : 0 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="absolute inset-0 [transform-style:preserve-3d]"
+          <div className="grid grid-cols-2 gap-3">
+            {cards.map((card) => {
+              const isFlipped = flipped.includes(card.id) || matched.has(card.pairId);
+              const isMatched = matched.has(card.pairId);
+              return (
+                <button
+                  key={card.id}
+                  onClick={() => handleFlip(card.id)}
+                  disabled={isMatched}
+                  className="relative aspect-[4/3] [perspective:1000px] focus:outline-none"
+                  aria-label={isFlipped ? card.text : "Hidden card"}
                 >
-                  <div
-                    className="absolute inset-0 rounded-2xl glass-strong flex items-center justify-center [backface-visibility:hidden]"
-                    style={{ boxShadow: `0 0 20px ${subject?.glow || "rgba(34,211,238,0.3)"}` }}
+                  <motion.div
+                    animate={{ rotateY: isFlipped ? 180 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="absolute inset-0 [transform-style:preserve-3d]"
                   >
-                    <div className="text-4xl">{topic.icon}</div>
-                  </div>
-                  <div
-                    className={`absolute inset-0 rounded-2xl flex items-center justify-center p-3 text-center [transform:rotateY(180deg)] [backface-visibility:hidden] border transition-all ${
-                      isMatched
-                        ? "bg-emerald-500/20 border-emerald-400/60 shadow-lg shadow-emerald-500/30"
-                        : "glass border-white/15"
-                    }`}
-                  >
-                    <span className={`text-sm font-semibold leading-snug text-white ${isDeva ? "font-deva" : ""}`}>
-                      {card.text}
-                    </span>
-                  </div>
-                </motion.div>
-              </button>
-            );
-          })}
-        </div>
+                    <div
+                      className="absolute inset-0 rounded-2xl glass-strong flex items-center justify-center [backface-visibility:hidden]"
+                      style={{ boxShadow: `0 0 20px ${subject?.glow || "rgba(34,211,238,0.3)"}` }}
+                    >
+                      <div className="text-4xl">{topic.icon}</div>
+                    </div>
+                    <div
+                      className={`absolute inset-0 rounded-2xl flex items-center justify-center p-3 text-center [transform:rotateY(180deg)] [backface-visibility:hidden] border transition-all ${
+                        isMatched
+                          ? "bg-emerald-500/20 border-emerald-400/60 shadow-lg shadow-emerald-500/30"
+                          : "glass border-white/15"
+                      }`}
+                    >
+                      <span className={`text-sm font-semibold leading-snug text-white ${isDeva ? "font-deva" : ""}`}>
+                        {card.text}
+                      </span>
+                    </div>
+                  </motion.div>
+                </button>
+              );
+            })}
+          </div>
 
-        <AnimatePresence>
-          {isComplete && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 text-center"
-            >
-              <div className="font-display text-2xl font-bold text-emerald-300">All matched!</div>
-              <Button size="lg" className="w-full mt-3" onClick={finishMatch}>
-                See Results
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {isComplete && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 text-center"
+              >
+                <div className="font-display text-2xl font-bold text-emerald-300">All matched!</div>
+                <Button size="lg" className="w-full mt-3" onClick={finishMatch}>
+                  See Results
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </ReducedMotionProvider>
   );
 }

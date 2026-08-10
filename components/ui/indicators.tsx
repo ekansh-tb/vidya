@@ -1,10 +1,11 @@
 "use client";
 
 import { Flame, Shield } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
 export function StreakFlame({ streak, large = false, shields = 0 }: { streak: number; large?: boolean; shields?: number }) {
+  const reduced = useReducedMotion();
   if (streak === 0) {
     return (
       <div className="flex items-center gap-1.5 text-white/40">
@@ -16,9 +17,11 @@ export function StreakFlame({ streak, large = false, shields = 0 }: { streak: nu
   }
   return (
     <div className="flex items-center gap-1.5">
+      {/* The flame rocks forever on the home header. The glow and the colour
+          already read as "streak is alive", so the motion can simply stop. */}
       <motion.div
-        animate={{ scale: [1, 1.08, 1], rotate: [-2, 2, -2] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? { scale: 1, rotate: 0 } : { scale: [1, 1.08, 1], rotate: [-2, 2, -2] }}
+        transition={reduced ? { duration: 0 } : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
       >
         <Flame className={`${large ? "w-7 h-7" : "w-5 h-5"} text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.7)]`} fill="#FBBF24" />
       </motion.div>
