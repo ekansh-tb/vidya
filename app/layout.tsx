@@ -18,8 +18,13 @@ export const viewport: Viewport = {
   themeColor: "#06080F",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Zoom is deliberately NOT disabled. `maximumScale: 1` / `userScalable: false`
+  // fails WCAG 2.1 SC 1.4.4 (Resize Text) and hurts exactly the learners who
+  // need it most — anyone with low vision, and any kid squinting at Devanagari
+  // or a maths expression on a small phone. The double-tap-zoom annoyance this
+  // was presumably guarding against is not worth locking them out.
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import type { GameState, LearnerProfile, LearnerId, Board } from "./types";
-import { storage, type ProfilesV2 } from "./storage";
+import { storage, type ProfilesV2, type SaveFailure } from "./storage";
 import { todayKey, daysBetween } from "./utils";
 
 export const DEFAULT_STATE: GameState = {
@@ -105,6 +105,9 @@ function defaultPrimaryLearner(): LearnerProfile {
 type Store = {
   profiles: ProfilesV2;
   hydrated: boolean;
+  /** Set when a write to localStorage failed. Non-null means progress is NOT
+   *  being saved and the learner must be told — see [[vidya-persistence-model]]. */
+  saveError: SaveFailure | null;
 
   // Active learner — derived from profiles + currentLearnerId
   state: GameState;
@@ -114,6 +117,10 @@ type Store = {
   set: (updater: (s: GameState) => GameState) => void;
   reset: () => void;
   hydrate: () => void;
+
+  /** Replace the whole archive — used by backup restore. */
+  restoreProfiles: (profiles: ProfilesV2) => void;
+  dismissSaveError: () => void;
 
   // Multi-learner management
   switchLearner: (id: LearnerId) => void;
@@ -127,9 +134,21 @@ const initialProfiles: ProfilesV2 = {
   learners: { "learner-primary": defaultPrimaryLearner() },
 };
 
+/**
+ * Persist and report. Every mutation routes through this so a failed write is
+ * recorded rather than swallowed — the old code ignored `saveProfiles()`'s
+ * boolean at all six call sites, so a full or read-only localStorage let the
+ * learner keep playing while nothing was saved.
+ */
+function persist(profiles: ProfilesV2): SaveFailure | null {
+  const result = storage.saveProfilesResult(profiles);
+  return result.ok ? null : result.reason;
+}
+
 export const useGameStore = create<Store>((set, get) => ({
   profiles: initialProfiles,
   hydrated: false,
+  saveError: null,
   state: initialProfiles.learners["learner-primary"].state,
   learner: initialProfiles.learners["learner-primary"],
 
@@ -144,7 +163,7 @@ export const useGameStore = create<Store>((set, get) => ({
 
     const current = profiles.learners[profiles.currentLearnerId] || Object.values(profiles.learners)[0];
     if (current) profiles.currentLearnerId = current.id;
-    storage.saveProfiles(profiles);
+    set({ saveError: persist(profiles) });
     set({
       profiles,
       hydrated: true,
@@ -162,7 +181,7 @@ export const useGameStore = create<Store>((set, get) => ({
       ...cur.profiles,
       learners: { ...cur.profiles.learners, [learnerId]: nextLearner },
     };
-    storage.saveProfiles(nextProfiles);
+    set({ saveError: persist(nextProfiles) });
     set({ profiles: nextProfiles, state: nextState, learner: nextLearner });
   },
 
@@ -172,15 +191,30 @@ export const useGameStore = create<Store>((set, get) => ({
     const fresh: GameState = { ...DEFAULT_STATE, dailyQuest: { date: todayKey(), completed: false } };
     const learner = { ...cur.profiles.learners[learnerId], state: fresh, subjectsLocked: false, pickedSubjects: undefined };
     const profiles = { ...cur.profiles, learners: { ...cur.profiles.learners, [learnerId]: learner } };
-    storage.saveProfiles(profiles);
+    set({ saveError: persist(profiles) });
     set({ profiles, state: fresh, learner });
   },
+
+  restoreProfiles: (profiles) => {
+    const current =
+      profiles.learners[profiles.currentLearnerId] || Object.values(profiles.learners)[0];
+    if (!current) return;
+    const next: ProfilesV2 = { ...profiles, currentLearnerId: current.id };
+    set({
+      profiles: next,
+      state: current.state,
+      learner: current,
+      saveError: persist(next),
+    });
+  },
+
+  dismissSaveError: () => set({ saveError: null }),
 
   switchLearner: (id) => {
     const cur = get();
     if (!cur.profiles.learners[id]) return;
     const profiles = { ...cur.profiles, currentLearnerId: id };
-    storage.saveProfiles(profiles);
+    set({ saveError: persist(profiles) });
     set({
       profiles,
       state: cur.profiles.learners[id].state,
@@ -194,7 +228,7 @@ export const useGameStore = create<Store>((set, get) => ({
       ...cur.profiles,
       learners: { ...cur.profiles.learners, [l.id]: l },
     };
-    storage.saveProfiles(profiles);
+    set({ saveError: persist(profiles) });
     set({ profiles });
   },
 
@@ -207,7 +241,7 @@ export const useGameStore = create<Store>((set, get) => ({
       ...cur.profiles,
       learners: { ...cur.profiles.learners, [id]: next },
     };
-    storage.saveProfiles(profiles);
+    set({ saveError: persist(profiles) });
     const isActive = cur.profiles.currentLearnerId === id;
     set({
       profiles,
