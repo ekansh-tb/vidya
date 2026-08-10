@@ -259,7 +259,7 @@ export default function HomePage() {
         );
         break;
       case "settings":
-        content = <SettingsView state={state} setState={set} onBack={back} />;
+        content = <SettingsView state={state} setState={set} onBack={back} onNavigate={navigate} />;
         break;
       case "review":
         content = <ReviewView state={state} setState={set} onBack={back} />;

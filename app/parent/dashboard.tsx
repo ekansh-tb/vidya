@@ -6,6 +6,7 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { Check, Copy, FileDown } from "lucide-react";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
+import { copyText } from "@/lib/clipboard";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { useGameStore } from "@/lib/game-store";
@@ -314,13 +315,19 @@ function ReportExport({
 
   const report = useMemo(() => buildMarkdownReport(learner, subjectStats), [learner, subjectStats]);
 
+  const [copyFailed, setCopyFailed] = useState(false);
+
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(report);
+    // copyText falls back to execCommand for webviews that block the async
+    // Clipboard API, and reports honestly when both routes fail — the old
+    // code swallowed the error, so the button just did nothing.
+    const ok = await copyText(report);
+    if (ok) {
+      setCopyFailed(false);
       setCopiedAt(Date.now());
       setTimeout(() => setCopiedAt(null), 2200);
-    } catch {
-      // Fallback: open a textarea in a new window? For now, silently no-op.
+    } else {
+      setCopyFailed(true);
     }
   };
 
@@ -356,7 +363,7 @@ function ReportExport({
           }}
         >
           {copiedAt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copiedAt ? "Copied" : "Copy to clipboard"}
+          {copiedAt ? "Copied" : copyFailed ? "Couldn\u2019t copy \u2014 use Download" : "Copy to clipboard"}
         </button>
         <button
           onClick={download}
