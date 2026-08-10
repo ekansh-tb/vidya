@@ -1,22 +1,43 @@
 // Clerk + path-role gating.
 //
-// Two duties:
-//   1. Initialise Clerk auth on every matched request.
+// Three duties:
+//   1. Initialise Clerk auth on every matched request — but only when Clerk is
+//      actually configured (see lib/auth/clerk-config.ts). Without a
+//      publishable key, clerkMiddleware() throws on EVERY request in a
+//      production build, which took the whole app down rather than just the
+//      parent area.
 //   2. Gate /parent/** to signed-in users — anonymous hits redirect
 //      to /sign-in?next=<original-path>.
+//   3. When Clerk is absent, close the parent area and the auth pages instead
+//      of opening them. The kid app keeps working.
 //
 // Future (when role metadata + /student/** routes ship):
 //   - require role=parent on /parent/**
 //   - require role=learner on /student/**
-//   - redirect signed-in users away from /sign-in to their role home
+//
+// NOTE: this middleware does NOT protect /api/**. clerkMiddleware only
+// *initialises* auth on a matched route; it never requires a session. The AI
+// routes guard themselves — see lib/api/guard.ts.
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { clerkConfigured } from "@/lib/auth/clerk-config";
 
 const isParentArea = createRouteMatcher(["/parent(.*)"]);
 const isAuthArea = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
-export default clerkMiddleware(async (auth, req) => {
+/** Fallback used when Clerk has no keys: kid app open, everything auth-shaped closed. */
+function withoutClerk(req: NextRequest) {
+  if (isParentArea(req) || isAuthArea(req)) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+  return NextResponse.next();
+}
+
+const withClerk = clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
   // Parent area requires a signed-in user. Anonymous → /sign-in with return target.
@@ -37,6 +58,11 @@ export default clerkMiddleware(async (auth, req) => {
 
   return NextResponse.next();
 });
+
+export default function middleware(req: NextRequest, event: import("next/server").NextFetchEvent) {
+  if (!clerkConfigured) return withoutClerk(req);
+  return withClerk(req, event);
+}
 
 export const config = {
   matcher: [

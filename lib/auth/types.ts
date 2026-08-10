@@ -65,8 +65,13 @@ export type CapabilityResolution = {
 };
 
 /**
- * Policy row shape (mirror of `capability_policies` in 0001_init.sql).
- * Held in memory after fetch for the lifetime of a session.
+ * Policy row shape for the planned `capability_policies` table (see the
+ * "Data model" section of docs/AUTH_ARCHITECTURE.md — the SQL migration
+ * that once held this was removed with Supabase on 2026-05-21).
+ *
+ * Today these rows are a static in-memory map in lib/capabilities/policies.ts.
+ * `aiSafetyPin`, `cohort`, and `rateLimit` are declared here but NOT yet
+ * evaluated by the resolver — see [[dynamic-guardrails]].
  */
 export type CapabilityPolicy = {
   key: CapabilityKey;
