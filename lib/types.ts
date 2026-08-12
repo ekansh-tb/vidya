@@ -9,6 +9,11 @@ export type SubjectId =
   | "cls-english" | "cls-maths" | "cls-science" | "cls-history" | "cls-geography"
   | "cls-globalperspectives" | "cls-ict" | "cls-art"
   | "cls-hindi" | "cls-french" | "cls-spanish" | "cls-marathi"
+  // Timetabled at CNS Amanora in Grades 6–7 but previously unmodelled, so a
+  // learner could not see them at all. PE and Music are real Cambridge Lower
+  // Secondary frameworks (0081, 0078); Hobby is a CNS timetable slot with no
+  // framework behind it.
+  | "cls-pe" | "cls-music" | "cls-hobby"
   // Grade 8 (Stage 9) splits combined Science into the three sciences
   | "cls-physics" | "cls-chemistry" | "cls-biology"
   // Cambridge IGCSE (Grade 10) — added v2

@@ -1,7 +1,7 @@
 import {
   Calculator, FlaskConical, BookOpen, Languages, Globe2,
   Atom, Beaker, Sprout, Cpu, Monitor, Briefcase, LineChart,
-  Map, Landmark, Palette, Music as MusicIcon,
+  Map, Landmark, Palette, Music as MusicIcon, Dumbbell, Drama, Sparkles,
 } from "lucide-react";
 import type { Board, Subject, SubjectId } from "../types";
 
@@ -704,6 +704,28 @@ export const SUBJECTS_CLS: Subject[] = [
     accent: "#F87171", soft: "rgba(248, 113, 113, 0.15)", deep: "#7F1D1D",
     glow: "rgba(248, 113, 113, 0.5)", icon: Languages,
   },
+  // Timetabled in Grades 6–7 at CNS but missing from the app until now, so a
+  // Grade 6 learner had no way to see three of their own periods. PE (0081) and
+  // Music (0078) are Cambridge Lower Secondary frameworks; Hobby is a school
+  // slot, so it carries no framework code.
+  {
+    id: "cls-pe", name: "Physical Education", tagline: "Move · play · train",
+    gradient: "from-red-400 via-rose-500 to-pink-600",
+    accent: "#F87171", soft: "rgba(248, 113, 113, 0.15)", deep: "#7F1D1D",
+    glow: "rgba(248, 113, 113, 0.5)", icon: Dumbbell,
+  },
+  {
+    id: "cls-music", name: "Music, Dance & Drama", tagline: "Perform · compose · stage",
+    gradient: "from-purple-400 via-fuchsia-500 to-pink-600",
+    accent: "#C084FC", soft: "rgba(192, 132, 252, 0.15)", deep: "#581C87",
+    glow: "rgba(192, 132, 252, 0.5)", icon: Drama,
+  },
+  {
+    id: "cls-hobby", name: "Hobby", tagline: "Your pick · your project",
+    gradient: "from-teal-400 via-cyan-500 to-sky-600",
+    accent: "#2DD4BF", soft: "rgba(45, 212, 191, 0.15)", deep: "#134E4A",
+    glow: "rgba(45, 212, 191, 0.5)", icon: Sparkles,
+  },
   // Grade 8 (Stage 9) only — combined Science splits into three
   {
     id: "cls-physics", name: "Physics", tagline: "Forces · energy · waves",
@@ -760,6 +782,18 @@ export const CLS_GROUPS_6_7: IcseGroup[] = [
     description: "Part of the timetable at CNS through Grades 6–7.",
     subjects: ["cls-ict", "cls-art"],
     compulsoryIds: ["cls-ict"],
+  },
+  {
+    // The CNS Grade 6–8 page lists PE, Music/Dance/Drama and Hobby alongside the
+    // academic subjects. PE and Music are timetabled for everyone, so they are
+    // compulsory here; Hobby is the slot the learner chooses, so it is offered
+    // rather than forced. None of the three has an exam pack yet — the subject
+    // screen already handles that (cls-marathi has been in the same state).
+    id: "wellbeing",
+    label: "PE, Performing Arts & Hobby",
+    description: "The periods that aren't at a desk. Timetabled at CNS in Grades 6–7.",
+    subjects: ["cls-pe", "cls-music", "cls-hobby"],
+    compulsoryIds: ["cls-pe", "cls-music"],
   },
 ];
 

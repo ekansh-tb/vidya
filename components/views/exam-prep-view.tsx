@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
-import type { GameState, SubjectId, ViewName } from "@/lib/types";
+import type { Board, GameState, SubjectId, ViewName } from "@/lib/types";
 import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { usePack } from "@/lib/content/packs/use-pack";
@@ -30,7 +30,7 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ComponentType<{ clas
 ];
 
 export function ExamPrepView({
-  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade,
+  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade, school, board,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
@@ -41,6 +41,10 @@ export function ExamPrepView({
   availablePackIds?: SubjectId[];
   /** Learner's grade — for grade-aware pack lookup. */
   grade?: number;
+  /** Learner's school + board — lets a registered school scheme of work replace
+   *  the pack's generic content topics. See lib/content/school-syllabus.ts. */
+  school?: string;
+  board?: Board;
 }) {
   const initialId = subjectId && hasPack(subjectId, grade)
     ? subjectId
@@ -48,7 +52,11 @@ export function ExamPrepView({
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
   // Pack bodies are large and load as their own chunk — see pack-index.ts.
-  const { exists: packExists, pack } = usePack(currentId, grade);
+  const { exists: packExists, pack } = usePack(
+    currentId,
+    grade,
+    board ? { school, board } : undefined,
+  );
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("overview");
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { ExamPack } from "../exam-pack";
-import type { SubjectId } from "../../types";
+import type { Board, SubjectId } from "../../types";
 import { hasPack, loadPack } from "./pack-index";
+import { applySchoolSyllabus } from "../school-syllabus";
 
 export type UsePackResult = {
   /** Known synchronously on first render — safe to branch layout on, so the
@@ -22,9 +23,18 @@ export type UsePackResult = {
  * arrives from a dynamically imported chunk. This keeps hundreds of kilobytes
  * of curriculum data out of the initial bundle — see pack-index.ts.
  */
-export function usePack(subjectId: SubjectId | undefined, grade?: number): UsePackResult {
+export function usePack(
+  subjectId: SubjectId | undefined,
+  grade?: number,
+  /** Learner's school + board. When a scheme of work is registered for them in
+   *  school-syllabus.ts, the school's own units replace the pack's generic
+   *  content topics. Omit and the framework-level pack is used as-is. */
+  schoolCtx?: { school?: string; board: Board },
+): UsePackResult {
   const exists = subjectId ? hasPack(subjectId, grade) : false;
   const [pack, setPack] = useState<ExamPack | undefined>(undefined);
+  const school = schoolCtx?.school;
+  const board = schoolCtx?.board;
 
   useEffect(() => {
     if (!subjectId || !exists) {
@@ -36,7 +46,10 @@ export function usePack(subjectId: SubjectId | undefined, grade?: number): UsePa
     // previous subject's chapters.
     setPack(undefined);
     loadPack(subjectId, grade)
-      .then((p) => { if (!cancelled) setPack(p); })
+      .then((p) => {
+        if (cancelled) return;
+        setPack(p && board ? applySchoolSyllabus(p, { school, board, grade }) : p);
+      })
       .catch((e) => {
         if (!cancelled) {
           console.error(`[usePack] failed to load ${subjectId} (grade ${grade}):`, e);
@@ -44,7 +57,7 @@ export function usePack(subjectId: SubjectId | undefined, grade?: number): UsePa
         }
       });
     return () => { cancelled = true; };
-  }, [subjectId, grade, exists]);
+  }, [subjectId, grade, exists, school, board]);
 
   return { exists, pack, loading: exists && pack === undefined };
 }
