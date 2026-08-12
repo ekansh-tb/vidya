@@ -30,7 +30,7 @@ import {
   getLearnerForClerkUser, issueClaimCode, redeemClaimCode,
   pushLearnerState, getLearnerState,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
-  clearSelfLink, hashDeviceToken, setDisabledCapabilities,
+  clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -188,9 +188,53 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       expect(after!.verificationLevel).toBe(0);
     });
 
+    it("tells a revoked token apart from an unknown one", async () => {
+      // Collapsing the two is what made the parent's Unlink button a no-op
+      // against the AI tutor: a revoked device looked identical to one that
+      // had never linked, and observe mode forgives those.
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "old tablet" });
+      if (!r.ok) throw new Error("redeem failed");
+
+      expect((await resolveDeviceToken(r.deviceToken)).kind).toBe("active");
+      await revokeDeviceForParent(PARENT_A, learnerA, "all");
+      expect((await resolveDeviceToken(r.deviceToken)).kind).toBe("revoked");
+
+      // A token that never existed is still just unknown.
+      expect((await resolveDeviceToken("x".repeat(43))).kind).toBe("unknown");
+    });
+
     it("a parent cannot list or revoke another family's devices", async () => {
       expect(await listDevicesForParent(PARENT_A, learnerB)).toBeNull();
       expect(await revokeDeviceForParent(PARENT_A, learnerB, "all")).toBeNull();
+    });
+  });
+
+  describe("what a redeemed code hands back", () => {
+    it("the row carries things the child must never receive", async () => {
+      // Guards the trimming in app/api/learner/redeem/route.ts. The route used
+      // to return this whole row to an unauthenticated caller, which meant a
+      // typed code bought you the parent's Clerk user id and the private list
+      // of features that parent had switched off — the latter breaking the
+      // rule that a child is never told a grown-up disabled something.
+      //
+      // If this assertion ever fails because the fields moved, check the route
+      // still lists its response fields explicitly rather than spreading.
+      await setDisabledCapabilities(PARENT_A, learnerA, ["ai.tutor.full"]);
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code);
+      if (!r.ok) throw new Error("redeem failed");
+
+      expect(r.learner.parentId, "still on the row — the route must not forward it").toBe(PARENT_A);
+      expect(r.learner.disabledCapabilities).toEqual(["ai.tutor.full"]);
+    });
+
+    it("codes expire well inside the old 24-hour window", async () => {
+      const issued = await issueClaimCode(PARENT_B, learnerB);
+      const minutes = (new Date(issued!.expiresAt).getTime() - Date.now()) / 60_000;
+      // The code is a bearer credential now: whoever reads it can redeem it.
+      expect(minutes).toBeGreaterThan(60);
+      expect(minutes, "a day-long window on a read-aloud secret").toBeLessThanOrEqual(125);
     });
   });
 

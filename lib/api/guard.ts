@@ -11,8 +11,12 @@
 // not a security boundary: calling the endpoint directly bypasses it entirely.
 //
 // WHAT THIS DOES
-//   1. Same-origin enforcement — blocks the trivial "curl from anywhere" and
-//      cross-site embedding cases.
+//   1. Same-origin enforcement — real CSRF protection, and a speed bump for
+//      direct callers. Be precise about which: a BROWSER cannot forge Origin,
+//      so a malicious page cannot make a victim's browser act on their session
+//      here. A non-browser caller sets both Origin and Host itself and sails
+//      straight through, so this is not authentication and never was. What
+//      actually bounds direct abuse is the body caps and the model spend cap.
 //   2. Body validation + hard caps — bounds how much text one call can push
 //      into the model, so a single request cannot be an expensive one.
 //   3. Best-effort rate limiting per client.
@@ -119,7 +123,13 @@ export function totalChars(messages: TutorRequest["messages"]): number {
  * Same-origin check. In production we require the request to declare an origin
  * matching the deployment host. Requests with no Origin AND no Referer are
  * rejected in production — browsers always send one for a cross-origin fetch,
- * so the empty case is a non-browser caller.
+ * so the empty case is a non-browser caller. Suppressing both fails CLOSED.
+ *
+ * The comparison is Origin-vs-Host, which is the correct shape for CSRF: a
+ * page cannot set either header on a cross-site request, so it cannot make a
+ * victim's browser act on their Clerk session. It is NOT a defence against a
+ * direct caller, who supplies both headers and matches trivially. Do not add
+ * an endpoint whose only guard is this one and call it protected.
  *
  * Skipped entirely in development so `curl` and tests keep working.
  */

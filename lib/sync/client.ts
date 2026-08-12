@@ -113,7 +113,7 @@ export async function pushWithMerge(
   expectedRevision: number,
   deviceLabel?: string,
   learner?: LearnerProfile,
-): Promise<{ state: GameState; revision: number; status: SyncState }> {
+): Promise<{ state: GameState; revision: number; status: SyncState; unauthorized?: boolean }> {
   const first = await pushState(local, expectedRevision, deviceLabel, undefined, learner);
   if (first.ok) return { state: local, revision: first.revision, status: "synced" };
 
@@ -134,6 +134,9 @@ export async function pushWithMerge(
     state: local,
     revision: expectedRevision,
     status: first.reason === "network" ? "offline" : "error",
+    // Surfaced so the caller can stand the device down instead of retrying
+    // against a link the parent revoked. See useSync#standDown.
+    unauthorized: first.reason === "unauthorized",
   };
 }
 

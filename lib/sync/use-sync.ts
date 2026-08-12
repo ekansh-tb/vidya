@@ -25,6 +25,24 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
   const state = useGameStore((s) => s.state);
   const setState = useGameStore((s) => s.set);
   const hydrated = useGameStore((s) => s.hydrated);
+  const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
+
+  /**
+   * The server said this device is no longer who it claimed to be — the parent
+   * revoked it, or the token is gone. Bring the local profile back in line.
+   *
+   * Not just tidiness. `verifiedLevel` is what the client's computeRung reads,
+   * so leaving it at 2 means a revoked kid still sees the Miss Vidya door in
+   * their lobby and only discovers it is shut by tapping it. The rule is that
+   * withdrawn features are ABSENT, never present-and-broken — and a parent who
+   * revokes a device expects the room to go away, not to start erroring.
+   *
+   * Local progress is untouched. Losing access is not losing your work.
+   */
+  const standDown = () => {
+    if (!learner.deviceToken && (learner.verifiedLevel ?? 0) === 0) return;
+    updateLearnerMeta(learner.id, { deviceToken: undefined, verifiedLevel: 0 });
+  };
 
   const [status, setStatus] = useState<SyncState>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
@@ -53,6 +71,9 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
       if (cancelled) return;
 
       if (!pulled.ok) {
+        // 401 here means revoked or unlinked server-side. Stand down rather
+        // than retrying forever against a door that is now shut.
+        if (pulled.reason === "unauthorized") standDown();
         setStatus(pulled.reason === "network" ? "offline" : "error");
         return;
       }
@@ -87,6 +108,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
       (async () => {
         try {
           const result = await pushWithMerge(state, revisionRef.current, deviceLabel(), learner);
+          if (result.unauthorized) standDown();
           revisionRef.current = result.revision;
           // A conflict merge produces a state this device must adopt, or the
           // same conflict recurs on every push.
