@@ -28,7 +28,10 @@ export function SubjectView({
   const hasQuiz = Object.keys(quizTopics).length > 0;
   // `hasExamPack` is synchronous so the layout never flashes an empty state;
   // `pack` arrives from its own chunk. See lib/content/packs/pack-index.ts.
-  const { exists: hasExamPack, pack } = usePack(subjectId, learner.grade);
+  const { exists: hasExamPack, pack } = usePack(subjectId, learner.grade, {
+    school: learner.school,
+    board: learner.board,
+  });
   const Icon = subject.icon;
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const setGameState = useGameStore((s) => s.set);

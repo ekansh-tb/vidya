@@ -330,6 +330,8 @@ export default function HomePage() {
             subjectId={view.params?.subjectId as SubjectId | undefined}
             availablePackIds={availablePackIds}
             grade={learner.grade}
+            school={learner.school}
+            board={learner.board}
           />
         );
         break;

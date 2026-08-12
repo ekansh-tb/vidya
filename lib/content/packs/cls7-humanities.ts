@@ -23,6 +23,32 @@
 // significance and interpretations for History; map and enquiry skills for Geography
 // — are the parts that are the same everywhere, and they are where the marks live.
 //
+// WHY THERE IS NO "EXACT" STAGE 7 SYLLABUS TO COPY IN (re-checked 2026-08-12)
+// --------------------------------------------------------------------------
+// Asked for the exact CNS Grade 6 syllabus, the honest answer is that it is not
+// publicly obtainable, and the reasons are structural rather than a gap in the
+// search:
+//   · 0839's learning objectives are published for Stages 7–9 as ONE group. The
+//     framework itself never says "this is Stage 7", so no stage-level topic list
+//     exists to be copied.
+//   · The framework PDF and its exemplifications sit behind the Cambridge Lower
+//     Secondary support site, which is school-login only.
+//   · There is no endorsed Stage 7 Humanities learner's book to take a contents
+//     page from — Cambridge University Press publishes a Stages 7–9 DIGITAL
+//     TEACHER'S RESOURCE for 0839 and nothing student-facing per stage.
+//   · CNS Amanora publishes its subject list but not its scheme of work.
+// So the school's own scheme of work is the only source that could make the word
+// "exact" true. lib/content/school-syllabus.ts is where it goes once we have the
+// document; until then this pack is framework-level and says so on screen.
+//
+// Sub-strand codes below are quoted from the official 0839 teacher guide (2024).
+// Code shape: 789 + strand (PP People / PT Past / PC Places) + sub-strand + .NN,
+// e.g. 789PTsk.04. Confirmed Past sub-strands: sk (skills), me (migration and
+// empires), as (advances/scientific discoveries). Confirmed Places sub-strands:
+// ph (population and health), ed (employment). The full sub-strand inventory is
+// in the support-site PDF; only codes actually seen in the teacher guide are
+// cited here, and no code is guessed.
+//
 // There is no external exam at Stage 7 — Checkpoint is sat at the end of Stage 9 —
 // so both packs are framed as owning the year, not cramming for a paper.
 //
@@ -48,6 +74,9 @@ export const CLS7_HISTORY_PACK: ExamPack = {
     { label: "Framework", value: "0839 Humanities · Past strand" },
     { label: "Stage", value: "Stage 7 = Grade 6" },
     { label: "Marks come from", value: "Evidence, not recall" },
+    // Replaced by "School scheme of work, <year>" once one is registered for
+    // this learner — see lib/content/school-syllabus.ts.
+    { label: "Syllabus", value: "Framework-level · school scheme not loaded" },
   ],
   pinnedRule: {
     heading: "Never assert. Always evidence.",
@@ -130,7 +159,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
     },
     {
       id: "early-civ", num: 6, title: "Early Civilisations & the First Cities",
-      blurb: "Representative content: why the first big settled societies grew up along rivers, and how we know.",
+      blurb: "Your school picks the periods; this one is the usual Stage 7 starting point. Why the first big settled societies grew up along rivers, and how we know.",
       syllabus: [
         "Rivers made large settled populations possible: reliable water, fertile soil renewed by flooding, and a route for transport. Mesopotamia sat between the Tigris and Euphrates, Egypt along the Nile, the Harappan cities along the Indus and its neighbours, and Shang China along the Yellow River.",
         "Farming surpluses let some people stop farming, which produced specialists — priests, scribes, soldiers, potters, metalworkers — and with them social hierarchy and rulers.",
@@ -142,7 +171,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
     },
     {
       id: "empires", num: 7, title: "Empires, Rulers & Power",
-      blurb: "Representative content: how empires grew, how they were held together, and why they came apart.",
+      blurb: "Maps onto 0839 sub-strand 789PTme (migration and empires). How empires grew, how they were held together, and why they came apart.",
       syllabus: [
         "An empire is one state ruling over other peoples and territories, usually acquired by conquest. Expansion needed an army, and holding the ground needed something else entirely.",
         "Tools of control that turn up again and again: roads and messengers, provincial governors, taxation, a common language of administration, standard coinage, garrisons, and the promotion of a ruling ideology.",
@@ -155,7 +184,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
     },
     {
       id: "life-trade", num: 8, title: "Everyday Life, Trade & Cultural Exchange",
-      blurb: "Representative content: goods travelled long distances — and ideas travelled with them.",
+      blurb: "Touches 789PTme (migration and empires) and the People strand's money-and-trade sub-strand. Goods travelled long distances — and ideas travelled with them.",
       syllabus: [
         "The Silk Roads were not one road but a shifting network of overland routes linking China, Central Asia, Persia and the Mediterranean. Most goods changed hands many times; few merchants travelled the whole way.",
         "Indian Ocean trade ran on the monsoon. Sailors used the southwest winds to sail one way and the northeast winds to return, which tied the sailing calendar to the weather system.",
@@ -167,7 +196,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
     },
     {
       id: "medieval", num: 9, title: "The Medieval World",
-      blurb: "Representative content: a connected world of kingdoms, faiths, scholars and — eventually — plague.",
+      blurb: "Period choice is the school's, not Cambridge's. A connected world of kingdoms, faiths, scholars and — eventually — plague.",
       syllabus: [
         "'Medieval' is a label invented much later for roughly 500–1500 CE, and it was coined with European history in mind. It fits other regions awkwardly, which is exactly the kind of thing a good historian points out.",
         "In medieval Europe, land was held in return for service and worked by peasants on manors, with castles and cathedrals as the great building projects and craft guilds controlling trades in towns. Historians argue about how well the tidy label 'feudalism' describes the messy reality.",
@@ -491,6 +520,9 @@ export const CLS7_GEOGRAPHY_PACK: ExamPack = {
     { label: "Framework", value: "0839 Humanities · Places strand" },
     { label: "Stage", value: "Stage 7 = Grade 6" },
     { label: "Marks come from", value: "Named places + map skills" },
+    // Replaced by "School scheme of work, <year>" once one is registered for
+    // this learner — see lib/content/school-syllabus.ts.
+    { label: "Syllabus", value: "Framework-level · school scheme not loaded" },
   ],
   pinnedRule: {
     heading: "Every answer needs a real, named place",
@@ -577,7 +609,7 @@ export const CLS7_GEOGRAPHY_PACK: ExamPack = {
     },
     {
       id: "population", num: 6, title: "Population & Settlement",
-      blurb: "Where people live, why they live there, and why they move.",
+      blurb: "0839 sub-strand 789PCph (population and health). Where people live, why they live there, and why they move.",
       syllabus: [
         "Population distribution is the SPREAD of people across an area. Population density is the NUMBER of people per square kilometre. They are not the same word and are not interchangeable.",
         "Densely populated areas tend to have flat land, fertile soil, reliable water, a moderate climate, resources and good transport — the Ganges plain, eastern China, western Europe. Sparsely populated areas tend to be too dry, too cold, too high or too dense with forest — the Sahara, the Thar desert, high Himalaya, Amazonia, Antarctica.",
@@ -590,7 +622,7 @@ export const CLS7_GEOGRAPHY_PACK: ExamPack = {
     },
     {
       id: "economy", num: 7, title: "Economic Activity, Resources & Energy",
-      blurb: "How people make a living, what they take from the Earth to do it, and what runs out.",
+      blurb: "0839 sub-strand 789PCed (employment). How people make a living, what they take from the Earth to do it, and what runs out.",
       syllabus: [
         "Employment sectors: primary (taking raw materials from the Earth — farming, fishing, forestry, mining), secondary (manufacturing and processing), tertiary (services — teaching, retail, transport, healthcare, IT services) and quaternary (research, development and high-level information work).",
         "As countries develop, the balance usually shifts from mostly primary work towards secondary and then tertiary and quaternary work. Show this with a bar chart or pie chart of employment structure.",
