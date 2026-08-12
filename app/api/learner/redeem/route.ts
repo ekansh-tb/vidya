@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { dbConfigured } from "@/lib/db/client";
+import { buildDeviceCookie } from "@/lib/auth/session";
 import { redeemClaimCode } from "@/lib/db/queries";
 import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
 
@@ -88,17 +89,29 @@ export async function POST(req: Request) {
     // child is never to be told a grown-up turned something off.
     //
     // The client needs the id (to store as remoteId) and the rung. Nothing else.
-    return Response.json({
-      learner: {
-        id: result.learner.id,
-        verificationLevel: result.learner.verificationLevel,
-        name: result.learner.name,
+    return Response.json(
+      {
+        learner: {
+          id: result.learner.id,
+          verificationLevel: result.learner.verificationLevel,
+          name: result.learner.name,
+        },
+        // Returned exactly once. The server keeps only its hash, so if the
+        // client loses it the parent must issue a fresh code — the correct
+        // failure mode for a credential.
+        deviceToken: result.deviceToken,
       },
-      // Returned exactly once. The server keeps only its hash, so if the client
-      // loses it the parent must issue a fresh code — the correct failure mode
-      // for a credential.
-      deviceToken: result.deviceToken,
-    });
+      {
+        headers: {
+          // A SECOND copy of the token, httpOnly so script cannot reach it.
+          // The localStorage copy is what the app sends day to day; this one
+          // exists solely so a child cannot escape their parent's switch-off
+          // by deleting their own credential. It only ever removes
+          // capabilities — see disabledForLinkedDevices.
+          "set-cookie": buildDeviceCookie(req.headers.get("cookie"), result.deviceToken),
+        },
+      },
+    );
   } catch (e) {
     console.error("[api/learner/redeem] failed:", e);
     return Response.json({ error: "Could not link this account right now." }, { status: 500 });

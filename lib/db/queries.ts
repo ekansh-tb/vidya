@@ -536,6 +536,35 @@ export async function resolveDeviceToken(token: string): Promise<DeviceTokenResu
   return learners.length ? { kind: "active", learner: toLearner(learners[0]) } : { kind: "unknown" };
 }
 
+/**
+ * Capabilities switched off for any of these device tokens, in one query.
+ *
+ * READ-ONLY, unlike resolveDeviceToken, and that matters: this runs on the
+ * capability check for every tutor turn, against every token in the browser's
+ * cookie. Touching `last_seen_at` here would mean one child using the tutor
+ * bumped their sibling's "last synced" timestamp, and the parent's device list
+ * would quietly report a device as active that nobody had touched in weeks.
+ * A denial check has no business writing anything.
+ */
+export async function disabledCapabilitiesForTokens(tokens: string[]): Promise<string[]> {
+  const hashes = tokens.filter((t) => t && t.length >= 16).map(hashDeviceToken);
+  if (hashes.length === 0) return [];
+  const sql = getSql();
+  const rows = await sql`
+    select l.disabled_capabilities
+    from learner_devices d
+    join learners l on l.id = d.learner_id
+    where d.token_hash = any(${hashes}) and d.revoked_at is null
+  `;
+  const out = new Set<string>();
+  for (const r of rows) {
+    if (Array.isArray(r.disabled_capabilities)) {
+      for (const k of r.disabled_capabilities) out.add(String(k));
+    }
+  }
+  return [...out];
+}
+
 /** Devices linked to a learner this parent owns. Scoped by ownership, always. */
 export async function listDevicesForParent(
   parentId: string,

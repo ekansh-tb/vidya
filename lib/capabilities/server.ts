@@ -3,7 +3,7 @@ import "server-only";
 import { CAPABILITY_POLICIES } from "./policies";
 import type { CapabilityKey, CapabilityResolution } from "../auth/types";
 import {
-  resolveIdentity, identityFromRequest, rungFor, type Identity,
+  resolveIdentity, identityFromRequest, disabledForLinkedDevices, rungFor, type Identity,
 } from "../auth/session";
 
 /**
@@ -74,7 +74,22 @@ export async function resolveCapabilityForRequest(
   key: CapabilityKey,
   req: Request,
 ): Promise<CapabilityResolution & { identity: Identity }> {
-  return resolveCapabilityServer(key, await identityFromRequest(req));
+  const identity = await identityFromRequest(req);
+  const decision = await resolveCapabilityServer(key, identity);
+  if (!decision.allowed) return decision;
+
+  // Second pass, deny-only. The identity above rests on a header the client
+  // chooses to send, and the client is exactly who the parent's switch-off is
+  // aimed at — so a child could delete their own token and resolve as
+  // anonymous, skipping the check against them. The httpOnly cookie set at
+  // redeem time cannot be deleted from script, so it still names the devices
+  // linked in this browser. It may only take capabilities away; see
+  // disabledForLinkedDevices for why granting from it would be worse than the
+  // hole it closes.
+  if ((await disabledForLinkedDevices(req)).has(key)) {
+    return { allowed: false, reason: "feature_disabled", identity };
+  }
+  return decision;
 }
 
 /**

@@ -93,6 +93,47 @@ describe("credentials never leave the device", () => {
       .toBe("tok_thisIsARealCredential");
   });
 
+  it("STRIPS ON IMPORT — a hand-edited backup cannot grant rung 2", () => {
+    // The attack this closes: export a backup, open the .json in a text
+    // editor, add verifiedLevel and a token, re-import. Stripping only on
+    // export defended the file and not the app, and import is the direction
+    // an attacker actually controls.
+    const tampered = profiles("a");
+    Object.assign(tampered.learners.a, {
+      verifiedLevel: 2,
+      deviceToken: "stolen-token-from-a-sibling",
+      remoteId: "00000000-0000-0000-0000-0000000000ff",
+      parentPin: "1234",
+    });
+    // Hand-built rather than via serializeBackup, because the export strip
+    // would remove the very fields this test is about.
+    const forged = JSON.stringify({
+      format: BACKUP_FORMAT,
+      version: BACKUP_VERSION,
+      profiles: tampered,
+    });
+    const out = parseBackup(forged);
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    const restored = out.profiles.learners.a;
+    expect(restored.verifiedLevel, "rung must not survive an import").toBeUndefined();
+    expect(restored.deviceToken).toBeUndefined();
+    expect(restored.parentPin).toBeUndefined();
+    expect(restored.remoteId, "or it can be paired with a sibling's token").toBeUndefined();
+  });
+
+  it("keeps the child's own work across an import", () => {
+    // The strip must not turn into "restore loses your progress".
+    const p = profiles("a");
+    (p.learners.a.state as unknown as { xp: number }).xp = 777;
+    p.learners.a.careNote = "Prefers worked examples.";
+    const out = parseBackup(serializeBackup(p));
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect((out.profiles.learners.a.state as unknown as { xp: number }).xp).toBe(777);
+    expect(out.profiles.learners.a.careNote).toBe("Prefers worked examples.");
+  });
+
   it("strips verifiedLevel, so a backup file cannot grant rung 2", () => {
     // A backup is JSON a child can open. If it carried the rung, restoring it
     // would reopen exactly the self-promotion hole claim codes closed.
