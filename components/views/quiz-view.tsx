@@ -461,12 +461,21 @@ export function QuizView({
           <AnimatePresence>
             {combo >= 2 && (
               <motion.div
+                key={combo}
                 initial={reduced ? { opacity: 0 } : { scale: 0, y: 10 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
+                // A streak that looks identical at 2x and at 8x is not a streak.
+                // Growth is capped so it never crowds the question above it.
+                animate={{ scale: reduced ? 1 : Math.min(1 + (combo - 2) * 0.06, 1.3), y: 0, opacity: 1 }}
                 exit={reduced ? { opacity: 0 } : { scale: 0 }}
+                transition={reduced ? { duration: 0.15 } : { type: "spring", stiffness: 500, damping: 15 }}
                 className="flex items-center justify-center gap-1.5 mb-3"
               >
-                <Zap className="w-4 h-4 text-amber-300" fill="#FBBF24" />
+                <motion.span
+                  animate={reduced || combo < 5 ? {} : { rotate: [0, -12, 12, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1.2 }}
+                >
+                  <Zap className="w-4 h-4 text-amber-300" fill="#FBBF24" />
+                </motion.span>
                 <span className="text-sm font-bold text-gradient-sunset">{combo}× Combo</span>
               </motion.div>
             )}
@@ -515,8 +524,33 @@ export function QuizView({
               }
               return (
                 <motion.button
-                  key={opt + i}
+                  // qIdx in the key so the options re-enter on every question
+                  // rather than silently swapping their text.
+                  key={`${qIdx}-${opt}-${i}`}
                   whileTap={reduced ? undefined : { scale: revealed ? 1 : 0.98 }}
+                  initial={reduced ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                  // Three states in one prop: entering, confirmed right (a small
+                  // pop), and confirmed wrong (a short shake). The shake is the
+                  // only one that moves horizontally, so the two verdicts never
+                  // read as the same beat.
+                  animate={
+                    reduced
+                      ? { opacity: 1 }
+                      : revealed && isAnswer
+                        ? { opacity: 1, y: 0, scale: [1, 1.045, 1] }
+                        : revealed && isSelected
+                          ? { opacity: 1, y: 0, x: [0, -9, 8, -6, 4, 0] }
+                          : { opacity: 1, y: 0 }
+                  }
+                  transition={
+                    reduced
+                      ? { duration: 0.15 }
+                      : revealed
+                        ? { duration: 0.42, ease: "easeOut" }
+                        // Options land one after another so the eye reads them
+                        // in order instead of meeting four at once.
+                        : { delay: 0.06 + i * 0.05, type: "spring", stiffness: 380, damping: 26 }
+                  }
                   onClick={() => !isElim && handleAnswer(opt)}
                   disabled={revealed || isElim}
                   className={`w-full p-4 rounded-2xl border text-left font-semibold transition-all flex items-center gap-3 ${style} ${isDeva ? "font-deva" : ""}`}

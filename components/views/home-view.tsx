@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import {
   Coins, Target, ArrowRight, Trophy, Gem, Settings, Check, Users,
   MessageCircle, Globe, BookOpen, Clock, Mic, NotebookPen, Music, Wind,
@@ -132,6 +132,25 @@ export function HomeView({
   // urgency that was permanently false. Say what the learner's own schedule says.
   const csExam = useMemo(() => examsAhead.find((e) => e.subjectId === "igcse-cs"), [examsAhead]);
 
+  const reduced = useReducedMotion();
+
+  // The home banners are each independently conditional, so a fixed per-card
+  // delay would leave gaps on the days a card is absent. Slots are handed out
+  // in JSX order instead — only the banners actually on screen consume one, so
+  // the cascade stays even whatever combination the day produces. Recomputed
+  // from zero on every render, so there is no state to fall out of sync.
+  let bannerSlot = 0;
+  const rise = () => {
+    const delay = 0.05 + bannerSlot++ * 0.07;
+    return reduced
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.15 } }
+      : {
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          transition: { delay, type: "spring" as const, stiffness: 320, damping: 26 },
+        };
+  };
+
   return (
     <div className="min-h-screen pb-28 max-w-2xl mx-auto">
       {/* Header */}
@@ -231,8 +250,7 @@ export function HomeView({
 
         {/* School Day banner */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...rise()}
           className="rounded-3xl p-5 mb-5 relative overflow-hidden"
           style={{
             background: "linear-gradient(135deg, rgba(167, 139, 250, 0.18) 0%, rgba(34, 211, 238, 0.18) 100%)",
@@ -295,8 +313,7 @@ export function HomeView({
         {/* Generic Exam Prep banner — surfaces when any exam pack is available for this learner. */}
         {isExamReady && firstPack && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...rise()}
             whileTap={{ scale: 0.99 }}
             onClick={() => { sfx.click(); onNavigate("exam-prep", { subjectId: firstPack.id }); }}
             className="w-full p-4 text-left mb-5 relative overflow-hidden"
@@ -333,8 +350,7 @@ export function HomeView({
         {/* IGCSE Computer Science Exam Prep — top of fold for IGCSE-CS learners */}
         {isIgcse && takingCS && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...rise()}
             whileTap={{ scale: 0.99 }}
             onClick={() => { sfx.click(); onNavigate("exam-prep"); }}
             className="w-full rounded-3xl p-4 text-left mb-5 relative overflow-hidden"
@@ -376,8 +392,7 @@ export function HomeView({
         {/* Exam countdown — surfaces when the parent has logged an exam within 7 days */}
         {upcomingExam && (
           <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            {...rise()}
             whileTap={{ scale: 0.99 }}
             onClick={() => {
               sfx.click();
@@ -428,6 +443,7 @@ export function HomeView({
         {/* Daily Quest — only when this learner's subjects actually have questions */}
         {hasDailyQuest && (
         <motion.button
+          {...rise()}
           whileTap={{ scale: 0.99 }}
           onClick={() => { sfx.click(); !todayQuestDone && onNavigate("daily"); }}
           disabled={todayQuestDone}
