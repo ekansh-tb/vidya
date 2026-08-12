@@ -86,8 +86,14 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
         <>
           <p className="text-sm mb-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Create a code and show it to {learner.name || "your child"}. They type it into Vidya on
-            their own device. It works once, expires in a day, and is the only way to open the
+            their own device. It works once, expires in two hours, and is the only way to open the
             AI tutor for them.
+          </p>
+          {/* Said plainly because it changes how a parent should handle it: the
+              code is the credential, so anyone who reads it can use it. */}
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+            Treat it like a door key — whoever types it first gets in. Read it out or hand the
+            device over; don&apos;t post it anywhere.
           </p>
 
           {issued ? (

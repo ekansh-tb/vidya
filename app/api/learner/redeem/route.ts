@@ -27,11 +27,15 @@ const schema = z.object({
  * parent's Clerk id onto their own child's row and locked them out of the
  * dashboard permanently. See redeemClaimCode for the full account.
  *
- * What stands in for a session: the code itself is a 6-character single-use
- * secret from a 32-symbol alphabet that expires in 24h and that an adult chose
- * to hand over, the request must be same-origin, and 10 tries per 10 minutes
- * makes guessing one impractical. Success mints a revocable per-device token,
- * not an identity.
+ * What stands in for a session: the code is a 6-character single-use secret
+ * from a 32-symbol alphabet (~1.07 billion combinations) that an adult chose
+ * to hand over and that expires in two hours, the request must be same-origin,
+ * and 10 tries per 10 minutes makes guessing one impractical. Success mints a
+ * revocable per-device token, not an identity.
+ *
+ * The honest cost of this design: the code is a BEARER credential. Anyone who
+ * reads it can redeem it, which is why the TTL is short and the parent-facing
+ * copy says to treat it like a door key.
  *
  * This is still the only path to verification rung 2.
  */
@@ -58,8 +62,12 @@ export async function POST(req: Request) {
       deviceLabel: parsed.data.deviceLabel ?? null,
     });
     if (!result.ok) {
-      // Kid-readable, and deliberately identical shape for every failure so
-      // the response cannot be used to probe which codes exist.
+      // These messages DO distinguish "expired" from "used" from "unknown",
+      // and an older comment here claimed the opposite. Telling a child to ask
+      // for a fresh code instead of retyping the same one is worth the small
+      // leak: the only thing an attacker learns is that a code they already
+      // cannot use once existed. Both states are terminal — neither can be
+      // redeemed — so nothing is gained by distinguishing them.
       const message =
         result.reason === "expired"
           ? "That code has expired. Ask for a new one."
@@ -70,10 +78,27 @@ export async function POST(req: Request) {
         status: 400, headers: rateHeaders(verdict, RATE.limit),
       });
     }
-    // The token is returned exactly once. The server keeps only its hash, so
-    // if the client loses it the parent must issue a fresh code — which is the
-    // correct failure mode for a credential.
-    return Response.json({ learner: result.learner, deviceToken: result.deviceToken });
+
+    // ONLY these fields. The learner row also carries `parentId` — the
+    // parent's Clerk user id — and `disabledCapabilities`, the private list of
+    // features that parent switched off. Returning the whole row handed both
+    // to an unauthenticated caller who typed a code, and put them in the
+    // child's localStorage where any curious kid can read them in devtools.
+    // The config leak breaks the parent-invisible-config rule outright: the
+    // child is never to be told a grown-up turned something off.
+    //
+    // The client needs the id (to store as remoteId) and the rung. Nothing else.
+    return Response.json({
+      learner: {
+        id: result.learner.id,
+        verificationLevel: result.learner.verificationLevel,
+        name: result.learner.name,
+      },
+      // Returned exactly once. The server keeps only its hash, so if the client
+      // loses it the parent must issue a fresh code — the correct failure mode
+      // for a credential.
+      deviceToken: result.deviceToken,
+    });
   } catch (e) {
     console.error("[api/learner/redeem] failed:", e);
     return Response.json({ error: "Could not link this account right now." }, { status: 500 });

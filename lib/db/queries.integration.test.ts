@@ -194,6 +194,34 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
     });
   });
 
+  describe("what a redeemed code hands back", () => {
+    it("the row carries things the child must never receive", async () => {
+      // Guards the trimming in app/api/learner/redeem/route.ts. The route used
+      // to return this whole row to an unauthenticated caller, which meant a
+      // typed code bought you the parent's Clerk user id and the private list
+      // of features that parent had switched off — the latter breaking the
+      // rule that a child is never told a grown-up disabled something.
+      //
+      // If this assertion ever fails because the fields moved, check the route
+      // still lists its response fields explicitly rather than spreading.
+      await setDisabledCapabilities(PARENT_A, learnerA, ["ai.tutor.full"]);
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code);
+      if (!r.ok) throw new Error("redeem failed");
+
+      expect(r.learner.parentId, "still on the row — the route must not forward it").toBe(PARENT_A);
+      expect(r.learner.disabledCapabilities).toEqual(["ai.tutor.full"]);
+    });
+
+    it("codes expire well inside the old 24-hour window", async () => {
+      const issued = await issueClaimCode(PARENT_B, learnerB);
+      const minutes = (new Date(issued!.expiresAt).getTime() - Date.now()) / 60_000;
+      // The code is a bearer credential now: whoever reads it can redeem it.
+      expect(minutes).toBeGreaterThan(60);
+      expect(minutes, "a day-long window on a read-aloud secret").toBeLessThanOrEqual(125);
+    });
+  });
+
   describe("parent capability switches", () => {
     it("persists, and reaches the learner a device token resolves to", async () => {
       // The whole point of migration 0003: the switch has to be readable on

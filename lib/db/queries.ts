@@ -309,6 +309,22 @@ export async function pushLearnerState(input: {
 /** Human-readable, unambiguous alphabet — no O/0/I/1 for a kid typing it. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+/**
+ * How long a claim code stays redeemable. Was 24 hours.
+ *
+ * The code became a bearer credential when redeeming stopped requiring a
+ * session: whoever types it first gets a device token for that child, from
+ * anywhere. That is the right trade — the previous design required a login the
+ * child does not have, so it never completed at all — but it means the window
+ * matters. A code is read aloud or held up on a screen and used within
+ * seconds; a day of validity is a day in which a shoulder-surfed or
+ * screenshotted code still works.
+ *
+ * Two hours is generous for "create it, hand it over, they type it in" while
+ * cutting the exposure window by 92%.
+ */
+export const CLAIM_CODE_TTL_MINUTES = 120;
+
 function generateCode(length = 6): string {
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
@@ -325,7 +341,7 @@ function generateCode(length = 6): string {
 export async function issueClaimCode(
   parentId: string,
   learnerId: string,
-  ttlMinutes = 60 * 24,
+  ttlMinutes = CLAIM_CODE_TTL_MINUTES,
 ): Promise<{ code: string; expiresAt: string } | null> {
   const owned = await getLearnerForParent(parentId, learnerId);
   if (!owned) return null;
