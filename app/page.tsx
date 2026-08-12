@@ -332,6 +332,7 @@ export default function HomePage() {
             grade={learner.grade}
             school={learner.school}
             board={learner.board}
+            uploaded={learner.schoolSyllabus}
           />
         );
         break;

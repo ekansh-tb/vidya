@@ -779,9 +779,13 @@ export const CLS_GROUPS_6_7: IcseGroup[] = [
   {
     id: "creative",
     label: "ICT & Art",
+    // Both are timetabled at CNS in Grades 6–7 — the school's own subject list
+    // names Art alongside ICT — so neither is a pick. Art was previously
+    // optional here, which meant a Grade 6 learner could end up with no Art
+    // tile at all despite having Art periods every week.
     description: "Part of the timetable at CNS through Grades 6–7.",
     subjects: ["cls-ict", "cls-art"],
-    compulsoryIds: ["cls-ict"],
+    compulsoryIds: ["cls-ict", "cls-art"],
   },
   {
     // The CNS Grade 6–8 page lists PE, Music/Dance/Drama and Hobby alongside the

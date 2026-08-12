@@ -30,6 +30,34 @@ export type SubjectId =
   | "cbse-science" | "cbse-socialscience" | "cbse-sanskrit"
   | "cbse-arts" | "cbse-pe" | "cbse-vocational";
 
+/** One unit of a school's own scheme of work, as read off a document the
+ *  parent uploaded. Deliberately structural (no import from lib/content) so
+ *  types.ts stays at the bottom of the dependency graph. */
+export type LearnerSyllabusTopic = {
+  id: string;
+  title: string;
+  blurb: string;
+  syllabus: string[];
+  /** Term label if the document assigns one, e.g. "Term 1". */
+  term?: string;
+};
+
+/** A school scheme of work attached to ONE learner, parsed from a document and
+ *  accepted by a parent. Never shared between learners — see the
+ *  strict-isolation rule. Only the parent surface can write it. */
+export type LearnerSyllabus = {
+  /** As printed on the document, e.g. "2026-27". */
+  academicYear: string;
+  /** What the parent uploaded, for their own audit trail. */
+  sourceLabel: string;
+  /** ISO timestamp the parent accepted the extraction. */
+  uploadedAt: string;
+  subjects: Partial<Record<SubjectId, {
+    topics: LearnerSyllabusTopic[];
+    textbooks?: string[];
+  }>>;
+};
+
 export type Board =
   | "cambridge-primary"
   | "cambridge-lower-secondary"
@@ -70,6 +98,10 @@ export type LearnerProfile = {
   pickedSubjects?: SubjectId[];
   /** True once subject picker has been completed. */
   subjectsLocked?: boolean;
+  /** The school's own scheme of work, uploaded and accepted by a parent on the
+   *  Clerk-gated /parent surface. Replaces the exam packs' generic content
+   *  topics for this learner only. See lib/content/school-syllabus.ts. */
+  schoolSyllabus?: LearnerSyllabus;
   /** 4-digit local PIN guarding the in-kid-app parent room. A speed bump that
    *  keeps a younger sibling out of the analytics screen — nothing more. It
    *  used to grant verification rung 2 (and therefore the AI tutor), which a
@@ -191,6 +223,11 @@ export type GameState = {
   buddyId: string | null;
   missedQuestions: MissedQuestion[];
   dailyReflections: DailyReflection[];
+  /** Move Break activity ids finished at least once. Union-merged across
+   *  devices — see lib/sync/merge.ts. */
+  completedActivities?: string[];
+  /** How many guided Move Breaks have been finished, ever. */
+  moveBreaks?: number;
   /** Last subject the kid opened. Used for "Pick up where you left off". */
   lastSubjectId?: SubjectId;
   lastSubjectAt?: string;

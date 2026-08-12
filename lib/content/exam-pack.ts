@@ -10,6 +10,12 @@ export type SyllabusTopic = {
   title: string;
   blurb: string;
   syllabus: string[];
+  /** True for topics that teach the SKILL rather than the content — reading a
+   *  source, using a grid reference, structuring an answer. Schools choose
+   *  their own content but not their own skills, so these survive when a real
+   *  school scheme of work replaces the pack's generic content topics.
+   *  See applySchoolSyllabus in ../school-syllabus.ts. */
+  skill?: boolean;
 };
 
 export type ExamQuestion = {

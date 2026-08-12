@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { ChevronLeft, Wind, Heart, Droplet, Pause, Play } from "lucide-react";
+import { ChevronLeft, Wind, Heart, Droplet, Pause, Play, Activity as ActivityIcon } from "lucide-react";
+import { MovePanel } from "@/components/views/move-panel";
 import { Button } from "@/components/ui/button";
 import type { GameState } from "@/lib/types";
 import { sfx } from "@/lib/audio";
@@ -57,6 +58,8 @@ export function WellnessView({
   onBack: () => void;
 }) {
   const reduce = useReducedMotion();
+  // Two halves of one room: wind DOWN (breathe) and wake UP (move).
+  const [mode, setMode] = useState<"breathe" | "move">("breathe");
   const [patternId, setPatternId] = useState<keyof typeof PATTERNS>("box");
   const pattern = PATTERNS[patternId];
   const [running, setRunning] = useState(false);
@@ -142,6 +145,30 @@ export function WellnessView({
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
 
+        {/* Wind down, or wake up. Both belong in the same room. */}
+        <div className="flex gap-2 mb-5 p-1 rounded-2xl glass" role="tablist" aria-label="Wellness mode">
+          {([
+            { id: "breathe" as const, label: "Breathe", icon: Wind },
+            { id: "move" as const, label: "Move", icon: ActivityIcon },
+          ]).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={mode === id}
+              onClick={() => { sfx.click(); setMode(id); }}
+              className={`flex-1 rounded-xl py-2 text-sm font-bold transition-all inline-flex items-center justify-center gap-1.5 ${
+                mode === id
+                  ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-400/40"
+                  : "text-white/55 active:scale-95"
+              }`}
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "move" ? <MovePanel state={state} setState={setState} /> : (
+        <>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
           <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#34D399" }} />
           <div className="relative flex items-center gap-3">
@@ -233,6 +260,8 @@ export function WellnessView({
           <Tip icon={<Droplet className="w-4 h-4 text-cyan-300" />} label="Sip some water" />
           <Tip icon={<Heart className="w-4 h-4 text-rose-300" />} label="Smile — even just a little" />
         </div>
+        </>
+        )}
       </div>
     </div>
   );

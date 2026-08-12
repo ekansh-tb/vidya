@@ -30,7 +30,7 @@
 // list and presenting it as the child's actual course.
 
 import type { ExamPack, SyllabusTopic } from "./exam-pack";
-import type { Board, SubjectId } from "../types";
+import type { Board, LearnerSyllabus, SubjectId } from "../types";
 
 /** Where a syllabus came from — shown to parents so they can judge it. */
 export type SyllabusSource = {
@@ -118,30 +118,75 @@ export function schoolSyllabusFor(opts: {
   );
 }
 
+/** Swaps the "not loaded" caveat for a named source, without duplicating it. */
+function stampSyllabus(pack: ExamPack, year: string): ExamPack["highlights"] {
+  const value = `School scheme of work, ${year}`;
+  const rest = (pack.highlights || []).filter((h) => h.label !== "Syllabus");
+  return [...rest, { label: "Syllabus", value }];
+}
+
 /**
  * Layers a school's scheme of work over a framework-level pack.
  *
- * Returns the pack unchanged when no syllabus is registered — the common case
- * today — so callers can apply this unconditionally.
+ * Two sources, checked in this order:
+ *   1. `uploaded` — a document a parent put through /parent for THIS learner.
+ *      A real document beats anything committed to the repo, so it wins.
+ *   2. SCHOOL_SYLLABI — a scheme of work typed into this file.
+ *
+ * Skills topics survive either way. Schools choose their own content but not
+ * their own skills, so replacing "how to read a source" with a school's list of
+ * periods would throw away the part that actually earns marks — see the `skill`
+ * flag on SyllabusTopic.
+ *
+ * Returns the pack unchanged when neither source has anything for this subject,
+ * so callers can apply this unconditionally.
  */
 export function applySchoolSyllabus(
   pack: ExamPack,
-  opts: { school?: string; board: Board; grade?: number; academicYear?: string },
+  opts: {
+    school?: string;
+    board: Board;
+    grade?: number;
+    academicYear?: string;
+    /** This learner's uploaded scheme of work, if a parent has accepted one. */
+    uploaded?: LearnerSyllabus;
+  },
 ): ExamPack {
+  const fromUpload = opts.uploaded?.subjects?.[pack.subjectId];
+  if (fromUpload && fromUpload.topics.length > 0) {
+    const year = opts.uploaded!.academicYear || "this year";
+    return {
+      ...pack,
+      context: `${pack.context} · ${year} scheme of work`,
+      highlights: stampSyllabus(pack, year),
+      topics: [
+        ...pack.topics.filter((t) => t.skill),
+        ...fromUpload.topics.map((t, i) => ({
+          id: t.id,
+          num: i + 1,
+          title: t.title,
+          blurb: t.term ? `${t.term} · ${t.blurb}` : t.blurb,
+          syllabus: t.syllabus,
+        })),
+      ],
+    };
+  }
+
   const entry = schoolSyllabusFor(opts);
   const subject = entry?.subjects[pack.subjectId];
   if (!entry || !subject) return pack;
 
-  const dropped = new Set(subject.supersedes || []);
-  const kept = pack.topics.filter((t) => !dropped.has(t.id));
+  // An entry may name the topics it replaces; otherwise every non-skill topic
+  // gives way, which is the same rule the upload path uses.
+  const named = subject.supersedes;
+  const kept = named
+    ? pack.topics.filter((t) => !named.includes(t.id))
+    : pack.topics.filter((t) => t.skill);
 
   return {
     ...pack,
     context: `${pack.context} · ${entry.academicYear} scheme of work`,
-    highlights: [
-      ...(pack.highlights || []),
-      { label: "Syllabus", value: `School scheme of work, ${entry.academicYear}` },
-    ],
+    highlights: stampSyllabus(pack, entry.academicYear),
     // School units follow the skills topics that survived.
     topics: [...kept, ...subject.topics],
   };
@@ -153,6 +198,11 @@ export function isGenericSyllabus(opts: {
   school?: string;
   board: Board;
   grade?: number;
+  uploaded?: LearnerSyllabus;
+  subjectId?: SubjectId;
 }): boolean {
+  if (opts.subjectId && (opts.uploaded?.subjects?.[opts.subjectId]?.topics.length ?? 0) > 0) {
+    return false;
+  }
   return schoolSyllabusFor(opts) === undefined;
 }

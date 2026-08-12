@@ -161,6 +161,8 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     passportStamps: unionStrings(local.passportStamps, r.passportStamps),
     readBooks: unionStrings(local.readBooks, r.readBooks),
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
+    completedActivities: unionStrings(local.completedActivities, r.completedActivities),
+    moveBreaks: Math.max(num(local.moveBreaks), num(r.moveBreaks)),
     progress: mergeProgress(local.progress, r.progress),
     seenQuestions: mergeSeen(local.seenQuestions, r.seenQuestions),
     inventory: {

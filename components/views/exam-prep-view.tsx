@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
-import type { Board, GameState, SubjectId, ViewName } from "@/lib/types";
+import type { Board, GameState, LearnerSyllabus, SubjectId, ViewName } from "@/lib/types";
 import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { usePack } from "@/lib/content/packs/use-pack";
@@ -30,7 +30,7 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ComponentType<{ clas
 ];
 
 export function ExamPrepView({
-  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade, school, board,
+  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade, school, board, uploaded,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
@@ -45,6 +45,8 @@ export function ExamPrepView({
    *  the pack's generic content topics. See lib/content/school-syllabus.ts. */
   school?: string;
   board?: Board;
+  /** Scheme of work a parent uploaded for this learner, if any. */
+  uploaded?: LearnerSyllabus;
 }) {
   const initialId = subjectId && hasPack(subjectId, grade)
     ? subjectId
@@ -55,7 +57,7 @@ export function ExamPrepView({
   const { exists: packExists, pack } = usePack(
     currentId,
     grade,
-    board ? { school, board } : undefined,
+    board ? { school, board, uploaded } : undefined,
   );
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("overview");
