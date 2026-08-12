@@ -82,6 +82,27 @@ describe("credentials never leave the device", () => {
     if (!out.ok) return;
     expect(out.profiles.learners.a.parentPin).toBeUndefined();
   });
+
+  it("strips the device token — it authenticates sync and opens the tutor", () => {
+    const p = profiles("a");
+    p.learners.a.deviceToken = "tok_thisIsARealCredential";
+    const text = serializeBackup(p);
+    expect(text).not.toContain("deviceToken");
+    expect(text).not.toContain("tok_thisIsARealCredential");
+    expect(p.learners.a.deviceToken, "export must not mutate the live profile")
+      .toBe("tok_thisIsARealCredential");
+  });
+
+  it("strips verifiedLevel, so a backup file cannot grant rung 2", () => {
+    // A backup is JSON a child can open. If it carried the rung, restoring it
+    // would reopen exactly the self-promotion hole claim codes closed.
+    const p = profiles("a");
+    p.learners.a.verifiedLevel = 2;
+    const out = parseBackup(serializeBackup(p));
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.profiles.learners.a.verifiedLevel).toBeUndefined();
+  });
 });
 
 describe("parseBackup rejects bad input helpfully", () => {

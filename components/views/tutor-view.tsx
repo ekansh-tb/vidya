@@ -12,6 +12,7 @@ import type { GameState, LearnerProfile, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { ThinkingVidya } from "@/components/effects/thinking-vidya";
 import { useCapability } from "@/lib/capabilities/use-capability";
+import { DEVICE_TOKEN_HEADER } from "@/lib/sync/client";
 
 const SUGGESTED: Partial<Record<SubjectId, string[]>> = {
   maths:    ["What is 25% of 80?", "How do I add 1/2 + 1/4?", "Explain BODMAS in 2 lines"],
@@ -111,6 +112,11 @@ function TutorRoom({
     () =>
       new DefaultChatTransport({
         api: "/api/tutor",
+        // How this device proves it was linked by an adult. Without it the
+        // server sees an anonymous caller at rung 0 — fine today, but it is
+        // what ENFORCE_TUTOR_RUNG will read, and it is how the parent's
+        // per-learner switch-off reaches the endpoint at all.
+        headers: learner.deviceToken ? { [DEVICE_TOKEN_HEADER]: learner.deviceToken } : undefined,
         body: () => ({
           subject: subjectId,
           name: state.name,
@@ -122,7 +128,7 @@ function TutorRoom({
           aiTone: learner.aiTone,
         }),
       }),
-    [subjectId, state.name, learner.grade, learner.board, learner.interests, learner.careNote, learner.aiTone, learner.school],
+    [subjectId, state.name, learner.grade, learner.board, learner.interests, learner.careNote, learner.aiTone, learner.school, learner.deviceToken],
   );
 
   const { messages, sendMessage, status, error, setMessages } = useChat({ transport });

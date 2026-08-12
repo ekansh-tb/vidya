@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import { getSql } from "./client";
 import type { GameState, SubjectId } from "../types";
 
@@ -32,6 +33,12 @@ export type LearnerRow = {
   verificationLevel: VerificationLevel;
   pickedSubjects: SubjectId[] | null;
   subjectsLocked: boolean;
+  /** Capability keys the parent switched off for this learner. Null means the
+   *  parent has never configured it — not the same as an empty array, which
+   *  means they looked and turned nothing off. Enforced in
+   *  lib/capabilities/server.ts, so it is a boundary and not just a hidden
+   *  button. */
+  disabledCapabilities: string[] | null;
   localId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -52,6 +59,7 @@ function toLearner(r: any): LearnerRow {
     verificationLevel: r.verification_level as VerificationLevel,
     pickedSubjects: r.picked_subjects ?? null,
     subjectsLocked: Boolean(r.subjects_locked),
+    disabledCapabilities: Array.isArray(r.disabled_capabilities) ? r.disabled_capabilities : null,
     localId: r.local_id ?? null,
     createdAt: String(r.created_at),
     updatedAt: String(r.updated_at),
@@ -167,6 +175,40 @@ export async function updateLearnerForParent(
     returning *
   `;
   return rows.length ? toLearner(rows[0]) : null;
+}
+
+/**
+ * Set the capabilities a parent has switched off for one learner they own.
+ *
+ * Kept separate from updateLearnerForParent because this one is a security
+ * control, not a profile field: it is the only write on this table that
+ * decides what the server will refuse to do. Worth being able to grep for.
+ *
+ * The full list is replaced rather than merged — the UI shows every toggle at
+ * once, so a partial patch would mean two tabs could each silently re-enable
+ * what the other turned off.
+ */
+export async function setDisabledCapabilities(
+  parentId: string,
+  learnerId: string,
+  keys: string[],
+): Promise<LearnerRow | null> {
+  const sql = getSql();
+  const rows = await sql`
+    update learners
+    set disabled_capabilities = ${JSON.stringify(keys)}::jsonb
+    where id = ${learnerId} and parent_id = ${parentId}
+    returning *
+  `;
+  if (!rows.length) return null;
+  await audit({
+    parentId,
+    learnerId,
+    event: "capabilities_set",
+    actor: parentId,
+    detail: { disabled: keys },
+  });
+  return toLearner(rows[0]);
 }
 
 // ----------------------------------------------------------- learner state
@@ -309,20 +351,38 @@ export async function issueClaimCode(
 }
 
 export type RedeemResult =
-  | { ok: true; learner: LearnerRow }
-  | { ok: false; reason: "invalid" | "expired" | "used" | "already_linked" };
+  | { ok: true; learner: LearnerRow; deviceToken: string }
+  | { ok: false; reason: "invalid" | "expired" | "used" };
 
 /**
- * A signed-in kid redeems a code, linking their Clerk account to the learner
- * and promoting them to parent-verified (rung 2).
+ * Redeeming a claim code links the DEVICE, not a person.
  *
- * This is the ONLY path to rung 2. The old client-side rule — "any 4-digit PIN
- * in localStorage means parent-verified" — let a kid promote themselves.
+ * WHY NOT A CLERK SESSION — read before "simplifying" this back.
+ * ---------------------------------------------------------------
+ * The original version required `auth()` and wrote the caller's Clerk id onto
+ * `learners.clerk_user_id`. That ending never worked and could not work: the
+ * kid app has no sign-in anywhere (deliberately — kids have no login here), so
+ * the only session available on a family's shared browser is the PARENT's. A
+ * parent who redeemed a code claimed their own child's row as their identity,
+ * `resolveIdentity` then returned kind:"learner" for them, and every
+ * /api/parent/* call answered 401 forever with no unlink control in existence.
+ * A second child redeeming from the same browser hit the UNIQUE index on
+ * `clerk_user_id` and got a 500.
+ *
+ * The claim code is already the credential — a short-lived secret an adult
+ * chose to hand over. So redeeming mints a per-device token and touches
+ * nothing about who is signed in. Nobody gets locked out of their own account
+ * by using the feature, and two siblings on one iPad each get their own token.
+ *
+ * This is still the ONLY path to rung 2.
  */
-export async function redeemClaimCode(code: string, clerkUserId: string): Promise<RedeemResult> {
+export async function redeemClaimCode(
+  code: string,
+  opts: { deviceLabel?: string | null } = {},
+): Promise<RedeemResult> {
   const sql = getSql();
   const rows = await sql`
-    select c.code, c.learner_id, c.expires_at, c.used_at, l.clerk_user_id
+    select c.code, c.learner_id, c.expires_at, c.used_at
     from claim_codes c
     join learners l on l.id = c.learner_id
     where c.code = ${code.trim().toUpperCase()}
@@ -333,30 +393,189 @@ export async function redeemClaimCode(code: string, clerkUserId: string): Promis
   const row = rows[0];
   if (row.used_at) return { ok: false, reason: "used" };
   if (new Date(row.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
-  if (row.clerk_user_id && row.clerk_user_id !== clerkUserId) {
-    return { ok: false, reason: "already_linked" };
-  }
+
+  const token = generateDeviceToken();
 
   const updated = await sql`
     update learners
-    set clerk_user_id = ${clerkUserId},
-        verification_level = greatest(verification_level, 2)
+    set verification_level = greatest(verification_level, 2)
     where id = ${row.learner_id}
     returning *
   `;
   await sql`
-    update claim_codes set used_at = now(), used_by = ${clerkUserId}
+    insert into learner_devices (learner_id, token_hash, label, claim_code)
+    values (${row.learner_id}, ${hashDeviceToken(token)},
+            ${opts.deviceLabel ?? null}, ${row.code})
+  `;
+  // Marked used only after the device row exists, so a failure mid-way leaves
+  // the code still redeemable rather than burning it for nothing.
+  await sql`
+    update claim_codes set used_at = now(), used_by = ${"device"}
     where code = ${row.code}
   `;
   await audit({
     parentId: null,
     learnerId: row.learner_id,
     event: "linked",
-    actor: clerkUserId,
-    detail: { via: "claim_code" },
+    actor: null,
+    detail: { via: "claim_code", device: opts.deviceLabel ?? null },
   });
 
-  return { ok: true, learner: toLearner(updated[0]) };
+  return { ok: true, learner: toLearner(updated[0]), deviceToken: token };
+}
+
+// --------------------------------------------------------- device tokens
+
+/**
+ * 32 bytes of CSPRNG, base64url. Long enough that the rate limiter on the
+ * redeem route is a courtesy rather than the actual defence.
+ */
+function generateDeviceToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("base64url");
+}
+
+/** Only the hash is stored — a database leak must not yield usable tokens. */
+export function hashDeviceToken(token: string): string {
+  return createHash("sha256").update(token, "utf8").digest("hex");
+}
+
+export type DeviceRow = {
+  id: string;
+  learnerId: string;
+  label: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  revokedAt: string | null;
+};
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function toDevice(r: any): DeviceRow {
+  return {
+    id: r.id,
+    learnerId: r.learner_id,
+    label: r.label ?? null,
+    createdAt: String(r.created_at),
+    lastSeenAt: r.last_seen_at ? String(r.last_seen_at) : null,
+    revokedAt: r.revoked_at ? String(r.revoked_at) : null,
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/**
+ * Resolve a device token to the learner it speaks for.
+ *
+ * Revoked tokens resolve to null, which is what makes the parent's revoke
+ * button mean something. `last_seen_at` is written here so the dashboard can
+ * say "last active 2 hours ago" without a separate heartbeat.
+ */
+export async function getLearnerForDeviceToken(token: string): Promise<LearnerRow | null> {
+  if (!token || token.length < 16) return null;
+  const sql = getSql();
+  const rows = await sql`
+    update learner_devices
+    set last_seen_at = now()
+    where token_hash = ${hashDeviceToken(token)} and revoked_at is null
+    returning learner_id
+  `;
+  if (!rows.length) return null;
+  const learners = await sql`
+    select * from learners where id = ${rows[0].learner_id} limit 1
+  `;
+  return learners.length ? toLearner(learners[0]) : null;
+}
+
+/** Devices linked to a learner this parent owns. Scoped by ownership, always. */
+export async function listDevicesForParent(
+  parentId: string,
+  learnerId: string,
+): Promise<DeviceRow[] | null> {
+  const owned = await getLearnerForParent(parentId, learnerId);
+  if (!owned) return null;
+  const sql = getSql();
+  const rows = await sql`
+    select * from learner_devices
+    where learner_id = ${learnerId}
+    order by created_at desc
+  `;
+  return rows.map(toDevice);
+}
+
+/**
+ * Revoke one device, or every device, for a learner this parent owns.
+ *
+ * When the last device goes, the learner drops back to rung 0 — otherwise
+ * "revoked" would mean "still parent-verified, just quieter", and the AI tutor
+ * would stay open on a device the parent just cut off.
+ */
+export async function revokeDeviceForParent(
+  parentId: string,
+  learnerId: string,
+  deviceId: string | "all",
+): Promise<{ revoked: number } | null> {
+  const owned = await getLearnerForParent(parentId, learnerId);
+  if (!owned) return null;
+  const sql = getSql();
+
+  const rows = deviceId === "all"
+    ? await sql`
+        update learner_devices set revoked_at = now()
+        where learner_id = ${learnerId} and revoked_at is null
+        returning id`
+    : await sql`
+        update learner_devices set revoked_at = now()
+        where learner_id = ${learnerId} and id = ${deviceId} and revoked_at is null
+        returning id`;
+
+  const remaining = await sql`
+    select 1 from learner_devices
+    where learner_id = ${learnerId} and revoked_at is null
+    limit 1
+  `;
+  if (!remaining.length) {
+    await sql`
+      update learners set verification_level = 0 where id = ${learnerId}
+    `;
+  }
+
+  await audit({
+    parentId,
+    learnerId,
+    event: "unlinked",
+    actor: parentId,
+    detail: { devices: rows.length, scope: deviceId },
+  });
+  return { revoked: rows.length };
+}
+
+/**
+ * Clear a stale `clerk_user_id` off a learner row.
+ *
+ * The escape hatch for anyone stranded by the old redeem path: a parent whose
+ * own Clerk id was written onto their child's row is classified as a learner
+ * by resolveIdentity and cannot reach any /api/parent/* route to fix it. So
+ * this is called from resolveIdentity itself, before that misclassification is
+ * allowed to stick — the only place the locked-out account can still act.
+ */
+export async function clearSelfLink(clerkUserId: string): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`
+    update learners
+    set clerk_user_id = null
+    where clerk_user_id = ${clerkUserId} and parent_id = ${clerkUserId}
+    returning id
+  `;
+  for (const r of rows) {
+    await audit({
+      parentId: clerkUserId,
+      learnerId: r.id,
+      event: "unlinked",
+      actor: clerkUserId,
+      detail: { reason: "self_link_repair" },
+    });
+  }
+  return rows.length > 0;
 }
 
 // ------------------------------------------------------------------ audit

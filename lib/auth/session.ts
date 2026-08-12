@@ -6,6 +6,8 @@ import { dbConfigured } from "../db/client";
 import {
   upsertParent,
   getLearnerForClerkUser,
+  getLearnerForDeviceToken,
+  clearSelfLink,
   type LearnerRow,
   type VerificationLevel,
 } from "../db/queries";
@@ -76,12 +78,26 @@ export async function resolveIdentity(): Promise<Identity> {
   // row. The row is the stronger signal, so check it first.
   const linked = await getLearnerForClerkUser(userId);
   if (linked) {
-    return {
-      kind: "learner",
-      userId,
-      learner: linked,
-      verificationLevel: linked.verificationLevel,
-    };
+    // ...with one exception, which is a repair rather than a rule.
+    //
+    // The old redeem path wrote the caller's Clerk id onto the learner row. On
+    // a family's shared browser the only signed-in account is the parent's, so
+    // a parent who redeemed a code became their own child as far as this
+    // function was concerned: requireParent() returned null, every
+    // /api/parent/* route answered 401, and there was no unlink control to
+    // reach because reaching one required being a parent. A row cannot be
+    // owned and inhabited by the same account, so treat that as the corruption
+    // it is, undo it, and carry on as the parent.
+    if (linked.parentId && linked.parentId === userId) {
+      await clearSelfLink(userId);
+    } else {
+      return {
+        kind: "learner",
+        userId,
+        learner: linked,
+        verificationLevel: linked.verificationLevel,
+      };
+    }
   }
   if (role === "learner") {
     // Signed in as a kid but no learner row yet — they still need to redeem a
@@ -109,6 +125,47 @@ export async function requireParent(): Promise<ParentIdentity | null> {
 export async function requireLearner(): Promise<LearnerIdentity | null> {
   const id = await resolveIdentity();
   return id.kind === "learner" ? id : null;
+}
+
+/**
+ * Header a linked device presents instead of a session.
+ *
+ * `sendBeacon` cannot set headers, and the sync flush on tab-hide is a beacon,
+ * so POST bodies may carry the same token under `deviceToken`. Both are read
+ * below; neither is ever logged.
+ */
+export const DEVICE_TOKEN_HEADER = "x-vidya-device";
+
+/**
+ * The learner making this request — by device token first, session second.
+ *
+ * Device tokens exist because the child has no login and is never going to get
+ * one. The token is minted when an adult's claim code is redeemed, so it
+ * carries exactly the authority the adult already granted, and a parent can
+ * revoke it from the dashboard. See redeemClaimCode.
+ *
+ * The Clerk path is kept for a learner who genuinely does have their own
+ * sign-in — an older kid on their own laptop — which the schema always allowed.
+ */
+export async function requireLearnerFrom(
+  req: Request,
+  bodyToken?: string | null,
+): Promise<LearnerIdentity | null> {
+  const token = req.headers.get(DEVICE_TOKEN_HEADER)?.trim() || bodyToken?.trim() || "";
+  if (token && dbConfigured()) {
+    const learner = await getLearnerForDeviceToken(token);
+    if (learner) {
+      return {
+        kind: "learner",
+        // A device is not a person. There is no Clerk user behind this, and
+        // callers must not treat the id as one.
+        userId: `device:${learner.id}`,
+        learner,
+        verificationLevel: learner.verificationLevel,
+      };
+    }
+  }
+  return requireLearner();
 }
 
 /**

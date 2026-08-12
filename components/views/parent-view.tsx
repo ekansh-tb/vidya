@@ -11,6 +11,7 @@ import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
 import { BackupPanel } from "@/components/parent/backup-panel";
+import { OpinionCard } from "@/components/parent/opinion-card";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 
 /**
@@ -870,6 +871,16 @@ type Signal = {
   observation: string;
   opinion: string;
   tone: SignalTone;
+  /**
+   * Where a parent takes this if it worries them.
+   *
+   * Required on any signal that could read as bad news about their child. The
+   * old inline renderer had no footer at all, so "a recent pause — busy week,
+   * illness, or just a break" landed as a verdict with nowhere to go. A soft
+   * observation about a kid's rhythm that offers no human to talk to is just a
+   * worry we handed over.
+   */
+  escalation?: { label: string; to: "teacher" | "doctor" | "counsellor" | "self" };
 };
 
 export function WellnessSignals({
@@ -898,6 +909,10 @@ export function WellnessSignals({
                 ? "This might mean a typical week. Streaks rise and fall; nothing here calls for action."
                 : "This might mean a recent pause — busy week, illness, or just a break. Worth a gentle check-in, not a push.",
         tone: longest === 0 ? "neutral" : ratio >= 0.3 ? "warm" : "concern",
+        escalation:
+          longest > 0 && ratio < 0.3
+            ? { label: "If the pause came with a mood change, a counsellor is a better read than we are", to: "counsellor" }
+            : undefined,
       });
     }
 
@@ -916,6 +931,10 @@ export function WellnessSignals({
             ? "This might mean the kid is in their stretch zone — a small backlog of 1–5 is normal and a sign of learning, not falling behind."
             : "This might mean a few specific topics need a slower walk-through together rather than another quiz attempt.",
       tone: misses === 0 ? "warm" : misses <= 5 ? "neutral" : "concern",
+      escalation:
+        misses > 5
+          ? { label: "Worth showing the class teacher which topics keep coming back", to: "teacher" }
+          : undefined,
     });
 
     // Signal 3 — Daily quest engagement
@@ -965,6 +984,10 @@ export function WellnessSignals({
             opinion:
               "This might mean a current passion (great!) or quiet avoidance of other subjects. Worth checking — both are useful to know.",
             tone: "neutral",
+            escalation: {
+              label: "Their teacher will know which of the two it is",
+              to: "teacher",
+            },
           });
         }
       }
@@ -988,34 +1011,19 @@ export function WellnessSignals({
         Nothing here is a verdict.
       </div>
       <div className="space-y-3">
+        {/* The shared primitive, not a local lookalike. Each card carries its
+            own "Opinion · not a claim" header, its data window, and — where the
+            finding could worry a parent — a human to take it to. */}
         {signals.map((s, i) => (
-          <SignalRow key={i} signal={s} />
+          <OpinionCard
+            key={i}
+            window={s.windowText}
+            observation={s.observation}
+            opinion={s.opinion}
+            escalation={s.escalation}
+            tone={s.tone === "warm" ? "warm" : s.tone === "concern" ? "concern" : "neutral"}
+          />
         ))}
-      </div>
-    </div>
-  );
-}
-
-function SignalRow({ signal }: { signal: Signal }) {
-  const palette =
-    signal.tone === "warm"
-      ? { dot: "var(--success)", bar: "rgba(52, 211, 153, 0.35)" }
-      : signal.tone === "concern"
-        ? { dot: "#FBBF24", bar: "rgba(251, 191, 36, 0.35)" }
-        : { dot: "var(--accent)", bar: "var(--border-strong)" };
-  return (
-    <div className="pl-3 py-1" style={{ borderLeft: `2px solid ${palette.bar}` }}>
-      <div className="flex items-center gap-1.5 mb-0.5">
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: palette.dot }} />
-        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: palette.dot }}>
-          {signal.windowText}
-        </span>
-      </div>
-      <div className="text-sm font-medium mb-0.5" style={{ color: "var(--text)" }}>
-        {signal.observation}
-      </div>
-      <div className="text-xs italic" style={{ color: "var(--text-muted)" }}>
-        {signal.opinion}
       </div>
     </div>
   );
@@ -1050,8 +1058,11 @@ const RUNG_NAME: Record<VerificationLevel, string> = {
 
 const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
   0: "Default — available the moment a profile exists.",
-  1: "Auto-promotes when the kid's session matches your Wi-Fi. Coming soon.",
-  2: "Set a parent PIN on this learner. You're already here.",
+  1: "Auto-promotes when the kid's session matches your Wi-Fi. Not built yet.",
+  // Was: "Set a parent PIN on this learner. You're already here." Both halves
+  // were false — computeRung ignores parentPin entirely, and it said "already
+  // here" to every parent regardless of rung. This is the actual route.
+  2: "Sign in on the parent dashboard, create a code, and have them type it into Vidya on their device.",
   3: "Strict review by our team. Coming when BYOK / medical features ship.",
 };
 
@@ -1063,6 +1074,7 @@ export function CapabilityMap({
 }) {
   const rung = computeRung(learner);
   const disabled = new Set(learner.disabledCapabilities || []);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
   const grouped = useMemo(() => {
     const m: Record<VerificationLevel, CapabilityKey[]> = { 0: [], 1: [], 2: [], 3: [] };
     for (const key of Object.keys(CAPABILITY_POLICIES) as CapabilityKey[]) {
@@ -1072,11 +1084,42 @@ export function CapabilityMap({
     return m;
   }, []);
 
-  const toggle = (key: CapabilityKey) => {
+  /**
+   * Writes locally first, then pushes to the server.
+   *
+   * Local-first because the whole app is, and a parent toggling on a flaky
+   * connection should still see the switch move. But the local write alone
+   * used to be the ENTIRE effect: it removed a room from the kid's lobby while
+   * the endpoint behind it stayed just as reachable. The PATCH is what makes
+   * the switch mean something — so when it fails, we say so rather than
+   * leaving a green toggle standing for a boundary that isn't there.
+   */
+  const toggle = async (key: CapabilityKey) => {
     sfx.click();
     const next = new Set(disabled);
     if (next.has(key)) next.delete(key); else next.add(key);
-    onUpdateLearner({ disabledCapabilities: Array.from(next) });
+    const list = Array.from(next);
+    onUpdateLearner({ disabledCapabilities: list });
+
+    if (!learner.remoteId) {
+      setSyncNote("Saved on this device. Add this learner to your account to make it apply everywhere.");
+      return;
+    }
+    setSyncNote(null);
+    try {
+      const res = await fetch(`/api/parent/learners/${learner.remoteId}/capabilities`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ disabled: list }),
+      });
+      if (res.status === 401) {
+        setSyncNote("Saved on this device only — sign in on the parent dashboard to apply it server-side.");
+      } else if (!res.ok) {
+        setSyncNote("Saved on this device, but the server didn't accept it. Try again from the parent dashboard.");
+      }
+    } catch {
+      setSyncNote("Saved on this device. It'll need re-saving online to apply server-side.");
+    }
   };
 
   return (
@@ -1087,10 +1130,20 @@ export function CapabilityMap({
           Capabilities · this learner is at rung {rung} · {RUNG_NAME[rung]}
         </span>
       </div>
-      <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
+      <div className="text-xs italic mb-3" style={{ color: "var(--text-muted)" }}>
         Each capability has a verification rung. Rooms appear in the kid&apos;s lobby only when their rung meets the rule.
         The kid never sees a locked door — features are simply present or absent.
       </div>
+
+      {syncNote && (
+        <div
+          role="status"
+          className="text-[11px] mb-3 px-3 py-2 rounded-[var(--radius-md)]"
+          style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+        >
+          {syncNote}
+        </div>
+      )}
 
       <div className="space-y-4">
         {([0, 1, 2, 3] as VerificationLevel[]).map((r) => {
@@ -1138,7 +1191,7 @@ export function CapabilityMap({
                       </div>
                       {open ? (
                         <button
-                          onClick={() => toggle(k)}
+                          onClick={() => void toggle(k)}
                           className="text-[9px] uppercase tracking-widest font-bold rounded-full px-2 py-0.5 flex-shrink-0 active:scale-95"
                           style={{
                             background: isDisabled ? "var(--surface)" : "rgba(52, 211, 153, 0.15)",

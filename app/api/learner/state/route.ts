@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requireLearner } from "@/lib/auth/session";
+import { requireLearnerFrom } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
 import { getLearnerState, pushLearnerState } from "@/lib/db/queries";
 import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
@@ -19,6 +19,9 @@ const pushSchema = z.object({
   state: z.record(z.string(), z.unknown()),
   expectedRevision: z.number().int().min(0),
   deviceLabel: z.string().trim().max(60).optional(),
+  /** Only for the tab-hide flush: sendBeacon cannot set headers, so the token
+   *  rides in the body there. Every other request uses x-vidya-device. */
+  deviceToken: z.string().trim().max(200).optional(),
 });
 
 /** Pull this learner's server copy. Identity comes from the session. */
@@ -26,7 +29,7 @@ export async function GET(req: Request) {
   if (!isSameOrigin(req)) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!dbConfigured()) return Response.json({ error: "Storage unavailable" }, { status: 503 });
 
-  const me = await requireLearner();
+  const me = await requireLearnerFrom(req);
   if (!me) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const envelope = await getLearnerState(me.learner.id);
@@ -52,9 +55,10 @@ export async function POST(req: Request) {
     });
   }
 
-  const me = await requireLearner();
-  if (!me) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
+  // The body is read BEFORE the identity check here, unlike GET, because the
+  // tab-hide beacon can only carry its token in the body. Nothing expensive
+  // happens first: the rate limiter and the size ceiling below both run on an
+  // unauthenticated request already.
   let rawText: string;
   try { rawText = await req.text(); } catch { return Response.json({ error: "Bad request" }, { status: 400 }); }
   if (rawText.length > MAX_STATE_BYTES) {
@@ -66,6 +70,9 @@ export async function POST(req: Request) {
 
   const parsed = pushSchema.safeParse(raw);
   if (!parsed.success) return Response.json({ error: "Bad request" }, { status: 400 });
+
+  const me = await requireLearnerFrom(req, parsed.data.deviceToken);
+  if (!me) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const result = await pushLearnerState({

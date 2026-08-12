@@ -12,7 +12,16 @@
  * genuinely enforced by the SQL, that a claim code is really single-use, and
  * that the revision check actually rejects a stale write. Every row created
  * here is namespaced and deleted in afterAll.
+ *
+ * TIMEOUTS ARE GENEROUS ON PURPOSE. Neon scales its compute to zero when idle,
+ * so the first query of a run pays a cold start that blows straight through
+ * vitest's 10s hook default and fails the whole file before a single
+ * assertion. That is an infrastructure nap, not a bug in the query — so the
+ * limits below are set past it rather than being tuned to a warm database.
  */
+
+/** Past a Neon cold start, not tuned to a warm connection. */
+const DB_TIMEOUT_MS = 60_000;
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { getSql, dbConfigured } from "./client";
@@ -20,6 +29,8 @@ import {
   upsertParent, createLearner, listLearnersForParent, getLearnerForParent,
   getLearnerForClerkUser, issueClaimCode, redeemClaimCode,
   pushLearnerState, getLearnerState,
+  getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
+  clearSelfLink, hashDeviceToken, setDisabledCapabilities,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -34,7 +45,7 @@ const KID_CLERK = `${RUN}-kid-clerk`;
 
 const state = (xp: number): GameState => ({ xp } as unknown as GameState);
 
-d("db integration", () => {
+d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
   let learnerA = "";
   let learnerB = "";
 
@@ -47,7 +58,7 @@ d("db integration", () => {
     learnerB = (await createLearner({
       parentId: PARENT_B, name: "Kid B", grade: 9, board: "cambridge-igcse", localId: `${RUN}-b`,
     })).id;
-  });
+  }, DB_TIMEOUT_MS);
 
   afterAll(async () => {
     if (!hasDb) return;
@@ -55,7 +66,7 @@ d("db integration", () => {
     // learners/states/codes cascade from parents.
     await sql`delete from parents where id in (${PARENT_A}, ${PARENT_B})`;
     await sql`delete from link_audit where actor like ${RUN + "%"} or parent_id in (${PARENT_A}, ${PARENT_B})`;
-  });
+  }, DB_TIMEOUT_MS);
 
   describe("strict per-learner isolation", () => {
     it("a parent sees only their own learners", async () => {
@@ -86,23 +97,26 @@ d("db integration", () => {
       expect(issued!.code).not.toMatch(/[O0I1]/);
     });
 
-    it("links the learner and promotes to rung 2 exactly once", async () => {
+    it("promotes to rung 2 and mints a device token, exactly once", async () => {
       const issued = await issueClaimCode(PARENT_A, learnerA);
-      const first = await redeemClaimCode(issued!.code, KID_CLERK);
+      const first = await redeemClaimCode(issued!.code, { deviceLabel: "iPad" });
       expect(first.ok).toBe(true);
       if (first.ok) {
-        expect(first.learner.clerkUserId).toBe(KID_CLERK);
         expect(first.learner.verificationLevel).toBe(2);
+        expect(first.deviceToken.length).toBeGreaterThan(30);
+        // The credential is a device, not a person. Redeeming must never write
+        // an identity onto the row — that is what locked parents out.
+        expect(first.learner.clerkUserId).toBeNull();
       }
 
       // Single use: the same code must not work twice.
-      const second = await redeemClaimCode(issued!.code, `${RUN}-other-kid`);
+      const second = await redeemClaimCode(issued!.code);
       expect(second.ok).toBe(false);
       if (!second.ok) expect(second.reason).toBe("used");
     });
 
     it("rejects an unknown code", async () => {
-      const out = await redeemClaimCode("ZZZZZZ", KID_CLERK);
+      const out = await redeemClaimCode("ZZZZZZ");
       expect(out.ok).toBe(false);
       if (!out.ok) expect(out.reason).toBe("invalid");
     });
@@ -111,13 +125,130 @@ d("db integration", () => {
       const first = await issueClaimCode(PARENT_B, learnerB);
       const second = await issueClaimCode(PARENT_B, learnerB);
       expect(first!.code).not.toBe(second!.code);
-      const stale = await redeemClaimCode(first!.code, `${RUN}-kid-b`);
+      const stale = await redeemClaimCode(first!.code);
       expect(stale.ok, "an abandoned code must not stay usable").toBe(false);
     });
 
-    it("a linked learner is reachable by their own Clerk id", async () => {
-      const me = await getLearnerForClerkUser(KID_CLERK);
-      expect(me?.id).toBe(learnerA);
+    it("two learners can be linked from one browser", async () => {
+      // The old path wrote a single Clerk id onto learners.clerk_user_id, which
+      // is UNIQUE, so the second child's redeem died on a constraint violation
+      // and answered 500. Device tokens are per-row, so both siblings link.
+      const a = await issueClaimCode(PARENT_A, learnerA);
+      const b = await issueClaimCode(PARENT_B, learnerB);
+      const ra = await redeemClaimCode(a!.code, { deviceLabel: "shared iPad" });
+      const rb = await redeemClaimCode(b!.code, { deviceLabel: "shared iPad" });
+      expect(ra.ok).toBe(true);
+      expect(rb.ok).toBe(true);
+      if (ra.ok && rb.ok) expect(ra.deviceToken).not.toBe(rb.deviceToken);
+    });
+  });
+
+  describe("device tokens", () => {
+    it("a token resolves to its own learner and nobody else's", async () => {
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "iPhone" });
+      expect(r.ok).toBe(true);
+      if (!r.ok) return;
+
+      const resolved = await getLearnerForDeviceToken(r.deviceToken);
+      expect(resolved?.id).toBe(learnerA);
+
+      // A near-miss must not resolve. Only the exact secret works.
+      const wrong = await getLearnerForDeviceToken(`${r.deviceToken}x`);
+      expect(wrong).toBeNull();
+    });
+
+    it("stores only a hash, never the token", async () => {
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code);
+      if (!r.ok) throw new Error("redeem failed");
+
+      const sql = getSql();
+      const rows = await sql`
+        select token_hash from learner_devices where learner_id = ${learnerA}
+      `;
+      const hashes = rows.map((x) => x.token_hash);
+      expect(hashes).toContain(hashDeviceToken(r.deviceToken));
+      expect(hashes, "a db leak must not hand over working credentials")
+        .not.toContain(r.deviceToken);
+    });
+
+    it("a revoked device stops resolving, and the last one drops the rung", async () => {
+      const issued = await issueClaimCode(PARENT_B, learnerB);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "Android tablet" });
+      if (!r.ok) throw new Error("redeem failed");
+      expect(await getLearnerForDeviceToken(r.deviceToken)).not.toBeNull();
+
+      const revoked = await revokeDeviceForParent(PARENT_B, learnerB, "all");
+      expect(revoked!.revoked).toBeGreaterThan(0);
+
+      expect(await getLearnerForDeviceToken(r.deviceToken)).toBeNull();
+      // Otherwise "revoked" would leave the AI tutor open on a cut-off device.
+      const after = await getLearnerForParent(PARENT_B, learnerB);
+      expect(after!.verificationLevel).toBe(0);
+    });
+
+    it("a parent cannot list or revoke another family's devices", async () => {
+      expect(await listDevicesForParent(PARENT_A, learnerB)).toBeNull();
+      expect(await revokeDeviceForParent(PARENT_A, learnerB, "all")).toBeNull();
+    });
+  });
+
+  describe("parent capability switches", () => {
+    it("persists, and reaches the learner a device token resolves to", async () => {
+      // The whole point of migration 0003: the switch has to be readable on
+      // the request path, not just in the parent's browser.
+      const saved = await setDisabledCapabilities(PARENT_A, learnerA, ["ai.tutor.full"]);
+      expect(saved?.disabledCapabilities).toEqual(["ai.tutor.full"]);
+
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "iPad" });
+      if (!r.ok) throw new Error("redeem failed");
+      const viaDevice = await getLearnerForDeviceToken(r.deviceToken);
+      expect(viaDevice?.disabledCapabilities).toEqual(["ai.tutor.full"]);
+    });
+
+    it("replaces the list rather than merging it", async () => {
+      await setDisabledCapabilities(PARENT_A, learnerA, ["ai.tutor.full", "share.crossNetwork"]);
+      const after = await setDisabledCapabilities(PARENT_A, learnerA, ["share.crossNetwork"]);
+      expect(after?.disabledCapabilities).toEqual(["share.crossNetwork"]);
+    });
+
+    it("distinguishes never-configured from nothing-turned-off", async () => {
+      const fresh = await getLearnerForParent(PARENT_B, learnerB);
+      expect(fresh?.disabledCapabilities, "untouched must be null").toBeNull();
+      const emptied = await setDisabledCapabilities(PARENT_B, learnerB, []);
+      expect(emptied?.disabledCapabilities, "looked and chose nothing must be []").toEqual([]);
+    });
+
+    it("a parent cannot set switches on another family's child", async () => {
+      expect(await setDisabledCapabilities(PARENT_A, learnerB, ["ai.tutor.full"])).toBeNull();
+      const untouched = await getLearnerForParent(PARENT_B, learnerB);
+      expect(untouched?.disabledCapabilities).toEqual([]);
+    });
+  });
+
+  describe("self-link repair", () => {
+    it("clears a parent's own Clerk id off a learner they own", async () => {
+      // Reproduces the lockout: the old redeem path wrote the caller's Clerk id
+      // onto the row, and on a family's shared browser that caller was the
+      // parent. resolveIdentity then classified them as a learner and
+      // requireParent() returned null forever, with no unlink control anywhere.
+      const sql = getSql();
+      await sql`update learners set clerk_user_id = ${PARENT_A} where id = ${learnerA}`;
+      expect((await getLearnerForClerkUser(PARENT_A))?.id).toBe(learnerA);
+
+      expect(await clearSelfLink(PARENT_A)).toBe(true);
+      expect(await getLearnerForClerkUser(PARENT_A)).toBeNull();
+    });
+
+    it("leaves a genuine learner sign-in alone", async () => {
+      const sql = getSql();
+      await sql`update learners set clerk_user_id = ${KID_CLERK} where id = ${learnerA}`;
+      // Not the owning parent, so not the corruption — must survive.
+      expect(await clearSelfLink(KID_CLERK)).toBe(false);
+      expect((await getLearnerForClerkUser(KID_CLERK))?.id).toBe(learnerA);
+      await sql`update learners set clerk_user_id = null where id = ${learnerA}`;
     });
   });
 

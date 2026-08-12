@@ -113,6 +113,12 @@ export type LearnerProfile = {
   verifiedLevel?: 0 | 1 | 2 | 3;
   /** Server learner id, once linked. Enables state sync. */
   remoteId?: string;
+  /** Credential minted when a claim code was redeemed on THIS device. Stands in
+   *  for a session because the child has no login — see redeemClaimCode. It is
+   *  per-device and per-learner, so two siblings on one browser each hold their
+   *  own, and a parent can revoke it from the dashboard. Never leaves this
+   *  profile except as the x-vidya-device header on a sync request. */
+  deviceToken?: string;
   /** Per-learner upcoming exams. Drives the home-view countdown banner. */
   upcomingExams?: ExamDate[];
   /** A note from the parent to the kid. Shown on the kid's home until acknowledged. */

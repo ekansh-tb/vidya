@@ -120,29 +120,55 @@ doesn't downgrade an already-higher rung.
 We don't store raw IPs in the DB. The fingerprint is one-way and rotated
 per parent session.
 
-## Parent verification flow (rung 2)
+## Parent verification flow (rung 2) *(rewritten 2026-08-13)*
 
-Two doors into rung 2 — both end at parent confirming.
+**The kid never signs in.** That is the load-bearing fact, and the earlier
+version of this section got it wrong — see "What the old Door A got wrong"
+below, because the mistake is instructive and easy to reintroduce.
 
-**Door A — Parent claims kid:**
-1. Parent signs up via `/sign-up`, picks role=parent
-2. From `/parent`, parent clicks "Add a learner"
-3. Parent enters the kid's name + age + board + school
-4. Backend creates a `learners` row with `parent_id = clerk_user_id`
-5. Backend issues a 6-digit `claim_code` (24h TTL)
-6. Parent shows the code to the kid on their device
-7. Kid signs up via `/sign-up`, picks role=learner, enters code
-8. Backend links kid Clerk ID to learner row, sets `verification_level = parent_verified`
+1. Parent signs up via `/sign-up` and signs in at `/parent`
+2. Parent clicks "Add this learner to my account" → a `learners` row with
+   `parent_id = <parent's Clerk id>`
+3. Parent clicks "Create a code" → a 6-character single-use `claim_code`,
+   24h TTL, from a 32-symbol alphabet with `O/0/I/1` removed
+4. Parent reads the code to the kid
+5. Kid types it into Vidya on their own device. **No session is required.**
+   The server checks same-origin, rate-limits to 10 tries per 10 minutes,
+   validates the code, sets `verification_level = 2`, and mints a **device
+   token** — 32 random bytes, returned once, stored as a SHA-256 hash in
+   `learner_devices`
+6. The device presents that token as `x-vidya-device` on every sync request
+   (or in the POST body for the tab-hide `sendBeacon`, which cannot set
+   headers). The parent can revoke any device from the dashboard; when the
+   last one goes, the learner drops back to rung 0
 
-**Door B — Kid signs up first:**
-1. Kid hits `/sign-up`, picks role=learner
-2. Kid enters their name + parent's email
-3. Backend creates a stub `learners` row with `parent_id = null`, `verification_level = unverified`
-4. Backend emails parent: "Your kid started Vidya. Verify to unlock AI features."
-5. Parent clicks link → signs up / in via Clerk
-6. Parent reviews kid profile → approves → `verification_level = parent_verified`
+### What the old Door A got wrong
 
-Door A is the default. Door B is the fallback for kids who signed up alone.
+Step 7 used to read "kid signs up via `/sign-up`, picks role=learner", and
+step 8 wrote the kid's Clerk id onto `learners.clerk_user_id`. Three things
+were wrong with it, and none were visible from the spec alone:
+
+- **The kid app has no sign-in affordance and is not getting one.** Clerk
+  components exist only under `/parent` and the two auth pages. `/api/tutor`
+  and `/api/assembly` are deliberately public for the same reason.
+- **On the real family setup — one iPad, one browser — the only signed-in
+  account is the parent's.** So the only person who *could* complete the flow
+  was the parent, and doing so wrote their own Clerk id onto their child's
+  row. `resolveIdentity` then classified them as a learner, `requireParent()`
+  returned null forever, and every `/api/parent/*` route answered 401. There
+  was no unlink control in the app or the database.
+- **`learners.clerk_user_id` is UNIQUE**, so a second sibling redeeming from
+  the same browser hit a constraint violation and got a 500.
+
+`resolveIdentity` now repairs the first case on sight: a Clerk id that appears
+as both `parent_id` and `clerk_user_id` on one row is corruption, not a role,
+so it is cleared and the caller continues as the parent. `clerk_user_id`
+itself is kept — it is still the right column for an older learner who
+genuinely does have their own sign-in — it is simply no longer written by
+redeem.
+
+**Door B — kid signs up first:** dropped. It was premised on the kid having an
+account.
 
 ## Strict verification (rung 3)
 
@@ -153,49 +179,44 @@ incognito, medical) immediately when ops capacity exists.
 For v1: any feature requiring rung 3 is hidden in the UI until rung is set
 manually in the DB by ops.
 
-## Data model *(spec — no database exists)*
+## Data model
 
-There is no migration file; `supabase/migrations/0001_init.sql` was deleted
-along with the rest of the Supabase scaffolding on 2026-05-21. The shape
-below is the design to build against if a server DB is reintroduced.
-`lib/auth/types.ts` mirrors the `capability_policies` row in TypeScript.
+**The migrations are the spec.** `db/migrations/*.sql` is applied against a
+live Neon Postgres and carries the reasoning inline; this section used to
+duplicate the shape in prose and drifted from it, which is how a doc ends up
+describing a flow nobody can perform.
+
+- `0001_init.sql` — `parents`, `learners`, `learner_states`, `claim_codes`,
+  `link_audit`
+- `0002_learner_devices.sql` — `learner_devices`, the per-device credential
+  that replaced "the kid signs in"
+- `0003_disabled_capabilities.sql` — `learners.disabled_capabilities`, which
+  is what makes the parent's per-learner switches binding on the server
+  instead of just hiding a room in the kid's lobby
+
+Two things the migrations cannot say for you, so they are said here:
+
+- `claim_code` / `claim_code_expires_at` were never columns on `learners`.
+  Codes live in their own table so issuing a new one can invalidate the old.
+- `parent_network_fingerprints` (rung 1) does not exist. Rung 1 is unbuilt;
+  only rungs 0 and 2 are reachable in code.
+
+`lib/auth/types.ts` mirrors the `capability_policies` row in TypeScript. That
+table is also still unbuilt — the capability map is static in the client.
 
 ```
-parents (
-  id              text primary key,     -- Clerk user ID
-  display_name    text,
-  email           text,
-  created_at      timestamptz default now()
-)
-
+-- Superseded. Kept only to show what the old spec claimed, since the
+-- redeem flow above was written against it.
 learners (
-  id                    uuid primary key default gen_random_uuid(),
-  parent_id             text references parents(id) on delete cascade,
-  clerk_user_id         text unique,    -- null until kid signs up
-  name                  text not null,
-  grade                 int not null,
-  board                 text not null,
-  school                text,
-  city                  text,
-  verification_level    int default 0,  -- 0..3
-  claim_code            text,
-  claim_code_expires_at timestamptz,
-  created_at            timestamptz default now()
+  ...
+  clerk_user_id         text unique,    -- "null until kid signs up" — the kid
+                                        -- never signs up; see the flow above
+  claim_code            text,           -- never existed; see claim_codes
+  claim_code_expires_at timestamptz     -- never existed
 )
 
-learner_states (
-  learner_id   uuid primary key references learners(id) on delete cascade,
-  state        jsonb not null,         -- the existing GameState shape
-  updated_at   timestamptz default now()
-)
-
-parent_network_fingerprints (
-  parent_id    text references parents(id) on delete cascade,
-  fingerprint  text not null,
-  last_seen    timestamptz default now(),
-  primary key (parent_id, fingerprint)
-)
-
+-- Unbuilt below this line. `link_audit` shipped in 0001 under that name and
+-- with a different shape; the capability tables were never created.
 parent_child_links_audit (
   id           uuid primary key default gen_random_uuid(),
   parent_id    text references parents(id),
@@ -225,12 +246,21 @@ capability_policy_audit (
 )
 ```
 
-RLS policies:
-- A parent reads only their own row in `parents` AND only learners where
-  `parent_id = auth.jwt() ->> 'sub'`.
-- A learner reads only their own row in `learners` (matched by `clerk_user_id`)
-  and their own `learner_states`.
-- No one reads `parent_child_links_audit` except service-role queries.
+**Isolation is enforced in the queries, not by RLS.** There is no Postgres
+row-level security here — the app connects as one role. Instead every function
+in `lib/db/queries.ts` scopes its SQL by ownership, and the file's header
+states the rule: there is deliberately no `getLearnerById(id)`, because that
+is exactly how one family ends up reading another family's child by guessing a
+UUID. A miss answers 404, never 403, so the response never confirms that
+another family's learner id exists.
+
+What that works out to:
+- A parent reaches a learner only via `parent_id = <their Clerk id>` in the
+  where-clause.
+- A device reaches a learner only via the SHA-256 of the token it presents,
+  and only while `revoked_at is null`.
+- A learner with their own sign-in reaches their row via `clerk_user_id` —
+  still supported, not used by the redeem path.
 
 ## Environment variables
 
@@ -257,26 +287,30 @@ Audited against the codebase on 2026-08-10.
 | 4 | `/sign-up` page | ✅ done — **no role chooser**; every signup is implicitly a parent |
 | 5 | Move kid app to `/student/**`, `/` becomes marketing | ❌ not done — `/` is still the kid app; there is no marketing landing |
 | 6 | Role-gate paths in middleware | ⚠️ partial — `/parent(.*)` requires *a* session; role is never checked because no role is ever written to `publicMetadata` |
-| 7–9 | Server DB + JWT template + DB client | ❌ dropped with Supabase |
-| 10 | localStorage → server sync | ❌ blocked on 7–9 |
+| 7–9 | Server DB + DB client | ✅ done — Neon Postgres, `db/migrations/`, `lib/db/queries.ts`. No JWT template; ownership is checked in SQL |
+| 10 | localStorage → server sync | ✅ done — `lib/sync/`, gated on a linked device |
 
-Known gaps beyond the table:
+Known gaps, re-checked 2026-08-13:
 
 - **Rungs 1 and 3 are unreachable.** `computeRung()` in
-  `lib/capabilities/use-capability.ts` returns only 0 or 2.
-- **Rung 2 is a local PIN, not authentication.** Any 4-digit
-  `learner.parentPin` in localStorage promotes the learner to rung 2 and
-  unlocks `ai.tutor.full`. No Clerk session is consulted. The model above
-  says rung 2 means a specific authenticated adult is responsible for this
-  kid; the code does not implement that.
-- **`ai.tutor.limited` is dead.** All five call sites check
-  `ai.tutor.full`, so the rung-1 rate-limited tier is never resolved.
-- **The API routes enforce nothing.** `/api/tutor` and `/api/assembly`
-  are public: no `auth()` call, no rate limit, no request-body validation.
-  `middleware.ts` matches `/(api|trpc)(.*)`, but `clerkMiddleware` only
-  *initialises* auth on a matched route — it does not require a session.
-  The capability hook is a UX affordance, not a security boundary.
+  `lib/capabilities/use-capability.ts` returns only 0 or 2. Rung 1 needs the
+  network-fingerprint table that was never built; rung 3 needs an ops process.
+- **`ai.tutor.limited` is dead.** All five call sites check `ai.tutor.full`,
+  so the rung-1 rate-limited tier is never resolved.
+- **`/api/tutor`'s RUNG check runs in OBSERVE MODE.** It resolves the real
+  capability from the request's device token, logs the decision, and allows it
+  anyway. `ENFORCE_TUTOR_RUNG=true` makes that half binding — safe once the
+  family has linked a device, and not before, since it switches the tutor off
+  for every unlinked learner at once. The parent's explicit switch-off is
+  honoured immediately either way: an adult who turned a feature off has made
+  a decision, and there is no transition to ease them through.
+- **The capability hook is still a UX affordance, not a boundary.** It reads
+  `verifiedLevel` out of localStorage, which a child can edit. The boundary is
+  the server: the device token, and the rung column behind it.
 
-When a server DB returns, step 10 is the tricky one: in-progress learners
-live only in localStorage. Plan is to prompt on first sign-in to claim an
-existing local profile or start fresh.
+Fixed since this table was written: the PIN no longer grants anything
+(`computeRung` ignores `parentPin` entirely — the label on the dashboard that
+claimed otherwise was corrected on 2026-08-13); `/api/tutor` and
+`/api/assembly` now validate origin and body and rate-limit best-effort; and
+step 10's "claim an existing local profile" prompt shipped as the
+Add-to-my-account button on `/parent`.

@@ -62,18 +62,36 @@ const backupSchema = z.object({
  * Strips credentials before anything leaves the device.
  *
  * A backup is meant to be emailed to yourself, dropped in cloud storage, or
- * handed to another device — so it must not be a credential dump. `parentPin`
- * is the one secret stored on a LearnerProfile, and exporting it verbatim
- * meant any sibling who could open the export (see the PIN room) walked away
- * with every other learner's parent PIN in plaintext.
+ * handed to another device — so it must not be a credential dump.
  *
- * Restore therefore never carries a PIN either; the parent re-sets it on the
- * new device, which is the correct behaviour anyway.
+ * Two secrets live on a LearnerProfile:
+ *   - `parentPin`. Exporting it verbatim meant any sibling who could open the
+ *     export (see the PIN room) walked away with every other learner's parent
+ *     PIN in plaintext.
+ *   - `deviceToken`. This one is a real credential: it authenticates sync and
+ *     opens the AI tutor, with no session behind it. A backup that carried it
+ *     would silently link every device the file ever reached, and a parent
+ *     revoking from the dashboard would have no idea how many there were.
+ *
+ * `verifiedLevel` goes with the token, because it is only ever a mirror of a
+ * server column and a device holding no token cannot prove anything to that
+ * server. Carrying it alone would mean a backup file — a JSON file a child can
+ * open and edit — granted rung 2 and the AI tutor on any device it landed on,
+ * which is the self-promotion hole the claim-code rebuild existed to close.
+ *
+ * Restore therefore carries none of the three. The parent re-sets the PIN, and
+ * issues a fresh claim code for the new device — which is exactly the point at
+ * which an adult should be deciding whether that device gets access.
  */
 function withoutCredentials(profiles: ProfilesV2): ProfilesV2 {
   const learners: ProfilesV2["learners"] = {};
   for (const [id, learner] of Object.entries(profiles.learners)) {
-    const { parentPin: _omit, ...safe } = learner;
+    const {
+      parentPin: _omitPin,
+      deviceToken: _omitToken,
+      verifiedLevel: _omitRung,
+      ...safe
+    } = learner;
     learners[id] = safe as LearnerProfile;
   }
   return { ...profiles, learners };
