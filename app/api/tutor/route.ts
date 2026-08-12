@@ -3,7 +3,7 @@ import {
   tutorRequestSchema, totalChars, isSameOrigin,
   clientKey, rateLimit, rateHeaders, LIMITS,
 } from "@/lib/api/guard";
-import { resolveCapabilityServer } from "@/lib/capabilities/server";
+import { resolveCapabilityForRequest } from "@/lib/capabilities/server";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -305,17 +305,33 @@ export async function POST(req: Request) {
 
   // 3b. Capability check, server-side.
   //
-  // OBSERVE MODE, deliberately. The kid app still runs fully anonymously and
-  // no learner has linked an account yet, so enforcing `ai.tutor.full` today
-  // would switch the tutor off for every existing user at once. We resolve the
-  // real rung and log the decision now; flipping ENFORCE_TUTOR_RUNG to true is
-  // the single, visible change that makes it binding once families have
-  // linked. Until then the client hook remains the only gate — and it is a UX
-  // affordance, not a security boundary.
+  // Resolved FROM THE REQUEST, because the child has no Clerk session — they
+  // hold a device token minted when a parent's claim code was redeemed. See
+  // resolveCapabilityForRequest.
+  //
+  // Two things can deny here, and they are different:
+  //   - below_min_rung — this device has never been linked by an adult.
+  //   - feature_disabled — an adult linked it and then switched Miss Vidya
+  //     off for this child specifically. That one is honoured even in observe
+  //     mode: a parent who turns a feature off has made a decision, and there
+  //     is no transition to ease them through.
+  //
+  // The rung half stays in OBSERVE MODE by default. Enforcing it before a
+  // family has linked would switch the tutor off for them mid-term, so
+  // ENFORCE_TUTOR_RUNG=true is the single visible change that makes it binding.
   const ENFORCE_TUTOR_RUNG = process.env.ENFORCE_TUTOR_RUNG === "true";
   try {
-    const decision = await resolveCapabilityServer("ai.tutor.full");
+    const decision = await resolveCapabilityForRequest("ai.tutor.full", req);
     if (!decision.allowed) {
+      if (decision.reason === "feature_disabled") {
+        // Deliberately not "your parent turned this off". Per
+        // [[parent-invisible-config]] the child is never told a grown-up
+        // configured something — disabled features are absent, not blamed.
+        return Response.json(
+          { error: "Miss Vidya isn't available right now." },
+          { status: 403, headers: rateHeaders(verdict, RATE.limit) },
+        );
+      }
       if (ENFORCE_TUTOR_RUNG) {
         return Response.json(
           { error: "Miss Vidya isn't open for this account yet." },

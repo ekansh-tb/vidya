@@ -6,6 +6,7 @@ import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, KeyRound, Check, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/lib/game-store";
+import { deviceLabel } from "@/lib/sync/client";
 import { sfx } from "@/lib/audio";
 import type { LearnerProfile } from "@/lib/types";
 
@@ -14,9 +15,14 @@ import type { LearnerProfile } from "@/lib/types";
  *
  * This is what replaces the PIN as the route to verification rung 2 (and
  * therefore the AI tutor). A parent issues a single-use code from their
- * signed-in dashboard; the child types it here. The promotion happens on the
- * server against the parent's session, so a child cannot award it to
- * themselves — which the old 4-digit PIN let them do in two taps.
+ * signed-in dashboard; the child types it here. The code is minted against the
+ * parent's session, so a child cannot award rung 2 to themselves — which the
+ * old 4-digit PIN let them do in two taps.
+ *
+ * The child is NOT asked to sign in, and this screen used to dead-end because
+ * of it: the server required a session, the kid app has none, and the only
+ * advice on offer was "ask a grown-up to help" with nothing to point them at.
+ * Redeeming now returns a device token instead — the code is the credential.
  *
  * Deliberately kid-legible: no jargon, no mention of "rungs" or "capabilities",
  * and every failure says what to do next.
@@ -45,14 +51,10 @@ export function LinkAccountView({
       const res = await fetch("/api/learner/redeem", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ code: trimmed }),
+        body: JSON.stringify({ code: trimmed, deviceLabel: deviceLabel() }),
       });
       const data = await res.json().catch(() => null);
 
-      if (res.status === 401) {
-        setError("You need to sign in first. Ask a grown-up to help.");
-        return;
-      }
       if (res.status === 503) {
         setError("Linking isn't switched on yet. You can keep learning without it.");
         return;
@@ -63,10 +65,13 @@ export function LinkAccountView({
       }
 
       // Mirror the server's decision onto the local profile. `verifiedLevel` is
-      // the ONLY thing that raises the rung now — see computeRung.
+      // the ONLY thing that raises the rung now — see computeRung. The token is
+      // handed back exactly once, so if this write is lost the parent has to
+      // issue a fresh code; that is the correct failure mode for a credential.
       updateLearnerMeta(learner.id, {
         verifiedLevel: data.learner.verificationLevel ?? 2,
         remoteId: data.learner.id,
+        deviceToken: data.deviceToken,
       });
       sfx.badge();
       setLinked(true);

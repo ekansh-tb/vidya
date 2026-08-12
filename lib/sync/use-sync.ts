@@ -49,7 +49,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
 
     (async () => {
       setStatus("syncing");
-      const pulled = await pullState(controller.signal);
+      const pulled = await pullState(learner, controller.signal);
       if (cancelled) return;
 
       if (!pulled.ok) {
@@ -86,7 +86,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
 
       (async () => {
         try {
-          const result = await pushWithMerge(state, revisionRef.current, deviceLabel());
+          const result = await pushWithMerge(state, revisionRef.current, deviceLabel(), learner);
           revisionRef.current = result.revision;
           // A conflict merge produces a state this device must adopt, or the
           // same conflict recurs on every push.
@@ -113,11 +113,20 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
       // keepalive lets the request outlive the page. Fire-and-forget: there is
       // no chance to handle a conflict on the way out, and the next session's
       // pull will merge anyway.
+      //
+      // The device token travels in the BODY here, not the usual header —
+      // sendBeacon cannot set headers at all. Same-origin POST, so it is not
+      // exposed anywhere a URL would be.
       try {
         navigator.sendBeacon?.(
           "/api/learner/state",
           new Blob(
-            [JSON.stringify({ state, expectedRevision: revisionRef.current, deviceLabel: deviceLabel() })],
+            [JSON.stringify({
+              state,
+              expectedRevision: revisionRef.current,
+              deviceLabel: deviceLabel(),
+              deviceToken: learner.deviceToken,
+            })],
             { type: "application/json" },
           ),
         );
@@ -127,7 +136,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
     };
     document.addEventListener("visibilitychange", flush);
     return () => document.removeEventListener("visibilitychange", flush);
-  }, [enabled, state]);
+  }, [enabled, state, learner.deviceToken]);
 
   return { status, lastSyncedAt };
 }

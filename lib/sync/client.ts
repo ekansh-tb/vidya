@@ -28,13 +28,27 @@ export function canSync(learner: LearnerProfile): boolean {
   return Boolean(learner.remoteId) && (learner.verifiedLevel ?? 0) >= 2;
 }
 
+/**
+ * The header a linked device authenticates with.
+ *
+ * The child has no login, so there is no cookie to lean on. Redeeming the
+ * parent's claim code mints this token; it is the whole credential. Absent
+ * means an unlinked profile, and the server will answer 401 — which useSync
+ * treats as "not linked", never as an error worth showing a kid.
+ */
+export const DEVICE_TOKEN_HEADER = "x-vidya-device";
+
+function authHeaders(learner?: LearnerProfile): Record<string, string> {
+  return learner?.deviceToken ? { [DEVICE_TOKEN_HEADER]: learner.deviceToken } : {};
+}
+
 type PullResult =
   | { ok: true; state: GameState | null; revision: number }
   | { ok: false; reason: "unauthorized" | "unavailable" | "network" };
 
-export async function pullState(signal?: AbortSignal): Promise<PullResult> {
+export async function pullState(learner?: LearnerProfile, signal?: AbortSignal): Promise<PullResult> {
   try {
-    const res = await fetch("/api/learner/state", { signal });
+    const res = await fetch("/api/learner/state", { signal, headers: authHeaders(learner) });
     if (res.status === 401) return { ok: false, reason: "unauthorized" };
     if (res.status === 503) return { ok: false, reason: "unavailable" };
     if (!res.ok) return { ok: false, reason: "network" };
@@ -55,11 +69,12 @@ export async function pushState(
   expectedRevision: number,
   deviceLabel?: string,
   signal?: AbortSignal,
+  learner?: LearnerProfile,
 ): Promise<PushResult> {
   try {
     const res = await fetch("/api/learner/state", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...authHeaders(learner) },
       body: JSON.stringify({ state, expectedRevision, deviceLabel }),
       signal,
     });
@@ -97,13 +112,14 @@ export async function pushWithMerge(
   local: GameState,
   expectedRevision: number,
   deviceLabel?: string,
+  learner?: LearnerProfile,
 ): Promise<{ state: GameState; revision: number; status: SyncState }> {
-  const first = await pushState(local, expectedRevision, deviceLabel);
+  const first = await pushState(local, expectedRevision, deviceLabel, undefined, learner);
   if (first.ok) return { state: local, revision: first.revision, status: "synced" };
 
   if (first.reason === "conflict") {
     const merged = mergeGameState(local, first.serverState);
-    const second = await pushState(merged, first.serverRevision, deviceLabel);
+    const second = await pushState(merged, first.serverRevision, deviceLabel, undefined, learner);
     if (second.ok) return { state: merged, revision: second.revision, status: "synced" };
     // Still contended — keep the merged state locally so nothing is lost, and
     // let the next push settle it.

@@ -10,6 +10,7 @@ import { copyText } from "@/lib/clipboard";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
+import { DevicePanel } from "@/components/parent/device-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
@@ -36,7 +37,7 @@ import {
  */
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { profiles, hydrated, hydrate, updateLearnerMeta, switchLearner } = useGameStore();
+  const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => { hydrate(); }, [hydrate]);
@@ -148,7 +149,14 @@ export function ParentDashboard() {
               return (
                 <button
                   key={l.id}
-                  onClick={() => { setSelectedId(l.id); switchLearner(l.id); }}
+                  // Local to this dashboard ONLY. This used to also call
+                  // switchLearner(), which rewrites the shared
+                  // `currentLearnerId` — so a parent glancing at one child's
+                  // numbers silently moved the kid app into that child's
+                  // profile, and the next kid to open Vidya landed inside their
+                  // sibling's account. Reading must never rewrite whose app it
+                  // is.
+                  onClick={() => setSelectedId(l.id)}
                   className="rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition"
                   style={{
                     background: active ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.04)",
@@ -174,6 +182,10 @@ export function ParentDashboard() {
               onClaimed={(remoteId) => updateLearnerMeta(selected.id, { remoteId })}
             />
             <LearnerLinkPanel key={`link-${selected.id}`} learner={selected} />
+
+            {/* Revoking lives behind Clerk only — the in-kid-app parent room is
+                PIN-guarded, which is a speed bump, not an authorisation. */}
+            <DevicePanel key={`devices-${selected.id}`} learner={selected} />
             <SyllabusPanel
               key={`syllabus-${selected.id}`}
               learner={selected}
@@ -500,9 +512,20 @@ function SetupStatus({ learner }: { learner: LearnerProfile }) {
       hint: learner.aiTone ? `set to ${learner.aiTone}` : "Kid picks in their profile.",
     },
     {
-      label: "Parent PIN (unlocks AI tutor at rung 2)",
+      // The old label claimed this PIN unlocked the AI tutor at rung 2. It
+      // never did after the rebuild — computeRung ignores parentPin entirely
+      // and reads verifiedLevel, which only a redeemed claim code sets. Saying
+      // otherwise sent parents to set a PIN and wonder why nothing opened.
+      label: "Parent PIN (guards the in-app parent room)",
       done: !!learner.parentPin,
       hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
+    },
+    {
+      label: "Device linked (this is what opens the AI tutor)",
+      done: (learner.verifiedLevel ?? 0) >= 2,
+      hint: (learner.verifiedLevel ?? 0) >= 2
+        ? "linked"
+        : "Create a code above and have them type it in.",
     },
     {
       label: "Care note (parent → AI)",

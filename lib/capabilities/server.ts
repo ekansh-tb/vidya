@@ -2,7 +2,9 @@ import "server-only";
 
 import { CAPABILITY_POLICIES } from "./policies";
 import type { CapabilityKey, CapabilityResolution } from "../auth/types";
-import { resolveIdentity, rungFor, type Identity } from "../auth/session";
+import {
+  resolveIdentity, requireLearnerFrom, rungFor, type Identity,
+} from "../auth/session";
 
 /**
  * Server-side capability resolution.
@@ -13,10 +15,11 @@ import { resolveIdentity, rungFor, type Identity } from "../auth/session";
  * gate was a React hook, trivially bypassed by calling the endpoint directly.
  *
  * Rules:
- *   - The rung comes from the database via a Clerk session. A request cannot
- *     assert it, and no PIN is involved.
- *   - A parent's explicit `disabledCapabilities` override still wins, so
- *     parent-invisible config keeps working server-side too.
+ *   - The rung comes from the database, via a device token or a Clerk session.
+ *     A request cannot assert it, and no PIN is involved.
+ *   - A parent's explicit `disabledCapabilities` override wins over the rung,
+ *     so parent-invisible config is a boundary here and not just a hidden
+ *     button in the kid's lobby.
  */
 export async function resolveCapabilityServer(
   key: CapabilityKey,
@@ -29,12 +32,18 @@ export async function resolveCapabilityServer(
     return { allowed: false, reason: "feature_disabled", identity };
   }
 
-  // NOT YET ENFORCED HERE: the parent's per-learner `disabledCapabilities`
-  // override. It currently lives only on the client LearnerProfile and has no
-  // column in `learners`, so the server cannot see it. The client hook still
-  // applies it, which means a parent's switch-off hides the surface but does
-  // not yet harden the endpoint. Add the column and read it here when parent
-  // config syncs to the database.
+  // The parent's switch-off is checked BEFORE the rung, because it is the more
+  // specific decision: an adult looked at this child and said no. Raising the
+  // rung later must not quietly undo that.
+  //
+  // This used to be a comment explaining that the column did not exist and the
+  // override lived only on the client — which meant a parent turning Miss
+  // Vidya off removed a button while /api/tutor stayed just as reachable.
+  // Migration 0003 added the column; this is what makes the toggle real.
+  if (identity.kind === "learner" && identity.learner.disabledCapabilities?.includes(key)) {
+    return { allowed: false, reason: "feature_disabled", identity };
+  }
+
   const rung = rungFor(identity);
   if (rung < policy.minRung) {
     return { allowed: false, reason: "below_min_rung", identity };
@@ -44,12 +53,30 @@ export async function resolveCapabilityServer(
 }
 
 /**
+ * The same decision, for a route that has a Request in hand.
+ *
+ * USE THIS ONE FROM THE KID-FACING ROUTES. `resolveIdentity()` alone reads a
+ * Clerk session, and the child does not have one — they hold a device token
+ * (see redeemClaimCode). So resolving without the request would classify every
+ * linked learner as anonymous, put them at rung 0, and mean that turning on
+ * ENFORCE_TUTOR_RUNG switched the tutor off for exactly the families who had
+ * done the linking properly.
+ */
+export async function resolveCapabilityForRequest(
+  key: CapabilityKey,
+  req: Request,
+): Promise<CapabilityResolution & { identity: Identity }> {
+  const learner = await requireLearnerFrom(req);
+  return resolveCapabilityServer(key, learner ?? undefined);
+}
+
+/**
  * Boolean helper for routes.
  *
  * NOTE ON THE CURRENT TRANSITION: the kid app is still allowed to run fully
- * anonymously, and most learners have not yet linked an account. Enforcing
- * `ai.tutor.full` strictly today would switch the tutor off for every existing
- * user at once. Routes therefore call this with `enforce` explicitly, so the
+ * anonymously, and a learner who has not linked is at rung 0. Enforcing
+ * `ai.tutor.full` strictly before a family has linked would switch the tutor
+ * off for them. Routes therefore call this with `enforce` explicitly, so the
  * switch from "observe" to "enforce" is a visible, deliberate change rather
  * than something buried in a helper.
  */

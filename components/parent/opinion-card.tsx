@@ -14,6 +14,16 @@ import { AlertTriangle, Heart, Stethoscope, GraduationCap, Info } from "lucide-r
  * Every analytics surface in /parent/** MUST use this component. Composing
  * a bespoke "AI says X about your kid" card outside this primitive bypasses
  * the consent + opinion contract and is a bug.
+ *
+ * It rendered in exactly one place for a while, because WellnessSignals in
+ * parent-view.tsx grew its own inline SignalRow — same window/observation/
+ * opinion data, but no "Opinion · not a claim" header and no escalation
+ * footer, so five findings about a child's rhythm and wellbeing read as
+ * verdicts with nowhere to take them. That is the failure mode this component
+ * exists to prevent, and it happened anyway, which is why the text colours
+ * below are theme tokens now: the duplicate existed partly because this one
+ * was hard-coded to the dashboard's palette and looked wrong in the kid app's
+ * parent room. A primitive nobody can reuse gets reimplemented.
  */
 export type OpinionTone = "neutral" | "warm" | "concern" | "medical" | "academic";
 
@@ -51,19 +61,22 @@ export function OpinionCard({
             Opinion · not a claim
           </span>
         </div>
-        <span className="text-[10px] text-neutral-500">{dataWindow}</span>
+        <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>{dataWindow}</span>
       </header>
 
-      <p className="text-[13px] text-neutral-300 leading-relaxed">
-        <span className="text-neutral-100 font-medium">{observation}</span>
+      <p className="text-[13px] leading-relaxed">
+        <span className="font-medium" style={{ color: "var(--text)" }}>{observation}</span>
       </p>
 
-      <p className="text-[13px] text-neutral-400 mt-1.5 leading-relaxed italic">
+      <p className="text-[13px] mt-1.5 leading-relaxed italic" style={{ color: "var(--text-muted)" }}>
         {opinion}
       </p>
 
       {(escalation || evidenceHref) && (
-        <footer className="mt-3 pt-3 border-t border-neutral-800 flex items-center justify-between gap-3 flex-wrap">
+        <footer
+          className="mt-3 pt-3 flex items-center justify-between gap-3 flex-wrap"
+          style={{ borderTop: "1px solid var(--border)" }}
+        >
           {escalation ? (
             <div className="flex items-center gap-2">
               <EscalationIcon to={escalation.to} className={`w-3.5 h-3.5 ${palette.accent}`} />
@@ -74,7 +87,8 @@ export function OpinionCard({
           {evidenceHref && (
             <a
               href={evidenceHref}
-              className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 hover:text-neutral-200 transition"
+              className="text-[10px] uppercase tracking-widest font-bold transition hover:opacity-100 opacity-70"
+              style={{ color: "var(--text-muted)" }}
             >
               See the data →
             </a>
