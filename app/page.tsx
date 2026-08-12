@@ -29,6 +29,7 @@ import { CosmicBg, cosmicModeForGrade } from "@/components/effects/cosmic-bg";
 import { RoomTransition } from "@/components/effects/room-transition";
 import { VoiceBubble } from "@/components/effects/voice-bubble";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
+import { BadgeToast } from "@/components/effects/badge-toast";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
 import { useGameStore } from "@/lib/game-store";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
@@ -382,6 +383,9 @@ export default function HomePage() {
       </RoomTransition>
       <VoiceBubble />
       <SaveErrorBanner />
+      {/* Mounted once at the root so a badge earned mid-quiz or mid-Move-Break
+          is announced wherever the child is standing. */}
+      <BadgeToast badges={state.badges} learnerId={learner.id} />
     </>
   );
 }

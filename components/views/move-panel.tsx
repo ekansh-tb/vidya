@@ -240,7 +240,8 @@ function MoveRunner({
   const [running, setRunning] = useState(true);
   const [done, setDone] = useState(false);
   const [burst, setBurst] = useState(false);
-  const [earned, setEarned] = useState<string[]>([]);
+  /** Only used to pick the burst size — BadgeToast does the announcing. */
+  const [earnedCount, setEarnedCount] = useState(0);
   /** Rewards are paid exactly once, even if React runs the effect twice. */
   const paid = useRef(false);
 
@@ -271,7 +272,7 @@ function MoveRunner({
       if (breaks >= 10) award("move-10");
 
       seen.add(activity.id);
-      setEarned(fresh);
+      setEarnedCount(fresh.length);
 
       return {
         ...prev,
@@ -305,7 +306,7 @@ function MoveRunner({
   const restart = () => {
     sfx.click();
     paid.current = false;
-    setStepIdx(0); setTick(0); setDone(false); setRunning(true); setEarned([]);
+    setStepIdx(0); setTick(0); setDone(false); setRunning(true); setEarnedCount(0);
   };
 
   const pct = Math.min(100, (elapsed / totalSecs) * 100);
@@ -315,7 +316,7 @@ function MoveRunner({
     <div>
       <CelebrationBurst
         show={burst}
-        variant={earned.length > 0 ? "badge" : "correct"}
+        variant={earnedCount > 0 ? "badge" : "correct"}
         label={`${activity.name} complete`}
         onDone={() => setBurst(false)}
       />
@@ -349,22 +350,6 @@ function MoveRunner({
           <div className="text-sm text-white/70 mt-1">
             +{XP_PER_BREAK} XP · +{COINS_PER_BREAK} coins. Your brain works better now — that is not a slogan, it is blood flow.
           </div>
-
-          {earned.length > 0 && (
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {earned.map((id) => (
-                <motion.span
-                  key={id}
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.2 }}
-                  className="rounded-full px-3 py-1 text-xs font-bold bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/40"
-                >
-                  New badge unlocked
-                </motion.span>
-              ))}
-            </div>
-          )}
 
           <div className="mt-5 grid grid-cols-2 gap-2">
             <Button variant="secondary" onClick={restart}>

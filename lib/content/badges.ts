@@ -26,6 +26,10 @@ export const BADGES: Badge[] = [
   { id: "move-10", name: "Never Still", desc: "Finish 10 Move Breaks", icon: "🔥", tier: "gold" },
 ];
 
+export const BADGE_MAP: Record<string, Badge> = Object.fromEntries(
+  BADGES.map((b) => [b.id, b]),
+);
+
 export const TIER_STYLES = {
   bronze: { gradient: "from-orange-300 to-amber-500", ring: "ring-amber-400", glow: "shadow-amber-500/40" },
   silver: { gradient: "from-slate-200 to-slate-400", ring: "ring-slate-300", glow: "shadow-slate-300/40" },
