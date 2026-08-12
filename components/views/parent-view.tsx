@@ -12,7 +12,6 @@ import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
 import { BackupPanel } from "@/components/parent/backup-panel";
 import { OpinionCard } from "@/components/parent/opinion-card";
-import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 
 /**
  * In-kid-app Parent Room.
@@ -200,8 +199,9 @@ export function ParentView({
           onChange={(next) => onUpdateLearner({ upcomingExams: next })}
         />
 
-        {/* Capability map ------------------------------------------------ */}
-        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+        {/* Capability map — READ-ONLY here. See the note below on why nothing
+            in this room may write. */}
+        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} readOnly />
 
         {/* Nothing in the kid app linked to the Clerk dashboard, so the whole
             signed-in parent experience was reachable only by typing the URL. */}
@@ -225,10 +225,34 @@ export function ParentView({
           <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: "var(--text-faint)" }} />
         </a>
 
-        {/* Account linking ------------------------------------------------ */}
-        {/* The adult half of what replaces the PIN: a code minted against the
-            parent's own session, which is the only path to the AI tutor. */}
-        <LearnerLinkPanel learner={learner} />
+        {/* NOTHING THAT CONSUMES THE PARENT'S CLERK SESSION MAY LIVE IN HERE.
+            ------------------------------------------------------------------
+            LearnerLinkPanel — the claim-code issuer — used to sit right here,
+            and it was a straight path to the self-promotion hole this whole
+            architecture exists to close.
+
+            The gate on this room is the PIN, and the PIN has a self-service
+            escape hatch a few lines up: "Forgot PIN · reset" clears it behind a
+            confirm() with no credential of any kind. That is fine for what the
+            PIN is honestly for — keeping a younger sibling out of the analytics
+            screen — but it means ANY holder of the device can be standing in
+            this room in three taps.
+
+            Meanwhile these panels fetch from the browser, so they ride whatever
+            Clerk cookie is already there. On the family setup this codebase is
+            designed around — one iPad, one browser, the parent signed in at
+            some point — a child could reset the PIN, press "Create a code",
+            watch it render on screen, and redeem it themselves. requireParent()
+            would succeed, the ownership check would pass because the parent
+            genuinely owns the row, and the child would walk out with rung 2 and
+            a durable device token, no adult involved. Worse with a sibling
+            selected in the switcher: the code is minted against THEIR remoteId,
+            and redeeming it hands over read/write of their server state.
+
+            So: issuing codes and revoking devices both live on /parent behind
+            Clerk, and the link below is the only way through from here.
+            The capability map stays, read-only, because seeing what is on is
+            not the same as being able to change it. */}
 
         {/* Backup & restore ---------------------------------------------- */}
         {/* Placed high enough to be found before it is needed. All progress
@@ -1067,10 +1091,21 @@ const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
 };
 
 export function CapabilityMap({
-  learner, onUpdateLearner,
+  learner, onUpdateLearner, readOnly = false,
 }: {
   learner: LearnerProfile;
   onUpdateLearner: (patch: Partial<Omit<LearnerProfile, "state" | "id">>) => void;
+  /**
+   * Renders without the On/Off buttons.
+   *
+   * Required in the in-kid-app parent room, whose PIN gate has a self-service
+   * reset. The toggle PATCHes /api/parent/learners/:id/capabilities on the
+   * parent's ambient Clerk cookie, and `setDisabledCapabilities` REPLACES the
+   * whole list rather than patching one key — so a single tap from inside that
+   * room could clear every switch-off a parent had ever set, server-side, with
+   * no notification. Showing the state is fine; changing it needs Clerk.
+   */
+  readOnly?: boolean;
 }) {
   const rung = computeRung(learner);
   const disabled = new Set(learner.disabledCapabilities || []);
@@ -1133,6 +1168,7 @@ export function CapabilityMap({
       <div className="text-xs italic mb-3" style={{ color: "var(--text-muted)" }}>
         Each capability has a verification rung. Rooms appear in the kid&apos;s lobby only when their rung meets the rule.
         The kid never sees a locked door — features are simply present or absent.
+        {readOnly && " Turning these on or off needs the signed-in parent dashboard."}
       </div>
 
       {syncNote && (
@@ -1189,7 +1225,14 @@ export function CapabilityMap({
                           {CAPABILITY_LABEL[k]}
                         </span>
                       </div>
-                      {open ? (
+                      {readOnly ? (
+                        <span
+                          className="text-[9px] uppercase tracking-widest font-bold flex-shrink-0"
+                          style={{ color: effectiveOn ? "var(--success)" : "var(--text-faint)" }}
+                        >
+                          {!open ? "—" : isDisabled ? "Off" : "On"}
+                        </span>
+                      ) : open ? (
                         <button
                           onClick={() => void toggle(k)}
                           className="text-[9px] uppercase tracking-widest font-bold rounded-full px-2 py-0.5 flex-shrink-0 active:scale-95"

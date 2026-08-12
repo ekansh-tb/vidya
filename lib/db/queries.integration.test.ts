@@ -31,6 +31,7 @@ import {
   pushLearnerState, getLearnerState,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
   clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
+  disabledCapabilitiesForTokens,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -202,6 +203,31 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
 
       // A token that never existed is still just unknown.
       expect((await resolveDeviceToken("x".repeat(43))).kind).toBe("unknown");
+    });
+
+    it("reads switch-offs by token without disturbing last_seen_at", async () => {
+      // This runs on every tutor turn against every token in the browser's
+      // cookie. If it wrote last_seen_at, one child using the tutor would bump
+      // their sibling's "last synced" and the parent's device list would
+      // report a device as active that nobody had touched.
+      await setDisabledCapabilities(PARENT_A, learnerA, ["ai.tutor.full"]);
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "iPad" });
+      if (!r.ok) throw new Error("redeem failed");
+
+      const sql = getSql();
+      const before = await sql`
+        select last_seen_at from learner_devices where token_hash = ${hashDeviceToken(r.deviceToken)}
+      `;
+      expect(await disabledCapabilitiesForTokens([r.deviceToken])).toEqual(["ai.tutor.full"]);
+      const after = await sql`
+        select last_seen_at from learner_devices where token_hash = ${hashDeviceToken(r.deviceToken)}
+      `;
+      expect(after[0].last_seen_at).toEqual(before[0].last_seen_at);
+
+      // A revoked device stops contributing denials along with everything else.
+      await revokeDeviceForParent(PARENT_A, learnerA, "all");
+      expect(await disabledCapabilitiesForTokens([r.deviceToken])).toEqual([]);
     });
 
     it("a parent cannot list or revoke another family's devices", async () => {

@@ -7,6 +7,7 @@ import {
   upsertParent,
   getLearnerForClerkUser,
   resolveDeviceToken,
+  disabledCapabilitiesForTokens,
   clearSelfLink,
   type LearnerRow,
   type VerificationLevel,
@@ -140,6 +141,70 @@ export async function requireLearner(): Promise<LearnerIdentity | null> {
  * below; neither is ever logged.
  */
 export const DEVICE_TOKEN_HEADER = "x-vidya-device";
+
+/**
+ * httpOnly cookie listing the device tokens minted in THIS browser.
+ *
+ * Exists for one reason: the header above is volunteered by the client, and
+ * the client is the party the parent's switch-off is aimed at. A child whose
+ * parent turned Miss Vidya off could delete `deviceToken` from the Vidya
+ * localStorage blob in devtools, at which point the request resolved as
+ * anonymous, the `feature_disabled` check never ran, and the denial degraded
+ * to `below_min_rung` — which observe mode logs and allows. Dropping your own
+ * credential was strictly to your advantage.
+ *
+ * httpOnly means script cannot read or delete it, so the switch-off survives
+ * a localStorage edit.
+ */
+export const DEVICE_COOKIE = "vidya_devices";
+
+/** Comma-separated; base64url tokens never contain a comma. Capped so the
+ *  header cannot grow without bound on a much-shared family device. */
+export const MAX_COOKIE_DEVICES = 4;
+
+export function parseDeviceCookie(header: string | null): string[] {
+  if (!header) return [];
+  const jar = header.split(";");
+  for (const part of jar) {
+    const [k, ...rest] = part.trim().split("=");
+    if (k === DEVICE_COOKIE) {
+      return rest.join("=").split(",").map((s) => s.trim()).filter(Boolean).slice(0, MAX_COOKIE_DEVICES);
+    }
+  }
+  return [];
+}
+
+/** Appends a token to the browser's list, newest first, deduped and capped. */
+export function buildDeviceCookie(existing: string | null, token: string): string {
+  const next = [token, ...parseDeviceCookie(existing).filter((t) => t !== token)]
+    .slice(0, MAX_COOKIE_DEVICES);
+  const attrs = [
+    `${DEVICE_COOKIE}=${next.join(",")}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${60 * 60 * 24 * 365}`,
+  ];
+  if (process.env.NODE_ENV === "production") attrs.push("Secure");
+  return attrs.join("; ");
+}
+
+/**
+ * Capability keys switched off for ANY device linked in this browser.
+ *
+ * DENY-ONLY, and that restriction is load-bearing. It would be easy to also
+ * resolve identity from this cookie, and it would be wrong: on a shared iPad
+ * the cookie holds a sibling's token too, so granting from it would mean a
+ * child could delete their own token and inherit whichever rung the cookie
+ * happened to resolve to — trading one escalation for a worse one. The cookie
+ * may only ever take capabilities away, never hand them out.
+ */
+export async function disabledForLinkedDevices(req: Request): Promise<Set<string>> {
+  if (!dbConfigured()) return new Set();
+  const tokens = parseDeviceCookie(req.headers.get("cookie"));
+  if (tokens.length === 0) return new Set();
+  return new Set(await disabledCapabilitiesForTokens(tokens));
+}
 
 /**
  * The learner making this request — by device token first, session second.

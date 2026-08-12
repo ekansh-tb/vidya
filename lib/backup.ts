@@ -79,20 +79,52 @@ const backupSchema = z.object({
  * open and edit — granted rung 2 and the AI tutor on any device it landed on,
  * which is the self-promotion hole the claim-code rebuild existed to close.
  *
- * Restore therefore carries none of the three. The parent re-sets the PIN, and
- * issues a fresh claim code for the new device — which is exactly the point at
- * which an adult should be deciding whether that device gets access.
+ * Restore carries none of them either — and note that this is enforced on BOTH
+ * sides, because for a while it was only enforced on export. `parseBackup` did
+ * not strip, and the learner schema is permissive, so a child could export a
+ * backup, open the .json in any text editor, add `"verifiedLevel": 2`, delete
+ * `"disabledCapabilities"`, re-import, and land at rung 2 with every switch-off
+ * their parent had set now gone. Stripping outbound while accepting anything
+ * inbound defends the file and not the app; the import is the direction an
+ * attacker actually controls.
+ *
+ * `remoteId` goes too, on the import side. It is not a credential by itself —
+ * the server re-checks ownership on every call — but it is the server-side
+ * learner id, and pairing it with a `deviceToken` copied from a sibling's
+ * profile on the same device is the whole of that attack. A restored profile
+ * is UNLINKED until an adult issues a fresh claim code, which is exactly the
+ * moment someone should be deciding whether this device gets access.
  */
+const CREDENTIAL_FIELDS = ["parentPin", "deviceToken", "verifiedLevel"] as const;
+
+function stripLearnerCredentials(
+  learner: LearnerProfile,
+  also: readonly string[] = [],
+): LearnerProfile {
+  const copy = { ...learner } as Record<string, unknown>;
+  for (const k of [...CREDENTIAL_FIELDS, ...also]) delete copy[k];
+  return copy as unknown as LearnerProfile;
+}
+
 function withoutCredentials(profiles: ProfilesV2): ProfilesV2 {
   const learners: ProfilesV2["learners"] = {};
   for (const [id, learner] of Object.entries(profiles.learners)) {
-    const {
-      parentPin: _omitPin,
-      deviceToken: _omitToken,
-      verifiedLevel: _omitRung,
-      ...safe
-    } = learner;
-    learners[id] = safe as LearnerProfile;
+    learners[id] = stripLearnerCredentials(learner);
+  }
+  return { ...profiles, learners };
+}
+
+/**
+ * The same strip, applied to everything ARRIVING.
+ *
+ * Deliberately stricter than the export side: `remoteId` is dropped as well,
+ * so a restored profile cannot be pointed at a server row the importer did not
+ * legitimately link to.
+ */
+function withoutImportedCredentials(profiles: ProfilesV2): ProfilesV2 {
+  const learners: ProfilesV2["learners"] = {};
+  for (const [id, learner] of Object.entries(profiles.learners)) {
+    learners[id] = stripLearnerCredentials(learner, ["remoteId"]);
   }
   return { ...profiles, learners };
 }
@@ -143,8 +175,10 @@ export function parseBackup(text: string): ImportOutcome {
     const looksLikeRawProfiles = profilesSchema.safeParse(raw);
     if (looksLikeRawProfiles.success) {
       // Tolerate a hand-extracted localStorage blob — it is the same data,
-      // just without the envelope, and refusing it would be unhelpful.
-      const profiles = looksLikeRawProfiles.data as ProfilesV2;
+      // just without the envelope, and refusing it would be unhelpful. It is
+      // also, by definition, a file someone edited by hand, so it gets the
+      // same strip as everything else.
+      const profiles = withoutImportedCredentials(looksLikeRawProfiles.data as ProfilesV2);
       return { ok: true, profiles, learnerCount: Object.keys(profiles.learners).length };
     }
     return {
@@ -153,7 +187,10 @@ export function parseBackup(text: string): ImportOutcome {
     };
   }
 
-  const profiles = parsed.data.profiles as ProfilesV2;
+  // Stripped on the way IN, not just on the way out. A backup is JSON a child
+  // can open and edit; trusting its credential fields would hand rung 2 to
+  // anyone willing to type it.
+  const profiles = withoutImportedCredentials(parsed.data.profiles as ProfilesV2);
   const ids = Object.keys(profiles.learners);
   if (ids.length === 0) {
     return { ok: false, error: "That backup has no learners in it." };
