@@ -30,7 +30,7 @@ import {
   getLearnerForClerkUser, issueClaimCode, redeemClaimCode,
   pushLearnerState, getLearnerState,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
-  clearSelfLink, hashDeviceToken, setDisabledCapabilities,
+  clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -186,6 +186,22 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       // Otherwise "revoked" would leave the AI tutor open on a cut-off device.
       const after = await getLearnerForParent(PARENT_B, learnerB);
       expect(after!.verificationLevel).toBe(0);
+    });
+
+    it("tells a revoked token apart from an unknown one", async () => {
+      // Collapsing the two is what made the parent's Unlink button a no-op
+      // against the AI tutor: a revoked device looked identical to one that
+      // had never linked, and observe mode forgives those.
+      const issued = await issueClaimCode(PARENT_A, learnerA);
+      const r = await redeemClaimCode(issued!.code, { deviceLabel: "old tablet" });
+      if (!r.ok) throw new Error("redeem failed");
+
+      expect((await resolveDeviceToken(r.deviceToken)).kind).toBe("active");
+      await revokeDeviceForParent(PARENT_A, learnerA, "all");
+      expect((await resolveDeviceToken(r.deviceToken)).kind).toBe("revoked");
+
+      // A token that never existed is still just unknown.
+      expect((await resolveDeviceToken("x".repeat(43))).kind).toBe("unknown");
     });
 
     it("a parent cannot list or revoke another family's devices", async () => {

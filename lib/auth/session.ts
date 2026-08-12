@@ -6,7 +6,7 @@ import { dbConfigured } from "../db/client";
 import {
   upsertParent,
   getLearnerForClerkUser,
-  getLearnerForDeviceToken,
+  resolveDeviceToken,
   clearSelfLink,
   type LearnerRow,
   type VerificationLevel,
@@ -42,8 +42,13 @@ export type LearnerIdentity = {
 
 export type AnonymousIdentity = {
   kind: "anonymous";
-  /** Why we could not identify anyone — useful for honest UI copy. */
-  reason: "no_session" | "auth_disabled" | "db_disabled" | "unlinked";
+  /** Why we could not identify anyone — useful for honest UI copy.
+   *
+   *  `revoked` is deliberately its own reason and NOT folded into `unlinked`:
+   *  a parent cut this device off on purpose, which is a decision to honour
+   *  immediately, whereas an unlinked device is just one nobody has claimed
+   *  yet and is allowed to keep playing. See resolveDeviceToken. */
+  reason: "no_session" | "auth_disabled" | "db_disabled" | "unlinked" | "revoked";
 };
 
 export type Identity = ParentIdentity | LearnerIdentity | AnonymousIdentity;
@@ -151,21 +156,43 @@ export async function requireLearnerFrom(
   req: Request,
   bodyToken?: string | null,
 ): Promise<LearnerIdentity | null> {
+  const id = await identityFromRequest(req, bodyToken);
+  return id.kind === "learner" ? id : null;
+}
+
+/**
+ * Full identity for a kid-facing request, revocation included.
+ *
+ * Prefer this over `requireLearnerFrom` anywhere the DIFFERENCE between "never
+ * linked" and "a parent revoked this device" matters — which is anywhere a
+ * decision gets softened for unlinked users, because that softening must not
+ * extend to a device an adult deliberately cut off.
+ */
+export async function identityFromRequest(
+  req: Request,
+  bodyToken?: string | null,
+): Promise<Identity> {
   const token = req.headers.get(DEVICE_TOKEN_HEADER)?.trim() || bodyToken?.trim() || "";
   if (token && dbConfigured()) {
-    const learner = await getLearnerForDeviceToken(token);
-    if (learner) {
+    const result = await resolveDeviceToken(token);
+    if (result.kind === "active") {
       return {
         kind: "learner",
         // A device is not a person. There is no Clerk user behind this, and
         // callers must not treat the id as one.
-        userId: `device:${learner.id}`,
-        learner,
-        verificationLevel: learner.verificationLevel,
+        userId: `device:${result.learner.id}`,
+        learner: result.learner,
+        verificationLevel: result.learner.verificationLevel,
       };
     }
+    if (result.kind === "revoked") {
+      // Stop here rather than falling through to the session. On a shared
+      // browser the parent may well be signed in, and a revoked device must
+      // not quietly inherit whatever that session is worth.
+      return { kind: "anonymous", reason: "revoked" };
+    }
   }
-  return requireLearner();
+  return resolveIdentity();
 }
 
 /**

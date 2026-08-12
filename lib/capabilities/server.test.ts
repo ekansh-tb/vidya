@@ -101,6 +101,31 @@ describe("resolveCapabilityServer", () => {
     expect(r.reason).toBe("below_min_rung");
   });
 
+  it("a REVOKED device is denied as a decision, not as anonymity", async () => {
+    // The difference matters: /api/tutor waves `below_min_rung` through in
+    // observe mode, so folding revocation into ordinary anonymity meant the
+    // parent's Unlink button did nothing to the tutor — while the dashboard
+    // told them it "closes the AI tutor there".
+    const r = await resolveCapabilityServer(TUTOR, { kind: "anonymous", reason: "revoked" });
+    expect(r.allowed).toBe(false);
+    expect(r.reason, "must not be below_min_rung, which observe mode forgives")
+      .toBe("feature_disabled");
+  });
+
+  it("revocation closes even rung-0 capabilities", async () => {
+    const openKey = (Object.keys(CAPABILITY_POLICIES) as (keyof typeof CAPABILITY_POLICIES)[])
+      .find((k) => CAPABILITY_POLICIES[k].minRung === 0);
+    if (!openKey) return;
+    const r = await resolveCapabilityServer(openKey, { kind: "anonymous", reason: "revoked" });
+    expect(r.allowed, "a cut-off device is cut off, not demoted to guest").toBe(false);
+  });
+
+  it("an unlinked device is NOT treated as revoked", async () => {
+    // The observe-mode grace exists for exactly this case and must survive.
+    const r = await resolveCapabilityServer(TUTOR, { kind: "anonymous", reason: "unlinked" });
+    expect(r.reason).toBe("below_min_rung");
+  });
+
   it("an anonymous device gets rung-0 capabilities only", async () => {
     const anon: Identity = { kind: "anonymous", reason: "no_session" };
     expect((await resolveCapabilityServer(TUTOR, anon)).allowed).toBe(false);

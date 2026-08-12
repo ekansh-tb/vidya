@@ -3,7 +3,7 @@ import "server-only";
 import { CAPABILITY_POLICIES } from "./policies";
 import type { CapabilityKey, CapabilityResolution } from "../auth/types";
 import {
-  resolveIdentity, requireLearnerFrom, rungFor, type Identity,
+  resolveIdentity, identityFromRequest, rungFor, type Identity,
 } from "../auth/session";
 
 /**
@@ -29,6 +29,14 @@ export async function resolveCapabilityServer(
   const policy = CAPABILITY_POLICIES[key];
 
   if (!policy) {
+    return { allowed: false, reason: "feature_disabled", identity };
+  }
+
+  // A revoked device is an adult's explicit decision too, and it must not be
+  // treated as ordinary anonymity — otherwise a parent's Unlink button gets
+  // softened by the same observe-mode grace that exists for families who have
+  // simply not linked yet. See resolveDeviceToken.
+  if (identity.kind === "anonymous" && identity.reason === "revoked") {
     return { allowed: false, reason: "feature_disabled", identity };
   }
 
@@ -66,8 +74,7 @@ export async function resolveCapabilityForRequest(
   key: CapabilityKey,
   req: Request,
 ): Promise<CapabilityResolution & { identity: Identity }> {
-  const learner = await requireLearnerFrom(req);
-  return resolveCapabilityServer(key, learner ?? undefined);
+  return resolveCapabilityServer(key, await identityFromRequest(req));
 }
 
 /**

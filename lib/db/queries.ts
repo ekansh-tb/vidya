@@ -487,7 +487,32 @@ function toDevice(r: any): DeviceRow {
  * say "last active 2 hours ago" without a separate heartbeat.
  */
 export async function getLearnerForDeviceToken(token: string): Promise<LearnerRow | null> {
-  if (!token || token.length < 16) return null;
+  const r = await resolveDeviceToken(token);
+  return r.kind === "active" ? r.learner : null;
+}
+
+export type DeviceTokenResult =
+  | { kind: "active"; learner: LearnerRow }
+  /** The token is real and a parent revoked it. NOT the same as "unknown". */
+  | { kind: "revoked" }
+  | { kind: "unknown" };
+
+/**
+ * Resolve a device token, distinguishing REVOKED from UNKNOWN.
+ *
+ * That distinction is the whole reason this exists. Collapsing both to "no
+ * learner" made a revoked device indistinguishable from a device that had
+ * never linked — so it fell through to anonymous, landed at rung 0, and got
+ * waved through by the tutor's observe mode. The parent's Unlink button said
+ * it "closes the AI tutor there" and did not.
+ *
+ * A revoked token is an adult's explicit decision, the same kind as switching
+ * a capability off, and it is honoured immediately. Observe mode exists to
+ * avoid cutting off families who never linked — not to second-guess a parent
+ * who deliberately cut a device off.
+ */
+export async function resolveDeviceToken(token: string): Promise<DeviceTokenResult> {
+  if (!token || token.length < 16) return { kind: "unknown" };
   const sql = getSql();
   const rows = await sql`
     update learner_devices
@@ -495,11 +520,20 @@ export async function getLearnerForDeviceToken(token: string): Promise<LearnerRo
     where token_hash = ${hashDeviceToken(token)} and revoked_at is null
     returning learner_id
   `;
-  if (!rows.length) return null;
+  if (!rows.length) {
+    // No active row. Was there ever one? Answered from the hash, so this
+    // cannot be used to probe for tokens the caller does not already hold.
+    const revoked = await sql`
+      select 1 from learner_devices
+      where token_hash = ${hashDeviceToken(token)} and revoked_at is not null
+      limit 1
+    `;
+    return revoked.length ? { kind: "revoked" } : { kind: "unknown" };
+  }
   const learners = await sql`
     select * from learners where id = ${rows[0].learner_id} limit 1
   `;
-  return learners.length ? toLearner(learners[0]) : null;
+  return learners.length ? { kind: "active", learner: toLearner(learners[0]) } : { kind: "unknown" };
 }
 
 /** Devices linked to a learner this parent owns. Scoped by ownership, always. */
