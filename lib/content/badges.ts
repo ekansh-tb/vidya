@@ -19,6 +19,11 @@ export const BADGES: Badge[] = [
   { id: "daily-hero", name: "Daily Hero", desc: "Complete 7 daily quests", icon: "🌟", tier: "silver" },
   { id: "level-10", name: "Rising Star", desc: "Reach Level 10", icon: "⭐", tier: "silver" },
   { id: "level-25", name: "Scholar", desc: "Reach Level 25", icon: "🎓", tier: "gold" },
+  // Move Break — earned by finishing a guided activity, never by opening one.
+  { id: "first-move", name: "Off the Chair", desc: "Finish your first Move Break", icon: "⚡", tier: "bronze" },
+  { id: "tumbler", name: "Tumbler", desc: "Finish a gymnastics activity", icon: "🤸", tier: "silver" },
+  { id: "steady", name: "Steady", desc: "Finish a balance activity without stopping", icon: "🩰", tier: "silver" },
+  { id: "move-10", name: "Never Still", desc: "Finish 10 Move Breaks", icon: "🔥", tier: "gold" },
 ];
 
 export const TIER_STYLES = {

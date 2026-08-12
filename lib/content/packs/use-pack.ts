@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ExamPack } from "../exam-pack";
-import type { Board, SubjectId } from "../../types";
+import type { Board, LearnerSyllabus, SubjectId } from "../../types";
 import { hasPack, loadPack } from "./pack-index";
 import { applySchoolSyllabus } from "../school-syllabus";
 
@@ -26,15 +26,17 @@ export type UsePackResult = {
 export function usePack(
   subjectId: SubjectId | undefined,
   grade?: number,
-  /** Learner's school + board. When a scheme of work is registered for them in
-   *  school-syllabus.ts, the school's own units replace the pack's generic
-   *  content topics. Omit and the framework-level pack is used as-is. */
-  schoolCtx?: { school?: string; board: Board },
+  /** Learner's school + board, and any scheme of work a parent uploaded for
+   *  them. When either source has topics for this subject, the school's own
+   *  units replace the pack's generic content ones (skills topics survive).
+   *  Omit and the framework-level pack is used as-is. */
+  schoolCtx?: { school?: string; board: Board; uploaded?: LearnerSyllabus },
 ): UsePackResult {
   const exists = subjectId ? hasPack(subjectId, grade) : false;
   const [pack, setPack] = useState<ExamPack | undefined>(undefined);
   const school = schoolCtx?.school;
   const board = schoolCtx?.board;
+  const uploaded = schoolCtx?.uploaded;
 
   useEffect(() => {
     if (!subjectId || !exists) {
@@ -48,7 +50,7 @@ export function usePack(
     loadPack(subjectId, grade)
       .then((p) => {
         if (cancelled) return;
-        setPack(p && board ? applySchoolSyllabus(p, { school, board, grade }) : p);
+        setPack(p && board ? applySchoolSyllabus(p, { school, board, grade, uploaded }) : p);
       })
       .catch((e) => {
         if (!cancelled) {
@@ -57,7 +59,7 @@ export function usePack(
         }
       });
     return () => { cancelled = true; };
-  }, [subjectId, grade, exists, school, board]);
+  }, [subjectId, grade, exists, school, board, uploaded]);
 
   return { exists, pack, loading: exists && pack === undefined };
 }

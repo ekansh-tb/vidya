@@ -97,7 +97,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
 
   topics: [
     {
-      id: "sources", num: 1, title: "Sources & Evidence",
+      id: "sources", num: 1, title: "Sources & Evidence", skill: true,
       blurb: "History is an argument built from evidence — so you have to know what your evidence is and where it came from.",
       syllabus: [
         "Primary source = made at the time by someone connected to the event (a letter, a coin, a tool, a wall painting, a tax record). Secondary source = made later by someone studying it (a textbook, a documentary, a museum label). The same object can be primary for one question and secondary for another — a 1990 book is secondary about Ashoka but primary about what people believed in 1990.",
@@ -110,7 +110,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
       ],
     },
     {
-      id: "chronology", num: 2, title: "Chronology & Periods",
+      id: "chronology", num: 2, title: "Chronology & Periods", skill: true,
       blurb: "Getting time right is the cheapest set of marks in History — and the easiest to throw away.",
       syllabus: [
         "BCE (Before Common Era) and CE (Common Era) are the same as BC and AD, just without the religious wording. BCE years count BACKWARDS: 500 BCE is earlier than 200 BCE.",
@@ -122,7 +122,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
       ],
     },
     {
-      id: "cause", num: 3, title: "Cause & Consequence",
+      id: "cause", num: 3, title: "Cause & Consequence", skill: true,
       blurb: "Almost nothing in history has one cause, and almost nothing turns out exactly as intended.",
       syllabus: [
         "Separate long-term causes (conditions building up over years or centuries), short-term causes (things that happen in the run-up) and the trigger (the specific event that starts it).",
@@ -134,7 +134,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
       ],
     },
     {
-      id: "change", num: 4, title: "Change, Continuity, Similarity & Difference",
+      id: "change", num: 4, title: "Change, Continuity, Similarity & Difference", skill: true,
       blurb: "Two questions historians ask constantly: what actually changed, and how much was different somewhere else?",
       syllabus: [
         "Change and continuity run at the same time. When a new dynasty takes power, the ruler changes but the farming year, the language of the village and the way a house is built often do not.",
@@ -146,7 +146,7 @@ export const CLS7_HISTORY_PACK: ExamPack = {
       ],
     },
     {
-      id: "significance", num: 5, title: "Significance & Interpretations",
+      id: "significance", num: 5, title: "Significance & Interpretations", skill: true,
       blurb: "Why some events get remembered, and why two historians can read the same evidence and disagree.",
       syllabus: [
         "Historical significance is decided by later people, not by the event itself. Test it with the 5 Rs: was it Remarkable at the time, Remembered afterwards, Resonant for later generations, Resulting in change, and Revealing about its period?",
@@ -543,7 +543,7 @@ export const CLS7_GEOGRAPHY_PACK: ExamPack = {
 
   topics: [
     {
-      id: "skills", num: 1, title: "Geographical Skills — Maps, Grids & Graphs",
+      id: "skills", num: 1, title: "Geographical Skills — Maps, Grids & Graphs", skill: true,
       blurb: "The toolkit. Every other topic gets tested through these, so learn them first.",
       syllabus: [
         "Atlas skills: lines of latitude run east–west and measure how far north or south of the Equator you are; lines of longitude run north–south from pole to pole and measure east or west of the Prime Meridian. Give latitude first, then longitude. Key lines: Equator (0°), Tropic of Cancer, Tropic of Capricorn, and the Prime Meridian (0°).",

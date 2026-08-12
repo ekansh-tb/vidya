@@ -31,6 +31,7 @@ export function SubjectView({
   const { exists: hasExamPack, pack } = usePack(subjectId, learner.grade, {
     school: learner.school,
     board: learner.board,
+    uploaded: learner.schoolSyllabus,
   });
   const Icon = subject.icon;
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;

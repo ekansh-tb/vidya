@@ -10,6 +10,7 @@ import { copyText } from "@/lib/clipboard";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
+import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
@@ -173,6 +174,11 @@ export function ParentDashboard() {
               onClaimed={(remoteId) => updateLearnerMeta(selected.id, { remoteId })}
             />
             <LearnerLinkPanel key={`link-${selected.id}`} learner={selected} />
+            <SyllabusPanel
+              key={`syllabus-${selected.id}`}
+              learner={selected}
+              onSave={(patch) => updateLearnerMeta(selected.id, patch)}
+            />
             <SelectedLearnerView
               key={selected.id}
               learner={selected}

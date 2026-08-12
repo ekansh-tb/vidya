@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ExamPack } from "./exam-pack";
+import type { LearnerSyllabus } from "../types";
 import type { SchoolSyllabus } from "./school-syllabus";
 import { applySchoolSyllabus, isGenericSyllabus, SCHOOL_SYLLABI } from "./school-syllabus";
 import { pickerGroupsForBoard, subjectsForLearner } from "./subjects";
@@ -9,10 +10,13 @@ const BASE: ExamPack = {
   grade: 6,
   title: "History — Stage 7",
   context: "Humanities 0839 · Past strand",
-  highlights: [{ label: "Framework", value: "0839" }],
+  highlights: [
+    { label: "Framework", value: "0839" },
+    { label: "Syllabus", value: "Framework-level · school scheme not loaded" },
+  ],
   plan: [],
   topics: [
-    { id: "sources", num: 1, title: "Sources & Evidence", blurb: "", syllabus: ["a"] },
+    { id: "sources", num: 1, title: "Sources & Evidence", blurb: "", syllabus: ["a"], skill: true },
     { id: "empires", num: 7, title: "Empires, Rulers & Power", blurb: "", syllabus: ["b"] },
   ],
   flashcards: [],
@@ -97,6 +101,61 @@ describe("school syllabus overlay", () => {
     const ctx = { school: "CNS Amanora", board: "cambridge-lower-secondary" as const, grade: 6 };
     expect(isGenericSyllabus(ctx)).toBe(true);
     withSyllabus(CNS, () => expect(isGenericSyllabus(ctx)).toBe(false));
+  });
+});
+
+describe("parent-uploaded syllabus", () => {
+  const uploaded: LearnerSyllabus = {
+    academicYear: "2026-27",
+    sourceLabel: "cns-grade6.pdf",
+    uploadedAt: "2026-08-12T00:00:00.000Z",
+    subjects: {
+      "cls-history": {
+        topics: [
+          { id: "sch-1", title: "Mughal India", blurb: "Term 1 unit", syllabus: ["Akbar"], term: "Term 1" },
+        ],
+      },
+    },
+  };
+  const ctx = { school: "CNS Amanora", board: "cambridge-lower-secondary" as const, grade: 6 };
+
+  it("keeps skills topics and replaces the generic content ones", () => {
+    const out = applySchoolSyllabus(BASE, { ...ctx, uploaded });
+    expect(out.topics.map((t) => t.id)).toEqual(["sources", "sch-1"]);
+    expect(out.topics[1].title).toBe("Mughal India");
+  });
+
+  it("prefixes the term onto the unit blurb", () => {
+    const out = applySchoolSyllabus(BASE, { ...ctx, uploaded });
+    expect(out.topics[1].blurb).toBe("Term 1 · Term 1 unit");
+  });
+
+  it("replaces the 'not loaded' caveat rather than stacking a second one", () => {
+    const out = applySchoolSyllabus(BASE, { ...ctx, uploaded });
+    const syl = out.highlights!.filter((h) => h.label === "Syllabus");
+    expect(syl).toEqual([{ label: "Syllabus", value: "School scheme of work, 2026-27" }]);
+  });
+
+  it("leaves a subject the upload says nothing about alone", () => {
+    const geo: ExamPack = { ...BASE, subjectId: "cls-geography" };
+    expect(applySchoolSyllabus(geo, { ...ctx, uploaded })).toBe(geo);
+  });
+
+  it("ignores an upload whose subject has no topics", () => {
+    const empty: LearnerSyllabus = { ...uploaded, subjects: { "cls-history": { topics: [] } } };
+    expect(applySchoolSyllabus(BASE, { ...ctx, uploaded: empty })).toBe(BASE);
+  });
+
+  it("beats a syllabus committed to the registry", () => {
+    withSyllabus(CNS, () => {
+      const out = applySchoolSyllabus(BASE, { ...ctx, uploaded });
+      expect(out.topics.map((t) => t.id)).toEqual(["sources", "sch-1"]);
+    });
+  });
+
+  it("reports the subject as no longer generic", () => {
+    expect(isGenericSyllabus({ ...ctx, uploaded, subjectId: "cls-history" })).toBe(false);
+    expect(isGenericSyllabus({ ...ctx, uploaded, subjectId: "cls-geography" })).toBe(true);
   });
 });
 
