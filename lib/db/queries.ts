@@ -657,6 +657,55 @@ export async function clearSelfLink(clerkUserId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+// -------------------------------------------------------- capability usage
+
+export type UsageVerdict = { allowed: boolean; used: number; perDay: number };
+
+/**
+ * Count one use of a capability against this learner's daily allowance.
+ *
+ * ATOMIC, and only counts uses it ALLOWS. The `where` on the conflict branch
+ * means a request over the limit updates nothing and returns no row, so a
+ * child hammering a denied endpoint cannot inflate their own counter — and two
+ * concurrent requests at the boundary cannot both slip through, because the
+ * increment and the comparison are one statement.
+ *
+ * Returns `used` as the count INCLUDING this call when allowed, so a caller
+ * can honestly say "18 of 20".
+ */
+export async function bumpCapabilityUsage(
+  learnerId: string,
+  capability: string,
+  perDay: number,
+): Promise<UsageVerdict> {
+  if (perDay <= 0) return { allowed: false, used: 0, perDay };
+  const sql = getSql();
+  const rows = await sql`
+    insert into capability_usage (learner_id, capability, day, count)
+    values (${learnerId}, ${capability}, current_date, 1)
+    on conflict (learner_id, capability, day) do update
+      set count = capability_usage.count + 1
+      where capability_usage.count < ${perDay}
+    returning count
+  `;
+  if (!rows.length) return { allowed: false, used: perDay, perDay };
+  return { allowed: true, used: Number(rows[0].count), perDay };
+}
+
+/** Today's count without spending any of it. For parent-facing display. */
+export async function capabilityUsedToday(
+  learnerId: string,
+  capability: string,
+): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`
+    select count from capability_usage
+    where learner_id = ${learnerId} and capability = ${capability} and day = current_date
+    limit 1
+  `;
+  return rows.length ? Number(rows[0].count) : 0;
+}
+
 // ------------------------------------------------------------------ audit
 
 export async function audit(input: {

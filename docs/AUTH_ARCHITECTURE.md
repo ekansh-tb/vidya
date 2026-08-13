@@ -104,21 +104,41 @@ resolver (`lib/capabilities/use-capability.ts`) reads a static map and a
 locally-computed rung, and applies the parent's `disabledCapabilities`
 override. No cohorts, no jitter, no safety pin, no rate limits.
 
-## Same-network detection (rung 1)
+## Same-network detection (rung 1) — NOT BUILT, and the spec below is unsound here
 
-On every learner session start, server logs an opaque fingerprint:
+The original design was: on every learner session start, log an opaque
+fingerprint `sha256(ip_class_c + asn + user_agent_family)`; if it matches a
+parent's fingerprint from the last 14 days, auto-promote the learner row to
+`network_verified`. No raw IPs stored, one-way, rotated per parent session.
 
-```
-sha256(ip_class_c + asn + user_agent_family)
-```
+**Do not implement that as written.** The privacy handling is careful, but the
+signal does not survive contact with this deployment.
 
-If the fingerprint matches any row in `parent_network_fingerprints` (a
-parent's recent session within 14 days), upgrade the learner's row
-`verification_level` to `network_verified`. Soft-fails — losing the match
-doesn't downgrade an already-higher rung.
+The learners are in Pune, on Indian consumer ISPs and mobile carriers, where
+CGNAT is the norm rather than the exception. A single carrier-NAT `/24` fronts
+thousands of unrelated subscribers. The fingerprint's three inputs collapse in
+exactly that setting: `ip_class_c` is the shared NAT range, `asn` is the
+carrier every one of those households is on, and `user_agent_family` is
+"Mobile Safari" for a large share of them. So the fingerprint would match
+across strangers, at scale, and — because the design *auto-promotes and writes
+`verification_level`* — it would hand a persistent rung to other people's
+children and bill their AI use to this project.
 
-We don't store raw IPs in the DB. The fingerprint is one-way and rotated
-per parent session.
+That is not a tuning problem. A rung is a claim about who vouched for a child;
+one that fires for a stranger on the same carrier means nothing, and a rung
+that means nothing is worse than an absent one, because the parent dashboard
+reports it as a verification.
+
+**If rung 1 is wanted, the signal to use is "a parent is signed in on THIS
+browser"** — a Clerk session cookie on the same device the child is using. It
+is stronger than same-network (an identified adult deliberately signed in
+here, rather than merely sharing an ISP), it needs no fingerprinting and no new
+table, and it matches the one-iPad family setup the rest of this architecture
+is built around. It has not been built either; it is written down here so the
+next person does not reach for the IP version.
+
+Until then rungs 0, 2 and 3 are the ladder, and `ai.tutor.limited` is
+unreachable — see the gaps section.
 
 ## Parent verification flow (rung 2) *(rewritten 2026-08-13)*
 
@@ -193,6 +213,9 @@ describing a flow nobody can perform.
 - `0003_disabled_capabilities.sql` — `learners.disabled_capabilities`, which
   is what makes the parent's per-learner switches binding on the server
   instead of just hiding a room in the kid's lobby
+- `0004_capability_usage.sql` — `capability_usage`, the per-learner daily
+  counter that makes `CapabilityPolicy.rateLimit.perDay` a real limit rather
+  than a declared one
 
 Two things the migrations cannot say for you, so they are said here:
 
@@ -293,10 +316,14 @@ Audited against the codebase on 2026-08-10.
 Known gaps, re-checked 2026-08-13:
 
 - **Rungs 1 and 3 are unreachable.** `computeRung()` in
-  `lib/capabilities/use-capability.ts` returns only 0 or 2. Rung 1 needs the
-  network-fingerprint table that was never built; rung 3 needs an ops process.
-- **`ai.tutor.limited` is dead.** All five call sites check `ai.tutor.full`,
-  so the rung-1 rate-limited tier is never resolved.
+  `lib/capabilities/use-capability.ts` returns only 0 or 2. Rung 3 needs an ops
+  process. Rung 1 is a deliberate non-build, not an oversight — the
+  network-fingerprint design is unsound on Indian CGNAT; see the section above
+  for why, and for the signal to use instead.
+- **`ai.tutor.limited` is dead**, and stays dead while rung 1 does. All five
+  call sites check `ai.tutor.full`. Its `perDay: 20` is now honoured by the
+  enforcement path, so the tier will work the day a rung-1 signal exists — it
+  is dormant, not broken.
 - **`/api/tutor`'s RUNG check runs in OBSERVE MODE.** It resolves the real
   capability from the request's device token, logs the decision, and allows it
   anyway. `ENFORCE_TUTOR_RUNG=true` makes that half binding — safe once the

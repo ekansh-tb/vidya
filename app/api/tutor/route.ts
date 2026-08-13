@@ -4,6 +4,9 @@ import {
   clientKey, rateLimit, rateHeaders, LIMITS,
 } from "@/lib/api/guard";
 import { resolveCapabilityForRequest } from "@/lib/capabilities/server";
+import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
+import { bumpCapabilityUsage } from "@/lib/db/queries";
+import type { Identity } from "@/lib/auth/session";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -320,8 +323,14 @@ export async function POST(req: Request) {
   // family has linked would switch the tutor off for them mid-term, so
   // ENFORCE_TUTOR_RUNG=true is the single visible change that makes it binding.
   const ENFORCE_TUTOR_RUNG = process.env.ENFORCE_TUTOR_RUNG === "true";
+  // Held outside the try so the usage accounting below can bill the turn to
+  // the learner this request proved it is. Stays null if identity resolution
+  // threw, in which case nobody is billed — an accounting gap is the right
+  // failure here, since the alternative is charging the wrong child.
+  let tutorIdentity: Identity | null = null;
   try {
     const decision = await resolveCapabilityForRequest("ai.tutor.full", req);
+    tutorIdentity = decision.identity;
     if (!decision.allowed) {
       if (decision.reason === "feature_disabled") {
         // Deliberately not "your parent turned this off". Per
@@ -352,6 +361,39 @@ export async function POST(req: Request) {
       { error: "That conversation got too long. Start a fresh chat with Miss Vidya." },
       { status: 413, headers: rateHeaders(verdict, RATE.limit) },
     );
+  }
+
+  // 3c. The capability's own declared daily allowance, per learner.
+  //
+  // CAPABILITY_POLICIES has carried `rateLimit: { perDay, burst }` since the
+  // capability map shipped and nothing read it — the limiter above is keyed on
+  // a spoofable IP, is per-instance, and resets on deploy, so a *daily* budget
+  // expressed there was fiction. This one is keyed on the learner and lives in
+  // Postgres, which only became possible once a device could prove which child
+  // it speaks for.
+  //
+  // Runs last, after the cheap validity checks, so a malformed request never
+  // spends a child's allowance. A database failure allows the turn: an
+  // accounting problem must not become an outage in the middle of homework.
+  if (tutorIdentity?.kind === "learner") {
+    const perDay = CAPABILITY_POLICIES["ai.tutor.full"].rateLimit?.perDay;
+    if (perDay) {
+      try {
+        const usage = await bumpCapabilityUsage(tutorIdentity.learner.id, "ai.tutor.full", perDay);
+        if (!usage.allowed) {
+          return Response.json(
+            {
+              // Kid-legible, and it says when rather than just no. Nothing here
+              // mentions a parent or a setting — see parent-invisible-config.
+              error: "Miss Vidya has done a lot of thinking today. She'll be ready again tomorrow.",
+            },
+            { status: 429, headers: rateHeaders(verdict, RATE.limit) },
+          );
+        }
+      } catch (e) {
+        console.error("[api/tutor] usage accounting failed, allowing:", e);
+      }
+    }
   }
 
   if (
