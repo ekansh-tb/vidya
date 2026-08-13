@@ -70,7 +70,11 @@ export type CapabilityResolution = {
  * that once held this was removed with Supabase on 2026-05-21).
  *
  * Today these rows are a static in-memory map in lib/capabilities/policies.ts.
- * `aiSafetyPin`, `cohort`, and `rateLimit` are declared here but NOT yet
+ * `rateLimit.perDay` IS now enforced, per learner, in Postgres — see
+ * bumpCapabilityUsage and /api/tutor. `rateLimit.burst` is approximated by the
+ * in-memory IP limiter in lib/api/guard.ts rather than read from here.
+ *
+ * `aiSafetyPin` and `cohort` are declared here but NOT yet
  * evaluated by the resolver — see [[dynamic-guardrails]].
  */
 export type CapabilityPolicy = {

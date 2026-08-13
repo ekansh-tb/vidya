@@ -31,7 +31,7 @@ import {
   pushLearnerState, getLearnerState,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
   clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
-  disabledCapabilitiesForTokens,
+  disabledCapabilitiesForTokens, bumpCapabilityUsage, capabilityUsedToday,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -311,6 +311,69 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       expect(await setDisabledCapabilities(PARENT_A, learnerB, ["ai.tutor.full"])).toBeNull();
       const untouched = await getLearnerForParent(PARENT_B, learnerB);
       expect(untouched?.disabledCapabilities).toEqual([]);
+    });
+  });
+
+  describe("daily capability allowance", () => {
+    const KEY = "test.capability";
+
+    it("counts up to the limit and then refuses", async () => {
+      for (let i = 1; i <= 3; i++) {
+        const v = await bumpCapabilityUsage(learnerA, KEY, 3);
+        expect(v.allowed, `call ${i} of 3`).toBe(true);
+        expect(v.used).toBe(i);
+      }
+      const over = await bumpCapabilityUsage(learnerA, KEY, 3);
+      expect(over.allowed).toBe(false);
+      expect(over.used).toBe(3);
+    });
+
+    it("a refused call does not spend anything", async () => {
+      // Otherwise a child hammering a denied endpoint inflates their own
+      // counter, and the number a parent reads stops meaning "uses".
+      const before = await capabilityUsedToday(learnerA, KEY);
+      await bumpCapabilityUsage(learnerA, KEY, 3);
+      await bumpCapabilityUsage(learnerA, KEY, 3);
+      expect(await capabilityUsedToday(learnerA, KEY)).toBe(before);
+    });
+
+    it("is scoped per learner — one child cannot spend another's", async () => {
+      const mine = await capabilityUsedToday(learnerA, KEY);
+      expect(await capabilityUsedToday(learnerB, KEY)).toBe(0);
+      const v = await bumpCapabilityUsage(learnerB, KEY, 3);
+      expect(v.used).toBe(1);
+      expect(await capabilityUsedToday(learnerA, KEY)).toBe(mine);
+    });
+
+    it("is scoped per capability", async () => {
+      const other = await bumpCapabilityUsage(learnerA, "test.other", 3);
+      expect(other.allowed, "a different key has its own allowance").toBe(true);
+      expect(other.used).toBe(1);
+    });
+
+    it("raising the limit lets a capped learner continue", async () => {
+      // The limit is read per call, so changing the policy takes effect at once
+      // rather than after a day.
+      const v = await bumpCapabilityUsage(learnerA, KEY, 5);
+      expect(v.allowed).toBe(true);
+      expect(v.used).toBe(4);
+    });
+
+    it("a zero allowance refuses without recording a use", async () => {
+      const v = await bumpCapabilityUsage(learnerB, "test.zero", 0);
+      expect(v.allowed).toBe(false);
+      expect(await capabilityUsedToday(learnerB, "test.zero")).toBe(0);
+    });
+
+    it("concurrent calls at the boundary cannot both slip through", async () => {
+      // The increment and the comparison are one statement precisely so this
+      // cannot over-grant under load.
+      const K = "test.race";
+      const results = await Promise.all(
+        Array.from({ length: 8 }, () => bumpCapabilityUsage(learnerA, K, 4)),
+      );
+      expect(results.filter((r) => r.allowed)).toHaveLength(4);
+      expect(await capabilityUsedToday(learnerA, K)).toBe(4);
     });
   });
 

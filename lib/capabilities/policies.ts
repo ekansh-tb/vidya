@@ -24,7 +24,15 @@ const policy = (
 export const CAPABILITY_POLICIES: Record<CapabilityKey, CapabilityPolicy> = {
   // AI tutor — Miss Vidya
   "ai.tutor.limited":    policy("ai.tutor.limited", 1, "Rate-limited tutor (same-network rung).", { perDay: 20, burst: 5 }),
-  "ai.tutor.full":       policy("ai.tutor.full",    2, "Full Miss Vidya tutor — parent-verified."),
+  // `perDay` here is now ENFORCED, per learner, in the database — see
+  // bumpCapabilityUsage. It was previously declared and read by nothing.
+  //
+  // 60 is deliberately generous: a child working through a hard evening asks a
+  // lot of follow-ups, and a tutor that stops mid-topic teaches them the tool
+  // is unreliable. It is a ceiling on runaway use, not a study budget, and it
+  // is one number to change. What it is NOT is a spend cap — that belongs on
+  // the provider account, because it has to hold even when identity does not.
+  "ai.tutor.full":       policy("ai.tutor.full",    2, "Full Miss Vidya tutor — parent-verified.", { perDay: 60, burst: 8 }),
 
   // Sharing
   "share.crossNetwork":  policy("share.crossNetwork", 1, "Share streaks / app link across networks."),
