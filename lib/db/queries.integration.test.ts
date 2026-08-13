@@ -64,9 +64,25 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
   afterAll(async () => {
     if (!hasDb) return;
     const sql = getSql();
-    // learners/states/codes cascade from parents.
-    await sql`delete from parents where id in (${PARENT_A}, ${PARENT_B})`;
+
+    // `link_audit` FIRST, and by learner_id.
+    //
+    // It has no FK, so nothing cascades into it, and the old cleanup matched
+    // on `actor` or `parent_id` — which a redeem row has NEITHER of.
+    // `redeemClaimCode` audits with `{ parentId: null, actor: null }` because
+    // the redeemer is a device, not a person. So every run of this file left
+    // permanent "linked · via claim_code" rows in the real database, with
+    // plausible device labels, indistinguishable from a family's actual links.
+    // Test residue in a production audit trail is worse than no audit trail:
+    // the whole point of the table is reconstructing who got access to a
+    // child's data.
+    //
+    // Deleting by learner_id catches those, and it has to happen before the
+    // parents go, because that is what deletes the learners.
+    await sql`delete from link_audit where learner_id in (${learnerA}, ${learnerB})`;
     await sql`delete from link_audit where actor like ${RUN + "%"} or parent_id in (${PARENT_A}, ${PARENT_B})`;
+    // learners/states/codes/devices cascade from parents.
+    await sql`delete from parents where id in (${PARENT_A}, ${PARENT_B})`;
   }, DB_TIMEOUT_MS);
 
   describe("strict per-learner isolation", () => {
