@@ -11,6 +11,7 @@ import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { DevicePanel } from "@/components/parent/device-panel";
+import { UsagePanel } from "@/components/parent/usage-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
@@ -186,6 +187,10 @@ export function ParentDashboard() {
             {/* Revoking lives behind Clerk only — the in-kid-app parent room is
                 PIN-guarded, which is a speed bump, not an authorisation. */}
             <DevicePanel key={`devices-${selected.id}`} learner={selected} />
+
+            {/* A count, not analytics — see the note in the component on why
+                this one deliberately has no "this might mean". */}
+            <UsagePanel key={`usage-${selected.id}`} learner={selected} />
             <SyllabusPanel
               key={`syllabus-${selected.id}`}
               learner={selected}
