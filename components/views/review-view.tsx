@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, BookOpen, Check, X, Filter } from "lucide-react";
 import type { GameState, MissedQuestion, SubjectId } from "@/lib/types";
+import { sortForReview, dueCount, isDue, recordCorrect } from "@/lib/spaced-repetition";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { sfx } from "@/lib/audio";
 
@@ -29,7 +30,11 @@ export function ReviewView({
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
 }) {
-  const all = state.missedQuestions || [];
+  // Due first, oldest miss first — see lib/spaced-repetition. Sorting here
+  // rather than in the store keeps the notebook's stored order meaningful
+  // (most-recent-first) while what the learner sees is what needs them.
+  const all = sortForReview(state.missedQuestions || []);
+  const readyCount = dueCount(state.missedQuestions);
   const [filterSubject, setFilterSubject] = useState<SubjectId | "all">("all");
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const reduced = useReducedMotion();
@@ -45,14 +50,31 @@ export function ReviewView({
     ? all
     : all.filter((m) => m.subjectId === filterSubject);
 
+  /**
+   * "Got it" — the learner's own claim that they know this one.
+   *
+   * It used to delete the card. It now promotes it exactly as a correct quiz
+   * answer would, so the claim is taken seriously but still has to survive the
+   * schedule. A card the learner has genuinely learned will sail through the
+   * remaining reviews in a few seconds each; one they were optimistic about
+   * comes back, which is the whole point of a notebook.
+   *
+   * The XP is unchanged and still paid every time, because closing the loop on
+   * a miss is the behaviour worth encouraging whether or not it retires the
+   * card. Promotion only counts when the card is actually due, so tapping this
+   * repeatedly cannot rush a card out.
+   */
   const markMastered = (id: string) => {
     sfx.coin();
-    setState((p) => ({
-      ...p,
-      missedQuestions: (p.missedQuestions || []).filter((m) => m.id !== id),
-      // Small XP bump for closing the loop on a miss
-      xp: p.xp + 2,
-    }));
+    setState((p) => {
+      const next: MissedQuestion[] = [];
+      for (const m of p.missedQuestions || []) {
+        if (m.id !== id) { next.push(m); continue; }
+        const outcome = recordCorrect(m);
+        if (outcome.kind === "scheduled") next.push(outcome.card);
+      }
+      return { ...p, missedQuestions: next, xp: p.xp + 2 };
+    });
     if (revealedId === id) setRevealedId(null);
   };
 
@@ -153,9 +175,11 @@ export function ReviewView({
 
           {all.length > 0 && (
             <p className="text-[10px] mt-6 leading-relaxed text-center" style={{ color: "var(--text-faint)" }}>
-              Notebook stores up to 50 most-recent misses on this device.
+              {readyCount === 0
+                ? "Nothing needs you right now — these come back on their own, spread out over the next few weeks."
+                : "Questions come back a few times, spread further apart each time you get them right."}
               <br />
-              Mark <em>Got it</em> to clear a card · or answer it right in a quiz to clear it automatically.
+              A card leaves the notebook once you&apos;ve got it right on five different days.
             </p>
           )}
         </div>
@@ -197,6 +221,11 @@ function MissCard({ miss, revealed, onToggle, onMaster, reduced }: {
   reduced: boolean;
 }) {
   const subj = miss.subjectId ? SUBJECT_MAP[miss.subjectId] : undefined;
+  // A card the learner has already got right is still in the notebook, resting
+  // until its next review. Saying so plainly prevents the obvious confusion —
+  // "I answered this, why is it still here?" — without showing them a box
+  // number or a schedule, which is bookkeeping they did not ask for.
+  const resting = !isDue(miss);
   return (
     <motion.div
       // `layout` reflows every sibling card when one is removed or expanded —
@@ -206,7 +235,13 @@ function MissCard({ miss, revealed, onToggle, onMaster, reduced }: {
       animate={{ opacity: 1, y: 0 }}
       exit={reduced ? { opacity: 0 } : { opacity: 0, height: 0, marginBottom: 0 }}
       className="glass-card p-4"
+      style={resting ? { opacity: 0.62 } : undefined}
     >
+      {resting && (
+        <div className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--success)" }}>
+          Got it · back again later
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex-1 min-w-0">
           {subj && (

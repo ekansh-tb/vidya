@@ -350,6 +350,14 @@ export type MissedQuestion = {
   subjectId?: SubjectId;
   topicId?: string;
   missedAt: string;        // ISO timestamp
+  /** Leitner box, 0..5. Absent on entries written before spaced repetition
+   *  shipped, which read as box 0 — due now. See lib/spaced-repetition.ts. */
+  box?: number;
+  /** ISO timestamp this card is next askable. Absent means due now. */
+  dueAt?: string;
+  lastReviewedAt?: string;
+  /** How many times it has been answered since the original miss. */
+  reviews?: number;
 };
 
 export type QuizResult = {

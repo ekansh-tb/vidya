@@ -118,6 +118,31 @@ describe("mergeGameState — never drop what a child wrote", () => {
     expect(out.missedQuestions.map((m) => m.id).sort()).toEqual(["m1", "m2"]);
     expect(out.savedCompositions.map((c) => c.id).sort()).toEqual(["c1", "c2"]);
   });
+
+  it("keeps the newer review schedule for a card held on both devices", () => {
+    // A plain union by id kept whichever copy it walked first, which could
+    // discard a review the other device had already recorded.
+    const card = { id: "m1", q: "?", given: "a", correct: "b", ex: "", missedAt: "2026-08-01T00:00:00.000Z" };
+    const out = mergeGameState(
+      base({ missedQuestions: [{ ...card, box: 1, lastReviewedAt: "2026-08-10T00:00:00.000Z" }] }),
+      base({ missedQuestions: [{ ...card, box: 3, lastReviewedAt: "2026-08-12T00:00:00.000Z" }] }),
+    );
+    expect(out.missedQuestions).toHaveLength(1);
+    expect(out.missedQuestions[0].box).toBe(3);
+  });
+
+  it("a lapse on one device survives a promotion on the other", () => {
+    // The outcome that must never be lost. Hiding a question the learner has
+    // forgotten costs them the thing they were trying to learn; showing one
+    // they know costs ten seconds.
+    const card = { id: "m1", q: "?", given: "a", correct: "b", ex: "", missedAt: "2026-08-01T00:00:00.000Z" };
+    const stamp = "2026-08-12T00:00:00.000Z";
+    const out = mergeGameState(
+      base({ missedQuestions: [{ ...card, box: 4, lastReviewedAt: stamp }] }),
+      base({ missedQuestions: [{ ...card, box: 0, lastReviewedAt: stamp }] }),
+    );
+    expect(out.missedQuestions[0].box).toBe(0);
+  });
 });
 
 describe("mergeGameState — the local device owns preferences", () => {

@@ -7,7 +7,8 @@ import { X, Check, Lightbulb, ScanLine, Zap, ArrowRight, BookOpen } from "lucide
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
-import type { GameState, Subject, SubjectId, QuizResult, WrongAnswer } from "@/lib/types";
+import type { GameState, Subject, SubjectId, QuizResult, WrongAnswer, MissedQuestion } from "@/lib/types";
+import { recordCorrect, recordWrong, newCard, capNotebook } from "@/lib/spaced-repetition";
 import { shuffle, todayKey } from "@/lib/utils";
 import { sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
@@ -165,8 +166,21 @@ export function QuizView({
         if (wasWrong && newSince >= 5 && !badges.includes("comeback")) {
           badges.push("comeback");
         }
-        // If this same question was previously in the miss log, mastered now — remove it.
-        const missedQuestions = (prev.missedQuestions || []).filter((m) => m.q !== currentQ.q);
+        // A previously-missed question answered right: PROMOTED, not deleted.
+        //
+        // This used to be `.filter(m => m.q !== currentQ.q)` — one correct
+        // answer and the card was gone. That is the weakest evidence of
+        // learning there is: the explanation was on screen moments ago and the
+        // question is word-for-word the one they just read. The card now moves
+        // up a Leitner box and comes back on a longer interval, leaving the
+        // notebook only after surviving all of them. See lib/spaced-repetition.
+        const missedQuestions: MissedQuestion[] = [];
+        for (const m of prev.missedQuestions || []) {
+          if (m.q !== currentQ.q) { missedQuestions.push(m); continue; }
+          const outcome = recordCorrect(m);
+          if (outcome.kind === "scheduled") missedQuestions.push(outcome.card);
+          // "retired" — it earned its way out.
+        }
         return {
           ...prev,
           comeback: { wasWrong: newSince < 5 ? wasWrong : false, sinceWrongCorrect: newSince < 5 ? newSince : 0 },
@@ -182,22 +196,30 @@ export function QuizView({
       const missed = { q: currentQ.q, given: option, correct: currentQ.a, ex: currentQ.ex, isDeva: !!isDeva };
       setWrongAnswers((prev) => [...prev, missed]);
       setState((prev) => {
-        // Persistent miss log (capped at 50 most-recent per learner)
-        const entry: import("@/lib/types").MissedQuestion = {
-          id: `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-          q: missed.q,
-          given: missed.given,
-          correct: missed.correct,
-          ex: missed.ex,
-          isDeva: missed.isDeva,
-          subjectId,
-          topicId,
-          missedAt: new Date().toISOString(),
-        };
         const existing = prev.missedQuestions || [];
-        // Dedup by exact question text — most-recent given/timestamp wins
+        const prior = existing.find((m) => m.q === missed.q);
+
+        // A card already in the notebook that is missed AGAIN is a lapse:
+        // straight back to box 0, due immediately, and its review history is
+        // kept so the schedule reflects what actually happened rather than
+        // restarting as though this were the first time.
+        const entry: MissedQuestion = prior
+          ? recordWrong({ ...prior, given: missed.given, missedAt: new Date().toISOString() })
+          : newCard({
+              id: `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+              q: missed.q,
+              given: missed.given,
+              correct: missed.correct,
+              ex: missed.ex,
+              isDeva: missed.isDeva,
+              subjectId,
+              topicId,
+              missedAt: new Date().toISOString(),
+            });
+
         const filtered = existing.filter((m) => m.q !== entry.q);
-        const next = [entry, ...filtered].slice(0, 50);
+        // Cap by how well-learned a card is, not by age — see capNotebook.
+        const next = capNotebook([entry, ...filtered], 50);
         return {
           ...prev,
           comeback: { wasWrong: true, sinceWrongCorrect: 0 },
