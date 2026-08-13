@@ -1,4 +1,5 @@
-import type { GameState } from "../types";
+import type { GameState, MissedQuestion } from "../types";
+import { mergeCard, capNotebook } from "../spaced-repetition";
 
 /**
  * Merges two copies of a learner's GameState.
@@ -62,6 +63,32 @@ function unionBy<T extends Record<string, unknown>>(a: unknown, b: unknown, key:
     out.push(item);
   }
   return out;
+}
+
+/**
+ * Wrong-Answer Notebook across two devices.
+ *
+ * A union by id is wrong here. The same card can carry a different Leitner box
+ * and due date on each device — the kid reviewed on the iPad, then again on
+ * the phone before the two synced — and "first occurrence wins" would keep
+ * whichever copy the merge happened to walk first. That can throw away a
+ * lapse, which is the one outcome that must not be lost: hiding a question the
+ * learner has forgotten costs them the thing they were trying to learn.
+ *
+ * mergeCard resolves each pair by review recency, with a lapse winning ties.
+ */
+function mergeMissedQuestions(a: unknown, b: unknown): MissedQuestion[] {
+  const byId = new Map<string, MissedQuestion>();
+  for (const item of [...arr<MissedQuestion>(a), ...arr<MissedQuestion>(b)]) {
+    if (!item || typeof item !== "object") continue;
+    const id = String(item.id ?? "");
+    if (!id) continue;
+    const existing = byId.get(id);
+    byId.set(id, existing ? mergeCard(existing, item) : item);
+  }
+  // Cap after merging, not before: two devices can each be at the cap with
+  // different cards, and the union is what needs trimming.
+  return capNotebook([...byId.values()]);
 }
 
 /** Per-subject, per-topic progress: keep the better attempt record. */
@@ -182,7 +209,10 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     // ---- authored content: union, never drop what a child wrote ----
     notebook: mergeNotebook(local.notebook, r.notebook),
     dailyReflections: unionBy(local.dailyReflections, r.dailyReflections, "date"),
-    missedQuestions: unionBy(local.missedQuestions, r.missedQuestions, "id"),
+    // Not a plain union: the same card can carry different review schedules on
+    // two devices, and taking whichever copy happened to be seen first would
+    // silently discard a lapse recorded on the other. See mergeCard.
+    missedQuestions: mergeMissedQuestions(local.missedQuestions, r.missedQuestions),
     savedCompositions: unionBy(local.savedCompositions, r.savedCompositions, "id"),
     classRoster: unionBy(local.classRoster, r.classRoster, "id"),
     classNotes: unionBy(local.classNotes, r.classNotes, "id"),

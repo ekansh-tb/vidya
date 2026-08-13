@@ -19,6 +19,7 @@ import { hasPack } from "@/lib/content/packs/pack-index";
 import { useCapability } from "@/lib/capabilities/use-capability";
 import { xpToLevel } from "@/lib/economy";
 import { todayKey } from "@/lib/utils";
+import { dueCount } from "@/lib/spaced-repetition";
 import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 import { sfx } from "@/lib/audio";
@@ -49,6 +50,10 @@ export function HomeView({
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
   const setGameState = useGameStore((s) => s.set);
+  // Recomputed each render on purpose: cards become due with the passage of
+  // time, not in response to a state change, so a memo keyed on the notebook
+  // would keep yesterday's answer until something else happened to move.
+  const dueMisses = dueCount(state.missedQuestions);
 
   // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
   const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
@@ -489,8 +494,12 @@ export function HomeView({
         {/* Daily reflection — kid-authored, end-of-day prompt */}
         <DailyReflectionCard state={state} />
 
-        {/* Review-your-misses banner — only shown when the kid has unresolved misses */}
-        {(state.missedQuestions?.length ?? 0) > 0 && (
+        {/* Review-your-misses banner — DUE cards only.
+            This counted the whole notebook, which was fine when a card left on
+            the first correct answer. Under spaced repetition most cards are
+            resting most of the time, so the old count would have told a kid who
+            was fully caught up that they had thirty questions waiting. */}
+        {dueMisses > 0 && (
           <motion.button
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -502,14 +511,14 @@ export function HomeView({
               className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center text-base font-display font-bold"
               style={{ background: "rgba(244, 114, 182, 0.18)", color: "#F472B6" }}
             >
-              {state.missedQuestions!.length}
+              {dueMisses}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-display font-bold text-sm" style={{ color: "var(--text)" }}>
                 Review your misses
               </div>
               <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                {state.missedQuestions!.length === 1 ? "1 question" : `${state.missedQuestions!.length} questions`} from past quizzes, waiting for a second try
+                {dueMisses === 1 ? "1 question" : `${dueMisses} questions`} ready for another try
               </div>
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#F472B6" }}>
