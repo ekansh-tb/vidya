@@ -706,6 +706,41 @@ export async function capabilityUsedToday(
   return rows.length ? Number(rows[0].count) : 0;
 }
 
+export type UsageDay = { day: string; capability: string; count: number };
+
+/**
+ * Recent daily usage for a learner this parent owns.
+ *
+ * Ownership-scoped like everything else here — a parent cannot read another
+ * family's child's usage by guessing a UUID.
+ *
+ * Returns raw counts and nothing else on purpose. There is no "average", no
+ * trend line and no percentile, because the moment this returns a comparison
+ * it stops being a fact about one child and starts being a judgement — and
+ * the parent surface is allowed to observe, not to claim. See the
+ * analytics-opinion-only rule.
+ */
+export async function usageForParent(
+  parentId: string,
+  learnerId: string,
+  days = 7,
+): Promise<UsageDay[] | null> {
+  const owned = await getLearnerForParent(parentId, learnerId);
+  if (!owned) return null;
+  const sql = getSql();
+  const rows = await sql`
+    select day, capability, count from capability_usage
+    where learner_id = ${learnerId}
+      and day > current_date - ${days}::int
+    order by day desc, capability asc
+  `;
+  return rows.map((r) => ({
+    day: String(r.day).slice(0, 10),
+    capability: String(r.capability),
+    count: Number(r.count),
+  }));
+}
+
 // ------------------------------------------------------------------ audit
 
 export async function audit(input: {

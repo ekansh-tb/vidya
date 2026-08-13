@@ -31,7 +31,7 @@ import {
   pushLearnerState, getLearnerState,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
   clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
-  disabledCapabilitiesForTokens, bumpCapabilityUsage, capabilityUsedToday,
+  disabledCapabilitiesForTokens, bumpCapabilityUsage, capabilityUsedToday, usageForParent,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -363,6 +363,15 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       const v = await bumpCapabilityUsage(learnerB, "test.zero", 0);
       expect(v.allowed).toBe(false);
       expect(await capabilityUsedToday(learnerB, "test.zero")).toBe(0);
+    });
+
+    it("a parent reads only their own child's usage", async () => {
+      await bumpCapabilityUsage(learnerA, "test.read", 5);
+      const mine = await usageForParent(PARENT_A, learnerA);
+      expect(mine!.some((r) => r.capability === "test.read")).toBe(true);
+      // Guessing another family's learner id gets nothing, not a 403's worth
+      // of confirmation that the id exists.
+      expect(await usageForParent(PARENT_A, learnerB)).toBeNull();
     });
 
     it("concurrent calls at the boundary cannot both slip through", async () => {
