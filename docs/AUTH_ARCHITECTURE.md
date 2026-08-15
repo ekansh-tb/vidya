@@ -1,36 +1,34 @@
 # Auth & Verification Architecture
 
-Last updated: 2026-08-10 (audited against the codebase)
+Last updated: 2026-08-16 (audited against the codebase)
 
-> **Status note:** As of 2026-05-21 Vidya is **Clerk-only**. Supabase
-> was removed before the migration was ever applied. The schema and
-> RLS design below are a forward-looking spec for when a durable DB
-> becomes necessary (cross-device sync, rung-3 features, multi-family
-> analytics). Today, kid GameState lives in localStorage; parent
-> identity lives in Clerk publicMetadata.
+> **Status note:** Vidya uses Clerk for parent identity and Neon Postgres for
+> linked learners, revocable device tokens, learner-state sync, capability
+> usage and safety signals. Anonymous learner profiles remain local-first in
+> localStorage until a parent explicitly links them.
 >
 > **Read this before trusting the design below.** Sections marked
-> *(spec)* describe a target that is not built. What is actually
-> enforced today is only: `middleware.ts` requiring a Clerk session on
-> `/parent(.*)`. Everything else — rungs, capability policies, rate
-> limits — is client-side and advisory. See "Implementation status"
-> at the end.
+> *(spec)* describe a target that is not built. Parent ownership, device-token
+> identity, revoked-device denial, parent capability switches and per-learner
+> daily tutor usage are enforced on the server. Rungs 1 and 3, dynamic policy
+> rows, cohorts and safety pins remain unbuilt. See "Implementation status".
 
-## Stack (target — partially shipped)
+## Stack: partially shipped target
 
-- **Clerk** *(shipped)* — sign-in/sign-up UI, parent-approval UX, JWT
-  issuance, role management ("parent" vs "learner").
-- **Durable DB layer** *(deferred)* — schema below is the planned shape
-  when we re-introduce a server DB. Likely Supabase Postgres again
-  with Clerk JWT integration, but the choice is open.
+- **Clerk** *(shipped)* - parent sign-in/sign-up UI, sessions and JWT
+  issuance. The shipped app does not create learner Clerk accounts or write
+  role metadata.
+- **Neon Postgres** *(shipped)* - stores linked learners, devices, state,
+  capability usage and safety signals. Ownership is checked in scoped SQL
+  queries rather than Postgres RLS.
 - **Next.js App Router middleware** *(shipped)* — gates `/parent/**` to
   signed-in users, bounces signed-in users away from `/sign-in`. Role
   gating against `/student/**` is wired in the design but the
   `/student/**` route group is not yet created.
 
-Clerk handles WHO. Until a DB exists, small WHAT-state lives in Clerk
-publicMetadata (verification rung, family slug); larger state lives in
-the kid device's localStorage.
+Clerk handles parent identity. The learner device proves a parent-approved
+link with a revocable token. The browser remains the offline-first source of
+truth and synchronizes linked learner state to Postgres.
 
 ## Path topology
 
@@ -39,23 +37,26 @@ the kid device's localStorage.
 /sign-in                 → Clerk SignIn component                 (shipped)
 /sign-up                 → role chooser → Clerk SignUp            (shipped, no role chooser)
 /student/**              → kid app (home view + all kid surfaces) (spec — kid app is at `/`)
-/parent/**               → parent dashboard, BYOK config, care    (shipped)
+/parent/**               → parent dashboard, learner links, care (shipped)
 /auth/callback           → Clerk → DB JWT exchange (no UI)        (dropped with Supabase)
 ```
 
 Same domain, path isolation. Cookies are scoped by Clerk. Preview deploys
 work unchanged.
 
-## Roles
+## Identities and roles
 
-A Clerk user has exactly one role on signup:
+The shipped identity model has two distinct credentials:
 
-- **`parent`** — manages one or more `learner` profiles, configures AI
-  invisible to the kid, holds BYOK keys, sees opinion-only analytics.
-- **`learner`** — the kid. Logs in via parent-issued code at first, can
-  promote to self-managed at age 13+ (TBD).
+- **Parent** - a Clerk user who manages linked learner profiles, devices,
+  capability switches and parent-only reports.
+- **Learner device** - an anonymous local profile that can redeem a
+  parent-issued code for a revocable device token. The learner does not sign
+  up for Clerk.
 
-Role is stored in Clerk publicMetadata so it ships in every JWT.
+The schema retains `learners.clerk_user_id` for a future older learner with a
+genuine account, but no current UI creates that account. Clerk role metadata is
+not written or checked today.
 
 ## The 4-rung verification ladder
 
@@ -65,9 +66,9 @@ guardrails" below):
 
 | Rung | Name | Default unlocks (additive) | Trigger |
 |------|------|----------------------------|---------|
-| 0 | unverified | Local learning loop, classroom AI peers, friend streaks, music, library, wellness, review notebook | Default on signup |
+| 0 | unverified | Local learning loop, classroom AI peers, friend streaks, music, library, wellness, review notebook | Default local profile |
 | 1 | network_verified | Limited rate-limited AI tutor, share-app-to-friend link | IP+ASN fingerprint matches a parent device's recent fingerprint |
-| 2 | parent_verified | Full AI tutor, parent dashboard write access, exam alerts | Parent claims kid OR kid types parent-issued code AND parent confirms in their dashboard |
+| 2 | parent_verified | Full AI tutor, parent dashboard write access, exam alerts | Parent creates the learner and code, then the learner device redeems it |
 | 3 | strict_verified | BYOK AI providers, incognito mode for that kid, medical advisories, health profile | Manual team review (govt ID + selfie OR Stripe Identity) — operations TBD |
 
 **Critical UI rule:** the kid never sees rung gates explicitly. Locked
@@ -149,8 +150,9 @@ below, because the mistake is instructive and easy to reintroduce.
 1. Parent signs up via `/sign-up` and signs in at `/parent`
 2. Parent clicks "Add this learner to my account" → a `learners` row with
    `parent_id = <parent's Clerk id>`
-3. Parent clicks "Create a code" → a 6-character single-use `claim_code`,
-   24h TTL, from a 32-symbol alphabet with `O/0/I/1` removed
+3. Parent clicks "Create a code" to create a 6-character single-use
+   `claim_code` with a 120-minute TTL from a 32-symbol alphabet with
+   `O/0/I/1` removed
 4. Parent reads the code to the kid
 5. Kid types it into Vidya on their own device. **No session is required.**
    The server checks same-origin, rate-limits to 10 tries per 10 minutes,
@@ -216,6 +218,8 @@ describing a flow nobody can perform.
 - `0004_capability_usage.sql` — `capability_usage`, the per-learner daily
   counter that makes `CapabilityPolicy.rateLimit.perDay` a real limit rather
   than a declared one
+- `0005_safety_signals.sql` - `safety_signals`, the persistent record for
+  reportable tutor safety events and parent acknowledgement
 
 Two things the migrations cannot say for you, so they are said here:
 
@@ -293,14 +297,15 @@ Required today (see `.env.local.example`):
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY    # pk_test_... or pk_live_...
 CLERK_SECRET_KEY                     # sk_test_... or sk_live_...
 ANTHROPIC_API_KEY                    # or AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN
+DATABASE_URL                         # or POSTGRES_URL for Neon
 ```
 
-No Supabase variables are used. If a server DB returns, its credentials plus
-a Clerk JWT template (so RLS can read the `sub` claim) get added here.
+No Supabase variables or Clerk JWT template are used. Server routes own the
+database connection and enforce parent or device ownership in scoped queries.
 
 ## Implementation status
 
-Audited against the codebase on 2026-08-10.
+Audited against the codebase on 2026-08-16.
 
 | # | Step | Status |
 |---|------|--------|
@@ -313,17 +318,17 @@ Audited against the codebase on 2026-08-10.
 | 7–9 | Server DB + DB client | ✅ done — Neon Postgres, `db/migrations/`, `lib/db/queries.ts`. No JWT template; ownership is checked in SQL |
 | 10 | localStorage → server sync | ✅ done — `lib/sync/`, gated on a linked device |
 
-Known gaps, re-checked 2026-08-13:
+Known gaps, re-checked 2026-08-16:
 
 - **Rungs 1 and 3 are unreachable.** `computeRung()` in
   `lib/capabilities/use-capability.ts` returns only 0 or 2. Rung 3 needs an ops
   process. Rung 1 is a deliberate non-build, not an oversight — the
   network-fingerprint design is unsound on Indian CGNAT; see the section above
   for why, and for the signal to use instead.
-- **`ai.tutor.limited` is dead**, and stays dead while rung 1 does. All five
-  call sites check `ai.tutor.full`. Its `perDay: 20` is now honoured by the
-  enforcement path, so the tier will work the day a rung-1 signal exists — it
-  is dormant, not broken.
+- **`ai.tutor.limited` is dead**, and stays dead while rung 1 does. The tutor
+  route resolves and bills only `ai.tutor.full`. Making rung 1 reachable would
+  not activate the limited tier by itself; the route would also need explicit
+  limited-tier resolution and billing.
 - **`/api/tutor`'s RUNG check runs in OBSERVE MODE.** It resolves the real
   capability from the request's device token, logs the decision, and allows it
   anyway. `ENFORCE_TUTOR_RUNG=true` makes that half binding — safe once the

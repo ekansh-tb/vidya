@@ -14,7 +14,7 @@ import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators"
 import { TiltCard } from "@/components/effects/tilt-card";
 import { DiyaCompanion } from "@/components/effects/diya";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
+import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { useCapability } from "@/lib/capabilities/use-capability";
 import { xpToLevel } from "@/lib/economy";
@@ -53,7 +53,8 @@ export function HomeView({
   // Recomputed each render on purpose: cards become due with the passage of
   // time, not in response to a state change, so a memo keyed on the notebook
   // would keep yesterday's answer until something else happened to move.
-  const dueMisses = dueCount(state.missedQuestions);
+  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
+  const dueMisses = dueCount(learnerMisses);
 
   // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
   const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
@@ -80,25 +81,26 @@ export function HomeView({
     () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
     [learner.board, learner.pickedSubjects, learner.grade],
   );
+  const questionBanks = questionsForLearner(learner);
 
   // The Daily Quest pool is drawn from this learner's own subjects. Only the
   // six Cambridge Primary Stage 5 subjects have question banks today, so for
   // every other board the tile would open an empty quiz. Hide it rather than
   // offering a quest that cannot be built.
   const hasDailyQuest = useMemo(
-    () => visibleSubjects.some((s) => Object.keys(QUESTIONS[s.id] || {}).length > 0),
-    [visibleSubjects],
+    () => visibleSubjects.some((s) => Object.keys(questionBanks[s.id] || {}).length > 0),
+    [questionBanks, visibleSubjects],
   );
 
   const subjectMastery = useMemo(() => {
     return visibleSubjects.map((s) => {
-      const topics = Object.keys(QUESTIONS[s.id] || {});
-      if (topics.length === 0) return { ...s, mastery: 0 };
+      const topics = Object.keys(questionBanks[s.id] || {});
+      if (topics.length === 0) return { ...s, mastery: null };
       let total = 0;
       topics.forEach((t) => { total += state.progress?.[s.id]?.[t]?.mastery || 0; });
       return { ...s, mastery: Math.round(total / topics.length) };
     });
-  }, [state.progress, visibleSubjects]);
+  }, [questionBanks, state.progress, visibleSubjects]);
 
   const takingCS = !!learner.pickedSubjects?.includes("igcse-cs");
   const packSubjects = useMemo(
@@ -622,7 +624,16 @@ export function HomeView({
                     >
                       <Icon className="w-6 h-6" style={{ color: s.accent }} />
                     </div>
-                    <ProgressRing percent={s.mastery} size={42} stroke={4} color={s.accent} />
+                    {s.mastery == null ? (
+                      <div
+                        className="rounded-full px-2 py-1 text-[9px] uppercase tracking-widest font-bold"
+                        style={{ background: s.soft, color: s.accent }}
+                      >
+                        Soon
+                      </div>
+                    ) : (
+                      <ProgressRing percent={s.mastery} size={42} stroke={4} color={s.accent} />
+                    )}
                   </div>
                   <div className={`font-display text-xl font-bold mb-0.5 text-white ${s.isDeva ? "font-deva" : ""}`}>
                     {s.name}
@@ -630,7 +641,7 @@ export function HomeView({
                   <div className={`text-xs text-white/50 ${s.id === "marathi" ? "font-deva" : ""}`}>{s.tagline}</div>
                   <div className="mt-2 flex items-center gap-2">
                     <div className="text-[10px] uppercase tracking-widest font-bold text-white/40">
-                      {s.mastery}% mastered
+                      {s.mastery == null ? "Lessons coming soon" : `${s.mastery}% mastered`}
                     </div>
                     {isNow && (
                       <div

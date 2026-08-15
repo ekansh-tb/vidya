@@ -2,6 +2,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const outputDirectory = join(process.cwd(), "public", "books");
+const licenseUrl = "https://www.gutenberg.org/policy/license.html";
+const requiredNotice = "This eBook is for the use of anyone anywhere in the United States and most other parts of the world at no cost and with almost no restrictions whatsoever. You may copy it, give it away or re-use it under the terms of the Project Gutenberg License included with this eBook or online at www.gutenberg.org. If you are not located in the United States, you will have to check the laws of the country where you are located before using this eBook.";
 
 const sources = {
   indian: {
@@ -32,11 +34,33 @@ const sources = {
 
 const rights = "Public domain in the USA. Readers elsewhere should check local law.";
 
-function normaliseSource(text) {
+function normaliseBookText(text) {
   return text
-    .replace(/\r\n?/g, "\n")
     .replaceAll("\u2014", "--")
     .replaceAll("\u00a0", " ");
+}
+
+function extractLicenseMetadata(text, originalFormatUrl) {
+  const noticeMatch = text.match(/This eBook is for the use[\s\S]*?before using this eBook\./);
+  if (!noticeMatch) throw new Error(`Could not find the required Project Gutenberg notice in ${originalFormatUrl}`);
+  const extractedNotice = noticeMatch[0].replace(/\s+/g, " ").trim();
+  if (extractedNotice !== requiredNotice) {
+    throw new Error(`The required Project Gutenberg notice changed in ${originalFormatUrl}`);
+  }
+
+  const licenseStart = text.indexOf("START: FULL LICENSE");
+  if (licenseStart === -1) throw new Error(`Could not find the full Project Gutenberg license in ${originalFormatUrl}`);
+  const fullText = text.slice(licenseStart).trim();
+  if (!fullText.includes("THE FULL PROJECT GUTENBERG") || fullText.length < 10_000) {
+    throw new Error(`The Project Gutenberg license is incomplete in ${originalFormatUrl}`);
+  }
+
+  return {
+    requiredNotice: extractedNotice,
+    fullText,
+    licenseUrl,
+    originalFormatUrl,
+  };
 }
 
 function slug(value) {
@@ -214,10 +238,14 @@ function parseVerses(text) {
 async function fetchText(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Could not download ${url}: ${response.status}`);
-  return normaliseSource(await response.text());
+  const sourceText = (await response.text()).replace(/\r\n?/g, "\n");
+  return {
+    bookText: normaliseBookText(sourceText),
+    gutenbergLicense: extractLicenseMetadata(sourceText, url),
+  };
 }
 
-async function writeBook(source, chapters) {
+async function writeBook(source, sourceDocument, chapters) {
   const book = {
     title: source.title,
     author: source.author,
@@ -225,6 +253,7 @@ async function writeBook(source, chapters) {
     sourceLabel: source.sourceLabel,
     sourceUrl: source.sourceUrl,
     rights,
+    gutenbergLicense: sourceDocument.gutenbergLicense,
     chapters,
   };
   await writeFile(join(outputDirectory, source.output), `${JSON.stringify(book)}\n`, "utf8");
@@ -239,9 +268,9 @@ const [indianText, versesText, windText] = await Promise.all([
 ]);
 
 await Promise.all([
-  writeBook(sources.indian, parseIndianFairyTales(indianText)),
-  writeBook(sources.verses, parseVerses(versesText)),
-  writeBook(sources.wind, parseWindInTheWillows(windText)),
+  writeBook(sources.indian, indianText, parseIndianFairyTales(indianText.bookText)),
+  writeBook(sources.verses, versesText, parseVerses(versesText.bookText)),
+  writeBook(sources.wind, windText, parseWindInTheWillows(windText.bookText)),
 ]);
 
 console.log("Built 3 complete library books in public/books.");

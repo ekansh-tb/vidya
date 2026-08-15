@@ -73,7 +73,7 @@ export default function HomePage() {
   // Compute available exam packs for the current learner
   const learnerSubjects = useMemo(
     () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
-    [learner.board, learner.pickedSubjects],
+    [learner.board, learner.pickedSubjects, learner.grade],
   );
   const availablePackIds: SubjectId[] = useMemo(
     () => learnerSubjects.filter((s) => hasPack(s.id, learner.grade)).map((s) => s.id),
@@ -209,6 +209,7 @@ export default function HomePage() {
             subjectId={view.params!.subjectId as SubjectId}
             topicId={view.params!.topicId as string}
             isDaily={false}
+            learner={learner}
             learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
@@ -223,6 +224,7 @@ export default function HomePage() {
           <MatchView
             subjectId={view.params!.subjectId as SubjectId}
             topicId={view.params!.topicId as string}
+            learner={learner}
             state={state}
             setState={set}
             onFinish={(r) => setQuizResult(r)}
@@ -234,6 +236,7 @@ export default function HomePage() {
         content = (
           <QuizView
             isDaily={true}
+            learner={learner}
             learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
@@ -264,7 +267,7 @@ export default function HomePage() {
         content = <SettingsView state={state} setState={set} onBack={back} onNavigate={navigate} />;
         break;
       case "review":
-        content = <ReviewView state={state} setState={set} onBack={back} />;
+        content = <ReviewView learner={learner} state={state} setState={set} onBack={back} />;
         break;
       case "friends":
         content = (

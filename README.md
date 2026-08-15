@@ -18,10 +18,10 @@ It started as a one-learner quiz app for a Grade 5 student and grew into a multi
 - **Curriculum-anchored content** — every pack cites the syllabus code it was written against.
   - **Cambridge Primary** Stage 5 (Grade 5) — Maths, Science, English, Hindi, Marathi, GK.
   - **Cambridge Lower Secondary** (Grades 6–8 = Stages 7–9) — Stage 7 packs for Maths (0862), Science (0893), English (0861), History, Geography, Global Perspectives and ICT, plus Art and the Hindi/French/Spanish language choice.
-  - **Cambridge IGCSE** (Grades 9–10) — exam packs for International Mathematics **0607**, Physics 0625 (full syllabus), Chemistry 0620, Biology 0610, First Language English 0500, French 0520, Computer Science 0478, ICT 0417, Business Studies 0450, Economics 0455, Geography 0460 and History 0470.
+  - **Cambridge IGCSE** models Grades 9 and 10. Exact Grade 10 exam packs cover International Mathematics **0607**, Physics 0625, Chemistry 0620, Biology 0610, First Language English 0500, French 0520, Computer Science 0478, ICT 0417, Business Studies 0450, Economics 0455, Geography 0460 and History 0470. Grade 9 packs are not authored yet.
   - **ICSE / CISCE** Class 6–7 — Selina-aligned packs for Maths, Physics, Chemistry, Biology, History & Civics, Geography, Computer Studies.
   - **CBSE** Class 7 (NCERT) — Maths, Science, English, Hindi, Sanskrit, Social Science.
-  - Maharashtra-mandated Marathi (Balbharati) across boards.
+  - Maharashtra-mandated Marathi is modeled for the Cambridge and ICSE pathways. The current CBSE catalog does not include Marathi.
 
   > **Grade ≠ Cambridge stage.** Cambridge Lower Secondary covers Grades 6–8 as
   > Stages **7–9**, so a Grade 6 learner studies Stage 7. Packs carry the
@@ -33,8 +33,9 @@ It started as a one-learner quiz app for a Grade 5 student and grew into a multi
 - **Exam Prep mode** — generic ExamPack shape: overview → syllabus checklist (with weak/ok/strong confidence tagging) → flashcards → practice MCQs with model answers → common mistakes → morning cheat sheet.
 - **Music Room** — Sargam ↔ Western keyboard (`A S D F G H J K`), recording, named multi-composition library that persists.
 - **Field Trip Atlas** — Mars, Moon, Ajanta, Shaniwar Wada, ISRO, Everest, Amazon, Mariana Trench — Wikipedia + facts + mini-quiz + passport stamp.
-- **Library** — curated Grade 5 reading list (Panchatantra, R.K. Narayan, Ruskin Bond, Roald Dahl, Premchand, Balbharati).
-- **Notebook** — per-subject rich-text notes, auto-saved.
+- **Library** - 18-book discovery shelf with search, reading-level and availability filters. Three complete, chaptered public-domain books open inside Vidya with saved progress, persistent reading preferences, adjustable text size, device read-aloud, and attached source and rights information.
+- **Installable PWA** - manifest, app icons, a privacy-safe service worker, a generic offline fallback, a cached public root shell for offline relaunch, cached public book and field-trip assets after use, and an accessible cross-tab update prompt.
+- **Notebook** - per-subject plain-text notes with automatic saving.
 - **Wellness Break** — guided breathing (box, 4-7-8, belly).
 - **Friend Streak** — pair learning.
 
@@ -46,7 +47,8 @@ It started as a one-learner quiz app for a Grade 5 student and grew into a multi
 - **Tone.js** for the Music Room synth
 - **AI SDK v6** + `@ai-sdk/anthropic` (Claude Haiku 4.5) for the tutor + principal
 - **Clerk** for parent authentication (the kid app is deliberately anonymous)
-- **Zustand** + localStorage for state (per-learner profile isolation)
+- **Zustand** + localStorage for offline-first state and per-learner profile isolation
+- **Neon Postgres** for linked-learner sync, device revocation, capability usage and parent safety signals
 - **Zod** for API request validation
 - **Vitest** for unit tests; **ESLint** flat config; **GitHub Actions** for CI
 - **TypeScript** throughout
@@ -64,7 +66,7 @@ Every key is optional for local poking:
 - **No `ANTHROPIC_API_KEY`** (or `AI_GATEWAY_API_KEY` / `VERCEL_OIDC_TOKEN`) — the tutor shows a gentle "ask a grown-up to plug in the key" message and the Daily Assembly serves a hand-written fallback. Everything else works.
 - **No Clerk keys** — Clerk starts in keyless dev mode under `next dev` and writes a temporary key into `.clerk/` (gitignored). A **production** build has no such fallback, so the app detects the missing key and degrades: the kid app runs normally while `/parent` and the auth pages are closed off (fail-closed — an unconfigured deployment must never expose a dashboard that can read every profile on the device). Set real keys before deploying.
 
-There is no database to set up — learner state lives in the browser's `localStorage`.
+The learner app works without a database and keeps its local-first behavior. Linked-device sync, parent account linking, capability usage and safety signals require `DATABASE_URL` or `POSTGRES_URL` plus the migrations in `db/migrations/`.
 
 ## Deployment
 
@@ -98,9 +100,10 @@ npm run verify      # typecheck + lint + tests — what CI runs
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint (flat config)
 npm run test        # vitest
+npm run security:audit # fail on high-severity dependency advisories
 ```
 
-`.github/workflows/ci.yml` runs all of the above plus a production build on every push and PR. The build is deliberately key-free: if it ever starts needing a secret, that is a regression.
+`.github/workflows/ci.yml` runs all of the above plus the dependency audit and a production build on every push and PR. The build is deliberately key-free: if it ever starts needing a secret, that is a regression.
 
 ## Project structure
 
@@ -145,10 +148,12 @@ Exam packs are large. Importing `ALL_PACKS` on the client pulled every pack body
 
 Being explicit, because these shape what is safe to promise:
 
-- **No durable storage.** Everything lives in one `localStorage` key. Clearing site data, switching browsers or switching devices loses all progress. There is no export and no backup. This is the largest gap between Vidya and a product families could rely on.
-- **The AI routes are public by necessity.** The kid app has no login, so `/api/tutor` and `/api/assembly` cannot require a session. They are guarded by same-origin checks, zod validation with hard caps, and rate limiting — but the limiter is **in-memory and per-instance**, so it raises the cost of abuse rather than capping it. Keep a spend cap on the model provider account; that is the real backstop.
-- **The verification ladder is partly aspirational.** `computeRung()` returns only 0 or 2, and rung 2 is granted by any 4-digit local PIN rather than by authentication. Capability policies are a static map, so rate limits and cohorts in `CAPABILITY_POLICIES` are declared but not enforced. See `docs/AUTH_ARCHITECTURE.md` for what is spec versus shipped.
-- **Adaptive learning is not built.** Mastery is a flat per-topic ratio; there is no concept graph and no spaced repetition. See Phase C in [VISION.md](./VISION.md).
+- **Anonymous profiles remain local-first.** A learner can use Vidya without an account, so that profile stays in localStorage until a parent deliberately links it. Linked learners sync through Postgres with revision conflict handling, and families can export and merge a credential-stripped backup. The authenticated parent dashboard still reads learning reports from the browser it is opened on instead of loading the synced state remotely.
+- **AI is not configured in production.** The Daily Assembly uses its local fallback and Miss Vidya shows a connection notice. Tutor capability enforcement is implemented server-side, but minimum-rung enforcement stays in observe mode until `ENFORCE_TUTOR_RUNG=true`. The assembly endpoint remains anonymous, same-origin and rate-limited.
+- **The verification ladder is only partly live.** Rung 2 is granted through a parent-issued, single-use claim code and a revocable device token. Rungs 1 and 3 are unreachable. Capability policies remain a static map; per-learner daily tutor usage is durable, while burst limits remain best-effort and per instance.
+- **Adaptation is incomplete.** Missed questions use a tested Leitner spaced-repetition schedule, but topic mastery is still a flat attempts/correct ratio. There is no diagnostic assessment, concept dependency graph or next-best-lesson engine.
+- **Curriculum depth is uneven.** The catalog models broad board and grade ranges, while authored packs currently concentrate on Cambridge Primary Grade 5, Cambridge Lower Secondary Grade 6, IGCSE Grade 10, ICSE Grades 6 and 7, and CBSE Grade 7. Known learner grades require exact pack matches, so Vidya does not silently substitute another grade's content.
+- **Offline support is intentionally narrow.** The credential-free public root shell and its static build files are cached so an installed app can relaunch offline. Personalized HTML, parent and authentication pages, and API responses are never cached. Public book and field-trip assets become available after they are requested successfully. Other offline navigations show a generic retry page, and learning progress remains local-first.
 
 ## What I learned building this
 

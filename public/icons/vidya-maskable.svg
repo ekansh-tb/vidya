@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Vidya maskable app icon</title>
+  <desc id="description">An open book beneath a bright learning star</desc>
+  <defs>
+    <linearGradient id="background" x1="48" y1="32" x2="464" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#3730A3"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#background)"/>
+  <circle cx="256" cy="256" r="184" fill="#FFFFFF" fill-opacity=".1"/>
+  <path d="m256 134 11.5 27.3 29.5 2.5-22.4 19.3 6.8 28.8-25.4-15.3-25.4 15.3 6.8-28.8-22.4-19.3 29.5-2.5L256 134Z" fill="#FDE68A"/>
+  <path d="M148 240c37.3-8 73.3 1.3 108 28v116c-32-25.3-68-34.7-108-28V240Z" fill="#FFFFFF"/>
+  <path d="M364 240c-37.3-8-73.3 1.3-108 28v116c32-25.3 68-34.7 108-28V240Z" fill="#EDE9FE"/>
+  <path d="M256 268v116" stroke="#C4B5FD" stroke-width="12" stroke-linecap="round"/>
+</svg>

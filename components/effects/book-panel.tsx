@@ -21,6 +21,8 @@ export function BookPanel({
 }) {
   const subject = SUBJECT_MAP[subjectId];
   const book = BOOKS[subjectId];
+  // This panel is mounted only for a question already admitted by QuizView's
+  // learner-aware gate, so this read cannot expose a bank to another grade.
   const topic = topicId ? QUESTIONS[subjectId]?.[topicId] : undefined;
   const isDeva = subject?.isDeva;
 

@@ -6,8 +6,8 @@ import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { X, Check, Lightbulb, ScanLine, Zap, ArrowRight, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
-import type { GameState, Subject, SubjectId, QuizResult, WrongAnswer, MissedQuestion } from "@/lib/types";
+import { questionsForLearner, type LearnerQuestionBanks } from "@/lib/content/questions/availability";
+import type { GameState, LearnerProfile, Subject, SubjectId, QuizResult, WrongAnswer, MissedQuestion } from "@/lib/types";
 import { recordCorrect, recordWrong, newCard, capNotebook } from "@/lib/spaced-repetition";
 import { shuffle, todayKey } from "@/lib/utils";
 import { sfx } from "@/lib/audio";
@@ -40,7 +40,7 @@ function pickWithSeenPreference<T extends { q: string }>(items: T[], seen: strin
  * Builds the Daily Quest from the LEARNER'S OWN subjects.
  *
  * This used to iterate the global SUBJECTS array — every id across all five
- * boards. Since the QUESTIONS bank only holds the six Cambridge Primary
+ * boards. Since the question bank only holds the six Cambridge Primary
  * Stage 5 subjects, a Grade 10 IGCSE learner tapping Daily Quest was asked
  * place-value questions and given Hindi/Marathi items for subjects they do
  * not take. Cambridge Primary was the only board where the journey was right.
@@ -51,10 +51,11 @@ function pickWithSeenPreference<T extends { q: string }>(items: T[], seen: strin
 function buildDailyQuiz(
   seen: Record<string, Record<string, string[]>>,
   learnerSubjects: Subject[],
+  questionBanks: LearnerQuestionBanks,
 ): EnrichedQuestion[] {
   const items: EnrichedQuestion[] = [];
   learnerSubjects.forEach((s) => {
-    const topics = Object.entries(QUESTIONS[s.id] || {});
+    const topics = Object.entries(questionBanks[s.id] || {});
     if (!topics.length) return;
     const [topicId, topic] = topics[Math.floor(Math.random() * topics.length)];
     const seenForTopic = seen[s.id]?.[topicId] || [];
@@ -68,8 +69,9 @@ function buildTopicQuiz(
   subjectId: SubjectId,
   topicId: string,
   seen: Record<string, Record<string, string[]>>,
+  questionBanks: LearnerQuestionBanks,
 ): EnrichedQuestion[] {
-  const topic = QUESTIONS[subjectId]?.[topicId];
+  const topic = questionBanks[subjectId]?.[topicId];
   if (!topic) return [];
   const seenForTopic = seen[subjectId]?.[topicId] || [];
   return pickWithSeenPreference(topic.items, seenForTopic, QUIZ_SIZE).map((q) => ({
@@ -81,11 +83,12 @@ function buildTopicQuiz(
 }
 
 export function QuizView({
-  subjectId, topicId, isDaily, learnerSubjects, state, setState, onFinish, onClose, voiceEnabled,
+  subjectId, topicId, isDaily, learner, learnerSubjects, state, setState, onFinish, onClose, voiceEnabled,
 }: {
   subjectId?: SubjectId;
   topicId?: string;
   isDaily: boolean;
+  learner: Pick<LearnerProfile, "board" | "grade">;
   /** The learner's own subjects — the Daily Quest pool is drawn from these. */
   learnerSubjects: Subject[];
   state: GameState;
@@ -94,12 +97,13 @@ export function QuizView({
   onClose?: () => void;
   voiceEnabled: boolean;
 }) {
+  const questionBanks = questionsForLearner(learner);
   const questions = useMemo(() => {
-    if (isDaily) return buildDailyQuiz(state.seenQuestions || {}, learnerSubjects);
-    if (subjectId && topicId) return buildTopicQuiz(subjectId, topicId, state.seenQuestions || {});
+    if (isDaily) return buildDailyQuiz(state.seenQuestions || {}, learnerSubjects, questionBanks);
+    if (subjectId && topicId) return buildTopicQuiz(subjectId, topicId, state.seenQuestions || {}, questionBanks);
     return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDaily, subjectId, topicId, learnerSubjects]);
+  }, [isDaily, subjectId, topicId, learnerSubjects, questionBanks]);
 
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
@@ -303,7 +307,7 @@ export function QuizView({
         hindi: "bhasha-premi", marathi: "marathi-mitra", gk: "world-explorer",
       };
       Object.entries(subjectBadgeMap).forEach(([sId, bId]) => {
-        const topicsForS = Object.keys(QUESTIONS[sId as SubjectId] || {});
+        const topicsForS = Object.keys(questionBanks[sId as SubjectId] || {});
         const allMastered = topicsForS.length > 0 && topicsForS.every((t) => (newProgress[sId]?.[t]?.mastery || 0) >= 90);
         if (allMastered) checkAdd(bId);
       });
@@ -324,7 +328,7 @@ export function QuizView({
       questions.forEach((q) => {
         const sId = q.subjectId;
         const tId = q.topicId;
-        const pool = QUESTIONS[sId]?.[tId]?.items || [];
+        const pool = questionBanks[sId]?.[tId]?.items || [];
         if (!seenQuestions[sId]) seenQuestions[sId] = { ...(prev.seenQuestions?.[sId] || {}) };
         const prevSeen = seenQuestions[sId][tId] || [];
         let nextSeen = prevSeen.includes(q.q) ? prevSeen : [...prevSeen, q.q];
