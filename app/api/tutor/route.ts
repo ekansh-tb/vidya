@@ -1,12 +1,21 @@
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import {
+  streamText, convertToModelMessages,
+  createUIMessageStream, createUIMessageStreamResponse,
+  type UIMessage,
+} from "ai";
 import {
   tutorRequestSchema, totalChars, isSameOrigin,
   clientKey, rateLimit, rateHeaders, LIMITS,
 } from "@/lib/api/guard";
 import { resolveCapabilityForRequest } from "@/lib/capabilities/server";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
-import { bumpCapabilityUsage } from "@/lib/db/queries";
-import type { Identity } from "@/lib/auth/session";
+import { bumpCapabilityUsage, recordSafetySignal } from "@/lib/db/queries";
+import { identityFromRequest, type Identity } from "@/lib/auth/session";
+import { dbConfigured } from "@/lib/db/client";
+import {
+  detectCrisisInMessages, supportMessage, escalates, excerptFor,
+  DESPAIR_PROMPT_HINT,
+} from "@/lib/safety/crisis";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -275,6 +284,34 @@ ${careLine}
 `;
 }
 
+/** Hard ceiling on the raw body, since we now read it before rate limiting. */
+const MAX_BODY_BYTES = 64 * 1024;
+
+/**
+ * A complete assistant turn, delivered as a real UI message stream.
+ *
+ * Used for every reply Vidya writes herself rather than asking a model for —
+ * the crisis response and the "not connected" notice. Both used to be
+ * hand-rolled `data: {...}` SSE frames, which is not the v6 UI message protocol
+ * (`text-start` / `text-delta` / `text-end` with a part id), so `useChat`
+ * rendered nothing at all: the child saw an empty bubble. Building it with the
+ * SDK's own writer means these paths render exactly like a model reply.
+ */
+function staticReply(text: string, init?: { headers?: Record<string, string> }): Response {
+  const stream = createUIMessageStream({
+    execute: ({ writer }) => {
+      const id = "vidya-static";
+      writer.write({ type: "text-start", id });
+      writer.write({ type: "text-delta", id, delta: text });
+      writer.write({ type: "text-end", id });
+    },
+  });
+  // 200 on purpose, including for the crisis path. A non-2xx makes useChat
+  // treat the turn as an error and show a retry affordance instead of the
+  // words, and these words are the entire point.
+  return createUIMessageStreamResponse({ stream, headers: init?.headers });
+}
+
 export async function POST(req: Request) {
   // 1. Same-origin. A browser always sends Origin/Referer cross-origin, so a
   //    request with neither is not a browser.
@@ -282,19 +319,27 @@ export async function POST(req: Request) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 2. Rate limit before doing any work.
-  const verdict = rateLimit(`tutor:${clientKey(req)}`, RATE);
-  if (!verdict.ok) {
-    return Response.json(
-      { error: "Miss Vidya needs a short break. Try again in a few minutes." },
-      { status: 429, headers: rateHeaders(verdict, RATE.limit) },
-    );
+  // 2. Read, cap and validate the body.
+  //
+  //    This now runs BEFORE the rate limiter, which is a deliberate reordering:
+  //    step 3 has to be able to answer a request the limiter would otherwise
+  //    have rejected, and it cannot do that without the text. Nothing expensive
+  //    happens here — the body is capped at MAX_BODY_BYTES before parsing, and
+  //    the zod caps bound it again — so an unauthenticated caller still cannot
+  //    make this route do real work.
+  let rawText: string;
+  try {
+    rawText = await req.text();
+  } catch {
+    return Response.json({ error: "Bad request" }, { status: 400 });
+  }
+  if (rawText.length > MAX_BODY_BYTES) {
+    return Response.json({ error: "Bad request" }, { status: 413 });
   }
 
-  // 3. Validate and cap the body.
   let raw: unknown;
   try {
-    raw = await req.json();
+    raw = JSON.parse(rawText);
   } catch {
     return Response.json({ error: "Bad request" }, { status: 400 });
   }
@@ -305,6 +350,71 @@ export async function POST(req: Request) {
   }
 
   const { messages, subject, topic, name, grade, board, school, interests, careNote, aiTone } = parsed.data;
+
+  // 3. SAFETY — before every gate below, and that ordering is the whole point.
+  //
+  // A child disclosing self-harm or abuse must be answered even when the tutor
+  // is switched off for them, has never been linked, is out of turns for today,
+  // is over the burst limit, or has no API credentials at all. Every one of
+  // those paths used to return a refusal: with ENFORCE_TUTOR_RUNG on, the most
+  // important sentence a child could type got back "Miss Vidya isn't open for
+  // this account yet."
+  //
+  // The reply is static text from lib/safety/crisis.ts — no model call. That is
+  // not a shortcut, it is the requirement: this is the one answer in Vidya that
+  // must be identical every time, must not be improvised, and must work with no
+  // network path to a provider.
+  //
+  // Only the LAST user message is scanned. The client resends the whole history
+  // every turn, so scanning further back would re-interrupt — and re-notify the
+  // parent — on every subsequent "ok, thanks".
+  const crisis = detectCrisisInMessages(messages, 1);
+  const escalating = crisis ? escalates(crisis.signal.category) : false;
+
+  if (crisis && escalating) {
+    // Best-effort record for the parent. A failure here must never swallow the
+    // child's reply, so it is awaited inside its own try and nothing depends on
+    // it. An anonymous device has no learner row and therefore no parent to
+    // tell — the child still gets the full response.
+    try {
+      if (dbConfigured()) {
+        const who = await identityFromRequest(req);
+        if (who.kind === "learner") {
+          await recordSafetySignal({
+            learnerId: who.learner.id,
+            category: crisis.signal.category,
+            cue: crisis.signal.cue,
+            excerpt: excerptFor(crisis.text),
+            surface: "tutor",
+          });
+        } else {
+          console.warn(
+            `[api/tutor] crisis signal on an unlinked device (${who.kind}/${
+              who.kind === "anonymous" ? who.reason : "-"
+            }) — nobody to notify`,
+          );
+        }
+      }
+    } catch (e) {
+      console.error("[api/tutor] could not record safety signal:", e);
+    }
+
+    return staticReply(supportMessage(crisis.signal));
+  }
+
+  // The low-confidence tier: "i'm useless at this", "nobody likes me". No
+  // interruption and no parent row — see the escalation policy in crisis.ts.
+  // Miss Vidya just leads with the child instead of the topic.
+  const despairHint = crisis && !escalating ? DESPAIR_PROMPT_HINT : "";
+
+  // 4. Rate limit.
+  const verdict = rateLimit(`tutor:${clientKey(req)}`, RATE);
+  if (!verdict.ok) {
+    return Response.json(
+      { error: "Miss Vidya needs a short break. Try again in a few minutes." },
+      { status: 429, headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
 
   // 3b. Capability check, server-side.
   //
@@ -401,14 +511,9 @@ export async function POST(req: Request) {
     !process.env.VERCEL_OIDC_TOKEN &&
     !process.env.ANTHROPIC_API_KEY
   ) {
-    return new Response(
-      "data: " +
-        JSON.stringify({
-          type: "text",
-          text: "Miss Vidya isn't connected yet. The AI Gateway needs setting up in Vercel — ask a grown-up.",
-        }) +
-        "\n\n",
-      { headers: { "content-type": "text/event-stream" } },
+    return staticReply(
+      "Miss Vidya isn't connected yet. The AI Gateway needs setting up in Vercel — ask a grown-up.",
+      { headers: rateHeaders(verdict, RATE.limit) },
     );
   }
 
@@ -419,7 +524,12 @@ export async function POST(req: Request) {
     const modelMessages = await convertToModelMessages(messages as unknown as UIMessage[]);
     const result = streamText({
       model: "anthropic/claude-haiku-4.5",
-      system: systemPrompt({ subject, topic, name, grade, board, school, interests, careNote, aiTone }),
+      // Appended at the call site rather than threaded through systemPrompt's
+      // four branches: the hint is about this one turn, not about who the
+      // learner is, and it must read as the last instruction the model sees.
+      system:
+        systemPrompt({ subject, topic, name, grade, board, school, interests, careNote, aiTone }) +
+        (despairHint ? `\n\n${despairHint}` : ""),
       messages: modelMessages,
       maxOutputTokens: 900,
       temperature: 0.6,
