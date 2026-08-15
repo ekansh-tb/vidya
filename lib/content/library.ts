@@ -8,19 +8,24 @@ export type Book = {
   cover: string;        // emoji or color
   difficulty: "easy" | "medium" | "stretch";
   link?: string;
+  /** Local, chaptered public-domain text loaded only when the reader opens. */
+  readerPath?: string;
+  chapterCount?: number;
 };
 
 export const LIBRARY: Book[] = [
   // Indian classics
   {
     id: "panchatantra",
-    title: "Panchatantra: Best Tales",
-    author: "Vishnu Sharma (retold)",
+    title: "Indian Fairy Tales",
+    author: "Joseph Jacobs",
     region: "indian",
-    blurb: "Talking animals teaching wisdom. Quick, funny, and full of moral surprises.",
-    readMinutes: 12,
+    blurb: "Twenty-nine Indian folk tales filled with clever animals, brave children, magic, and moral surprises.",
+    readMinutes: 180,
     cover: "🦊",
     difficulty: "easy",
+    readerPath: "/books/indian-fairy-tales.json",
+    chapterCount: 31,
   },
   {
     id: "rk-narayan-swami",
@@ -112,6 +117,8 @@ export const LIBRARY: Book[] = [
     readMinutes: 50,
     cover: "🐸",
     difficulty: "medium",
+    readerPath: "/books/the-wind-in-the-willows.json",
+    chapterCount: 12,
   },
   {
     id: "diary-wimpy-kid",
@@ -132,7 +139,8 @@ export const LIBRARY: Book[] = [
     readMinutes: 15,
     cover: "🌱",
     difficulty: "medium",
-    link: "https://www.gutenberg.org/ebooks/25609",
+    readerPath: "/books/a-childs-garden-of-verses.json",
+    chapterCount: 65,
   },
   // Maharashtra / Indian languages
   {

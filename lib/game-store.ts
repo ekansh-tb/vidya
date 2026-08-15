@@ -33,6 +33,7 @@ export const DEFAULT_STATE: GameState = {
   assemblyStreak: 0,
   readBooks: [],
   rewardedBooks: [],
+  readingProgress: {},
   completedActivities: [],
   moveBreaks: 0,
   savedMelody: null,

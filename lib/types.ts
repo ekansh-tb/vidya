@@ -189,6 +189,13 @@ export type TopicProgress = {
   mastery: number;
 };
 
+export type ReadingProgress = {
+  chapterIndex: number;
+  /** Position within the current chapter, from 0 to 1. */
+  scrollProgress: number;
+  updatedAt: string;
+};
+
 export type GameState = {
   name: string;
   avatarId: string;
@@ -222,6 +229,8 @@ export type GameState = {
   /** Books that have EVER paid out XP/coins. Separate from `readBooks` so
    *  un-marking and re-marking a book cannot farm rewards. */
   rewardedBooks?: string[];
+  /** Per-book resume positions. The newest timestamp wins during sync. */
+  readingProgress?: Record<string, ReadingProgress>;
   savedMelody: number[] | null;
   savedCompositions: Composition[];
   classRoster: ClassMember[];

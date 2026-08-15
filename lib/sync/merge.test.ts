@@ -27,6 +27,42 @@ describe("mergeGameState — never lose earned progress", () => {
     expect(out.rewardedBooks!.sort()).toEqual(["x", "y"]);
   });
 
+  it("keeps the latest saved reading position for each book", () => {
+    const out = mergeGameState(
+      base({
+        readingProgress: {
+          wind: { chapterIndex: 2, scrollProgress: 0.4, updatedAt: "2026-08-15T10:00:00.000Z" },
+          local: { chapterIndex: 1, scrollProgress: 0.2, updatedAt: "2026-08-15T11:00:00.000Z" },
+        },
+      }),
+      base({
+        readingProgress: {
+          wind: { chapterIndex: 4, scrollProgress: 0.7, updatedAt: "2026-08-16T10:00:00.000Z" },
+          remote: { chapterIndex: 3, scrollProgress: 0.5, updatedAt: "2026-08-16T11:00:00.000Z" },
+        },
+      }),
+    );
+
+    expect(out.readingProgress?.wind.chapterIndex).toBe(4);
+    expect(out.readingProgress?.local.chapterIndex).toBe(1);
+    expect(out.readingProgress?.remote.chapterIndex).toBe(3);
+  });
+
+  it("ignores malformed remote reading positions", () => {
+    const localPosition = {
+      chapterIndex: 2,
+      scrollProgress: 0.4,
+      updatedAt: "2026-08-15T10:00:00.000Z",
+    };
+    const remote = {
+      ...base(),
+      readingProgress: { wind: { chapterIndex: -2, updatedAt: "later" } },
+    } as unknown as Partial<GameState>;
+
+    const out = mergeGameState(base({ readingProgress: { wind: localPosition } }), remote);
+    expect(out.readingProgress?.wind).toEqual(localPosition);
+  });
+
   it("keeps the best per-topic mastery from either device", () => {
     const out = mergeGameState(
       base({ progress: { maths: { place: { attempts: 5, correct: 3, mastery: 60 } } } }),
