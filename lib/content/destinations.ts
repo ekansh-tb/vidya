@@ -4,7 +4,10 @@ export type Destination = {
   region: "space" | "india" | "world" | "nature";
   emoji: string;
   tagline: string;
-  imageUrl?: string;
+  imageUrl: string;
+  imageCredit: string;
+  imageSourceUrl: string;
+  imageFit?: "cover" | "contain";
   wikipediaPath: string; // path on en.wikipedia.org
   facts: string[];       // 4-6 kid-friendly facts
   quiz: { q: string; a: string; opts: string[] }[];
@@ -18,7 +21,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🔴",
     tagline: "The Red Planet · 4th from the Sun",
     wikipediaPath: "/wiki/Mars",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/640px-OSIRIS_Mars_true_color.jpg",
+    imageUrl: "/field-trips/mars.webp",
+    imageCredit: "Kevin Gill · CC BY 2.0",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Mars_-_August_30_2021_-_Flickr_-_Kevin_M._Gill.png",
     facts: [
       "Mars is the fourth planet from the Sun and the second-smallest.",
       "It looks red because of iron oxide (rust) on its surface.",
@@ -40,7 +45,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🌙",
     tagline: "Earth's only natural satellite",
     wikipediaPath: "/wiki/Moon",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/640px-FullMoon2010.jpg",
+    imageUrl: "/field-trips/moon.webp",
+    imageCredit: "Gregory H. Revera · CC BY-SA 3.0",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg",
     facts: [
       "The Moon takes about 27 days to orbit the Earth.",
       "It causes the ocean tides through gravity.",
@@ -60,7 +67,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🛕",
     tagline: "Ancient rock-cut Buddhist caves, Maharashtra",
     wikipediaPath: "/wiki/Ajanta_Caves",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Ajanta_Padmapani.jpg/640px-Ajanta_Padmapani.jpg",
+    imageUrl: "/field-trips/ajanta.webp",
+    imageCredit: "Soman · CC BY 2.5",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Ajanta_(63).jpg",
     facts: [
       "The Ajanta Caves are about 2,200 years old.",
       "They are in Aurangabad district of Maharashtra.",
@@ -80,7 +89,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🏯",
     tagline: "Peshwa fort in Pune · 1732",
     wikipediaPath: "/wiki/Shaniwar_Wada",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Shaniwarwada_gate.jpg/640px-Shaniwarwada_gate.jpg",
+    imageUrl: "/field-trips/shaniwar-wada.webp",
+    imageCredit: "DesiBoy101 · CC BY 4.0",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Front_view_of_Shaniwar_Wada_illuminated.jpg",
     facts: [
       "Shaniwar Wada was built in 1732 by Bajirao I.",
       "It was the seat of the Peshwas, who led the Maratha Empire.",
@@ -100,7 +111,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🏔️",
     tagline: "Highest mountain · 8,849 m",
     wikipediaPath: "/wiki/Mount_Everest",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Everest_kalapatthar.jpg/640px-Everest_kalapatthar.jpg",
+    imageUrl: "/field-trips/everest.webp",
+    imageCredit: "Rdevany · CC BY-SA 3.0",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Mt._Everest_from_Gokyo_Ri_November_5,_2012.jpg",
     facts: [
       "Mount Everest is the highest mountain on Earth at 8,849 metres.",
       "It sits on the border between Nepal and Tibet (China).",
@@ -120,7 +133,9 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🌳",
     tagline: "Lungs of the planet · South America",
     wikipediaPath: "/wiki/Amazon_rainforest",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Amazonie_d%27en_haut.jpg/640px-Amazonie_d%27en_haut.jpg",
+    imageUrl: "/field-trips/amazon.webp",
+    imageCredit: "CIAT · CC BY-SA 2.0",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Amazon17_(5641020319).jpg",
     facts: [
       "The Amazon is the largest rainforest on Earth.",
       "It is home to more than 10% of all species on Earth.",
@@ -140,7 +155,10 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🌊",
     tagline: "Deepest spot in the ocean",
     wikipediaPath: "/wiki/Mariana_Trench",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Marianatrenchmap.png/640px-Marianatrenchmap.png",
+    imageUrl: "/field-trips/mariana.webp",
+    imageCredit: "Wallace · CC BY 2.5",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Marianatrenchmap.png",
+    imageFit: "contain",
     facts: [
       "It's in the western Pacific Ocean.",
       "The deepest point, Challenger Deep, is about 10,994 metres down.",
@@ -160,7 +178,10 @@ export const DESTINATIONS: Destination[] = [
     emoji: "🚀",
     tagline: "Indian Space Research Organisation · Bengaluru",
     wikipediaPath: "/wiki/Indian_Space_Research_Organisation",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Indian_Space_Research_Organisation_Logo.svg/240px-Indian_Space_Research_Organisation_Logo.svg.png",
+    imageUrl: "/field-trips/isro.webp",
+    imageCredit: "Indian Space Research Organisation · Public domain",
+    imageSourceUrl: "https://commons.wikimedia.org/wiki/File:Indian_Space_Research_Organisation_Logo.svg",
+    imageFit: "contain",
     facts: [
       "ISRO was founded in 1969 by Dr Vikram Sarabhai.",
       "Its headquarters are in Bengaluru, Karnataka.",

@@ -1,21 +1,58 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { ChevronLeft, ArrowLeft, MapPin, Stamp, Sparkles, Check, X, ExternalLink } from "lucide-react";
+import {
+  ChevronLeft, ArrowLeft, MapPin, Stamp, Sparkles, Check, X,
+  ExternalLink, Orbit, Landmark, Globe2, Trees, type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DESTINATIONS, type Destination } from "@/lib/content/destinations";
 import type { GameState } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 
-const REGIONS: { id: Destination["region"]; label: string; color: string }[] = [
-  { id: "space",  label: "Space",       color: "#A78BFA" },
-  { id: "india",  label: "India",       color: "#F59E0B" },
-  { id: "world",  label: "World",       color: "#22D3EE" },
-  { id: "nature", label: "Nature",      color: "#34D399" },
+const REGIONS: { id: Destination["region"]; label: string; color: string; icon: LucideIcon }[] = [
+  { id: "space",  label: "Space",       color: "#A78BFA", icon: Orbit },
+  { id: "india",  label: "India",       color: "#F59E0B", icon: Landmark },
+  { id: "world",  label: "World",       color: "#22D3EE", icon: Globe2 },
+  { id: "nature", label: "Nature",      color: "#34D399", icon: Trees },
 ];
+
+function DestinationImage({
+  destination,
+  sizes,
+  className,
+  fallbackClassName,
+}: {
+  destination: Destination;
+  sizes: string;
+  className: string;
+  fallbackClassName: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <span className={fallbackClassName} aria-hidden="true">
+        {destination.emoji}
+      </span>
+    );
+  }
+
+  return (
+    <Image
+      src={destination.imageUrl}
+      alt=""
+      fill
+      sizes={sizes}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export function FieldTripView({
   state, setState, onBack,
@@ -66,10 +103,17 @@ export function FieldTripView({
           {REGIONS.map((r) => {
             const list = DESTINATIONS.filter((d) => d.region === r.id);
             if (list.length === 0) return null;
+            const RegionIcon = r.icon;
             return (
               <div key={r.id} className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1.5 h-6 rounded-full" style={{ background: r.color }} />
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: `${r.color}18`, color: r.color }}
+                    aria-hidden="true"
+                  >
+                    <RegionIcon className="w-4 h-4" />
+                  </div>
                   <h3 className="font-display text-xl font-bold text-white">{r.label}</h3>
                 </div>
                 <div className="space-y-3">
@@ -86,15 +130,15 @@ export function FieldTripView({
                         className="w-full glass-card p-4 flex items-center gap-4 text-left active:scale-[0.99] transition"
                       >
                         <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden"
+                          className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0 overflow-hidden"
                           style={{ background: `${r.color}25` }}
                         >
-                          {d.imageUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={d.imageUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            d.emoji
-                          )}
+                          <DestinationImage
+                            destination={d}
+                            sizes="56px"
+                            className={d.imageFit === "contain" ? "object-contain p-1.5" : "object-cover"}
+                            fallbackClassName="absolute inset-0 flex items-center justify-center text-3xl"
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-display font-bold text-lg text-white truncate">{d.name}</div>
@@ -198,18 +242,32 @@ function TripView({
           <ArrowLeft className="w-5 h-5" /> Atlas
         </button>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl overflow-hidden relative">
-          {dest.imageUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={dest.imageUrl} alt={dest.name} className="w-full h-48 object-cover" />
-          ) : (
-            <div className="w-full h-48 flex items-center justify-center text-8xl" style={{ background: "rgba(34,211,238,0.15)" }}>
-              {dest.emoji}
-            </div>
-          )}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="h-48 rounded-3xl overflow-hidden relative bg-[#111A32]"
+        >
+          <DestinationImage
+            destination={dest}
+            sizes="(max-width: 672px) 100vw, 672px"
+            className={dest.imageFit === "contain" ? "object-contain p-4" : "object-cover"}
+            fallbackClassName="absolute inset-0 flex items-center justify-center text-8xl bg-cyan-400/10"
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 40%, rgba(10,4,32,0.9) 100%)" }} />
+          <a
+            href={dest.imageSourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute top-3 right-3 max-w-[55%] truncate rounded-full bg-black/55 px-2.5 py-1 text-[9px] font-semibold text-white/75 backdrop-blur-sm hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            aria-label={`Image credit: ${dest.imageCredit}`}
+          >
+            {dest.imageCredit}
+          </a>
           <div className="absolute bottom-0 inset-x-0 p-5">
-            <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">Field Trip</div>
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-cyan-300">
+              <span className="text-sm leading-none" aria-hidden="true">{dest.emoji}</span>
+              Field Trip
+            </div>
             <div className="font-display text-3xl font-bold text-white drop-shadow">{dest.name}</div>
             <div className="text-sm text-white/80">{dest.tagline}</div>
           </div>

@@ -123,6 +123,17 @@ export const LIBRARY: Book[] = [
     cover: "✏️",
     difficulty: "easy",
   },
+  {
+    id: "childs-garden-verses",
+    title: "A Child's Garden of Verses",
+    author: "Robert Louis Stevenson",
+    region: "world",
+    blurb: "Short poems about play, weather, bedtime, gardens, and the enormous worlds children imagine.",
+    readMinutes: 15,
+    cover: "🌱",
+    difficulty: "medium",
+    link: "https://www.gutenberg.org/ebooks/25609",
+  },
   // Maharashtra / Indian languages
   {
     id: "syamchi-aai",
@@ -165,6 +176,28 @@ export const LIBRARY: Book[] = [
     readMinutes: 20,
     cover: "📿",
     difficulty: "medium",
+  },
+  {
+    id: "ack-birbal-wise",
+    title: "Birbal the Wise",
+    author: "Amar Chitra Katha",
+    region: "comic",
+    blurb: "Quick court puzzles where Birbal solves tricky problems with wit, fairness, and presence of mind.",
+    readMinutes: 15,
+    cover: "💡",
+    difficulty: "easy",
+    link: "https://shop.amarchitrakatha.com/products/birbal-the-wise",
+  },
+  {
+    id: "champak",
+    title: "Champak",
+    author: "Delhi Press",
+    region: "magazine",
+    blurb: "Indian stories, comics, puzzles, activities, and everyday science for curious young readers.",
+    readMinutes: 18,
+    cover: "🐰",
+    difficulty: "easy",
+    link: "https://www.champak.in/",
   },
 ];
 
