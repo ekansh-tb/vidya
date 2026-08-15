@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, ChevronRight, Crown, Shuffle, NotebookPen, MessageCircle, BookOpen, Sparkles } from "lucide-react";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
+import { questionsForLearner } from "@/lib/content/questions/availability";
 import { usePack } from "@/lib/content/packs/use-pack";
 import type { GameState, LearnerProfile, ViewName, SubjectId } from "@/lib/types";
 import { sfx } from "@/lib/audio";
@@ -24,7 +24,7 @@ export function SubjectView({
   voiceEnabled: boolean;
 }) {
   const subject = SUBJECT_MAP[subjectId];
-  const quizTopics = QUESTIONS[subjectId] || {};
+  const quizTopics = questionsForLearner(learner)[subjectId] || {};
   const hasQuiz = Object.keys(quizTopics).length > 0;
   // `hasExamPack` is synchronous so the layout never flashes an empty state;
   // `pack` arrives from its own chunk. See lib/content/packs/pack-index.ts.
@@ -288,11 +288,12 @@ export function SubjectView({
             <div className="mt-5 glass-card p-6 text-center">
               <BookOpen className="w-8 h-8 mx-auto mb-3" style={{ color: subject.accent }} />
               <div className="font-display text-lg font-bold text-white mb-1">
-                Lessons coming soon
+                Grade {learner.grade} lessons are coming soon
               </div>
               <div className="text-sm text-white/60 mb-4">
-                We&apos;re still writing topic-level content for this classroom. In the meantime, you can chat with Miss Vidya
-                or jot notes.
+                This classroom does not have {subject.name} lessons for Grade {learner.grade} yet. You can {aiTutorAllowed
+                  ? "ask Miss Vidya about a topic or keep notes here"
+                  : "keep notes here while the lessons are being prepared"}.
               </div>
               <div className={`grid ${aiTutorAllowed ? "grid-cols-2" : "grid-cols-1"} gap-2`}>
                 {aiTutorAllowed && (

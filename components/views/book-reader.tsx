@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -13,58 +13,39 @@ import {
   LoaderCircle,
   Minus,
   Moon,
+  Pause,
+  Play,
   Plus,
   RotateCcw,
   Settings2,
+  Square,
   Sun,
+  Volume2,
   X,
 } from "lucide-react";
 import type { Book } from "@/lib/content/library";
+import {
+  DEFAULT_READER_PREFERENCES,
+  READER_PREFERENCES_STORAGE_KEY,
+  isValidReaderBook,
+  parseReaderPreferences,
+  safeReaderPosition,
+  speechChunks,
+  speechErrorMessage,
+  speechLanguageTag,
+  type ReaderBookContent,
+  type ReaderTheme,
+} from "@/lib/content/library-utils";
 import type { ReadingProgress } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type ReaderChapter = {
-  id: string;
-  title: string;
-  paragraphs: string[];
-};
-
-type ReaderBookContent = {
-  title: string;
-  author: string;
-  language: string;
-  sourceLabel: string;
-  sourceUrl: string;
-  rights: string;
-  chapters: ReaderChapter[];
-};
-
-type ReaderTheme = "paper" | "night" | "mist";
+type SpeechState = "idle" | "speaking" | "paused";
 
 const themeClasses: Record<ReaderTheme, string> = {
   paper: "bg-[#f6efdc] text-[#30291f] selection:bg-amber-200",
   night: "bg-[#171927] text-[#e8e9f1] selection:bg-violet-500/50",
   mist: "bg-[#e8f2f1] text-[#18363a] selection:bg-cyan-200",
 };
-
-function validReaderBook(value: unknown): value is ReaderBookContent {
-  if (!value || typeof value !== "object") return false;
-  const book = value as Partial<ReaderBookContent>;
-  return (
-    typeof book.title === "string" &&
-    typeof book.author === "string" &&
-    typeof book.sourceUrl === "string" &&
-    Array.isArray(book.chapters) &&
-    book.chapters.length > 0 &&
-    book.chapters.every((chapter) => (
-      chapter &&
-      typeof chapter.id === "string" &&
-      typeof chapter.title === "string" &&
-      Array.isArray(chapter.paragraphs) &&
-      chapter.paragraphs.every((paragraph) => typeof paragraph === "string")
-    ))
-  );
-}
 
 export function BookReader({
   book,
@@ -82,18 +63,67 @@ export function BookReader({
   onComplete: () => void;
 }) {
   const initialProgressRef = useRef(initialProgress);
+  const initialPositionRef = useRef(safeReaderPosition(initialProgress, book.chapterCount ?? 1));
   const viewportRef = useRef<HTMLDivElement>(null);
+  const readerHeadingRef = useRef<HTMLHeadingElement>(null);
+  const errorHeadingRef = useRef<HTMLHeadingElement>(null);
+  const contentsRef = useRef<HTMLElement>(null);
+  const contentsCloseRef = useRef<HTMLButtonElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestPositionRef = useRef({ chapterIndex: initialProgress?.chapterIndex ?? 0, scrollProgress: initialProgress?.scrollProgress ?? 0 });
+  const latestPositionRef = useRef(initialPositionRef.current);
+  const speechSessionRef = useRef(0);
+  const readingAloudRef = useRef(false);
   const [content, setContent] = useState<ReaderBookContent | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [chapterIndex, setChapterIndex] = useState(initialProgress?.chapterIndex ?? 0);
-  const [scrollProgress, setScrollProgress] = useState(initialProgress?.scrollProgress ?? 0);
-  const [theme, setTheme] = useState<ReaderTheme>("paper");
-  const [fontSize, setFontSize] = useState(19);
+  const [chapterIndex, setChapterIndex] = useState(initialPositionRef.current.chapterIndex);
+  const [scrollProgress, setScrollProgress] = useState(initialPositionRef.current.scrollProgress);
+  const [theme, setTheme] = useState<ReaderTheme>(DEFAULT_READER_PREFERENCES.theme);
+  const [fontSize, setFontSize] = useState(DEFAULT_READER_PREFERENCES.fontSize);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [speechState, setSpeechState] = useState<SpeechState>("idle");
+  const [speechMessage, setSpeechMessage] = useState("");
   const [showContents, setShowContents] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const contentsTitleId = useId();
+  const licenseTitleId = useId();
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => readerHeadingRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const preferences = parseReaderPreferences(window.localStorage.getItem(READER_PREFERENCES_STORAGE_KEY));
+      setTheme(preferences.theme);
+      setFontSize(preferences.fontSize);
+    } catch {
+      // Private browsing and device policies can make storage unavailable.
+    } finally {
+      setPreferencesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesLoaded) return;
+    try {
+      window.localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify({ theme, fontSize }));
+    } catch {
+      // Reading still works when a browser refuses preference storage.
+    }
+  }, [fontSize, preferencesLoaded, theme]);
+
+  useEffect(() => {
+    setSpeechSupported("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
+    return () => {
+      if (!readingAloudRef.current || !("speechSynthesis" in window)) return;
+      speechSessionRef.current += 1;
+      readingAloudRef.current = false;
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -106,7 +136,7 @@ export function BookReader({
         return response.json() as Promise<unknown>;
       })
       .then((value) => {
-        if (!validReaderBook(value)) throw new Error("Book data is not valid");
+        if (!isValidReaderBook(value)) throw new Error("Book data is not valid");
         setContent(value);
       })
       .catch((error: unknown) => {
@@ -119,9 +149,10 @@ export function BookReader({
 
   useEffect(() => {
     if (!content) return;
-    const saved = initialProgressRef.current;
-    const nextChapter = Math.min(Math.max(saved?.chapterIndex ?? 0, 0), content.chapters.length - 1);
-    const nextScroll = Math.min(Math.max(saved?.scrollProgress ?? 0, 0), 1);
+    const { chapterIndex: nextChapter, scrollProgress: nextScroll } = safeReaderPosition(
+      initialProgressRef.current,
+      content.chapters.length,
+    );
     setChapterIndex(nextChapter);
     setScrollProgress(nextScroll);
     latestPositionRef.current = { chapterIndex: nextChapter, scrollProgress: nextScroll };
@@ -131,9 +162,25 @@ export function BookReader({
       if (!viewport) return;
       const maxScroll = Math.max(viewport.scrollHeight - viewport.clientHeight, 0);
       viewport.scrollTop = maxScroll * nextScroll;
+      readerHeadingRef.current?.focus({ preventScroll: true });
     });
     return () => cancelAnimationFrame(frame);
   }, [content]);
+
+  useEffect(() => {
+    if (!loadError) return;
+    const frame = requestAnimationFrame(() => errorHeadingRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [loadError]);
+
+  useEffect(() => {
+    if (!readingAloudRef.current || !("speechSynthesis" in window)) return;
+    speechSessionRef.current += 1;
+    readingAloudRef.current = false;
+    window.speechSynthesis.cancel();
+    setSpeechState("idle");
+    setSpeechMessage("Read aloud stopped");
+  }, [chapterIndex]);
 
   useEffect(() => {
     const closePanels = (event: KeyboardEvent) => {
@@ -146,6 +193,39 @@ export function BookReader({
     return () => window.removeEventListener("keydown", closePanels);
   });
 
+  useEffect(() => {
+    if (!showContents) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    contentsCloseRef.current?.focus();
+
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusable = contentsRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]');
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", trapFocus);
+    return () => {
+      window.removeEventListener("keydown", trapFocus);
+      previouslyFocused?.focus();
+    };
+  }, [showContents]);
+
+  const currentPosition = safeReaderPosition(
+    { chapterIndex, scrollProgress },
+    content?.chapters.length ?? book.chapterCount ?? 1,
+  );
+  const currentChapterIndex = currentPosition.chapterIndex;
+
   const savePosition = (nextChapter: number, nextScroll: number) => {
     latestPositionRef.current = { chapterIndex: nextChapter, scrollProgress: nextScroll };
     onSaveProgress({
@@ -155,8 +235,76 @@ export function BookReader({
     });
   };
 
+  const stopReadAloud = () => {
+    const wasActive = readingAloudRef.current || speechState !== "idle";
+    speechSessionRef.current += 1;
+    readingAloudRef.current = false;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeechState("idle");
+    if (wasActive) setSpeechMessage("Read aloud stopped");
+  };
+
+  const startReadAloud = () => {
+    if (!content || !speechSupported || !("speechSynthesis" in window)) return;
+    const speechChapter = content.chapters[currentChapterIndex];
+    const chunks = speechChunks([speechChapter.title, ...speechChapter.paragraphs]);
+    if (!chunks.length) return;
+
+    const synthesis = window.speechSynthesis;
+    const session = speechSessionRef.current + 1;
+    speechSessionRef.current = session;
+    readingAloudRef.current = true;
+    synthesis.cancel();
+    setSpeechState("speaking");
+    setSpeechMessage("Reading chapter aloud");
+
+    const finish = (message = "Chapter read aloud finished") => {
+      if (speechSessionRef.current !== session) return;
+      readingAloudRef.current = false;
+      setSpeechState("idle");
+      setSpeechMessage(message);
+    };
+
+    const speakChunk = (index: number) => {
+      if (speechSessionRef.current !== session) return;
+      if (index >= chunks.length) {
+        finish();
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunks[index]);
+      utterance.lang = speechLanguageTag(content.language);
+      utterance.rate = 0.9;
+      utterance.onend = () => speakChunk(index + 1);
+      utterance.onerror = (event) => {
+        finish(speechErrorMessage(event.error));
+      };
+      synthesis.speak(utterance);
+    };
+
+    speakChunk(0);
+  };
+
+  const toggleReadAloud = () => {
+    if (!("speechSynthesis" in window)) return;
+    if (speechState === "idle") {
+      startReadAloud();
+    } else if (speechState === "speaking") {
+      window.speechSynthesis.pause();
+      setSpeechState("paused");
+      setSpeechMessage("Read aloud paused");
+    } else {
+      window.speechSynthesis.resume();
+      setSpeechState("speaking");
+      setSpeechMessage("Reading chapter aloud");
+    }
+  };
+
   const exitReader = () => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    stopReadAloud();
     savePosition(latestPositionRef.current.chapterIndex, latestPositionRef.current.scrollProgress);
     onExit();
   };
@@ -167,19 +315,23 @@ export function BookReader({
     const maxScroll = viewport.scrollHeight - viewport.clientHeight;
     const nextScroll = maxScroll > 0 ? Math.min(Math.max(viewport.scrollTop / maxScroll, 0), 1) : 1;
     setScrollProgress(nextScroll);
-    latestPositionRef.current = { chapterIndex, scrollProgress: nextScroll };
+    latestPositionRef.current = { chapterIndex: currentChapterIndex, scrollProgress: nextScroll };
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => savePosition(chapterIndex, nextScroll), 600);
+    saveTimerRef.current = setTimeout(() => savePosition(currentChapterIndex, nextScroll), 600);
   };
 
   const openChapter = (nextChapter: number) => {
     if (!content) return;
-    const safeChapter = Math.min(Math.max(nextChapter, 0), content.chapters.length - 1);
+    stopReadAloud();
+    const safeChapter = safeReaderPosition({ chapterIndex: nextChapter, scrollProgress: 0 }, content.chapters.length).chapterIndex;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     setChapterIndex(safeChapter);
     setScrollProgress(0);
     latestPositionRef.current = { chapterIndex: safeChapter, scrollProgress: 0 };
-    requestAnimationFrame(() => viewportRef.current?.scrollTo({ top: 0, behavior: "auto" }));
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollTo({ top: 0, behavior: "auto" });
+      readerHeadingRef.current?.focus({ preventScroll: true });
+    });
     savePosition(safeChapter, 0);
     setShowContents(false);
   };
@@ -188,23 +340,23 @@ export function BookReader({
     return (
       <div className="fixed inset-0 z-[90] min-h-[100dvh] bg-[#090b18] text-white flex flex-col">
         <div className="h-16 px-4 flex items-center border-b border-white/10">
-          <button onClick={exitReader} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10" aria-label="Back to library">
+          <button onClick={exitReader} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Back to library">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="ml-2 font-display font-bold truncate">{book.title}</div>
+          <h1 ref={readerHeadingRef} tabIndex={-1} className="ml-2 font-display font-bold truncate focus:outline-none">{book.title}</h1>
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
           {loadError ? (
             <div className="max-w-sm text-center">
               <BookMarked className="w-12 h-12 mx-auto text-amber-300 mb-4" />
-              <h2 className="font-display text-2xl font-bold">The book could not open</h2>
+              <h2 ref={errorHeadingRef} tabIndex={-1} className="font-display text-2xl font-bold focus:outline-none">The book could not open</h2>
               <p className="text-sm text-white/60 mt-2 mb-5">Check the connection and try loading the book again.</p>
-              <button onClick={() => setRetryKey((value) => value + 1)} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-300 text-slate-950 font-bold">
+              <button onClick={() => setRetryKey((value) => value + 1)} className="min-h-11 inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-300 text-slate-950 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                 <RotateCcw className="w-4 h-4" /> Try again
               </button>
             </div>
           ) : (
-            <div className="text-center text-white/70">
+            <div className="text-center text-white/70" role="status" aria-live="polite">
               <LoaderCircle className="w-9 h-9 animate-spin mx-auto text-amber-300 mb-3" />
               <div className="font-display text-lg font-bold text-white">Opening the book</div>
               <div className="text-sm mt-1">Preparing your saved place...</div>
@@ -215,9 +367,14 @@ export function BookReader({
     );
   }
 
-  const chapter = content.chapters[chapterIndex];
-  const overallProgress = ((chapterIndex + scrollProgress) / content.chapters.length) * 100;
-  const isLastChapter = chapterIndex === content.chapters.length - 1;
+  const chapter = content.chapters[currentChapterIndex];
+  const overallProgress = ((currentChapterIndex + currentPosition.scrollProgress) / content.chapters.length) * 100;
+  const isLastChapter = currentChapterIndex === content.chapters.length - 1;
+  const speechActionLabel = speechState === "idle"
+    ? "Read this chapter aloud"
+    : speechState === "speaking"
+      ? "Pause read aloud"
+      : "Resume read aloud";
 
   return (
     <div className="fixed inset-0 z-[90] h-[100dvh] overflow-hidden bg-[#090b18] text-white">
@@ -227,29 +384,52 @@ export function BookReader({
       </div>
 
       <header className="relative h-[72px] px-3 sm:px-5 flex items-center gap-2 border-b border-white/10 bg-[#090b18]/90 backdrop-blur-xl">
-        <button onClick={exitReader} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95" aria-label="Back to library">
+        <button onClick={exitReader} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Back to library">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0 flex-1 px-1">
           <div className="text-[10px] uppercase tracking-[0.18em] text-amber-300 font-bold">
-            Chapter {chapterIndex + 1} of {content.chapters.length}
+            Chapter {currentChapterIndex + 1} of {content.chapters.length}
           </div>
           <div className="font-display font-bold truncate text-sm sm:text-base">{content.title}</div>
         </div>
-        <button onClick={() => setShowContents(true)} className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10" aria-label="Table of contents">
+        {speechSupported && (
+          <button
+            type="button"
+            onClick={toggleReadAloud}
+            className={cn(
+              "w-11 h-11 flex items-center justify-center rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300",
+              speechState === "idle" ? "bg-white/[0.06] hover:bg-white/10" : "bg-amber-300/15 text-amber-200",
+            )}
+            aria-label={speechActionLabel}
+            title={speechActionLabel}
+          >
+            {speechState === "speaking" ? <Pause className="w-5 h-5" /> : speechState === "paused" ? <Play className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+        )}
+        <button onClick={() => setShowContents(true)} className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Table of contents">
           <List className="w-5 h-5" />
         </button>
-        <button onClick={() => setShowSettings((value) => !value)} className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10" aria-label="Reading settings" aria-expanded={showSettings}>
+        <button onClick={() => setShowSettings((value) => !value)} className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Reading settings" aria-expanded={showSettings} aria-controls="reading-settings-panel">
           <Settings2 className="w-5 h-5" />
         </button>
-        <div className="absolute bottom-0 inset-x-0 h-0.5 bg-white/5">
+        <div
+          className="absolute bottom-0 inset-x-0 h-0.5 bg-white/5"
+          role="progressbar"
+          aria-label="Book progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(overallProgress)}
+        >
           <div className="h-full bg-gradient-to-r from-amber-300 via-fuchsia-400 to-cyan-300 transition-[width] duration-150" style={{ width: `${overallProgress}%` }} />
         </div>
       </header>
+      <div className="sr-only" aria-live="polite" aria-atomic="true">{speechMessage}</div>
 
       <AnimatePresence>
         {showSettings && (
           <motion.div
+            id="reading-settings-panel"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -258,11 +438,11 @@ export function BookReader({
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold">Text size</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => setFontSize((value) => Math.max(value - 2, 15))} disabled={fontSize <= 15} className="w-10 h-10 rounded-xl bg-white/[0.07] flex items-center justify-center disabled:opacity-30" aria-label="Decrease text size">
+                <button onClick={() => setFontSize((value) => Math.max(value - 2, 15))} disabled={fontSize <= 15} className="w-11 h-11 rounded-xl bg-white/[0.07] flex items-center justify-center disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Decrease text size">
                   <Minus className="w-4 h-4" />
                 </button>
                 <span className="w-8 text-center text-sm tabular-nums">{fontSize}</span>
-                <button onClick={() => setFontSize((value) => Math.min(value + 2, 25))} disabled={fontSize >= 25} className="w-10 h-10 rounded-xl bg-white/[0.07] flex items-center justify-center disabled:opacity-30" aria-label="Increase text size">
+                <button onClick={() => setFontSize((value) => Math.min(value + 2, 25))} disabled={fontSize >= 25} className="w-11 h-11 rounded-xl bg-white/[0.07] flex items-center justify-center disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Increase text size">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -278,7 +458,7 @@ export function BookReader({
                   key={value}
                   onClick={() => setTheme(value)}
                   className={cn(
-                    "h-14 rounded-xl border flex flex-col items-center justify-center gap-1 text-xs font-bold",
+                    "min-h-14 rounded-xl border flex flex-col items-center justify-center gap-1 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300",
                     theme === value ? "border-amber-300 bg-amber-300/10 text-amber-200" : "border-white/10 bg-white/[0.04] text-white/65",
                   )}
                   aria-pressed={theme === value}
@@ -287,6 +467,30 @@ export function BookReader({
                 </button>
               ))}
             </div>
+            {speechSupported && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <div className="text-sm font-bold">Read aloud</div>
+                <p className="text-xs text-white/50 mt-1">Uses the voice available on this device.</p>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <button
+                    type="button"
+                    onClick={toggleReadAloud}
+                    className="min-h-11 px-3 rounded-xl bg-amber-300 text-slate-950 inline-flex items-center justify-center gap-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    {speechState === "speaking" ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {speechState === "idle" ? "Start" : speechState === "speaking" ? "Pause" : "Resume"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopReadAloud}
+                    disabled={speechState === "idle"}
+                    className="min-h-11 px-3 rounded-xl bg-white/[0.07] inline-flex items-center justify-center gap-2 text-xs font-bold disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                  >
+                    <Square className="w-4 h-4" /> Stop
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -296,19 +500,43 @@ export function BookReader({
         onScroll={onScroll}
         className="relative h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain px-3 sm:px-6 py-5 sm:py-9"
       >
-        <article className={cn("relative max-w-3xl mx-auto rounded-[1.75rem] sm:rounded-[2.25rem] shadow-2xl overflow-hidden", themeClasses[theme])}>
+        <article className={cn("relative max-w-3xl mx-auto rounded-[1.75rem] sm:rounded-[2.25rem] shadow-2xl overflow-hidden select-text", themeClasses[theme])}>
           <div className="absolute top-0 left-7 w-8 h-20 bg-amber-400 shadow-md" aria-hidden="true">
             <div className="absolute -bottom-1 left-0 border-l-[16px] border-r-[16px] border-t-[9px] border-l-transparent border-r-transparent border-t-amber-400" />
           </div>
           <div className="px-6 pt-24 pb-7 sm:px-14 sm:pt-28 sm:pb-10 border-b border-current/10">
-            <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-55 mb-3">Chapter {chapterIndex + 1}</div>
-            <h1 className="font-display text-3xl sm:text-5xl font-bold leading-tight text-balance">{chapter.title}</h1>
+            <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-55 mb-3">Chapter {currentChapterIndex + 1}</div>
+            <h1 ref={readerHeadingRef} tabIndex={-1} className="font-display text-3xl sm:text-5xl font-bold leading-tight text-balance select-text focus:outline-none">{chapter.title}</h1>
             <div className="mt-4 text-sm opacity-60">{content.author}</div>
+            <aside aria-labelledby={licenseTitleId} className="mt-7 rounded-2xl border-2 border-current/25 bg-current/[0.06] p-4 text-left font-sans">
+              <h2 id={licenseTitleId} className="text-base font-bold select-text">Project Gutenberg access notice</h2>
+              <p className="mt-2 text-xs sm:text-sm leading-relaxed select-text">{content.gutenbergLicense.requiredNotice}</p>
+              <p className="mt-3 text-xs leading-relaxed select-text"><strong>Rights:</strong> {content.rights}</p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold">
+                <a href={content.gutenbergLicense.licenseUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                  Full license online <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                </a>
+                <a href={content.gutenbergLicense.originalFormatUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                  Original plain-text book <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                </a>
+                <a href={content.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                  {content.sourceLabel} <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                </a>
+              </div>
+              <details className="mt-3 rounded-xl border border-current/20 p-3">
+                <summary className="min-h-11 cursor-pointer py-2 text-xs font-bold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                  Read the full license in Vidya
+                </summary>
+                <div tabIndex={0} aria-label="Full Project Gutenberg license text" className="mt-3 max-h-80 overflow-y-auto overscroll-contain rounded-lg border border-current/15 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current">
+                  <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed select-text">{content.gutenbergLicense.fullText}</pre>
+                </div>
+              </details>
+            </aside>
           </div>
 
           <div className="px-6 py-8 sm:px-14 sm:py-12 font-serif leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
             {chapter.paragraphs.map((paragraph, index) => (
-              <p key={`${chapter.id}-${index}`} className="mb-[1.35em] whitespace-pre-line text-pretty">
+              <p key={`${chapter.id}-${index}`} className="mb-[1.35em] whitespace-pre-line text-pretty select-text">
                 {paragraph}
               </p>
             ))}
@@ -318,8 +546,8 @@ export function BookReader({
             <div className="h-px bg-current/10 mb-6" />
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
               <button
-                onClick={() => openChapter(chapterIndex - 1)}
-                disabled={chapterIndex === 0}
+                onClick={() => openChapter(currentChapterIndex - 1)}
+                disabled={currentChapterIndex === 0}
                 className="h-12 px-4 rounded-xl border border-current/20 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold disabled:opacity-30"
               >
                 <ChevronLeft className="w-4 h-4" /> Previous
@@ -333,7 +561,7 @@ export function BookReader({
                   <Check className="w-4 h-4" /> {read ? "Book finished" : "Finish book and earn 20 XP"}
                 </button>
               ) : (
-                <button onClick={() => openChapter(chapterIndex + 1)} className="h-12 px-5 rounded-xl bg-amber-400 text-slate-950 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold">
+                <button onClick={() => openChapter(currentChapterIndex + 1)} className="h-12 px-5 rounded-xl bg-amber-400 text-slate-950 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold">
                   Next chapter <ChevronRight className="w-4 h-4" />
                 </button>
               )}
@@ -362,6 +590,10 @@ export function BookReader({
               className="absolute inset-0 z-30 bg-black/60 backdrop-blur-sm"
             />
             <motion.aside
+              ref={contentsRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={contentsTitleId}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -371,10 +603,10 @@ export function BookReader({
             >
               <div className="p-5 border-b border-white/10 flex items-start gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs uppercase tracking-[0.18em] text-amber-300 font-bold">Table of contents</div>
+                  <div id={contentsTitleId} className="text-xs uppercase tracking-[0.18em] text-amber-300 font-bold">Table of contents</div>
                   <div className="font-display text-xl font-bold mt-1 truncate">{content.title}</div>
                 </div>
-                <button onClick={() => setShowContents(false)} className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center" aria-label="Close">
+                <button ref={contentsCloseRef} onClick={() => setShowContents(false)} className="w-11 h-11 rounded-xl bg-white/[0.06] flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Close table of contents">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -385,13 +617,13 @@ export function BookReader({
                     onClick={() => openChapter(index)}
                     className={cn(
                       "w-full min-h-14 px-3 py-3 rounded-xl flex items-center gap-3 text-left mb-1",
-                      index === chapterIndex ? "bg-amber-300 text-slate-950" : "text-white/70 hover:bg-white/[0.06]",
+                      index === currentChapterIndex ? "bg-amber-300 text-slate-950" : "text-white/70 hover:bg-white/[0.06]",
                     )}
-                    aria-current={index === chapterIndex ? "page" : undefined}
+                    aria-current={index === currentChapterIndex ? "page" : undefined}
                   >
                     <span className="w-8 text-xs tabular-nums font-bold opacity-60">{String(index + 1).padStart(2, "0")}</span>
                     <span className="font-display font-bold leading-tight flex-1">{item.title}</span>
-                    {index < chapterIndex && <Check className="w-4 h-4 opacity-60" />}
+                    {index < currentChapterIndex && <Check className="w-4 h-4 opacity-60" />}
                   </button>
                 ))}
               </div>

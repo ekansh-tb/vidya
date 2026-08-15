@@ -56,15 +56,35 @@ describe("every indexed pack actually loads", () => {
   });
 });
 
-describe("lookup semantics match the old packFor()", () => {
-  it("prefers an exact grade match", () => {
-    // icse-maths exists for both Class 6 and Class 7.
+describe("grade-safe lookup semantics", () => {
+  it("finds packs for their exact grades", () => {
+    expect(packEntryFor("igcse-maths", 10)?.grade).toBe(10);
     expect(packEntryFor("icse-maths", 6)?.grade).toBe(6);
     expect(packEntryFor("icse-maths", 7)?.grade).toBe(7);
+    expect(packEntryFor("cbse-maths", 7)?.grade).toBe(7);
   });
 
-  it("falls back to any pack for the subject when the grade has none", () => {
-    expect(hasPack("icse-maths", 11)).toBe(true);
+  it("does not give an IGCSE Grade 9 learner a Grade 10 pack", async () => {
+    expect(hasPack("igcse-maths", 9)).toBe(false);
+    expect(packEntryFor("igcse-maths", 9)).toBeUndefined();
+    await expect(loadPack("igcse-maths", 9)).resolves.toBeUndefined();
+  });
+
+  it("does not give an ICSE Grade 8 learner a Grade 6 or 7 pack", async () => {
+    expect(hasPack("icse-maths", 8)).toBe(false);
+    expect(packEntryFor("icse-maths", 8)).toBeUndefined();
+    await expect(loadPack("icse-maths", 8)).resolves.toBeUndefined();
+  });
+
+  it("does not give a CBSE Grade 6 learner a Grade 7 pack", async () => {
+    expect(hasPack("cbse-maths", 6)).toBe(false);
+    expect(packEntryFor("cbse-maths", 6)).toBeUndefined();
+    await expect(loadPack("cbse-maths", 6)).resolves.toBeUndefined();
+  });
+
+  it("keeps subject-only lookup for callers without a grade", () => {
+    expect(packEntryFor("icse-maths")?.subjectId).toBe("icse-maths");
+    expect(hasPack("icse-maths")).toBe(true);
   });
 
   it("reports absence for a subject with no pack at all", () => {

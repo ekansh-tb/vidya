@@ -16,6 +16,7 @@ import {
   detectCrisisInMessages, supportMessage, escalates, excerptFor,
   DESPAIR_PROMPT_HINT,
 } from "@/lib/safety/crisis";
+import { aiProviderConfigured, resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -77,7 +78,7 @@ const SUBJECT_BLURBS: Record<string, string> = {
   "igcse-cs":
     "Cambridge IGCSE Computer Science 0478 (v5, 2026–2028). Topics: 1 Data representation (binary, hex, two's complement, ASCII/Unicode, sound/image file sizes, RLE compression); 2 Data transmission (packets, serial/parallel, USB, parity/checksum/ARQ, encryption sym vs asym); 3 Hardware (CPU + Von Neumann ALU/CU/PC/MAR/MDR/CIR/ACC, FDE cycle, sensors, RAM vs ROM, SSD/HDD, virtual memory, MAC vs IP); 4 Software (system vs app, OS roles, interrupts, compiler vs interpreter, IDE features); 5 Internet (URL, HTTP/HTTPS, DNS, cookies, blockchain, cyber threats and solutions); 6 Emerging tech (automation, robotics, AI, expert systems, machine learning); 7 Algorithms (PDLC, decomposition, flowcharts, validation/verification, test data including boundary as a PAIR, trace tables); 8 Programming in Cambridge pseudocode (INTEGER/REAL/CHAR/STRING/BOOLEAN, sequence/selection/iteration, 1D & 2D arrays, file handling, procedures up to 3 params); 9 Single-table databases (primary key, SQL: SELECT, FROM, WHERE, ORDER BY ASCENDING/DESCENDING, SUM, COUNT, AND, OR); 10 Boolean logic (NOT, AND, OR, NAND, NOR, XOR; truth tables; logic circuits up to 3 inputs without simplification). CRITICAL: all Paper 2 code must be in Cambridge pseudocode (UPPERCASE keywords, PascalCase identifiers, ← assignment). Python/Java only allowed in the final 15-mark scenario question.",
   "igcse-maths":
-    "Cambridge IGCSE Mathematics 0580 (Core & Extended): numbers (HCF/LCM, surds, indices, standard form, percentages, ratio), algebra (linear, quadratic, simultaneous, inequalities, indices, factorising), geometry (Pythagoras, trigonometry SOH-CAH-TOA, sine/cosine rules, circle theorems, transformations, vectors), mensuration (perimeter/area/volume of standard shapes), statistics (mean/median/mode, histograms, cumulative frequency, scatter, probability), functions (inverse, composite), differentiation (Extended only).",
+    "Cambridge IGCSE International Mathematics 0607 (Extended, GDC required): number and finance; algebra and logarithms; functions, graphs, inverses and composites; coordinate geometry; geometry and mensuration; trigonometry; transformations and vectors; probability; statistics; plus investigation and modelling. Do not teach differentiation or 0580-only content as part of this course.",
   "igcse-physics":
     "Cambridge IGCSE Physics 0625: motion (speed, velocity, acceleration, v-t and d-t graphs), forces (Newton's laws, weight, friction, Hooke's law), pressure, energy (kinetic, potential, conservation, efficiency), thermal physics (kinetic theory, expansion, transfer), waves (transverse/longitudinal, reflection, refraction, EM spectrum, sound), light (lenses, mirrors), electricity (current, voltage, resistance V=IR, series/parallel, household electricity, electromagnetism), atomic physics (radioactivity, half-life, fission/fusion), space.",
   "igcse-chemistry":
@@ -506,13 +507,9 @@ export async function POST(req: Request) {
     }
   }
 
-  if (
-    !process.env.AI_GATEWAY_API_KEY &&
-    !process.env.VERCEL_OIDC_TOKEN &&
-    !process.env.ANTHROPIC_API_KEY
-  ) {
+  if (!aiProviderConfigured()) {
     return staticReply(
-      "Miss Vidya isn't connected yet. The AI Gateway needs setting up in Vercel — ask a grown-up.",
+      "Miss Vidya isn't connected yet. An AI provider needs setting up in Vidya. Ask a grown-up.",
       { headers: rateHeaders(verdict, RATE.limit) },
     );
   }
@@ -523,7 +520,7 @@ export async function POST(req: Request) {
     // cast hands the validated value back to the SDK's own type.
     const modelMessages = await convertToModelMessages(messages as unknown as UIMessage[]);
     const result = streamText({
-      model: "anthropic/claude-haiku-4.5",
+      model: resolveVidyaModel(VIDYA_MODELS.haiku),
       // Appended at the call site rather than threaded through systemPrompt's
       // four branches: the hint is about this one turn, not about who the
       // learner is, and it must read as the last instruction the model sees.

@@ -16,7 +16,7 @@ import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
+import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import type { LearnerProfile } from "@/lib/types";
 import {
   RecentReflections,
@@ -24,6 +24,7 @@ import {
   CapabilityMap,
   FamilyNoteComposer,
   CareNoteComposer,
+  type SubjectLearningStat,
 } from "@/components/views/parent-view";
 
 /**
@@ -229,22 +230,25 @@ function SelectedLearnerView({
   onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
 }) {
   const state = learner.state;
-  const accuracy = state.stats.totalAnswered > 0
+  const questionBanks = questionsForLearner(learner);
+  const questionStatsAvailable = Object.keys(questionBanks).length > 0;
+  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
+  const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
     ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
     : null;
 
   const learnerSubjects = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
   const subjectStats = useMemo(
     () => learnerSubjects.map((s) => {
-      const topics = Object.keys(QUESTIONS[s.id] || {});
+      const topics = Object.keys(questionBanks[s.id] || {});
       let attempts = 0, correct = 0, masterySum = 0;
       topics.forEach((t) => {
         const p = state.progress?.[s.id]?.[t];
         if (p) { attempts += p.attempts || 0; correct += p.correct || 0; masterySum += p.mastery || 0; }
       });
-      return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : 0 };
+      return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : null };
     }),
-    [learnerSubjects, state.progress],
+    [learnerSubjects, questionBanks, state.progress],
   );
 
   return (
@@ -294,7 +298,12 @@ function SelectedLearnerView({
           onChange={(next) => onUpdateLearner({ careNote: next })}
         />
         <RecentReflections state={state} name={learner.name || "your learner"} />
-        <WellnessSignals state={state} subjectStats={subjectStats} />
+        <WellnessSignals
+          state={state}
+          subjectStats={subjectStats}
+          missedQuestions={learnerMisses}
+          questionStatsAvailable={questionStatsAvailable}
+        />
         <ReportExport learner={learner} subjectStats={subjectStats} />
       </div>
 
@@ -305,8 +314,8 @@ function SelectedLearnerView({
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
           <div className="grid grid-cols-2 gap-3">
-            <StatTile label="Accuracy" value={accuracy == null ? "—" : `${accuracy}%`} />
-            <StatTile label="Quizzes" value={String(state.stats.quizzesCompleted)} />
+            <StatTile label="Accuracy" value={!questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%`} />
+            <StatTile label="Quizzes" value={questionStatsAvailable ? String(state.stats.quizzesCompleted) : "Unavailable"} />
             <StatTile label="Streak" value={`${state.streak}d`} />
             <StatTile label="Longest" value={`${state.longestStreak || 0}d`} />
           </div>
@@ -318,10 +327,14 @@ function SelectedLearnerView({
         {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
         <OpinionCard
           tone="warm"
-          window="Over the whole profile"
-          observation={`${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`}
+          window={questionStatsAvailable ? "Over the whole profile" : `Grade ${learner.grade} curriculum availability`}
+          observation={questionStatsAvailable
+            ? `${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`
+            : "No grade-matched quiz bank is available yet, so Vidya is not showing quiz totals."}
           opinion={
-            state.stats.totalAnswered === 0
+            !questionStatsAvailable
+              ? "This means the curriculum content is still being prepared. It does not say anything about the learner's progress."
+              : state.stats.totalAnswered === 0
               ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
               : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
           }
@@ -340,7 +353,7 @@ function ReportExport({
   learner, subjectStats,
 }: {
   learner: LearnerProfile;
-  subjectStats: { id: string; name: string; attempts: number; correct: number; mastery: number }[];
+  subjectStats: SubjectLearningStat[];
 }) {
   const [copiedAt, setCopiedAt] = useState<number | null>(null);
 
@@ -422,20 +435,23 @@ function ReportExport({
 
 function buildMarkdownReport(
   learner: LearnerProfile,
-  subjectStats: { name: string; attempts: number; correct: number; mastery: number }[],
+  subjectStats: SubjectLearningStat[],
 ): string {
   const state = learner.state;
-  const accuracy = state.stats.totalAnswered > 0
+  const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
+  const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
     ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
     : null;
   // Local date: this is stamped on a report a parent reads in their own timezone.
   const today = dayKeyOf(new Date());
 
-  const subjectLines = subjectStats
-    .filter((s) => s.attempts > 0)
-    .sort((a, b) => b.mastery - a.mastery)
-    .map((s) => `- **${s.name}** — ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
-    .join("\n") || "_No subject attempts yet._";
+  const subjectLines = questionStatsAvailable
+    ? subjectStats
+        .filter((s) => s.mastery != null && s.attempts > 0)
+        .sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0))
+        .map((s) => `- **${s.name}**: ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
+        .join("\n") || "_No subject attempts yet._"
+    : `_Grade ${learner.grade} lesson mastery is unavailable until grade-matched content is ready._`;
 
   // PRIVACY: reflections the kid marked "Just for me" must never appear here.
   // The kid is shown a lock and told their parent cannot read it; the on-screen
@@ -463,7 +479,7 @@ function buildMarkdownReport(
     .map((e) => `- **${e.date}** — ${e.title}`)
     .join("\n") || "_None logged._";
 
-  const missesCount = state.missedQuestions?.length ?? 0;
+  const missesCount = missedQuestionsForLearner(learner, state.missedQuestions).length;
 
   return `# Vidya — ${learner.name || "Learner"} report
 
@@ -476,13 +492,15 @@ _Generated ${today} on the family device. Numbers come from local sessions only.
 - **Interests**: ${(learner.interests || []).join(", ") || "—"}
 
 ## Snapshot
-- **Accuracy**: ${accuracy == null ? "—" : `${accuracy}%`}
-- **Questions answered**: ${state.stats.totalAnswered}
-- **Quizzes completed**: ${state.stats.quizzesCompleted}
-- **Daily quests completed**: ${state.stats.dailyQuestsCompleted}
+- **Accuracy**: ${!questionStatsAvailable ? "Unavailable for current curriculum" : accuracy == null ? "Not yet" : `${accuracy}%`}
+- **Questions answered**: ${questionStatsAvailable ? state.stats.totalAnswered : "Unavailable for current curriculum"}
+- **Quizzes completed**: ${questionStatsAvailable ? state.stats.quizzesCompleted : "Unavailable for current curriculum"}
+- **Daily quests completed**: ${questionStatsAvailable ? state.stats.dailyQuestsCompleted : "Unavailable for current curriculum"}
 - **Current streak**: ${state.streak} day${state.streak === 1 ? "" : "s"}
 - **Longest streak**: ${state.longestStreak || 0} day${state.longestStreak === 1 ? "" : "s"}
-- **Wrong-Answer Notebook**: ${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try
+- **Wrong-Answer Notebook**: ${questionStatsAvailable
+  ? `${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try`
+  : "Unavailable for current curriculum"}
 
 ## Subject mastery
 ${subjectLines}
@@ -624,9 +642,11 @@ function prettyRelative(iso: string): string {
 
 function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
   const state = learner.state;
+  const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const reflectionsWeek = (state.dailyReflections || []).filter((r) => new Date(r.savedAt).getTime() >= sevenDaysAgo);
-  const missesWeek = (state.missedQuestions || []).filter((m) => new Date(m.missedAt).getTime() >= sevenDaysAgo);
+  const missesWeek = missedQuestionsForLearner(learner, state.missedQuestions)
+    .filter((m) => new Date(m.missedAt).getTime() >= sevenDaysAgo);
   const reflectionPrivateCount = reflectionsWeek.filter((r) => r.private).length;
 
   const hasAny = reflectionsWeek.length + missesWeek.length > 0 || state.streak > 0;
@@ -687,7 +707,7 @@ function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
         />
         <RecapStat
           label="New misses"
-          value={missesWeek.length}
+          value={questionStatsAvailable ? missesWeek.length : "Unavailable"}
         />
         <RecapStat
           label="Current streak"
@@ -699,7 +719,7 @@ function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
   );
 }
 
-function RecapStat({ label, value, sub }: { label: string; value: number; sub?: string }) {
+function RecapStat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div>
       <div className="font-display text-2xl font-bold tracking-tight">{value}</div>

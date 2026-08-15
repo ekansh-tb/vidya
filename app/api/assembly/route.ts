@@ -2,6 +2,7 @@ import { generateText } from "ai";
 import {
   assemblyRequestSchema, isSameOrigin, clientKey, rateLimit, rateHeaders,
 } from "@/lib/api/guard";
+import { aiProviderConfigured, resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -68,11 +69,7 @@ export async function POST(req: Request) {
     });
   }
 
-  if (
-    !process.env.AI_GATEWAY_API_KEY &&
-    !process.env.VERCEL_OIDC_TOKEN &&
-    !process.env.ANTHROPIC_API_KEY
-  ) {
+  if (!aiProviderConfigured()) {
     return Response.json(dailyFallback(body.name));
   }
 
@@ -107,7 +104,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await generateText({
-      model: "anthropic/claude-haiku-4.5",
+      model: resolveVidyaModel(VIDYA_MODELS.haiku),
       maxOutputTokens: 600,
       temperature: 0.85,
       system: `You are the AI Principal of Vidya, a digital school${schoolLabel ? ` for students at ${schoolLabel}` : ""}. You give the daily morning assembly.

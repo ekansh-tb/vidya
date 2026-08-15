@@ -100,7 +100,7 @@ export const SUBJECTS_IGCSE: Subject[] = [
   {
     id: "igcse-maths",
     name: "Mathematics",
-    tagline: "0580 · Core & Extended",
+    tagline: "0607 · International Mathematics",
     gradient: "from-amber-400 via-orange-500 to-rose-500",
     accent: "#FBBF24",
     soft: "rgba(251, 191, 36, 0.15)",

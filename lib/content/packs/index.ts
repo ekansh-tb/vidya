@@ -60,15 +60,12 @@ export const ALL_PACKS: ExamPack[] = [
 ];
 
 /**
- * Look up the best matching exam pack for a (subjectId, grade) combo.
- * - Exact grade match wins.
- * - Else, any pack with that subjectId.
- * - Else undefined.
+ * Look up an exam pack for a subject and, when known, the exact grade.
+ * Subject-only lookup is retained only for callers that omit the grade.
  */
 export function packFor(subjectId: SubjectId, grade?: number): ExamPack | undefined {
   if (grade != null) {
-    const exact = ALL_PACKS.find((p) => p.subjectId === subjectId && p.grade === grade);
-    if (exact) return exact;
+    return ALL_PACKS.find((p) => p.subjectId === subjectId && p.grade === grade);
   }
   return ALL_PACKS.find((p) => p.subjectId === subjectId);
 }
@@ -80,7 +77,7 @@ export function packsForSubjectAcrossGrades(subjectId: SubjectId): ExamPack[] {
     .sort((a, b) => (a.grade ?? 0) - (b.grade ?? 0));
 }
 
-/** All packs available to a learner — picks the best grade match per subject. */
+/** All exact-grade packs available to a learner, or subject-only when grade is omitted. */
 export function packsForSubjects(
   subjectIds: SubjectId[] | undefined,
   grade?: number,

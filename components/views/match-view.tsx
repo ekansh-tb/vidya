@@ -6,8 +6,8 @@ import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { X, RefreshCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
-import type { GameState, SubjectId, QuizResult } from "@/lib/types";
+import { questionsForLearner } from "@/lib/content/questions/availability";
+import type { GameState, LearnerProfile, SubjectId, QuizResult } from "@/lib/types";
 import { shuffle, todayKey } from "@/lib/utils";
 import { sfx } from "@/lib/audio";
 import { xpToLevel } from "@/lib/economy";
@@ -22,17 +22,18 @@ type Card = {
 };
 
 export function MatchView({
-  subjectId, topicId, state, setState, onFinish, onClose,
+  subjectId, topicId, learner, state, setState, onFinish, onClose,
 }: {
   subjectId: SubjectId;
   topicId: string;
+  learner: Pick<LearnerProfile, "board" | "grade">;
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onFinish: (result: QuizResult) => void;
   onClose: () => void;
 }) {
   const subject = SUBJECT_MAP[subjectId];
-  const topic = QUESTIONS[subjectId]?.[topicId];
+  const topic = questionsForLearner(learner)[subjectId]?.[topicId];
   const isDeva = subject?.isDeva;
 
   const cards = useMemo<Card[]>(() => {
@@ -175,7 +176,28 @@ export function MatchView({
     }, 50);
   };
 
-  if (!topic) return null;
+  if (!topic) {
+    return (
+      <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-5 pt-6">
+        <button
+          onClick={() => { sfx.click(); onClose(); }}
+          className="flex items-center gap-1 font-medium mb-6 active:scale-95 self-start text-white/60"
+        >
+          <X className="w-5 h-5" /> Close
+        </button>
+        <div className="glass-card p-8 text-center">
+          <div className="text-5xl mb-3 opacity-70">🌱</div>
+          <h2 className="font-display text-xl font-bold text-white mb-2">
+            Match Quest is coming soon
+          </h2>
+          <p className="text-sm text-white/60 mb-6">
+            This topic does not have a Match Quest for your curriculum yet. Try another classroom activity in the meantime.
+          </p>
+          <Button onClick={() => { sfx.click(); onClose(); }}>Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReducedMotionProvider>

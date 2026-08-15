@@ -4,14 +4,22 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { QUESTIONS } from "@/lib/content/questions";
-import type { ExamDate, FamilyNote, GameState, LearnerProfile, SubjectId } from "@/lib/types";
+import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
+import type { ExamDate, FamilyNote, GameState, LearnerProfile, MissedQuestion, SubjectId } from "@/lib/types";
 import type { CapabilityKey, VerificationLevel } from "@/lib/auth/types";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { computeRung } from "@/lib/capabilities/use-capability";
 import { sfx } from "@/lib/audio";
 import { BackupPanel } from "@/components/parent/backup-panel";
 import { OpinionCard } from "@/components/parent/opinion-card";
+
+export type SubjectLearningStat = {
+  id: SubjectId;
+  name: string;
+  attempts: number;
+  correct: number;
+  mastery: number | null;
+};
 
 /**
  * In-kid-app Parent Room.
@@ -120,20 +128,23 @@ export function ParentView({
 
   // ----- UNLOCKED ------------------------------------------------------------
 
-  const accuracy = state.stats.totalAnswered > 0
+  const questionBanks = questionsForLearner(learner);
+  const questionStatsAvailable = Object.keys(questionBanks).length > 0;
+  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
+  const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
     ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
     : null;
 
   // STRICT ISOLATION: only this learner's curriculum.
   const learnerSubjects = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
   const subjectStats = learnerSubjects.map((s) => {
-    const topics = Object.keys(QUESTIONS[s.id] || {});
+    const topics = Object.keys(questionBanks[s.id] || {});
     let attempts = 0, correct = 0, masterySum = 0;
     topics.forEach((t) => {
       const p = state.progress?.[s.id]?.[t];
       if (p) { attempts += p.attempts || 0; correct += p.correct || 0; masterySum += p.mastery || 0; }
     });
-    return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : 0 };
+    return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : null };
   });
 
   return (
@@ -150,14 +161,20 @@ export function ParentView({
 
         {/* OPINION-ONLY headline ----------------------------------------- */}
         <OpinionFrame
-          windowText={`Across ${state.stats.totalAnswered || 0} answered question${state.stats.totalAnswered === 1 ? "" : "s"}`}
+          windowText={questionStatsAvailable
+            ? `Across ${state.stats.totalAnswered || 0} answered question${state.stats.totalAnswered === 1 ? "" : "s"}`
+            : `Grade ${learner.grade} curriculum availability`}
           observation={
-            accuracy == null
+            !questionStatsAvailable
+              ? "No grade-matched quiz bank is available yet, so Vidya is not showing a quiz score."
+              : accuracy == null
               ? "Not enough data yet — this learner hasn't answered any quiz questions."
               : `Overall accuracy ${accuracy}%. Current streak ${state.streak} day${state.streak === 1 ? "" : "s"}.`
           }
           opinion={
-            accuracy == null
+            !questionStatsAvailable
+              ? "This means the curriculum content is still being prepared. It does not say anything about the learner's progress."
+              : accuracy == null
               ? "This might mean the app is brand new on this device, or the kid is exploring non-quiz rooms first."
               : accuracy >= 80
                 ? "This might mean the difficulty is currently a good fit — the kid is mostly getting things right but still being challenged."
@@ -166,7 +183,7 @@ export function ParentView({
                   : "This might mean specific topics need a parent-side conversation or a slower re-walk — not a sign of effort."
           }
           escalation={
-            accuracy != null && accuracy < 50 && state.stats.totalAnswered >= 20
+            questionStatsAvailable && accuracy != null && accuracy < 50 && state.stats.totalAnswered >= 20
               ? "Worth a calm chat with the class teacher to compare notes — this is the kind of pattern that's better untangled together than guessed at alone."
               : undefined
           }
@@ -190,7 +207,12 @@ export function ParentView({
         <RecentReflections state={state} name={learner.name || "your learner"} />
 
         {/* Wellness signals ---------------------------------------------- */}
-        <WellnessSignals state={state} subjectStats={subjectStats} />
+        <WellnessSignals
+          state={state}
+          subjectStats={subjectStats}
+          missedQuestions={learnerMisses}
+          questionStatsAvailable={questionStatsAvailable}
+        />
 
         {/* Upcoming exams ------------------------------------------------ */}
         <ExamManager
@@ -266,10 +288,10 @@ export function ParentView({
         <div className="glass-card p-5 mb-5">
           <div className="grid grid-cols-2 gap-4">
             {[
-              { label: "Total Questions", value: state.stats.totalAnswered },
-              { label: "Accuracy", value: accuracy == null ? "—" : `${accuracy}%` },
-              { label: "Quizzes Done", value: state.stats.quizzesCompleted },
-              { label: "Daily Quests", value: state.stats.dailyQuestsCompleted },
+              { label: "Total Questions", value: questionStatsAvailable ? state.stats.totalAnswered : "Unavailable" },
+              { label: "Accuracy", value: !questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%` },
+              { label: "Quizzes Done", value: questionStatsAvailable ? state.stats.quizzesCompleted : "Unavailable" },
+              { label: "Daily Quests", value: questionStatsAvailable ? state.stats.dailyQuestsCompleted : "Unavailable" },
               { label: "Current Streak", value: `${state.streak} d` },
               { label: "Longest Streak", value: `${state.longestStreak || 0} d` },
             ].map(({ label, value }) => (
@@ -299,13 +321,21 @@ export function ParentView({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className={`font-bold ${s.isDeva ? "font-deva" : ""}`} style={{ color: "var(--text)" }}>{s.name}</div>
-                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>{s.attempts} attempts · {s.correct} correct</div>
+                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                      {s.mastery == null
+                        ? `Grade ${learner.grade} lessons are coming soon`
+                        : `${s.attempts} attempts · ${s.correct} correct`}
+                    </div>
                   </div>
-                  <div className="font-bold font-display text-lg" style={{ color: "var(--text)" }}>{s.mastery}%</div>
+                  <div className="font-bold font-display text-sm" style={{ color: "var(--text)" }}>
+                    {s.mastery == null ? "Unavailable" : `${s.mastery}%`}
+                  </div>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.mastery}%`, background: s.accent, boxShadow: `0 0 6px ${s.glow}` }} />
-                </div>
+                {s.mastery != null && (
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.mastery}%`, background: s.accent, boxShadow: `0 0 6px ${s.glow}` }} />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -908,10 +938,12 @@ type Signal = {
 };
 
 export function WellnessSignals({
-  state, subjectStats,
+  state, subjectStats, missedQuestions, questionStatsAvailable,
 }: {
   state: GameState;
-  subjectStats: { id: SubjectId; name: string; attempts: number; correct: number; mastery: number }[];
+  subjectStats: SubjectLearningStat[];
+  missedQuestions: MissedQuestion[];
+  questionStatsAvailable: boolean;
 }) {
   const signals = useMemo<Signal[]>(() => {
     const out: Signal[] = [];
@@ -941,29 +973,31 @@ export function WellnessSignals({
     }
 
     // Signal 2 — Review backlog (Wrong-Answer Notebook)
-    const misses = state.missedQuestions?.length ?? 0;
-    out.push({
-      windowText: "Wrong-Answer Notebook",
-      observation:
-        misses === 0
-          ? "Zero questions waiting for a second try."
-          : `${misses} question${misses === 1 ? "" : "s"} waiting for a second try.`,
-      opinion:
-        misses === 0
-          ? "This might mean either no quizzes attempted yet OR every miss has been answered correctly later — both are healthy."
-          : misses <= 5
-            ? "This might mean the kid is in their stretch zone — a small backlog of 1–5 is normal and a sign of learning, not falling behind."
-            : "This might mean a few specific topics need a slower walk-through together rather than another quiz attempt.",
-      tone: misses === 0 ? "warm" : misses <= 5 ? "neutral" : "concern",
-      escalation:
-        misses > 5
-          ? { label: "Worth showing the class teacher which topics keep coming back", to: "teacher" }
-          : undefined,
-    });
+    if (questionStatsAvailable) {
+      const misses = missedQuestions.length;
+      out.push({
+        windowText: "Wrong-Answer Notebook",
+        observation:
+          misses === 0
+            ? "Zero questions waiting for a second try."
+            : `${misses} question${misses === 1 ? "" : "s"} waiting for a second try.`,
+        opinion:
+          misses === 0
+            ? "This might mean either no quizzes have been attempted yet or every miss was answered correctly later. Both are healthy."
+            : misses <= 5
+              ? "This might mean the kid is in their stretch zone. A small backlog of 1 to 5 is normal and a sign of learning, not falling behind."
+              : "This might mean a few specific topics need a slower walk-through together rather than another quiz attempt.",
+        tone: misses === 0 ? "warm" : misses <= 5 ? "neutral" : "concern",
+        escalation:
+          misses > 5
+            ? { label: "Worth showing the class teacher which topics keep coming back", to: "teacher" }
+            : undefined,
+      });
+    }
 
     // Signal 3 — Daily quest engagement
     const dq = state.stats?.dailyQuestsCompleted ?? 0;
-    if (state.stats?.totalAnswered && state.stats.totalAnswered > 0) {
+    if (questionStatsAvailable && state.stats?.totalAnswered && state.stats.totalAnswered > 0) {
       out.push({
         windowText: "Daily quest engagement",
         observation: `${dq} daily quest${dq === 1 ? "" : "s"} completed lifetime.`,
@@ -1018,7 +1052,7 @@ export function WellnessSignals({
     }
 
     return out;
-  }, [state, subjectStats]);
+  }, [missedQuestions, questionStatsAvailable, state, subjectStats]);
 
   if (signals.length === 0) return null;
 

@@ -32,6 +32,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
 import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
+import { resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -177,7 +178,7 @@ export async function POST(req: Request) {
     const { object } = await generateObject({
       // A stronger model than the chat routes on purpose — this reads scans and
       // photographs of printed timetables, and a misread here is durable.
-      model: "anthropic/claude-sonnet-5",
+      model: resolveVidyaModel(VIDYA_MODELS.sonnet),
       schema: extraction,
       system: SYSTEM,
       messages: [{ role: "user", content: parts }],

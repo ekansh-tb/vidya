@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { ChevronLeft, BookOpen, Check, X, Filter } from "lucide-react";
-import type { GameState, MissedQuestion, SubjectId } from "@/lib/types";
+import { ChevronLeft, BookOpen, Check, X } from "lucide-react";
+import type { GameState, LearnerProfile, MissedQuestion, SubjectId } from "@/lib/types";
 import { sortForReview, dueCount, isDue, recordCorrect } from "@/lib/spaced-repetition";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
+import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import { sfx } from "@/lib/audio";
 
 /**
@@ -24,8 +25,9 @@ import { sfx } from "@/lib/audio";
  * Strictly per-learner — these never cross profiles.
  */
 export function ReviewView({
-  state, setState, onBack,
+  learner, state, setState, onBack,
 }: {
+  learner: Pick<LearnerProfile, "board" | "grade">;
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
@@ -33,8 +35,10 @@ export function ReviewView({
   // Due first, oldest miss first — see lib/spaced-repetition. Sorting here
   // rather than in the store keeps the notebook's stored order meaningful
   // (most-recent-first) while what the learner sees is what needs them.
-  const all = sortForReview(state.missedQuestions || []);
-  const readyCount = dueCount(state.missedQuestions);
+  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
+  const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
+  const all = sortForReview(learnerMisses);
+  const readyCount = dueCount(learnerMisses);
   const [filterSubject, setFilterSubject] = useState<SubjectId | "all">("all");
   const [revealedId, setRevealedId] = useState<string | null>(null);
   const reduced = useReducedMotion();
@@ -148,7 +152,9 @@ export function ReviewView({
               </div>
               <div className="text-xs">
                 {all.length === 0
-                  ? "Take a quiz — any question you miss will land here for later review."
+                  ? questionStatsAvailable
+                    ? "Take a quiz. Any question you miss will land here for later review."
+                    : "Review cards will appear when lessons for your grade are ready."
                   : "Try a different subject filter above, or take more quizzes."}
               </div>
             </div>

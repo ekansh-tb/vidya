@@ -116,11 +116,16 @@ function must(packs: ExamPack[], subjectId: SubjectId, grade: number): ExamPack 
 
 // ---------------------------------------------------------------- lookups
 
-/** Best index entry for a (subjectId, grade): exact grade wins, else any. */
+/**
+ * Index entry for a subject and, when known, the learner's exact grade.
+ *
+ * A known grade must never receive another grade's curriculum. Callers that
+ * genuinely do not know the grade can omit it and receive the first pack for
+ * the subject, preserving the legacy subject-only lookup.
+ */
 export function packEntryFor(subjectId: SubjectId, grade?: number): PackEntry | undefined {
   if (grade != null) {
-    const exact = PACK_INDEX.find((p) => p.subjectId === subjectId && p.grade === grade);
-    if (exact) return exact;
+    return PACK_INDEX.find((p) => p.subjectId === subjectId && p.grade === grade);
   }
   return PACK_INDEX.find((p) => p.subjectId === subjectId);
 }

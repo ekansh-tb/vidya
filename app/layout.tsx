@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import { clerkConfigured } from "@/lib/auth/clerk-config";
 import "./globals.css";
 
@@ -7,6 +8,17 @@ export const metadata: Metadata = {
   title: "Vidya — your personal school",
   description: "A digital school for any learner — Cambridge Primary, Cambridge IGCSE, ICSE, CBSE. Curriculum-anchored quests, AI tutor, exam prep.",
   applicationName: "Vidya",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/vidya-app.svg", type: "image/svg+xml" },
+      { url: "/icons/vidya-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    shortcut: [{ url: "/icons/vidya-app.svg", type: "image/svg+xml" }],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", type: "image/png", sizes: "180x180" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -39,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-body antialiased">
+        <ServiceWorkerRegistration />
         {/* Without keys, mounting ClerkProvider would fail the whole tree. The
             kid app needs no auth, so render it plain; middleware.ts closes the
             parent area in the same condition. */}
