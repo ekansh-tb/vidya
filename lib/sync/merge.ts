@@ -1,4 +1,4 @@
-import type { GameState, MissedQuestion } from "../types";
+import type { GameState, MissedQuestion, ReadingProgress } from "../types";
 import { mergeCard, capNotebook } from "../spaced-repetition";
 
 /**
@@ -149,6 +149,49 @@ function mergeNotebook(local: unknown, remote: unknown): Rec<string> {
   return out;
 }
 
+function validReadingProgress(value: unknown): value is ReadingProgress {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return (
+    Number.isInteger(item.chapterIndex) &&
+    (item.chapterIndex as number) >= 0 &&
+    typeof item.scrollProgress === "number" &&
+    Number.isFinite(item.scrollProgress) &&
+    item.scrollProgress >= 0 &&
+    item.scrollProgress <= 1 &&
+    typeof item.updatedAt === "string" &&
+    Number.isFinite(Date.parse(item.updatedAt))
+  );
+}
+
+/** Resume positions are mutable, so the most recently saved copy wins. */
+function mergeReadingProgress(local: unknown, remote: unknown): Rec<ReadingProgress> {
+  const out: Rec<ReadingProgress> = {};
+  const left = (local && typeof local === "object" ? local : {}) as Rec<unknown>;
+  const right = (remote && typeof remote === "object" ? remote : {}) as Rec<unknown>;
+
+  for (const bookId of new Set([...Object.keys(left), ...Object.keys(right)])) {
+    const localProgress = left[bookId];
+    const remoteProgress = right[bookId];
+    const hasLocal = validReadingProgress(localProgress);
+    const hasRemote = validReadingProgress(remoteProgress);
+    if (!hasLocal && !hasRemote) continue;
+    if (!hasRemote) {
+      out[bookId] = localProgress as ReadingProgress;
+      continue;
+    }
+    if (!hasLocal) {
+      out[bookId] = remoteProgress;
+      continue;
+    }
+    out[bookId] = Date.parse(remoteProgress.updatedAt) > Date.parse(localProgress.updatedAt)
+      ? remoteProgress
+      : localProgress;
+  }
+
+  return out;
+}
+
 /**
  * Merge `remote` into `local`.
  *
@@ -188,6 +231,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     passportStamps: unionStrings(local.passportStamps, r.passportStamps),
     readBooks: unionStrings(local.readBooks, r.readBooks),
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
+    readingProgress: mergeReadingProgress(local.readingProgress, r.readingProgress),
     completedActivities: unionStrings(local.completedActivities, r.completedActivities),
     moveBreaks: Math.max(num(local.moveBreaks), num(r.moveBreaks)),
     progress: mergeProgress(local.progress, r.progress),

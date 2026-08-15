@@ -300,7 +300,7 @@ function makeLearner({
       seenQuestions: {},
       friendStreak: null, lastQuestCorrect: null,
       passportStamps: [], notebook: {}, lastAssemblyDate: null,
-      assemblyStreak: 0, readBooks: [], savedMelody: null, savedCompositions: [],
+      assemblyStreak: 0, readBooks: [], readingProgress: {}, savedMelody: null, savedCompositions: [],
       classRoster: [], classNotes: [], buddyId: null, missedQuestions: [], dailyReflections: [],
       settings: { sound: true, music: false, voice: true, musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9 },
       onboarded: true,

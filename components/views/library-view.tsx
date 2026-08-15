@@ -5,9 +5,17 @@ import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, BookOpen, Clock, Check, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BookReader } from "@/components/views/book-reader";
 import { LIBRARY, LIBRARY_REGIONS, type Book } from "@/lib/content/library";
-import type { GameState } from "@/lib/types";
+import type { GameState, ReadingProgress } from "@/lib/types";
 import { sfx } from "@/lib/audio";
+
+function formatReadTime(minutes: number) {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours}h ${remainder}m` : `${hours}h`;
+}
 
 export function LibraryView({
   state, setState, onBack,
@@ -17,6 +25,7 @@ export function LibraryView({
   onBack: () => void;
 }) {
   const [active, setActive] = useState<Book | null>(null);
+  const [readerBook, setReaderBook] = useState<Book | null>(null);
   const readCount = state.readBooks?.length || 0;
 
   const toggleRead = (bookId: string) => {
@@ -47,6 +56,45 @@ export function LibraryView({
       };
     });
   };
+
+  const completeBook = (bookId: string) => {
+    sfx.coin();
+    setState((p) => {
+      const readBooks = p.readBooks || [];
+      if (readBooks.includes(bookId)) return p;
+      const rewarded = p.rewardedBooks ?? readBooks;
+      const earns = !rewarded.includes(bookId);
+      return {
+        ...p,
+        readBooks: [...readBooks, bookId],
+        rewardedBooks: earns ? [...rewarded, bookId] : rewarded,
+        xp: earns ? p.xp + 20 : p.xp,
+        coins: earns ? p.coins + 5 : p.coins,
+      };
+    });
+  };
+
+  const saveReadingProgress = (bookId: string, progress: ReadingProgress) => {
+    setState((p) => ({
+      ...p,
+      readingProgress: { ...(p.readingProgress || {}), [bookId]: progress },
+    }));
+  };
+
+  if (readerBook) {
+    return (
+      <ReducedMotionProvider>
+        <BookReader
+          book={readerBook}
+          initialProgress={state.readingProgress?.[readerBook.id]}
+          read={!!state.readBooks?.includes(readerBook.id)}
+          onExit={() => setReaderBook(null)}
+          onSaveProgress={(progress) => saveReadingProgress(readerBook.id, progress)}
+          onComplete={() => completeBook(readerBook.id)}
+        />
+      </ReducedMotionProvider>
+    );
+  }
 
   return (
     <ReducedMotionProvider>
@@ -113,12 +161,17 @@ export function LibraryView({
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-[10px] text-white/60">
                           <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {b.readMinutes}m
+                            <Clock className="w-3 h-3" /> {formatReadTime(b.readMinutes)}
                           </div>
                           <div className="px-1.5 py-0.5 rounded-full bg-white/[0.06]">
                             {b.difficulty}
                           </div>
                         </div>
+                        {b.readerPath && (
+                          <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-300">
+                            <BookOpen className="w-3 h-3" /> {b.chapterCount} chapters · Full book
+                          </div>
+                        )}
                       </motion.button>
                     );
                   })}
@@ -133,8 +186,13 @@ export function LibraryView({
           <BookSheet
             book={active}
             read={!!state.readBooks?.includes(active.id)}
+            progress={state.readingProgress?.[active.id]}
             onClose={() => setActive(null)}
             onToggle={() => toggleRead(active.id)}
+            onRead={() => {
+              setActive(null);
+              setReaderBook(active);
+            }}
           />
         )}
       </div>
@@ -143,12 +201,14 @@ export function LibraryView({
 }
 
 function BookSheet({
-  book, read, onClose, onToggle,
+  book, read, progress, onClose, onToggle, onRead,
 }: {
   book: Book;
   read: boolean;
+  progress?: ReadingProgress;
   onClose: () => void;
   onToggle: () => void;
+  onRead: () => void;
 }) {
   const isDeva = book.region === "marathi" || book.region === "hindi";
   const titleId = `${useId()}-book-title`;
@@ -194,28 +254,40 @@ function BookSheet({
             </div>
             <div className={`text-sm text-white/60 mt-0.5 ${isDeva ? "font-deva" : ""}`}>{book.author}</div>
             <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
-              <Clock className="w-3.5 h-3.5" /> ~{book.readMinutes} min · {book.difficulty}
+              <Clock className="w-3.5 h-3.5" /> {book.readerPath ? `${book.chapterCount} chapters · Full text` : `~${formatReadTime(book.readMinutes)} · ${book.difficulty}`}
             </div>
           </div>
         </div>
         <div className={`text-sm text-white/80 leading-relaxed mb-5 ${isDeva ? "font-deva" : ""}`}>
           {book.blurb}
         </div>
-        <div className="flex gap-2">
-          <Button size="lg" className="flex-1" onClick={onToggle}>
-            {read ? "Mark unread" : "I read this · +20 XP"}
-          </Button>
-          {book.link && (
-            <a
-              href={book.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-2xl glass flex items-center justify-center text-cyan-300 active:scale-95"
-              aria-label="Open"
-            >
-              <ExternalLink className="w-5 h-5" />
-            </a>
+        {book.readerPath && progress && (progress.chapterIndex > 0 || progress.scrollProgress > 0.02) && (
+          <div className="text-xs text-amber-200 mb-3 flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5" /> Saved at chapter {progress.chapterIndex + 1}
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          {book.readerPath && (
+            <Button size="lg" className="w-full" onClick={onRead}>
+              {progress && (progress.chapterIndex > 0 || progress.scrollProgress > 0.02) ? "Continue reading" : "Start reading"}
+            </Button>
           )}
+          <div className="flex gap-2">
+            <Button size={book.readerPath ? "md" : "lg"} variant={book.readerPath ? "secondary" : "primary"} className="flex-1" onClick={onToggle}>
+              {read ? "Mark unread" : "Mark as finished · +20 XP"}
+            </Button>
+            {book.link && (
+              <a
+                href={book.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-12 h-12 rounded-2xl glass flex items-center justify-center text-cyan-300 active:scale-95"
+                aria-label="Open"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </a>
+            )}
+          </div>
         </div>
       </motion.div>
     </>
