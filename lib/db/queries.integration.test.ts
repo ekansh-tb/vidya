@@ -32,6 +32,7 @@ import {
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
   clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
   disabledCapabilitiesForTokens, bumpCapabilityUsage, capabilityUsedToday, usageForParent,
+  recordSafetySignal, safetySignalsForParent, markSafetySignalsSeen,
 } from "./queries";
 import type { GameState } from "../types";
 
@@ -407,6 +408,64 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       expect(await clearSelfLink(KID_CLERK)).toBe(false);
       expect((await getLearnerForClerkUser(KID_CLERK))?.id).toBe(learnerA);
       await sql`update learners set clerk_user_id = null where id = ${learnerA}`;
+    });
+  });
+
+  // safety_signals cascades from learners, which cascade from parents, so the
+  // afterAll above already cleans these up — nothing to add there.
+  describe("safety signals", () => {
+    it("records a disclosure and reads it back with the child's words", async () => {
+      await recordSafetySignal({
+        learnerId: learnerA,
+        category: "self_harm",
+        cue: "want-to-die",
+        excerpt: "i want to die",
+        surface: "tutor",
+      });
+      const rows = await safetySignalsForParent(PARENT_A, learnerA);
+      expect(rows).toHaveLength(1);
+      expect(rows![0].category).toBe("self_harm");
+      expect(rows![0].excerpt).toBe("i want to die");
+      expect(rows![0].seenAt, "a new row is unread").toBeNull();
+    });
+
+    it("a parent cannot read another family's disclosures", async () => {
+      // The single most important isolation property in this table: the contents
+      // are a child's most private sentence, and a learner id is guessable.
+      await recordSafetySignal({
+        learnerId: learnerB, category: "harm_from_others", cue: "bullied", surface: "tutor",
+      });
+      expect(await safetySignalsForParent(PARENT_A, learnerB)).toBeNull();
+      expect(await markSafetySignalsSeen(PARENT_A, learnerB)).toBeNull();
+      // …and B's row is untouched by A having asked.
+      const bs = await safetySignalsForParent(PARENT_B, learnerB);
+      expect(bs).toHaveLength(1);
+      expect(bs![0].seenAt).toBeNull();
+    });
+
+    it("acknowledging marks unread rows seen without deleting them", async () => {
+      expect(await markSafetySignalsSeen(PARENT_A, learnerA)).toBe(1);
+      const rows = await safetySignalsForParent(PARENT_A, learnerA);
+      expect(rows, "history is kept, not cleared").toHaveLength(1);
+      expect(rows![0].seenAt).not.toBeNull();
+      // Idempotent: nothing left unseen, so nothing to mark.
+      expect(await markSafetySignalsSeen(PARENT_A, learnerA)).toBe(0);
+    });
+
+    it("returns newest first", async () => {
+      await recordSafetySignal({
+        learnerId: learnerA, category: "harm_from_others", cue: "someone-hurts-me",
+        excerpt: "my dad hits me", surface: "tutor",
+      });
+      const rows = await safetySignalsForParent(PARENT_A, learnerA);
+      expect(rows![0].excerpt).toBe("my dad hits me");
+    });
+
+    it("stores a null excerpt when none is passed", async () => {
+      // The column is nullable so that dropping the child's words is a one-line
+      // change in recordSafetySignal rather than a migration.
+      const rows = await safetySignalsForParent(PARENT_B, learnerB);
+      expect(rows![0].excerpt).toBeNull();
     });
   });
 

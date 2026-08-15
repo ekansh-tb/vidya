@@ -13,6 +13,7 @@ import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { DevicePanel } from "@/components/parent/device-panel";
 import { UsagePanel } from "@/components/parent/usage-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
+import { SafetyPanel } from "@/components/parent/safety-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { QUESTIONS } from "@/lib/content/questions";
@@ -174,6 +175,12 @@ export function ParentDashboard() {
 
         {selected && (
           <>
+            {/* Above everything, including the setup panels, and it renders
+                nothing when there is nothing to say. If a child has disclosed
+                self-harm or that someone is hurting them, that cannot sit below
+                a syllabus form — a parent must not have to scroll to find it. */}
+            <SafetyPanel key={`safety-${selected.id}`} learner={selected} />
+
             {/* Ownership first, then the code. Without a server row there is
                 nothing for a claim code to point at, which is why the link
                 panel used to say "nothing to link to" for every learner. */}

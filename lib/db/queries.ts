@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { getSql } from "./client";
+import { getSql, type Row } from "./client";
 import type { GameState, SubjectId } from "../types";
 
 /**
@@ -739,6 +739,106 @@ export async function usageForParent(
     capability: String(r.capability),
     count: Number(r.count),
   }));
+}
+
+// ---------------------------------------------------------- safety signals
+
+export type SafetySignalRow = {
+  id: string;
+  category: string;
+  cue: string;
+  excerpt: string | null;
+  surface: string;
+  createdAt: string;
+  seenAt: string | null;
+};
+
+function toSafetySignal(r: Row): SafetySignalRow {
+  return {
+    id: String(r.id),
+    category: String(r.category),
+    cue: String(r.cue),
+    excerpt: r.excerpt === null || r.excerpt === undefined ? null : String(r.excerpt),
+    surface: String(r.surface),
+    createdAt: new Date(r.created_at).toISOString(),
+    seenAt: r.seen_at ? new Date(r.seen_at).toISOString() : null,
+  };
+}
+
+/**
+ * Records a disclosure. Called from the tutor route, which knows the learner
+ * from their device token.
+ *
+ * NOT ownership-scoped, and that is correct rather than an oversight: the child
+ * is the writer here, and a child cannot prove they own themselves to a parent.
+ * The learner id comes from a device token the server already resolved, so the
+ * only thing this function can be made to write is a row against the learner
+ * the caller has proven it speaks for. Nothing is ever read back on this path.
+ */
+export async function recordSafetySignal(input: {
+  learnerId: string;
+  category: string;
+  cue: string;
+  excerpt?: string | null;
+  surface: string;
+}): Promise<void> {
+  const sql = getSql();
+  await sql`
+    insert into safety_signals (learner_id, category, cue, excerpt, surface)
+    values (${input.learnerId}, ${input.category}, ${input.cue},
+            ${input.excerpt ?? null}, ${input.surface})
+  `;
+}
+
+/**
+ * Disclosures for a learner this parent owns, newest first.
+ *
+ * Ownership-scoped like every other read in this file. This is the one parent
+ * surface that is allowed to be blunt rather than to opine: the
+ * analytics-opinion-only rule exists so that a quiz-cadence chart does not
+ * masquerade as a diagnosis, and it still holds for everything else — but
+ * "your child typed this sentence on this date" is a fact, not an inference,
+ * and softening it into "this might mean" would be its own kind of dishonesty.
+ * What the card must NOT do is interpret the sentence. See SafetyPanel.
+ */
+export async function safetySignalsForParent(
+  parentId: string,
+  learnerId: string,
+  limit = 20,
+): Promise<SafetySignalRow[] | null> {
+  const owned = await getLearnerForParent(parentId, learnerId);
+  if (!owned) return null;
+  const sql = getSql();
+  const rows = await sql`
+    select id, category, cue, excerpt, surface, created_at, seen_at
+    from safety_signals
+    where learner_id = ${learnerId}
+    order by created_at desc
+    limit ${Math.min(Math.max(1, limit), 100)}
+  `;
+  return rows.map(toSafetySignal);
+}
+
+/**
+ * Marks everything currently unseen for this learner as seen.
+ *
+ * Acknowledging does not delete: a single hard week reads very differently from
+ * the same sentence every Sunday for two months, and only a parent who can see
+ * the history can tell those apart.
+ */
+export async function markSafetySignalsSeen(
+  parentId: string,
+  learnerId: string,
+): Promise<number | null> {
+  const owned = await getLearnerForParent(parentId, learnerId);
+  if (!owned) return null;
+  const sql = getSql();
+  const rows = await sql`
+    update safety_signals set seen_at = now()
+    where learner_id = ${learnerId} and seen_at is null
+    returning id
+  `;
+  return rows.length;
 }
 
 // ------------------------------------------------------------------ audit
