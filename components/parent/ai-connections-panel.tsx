@@ -140,6 +140,14 @@ export function AiConnectionsPanel({
     return responseJson(response);
   }, []);
 
+  const validateRequest = useCallback(async (id: string): Promise<unknown> => {
+    const response = await fetch(
+      `/api/parent/ai-connections/${encodeURIComponent(id)}/validate`,
+      { method: "POST" },
+    );
+    return responseJson(response);
+  }, []);
+
   const createWithReverification = useReverification(createRequest);
   const startOpenRouterWithReverification = useReverification(startOpenRouterRequest);
   const deleteWithReverification = useReverification(deleteRequest);
@@ -230,6 +238,36 @@ export function AiConnectionsPanel({
       if (!cancelledNotice(error)) {
         setNotice({ kind: "error", text: "Could not remove this connection." });
       }
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const validateConnection = async (connection: AiConnectionSummary) => {
+    setBusyAction(`validate:${connection.id}`);
+    setNotice(null);
+    try {
+      const payload = await validateRequest(connection.id);
+      const updated = parseCreatedAiConnection(payload);
+      if (!updated) {
+        setNotice({
+          kind: "error",
+          text: apiErrorMessage(payload, "Could not recheck this connection."),
+        });
+        return;
+      }
+      setConnections((current) => current?.map((item) => (
+        item.id === updated.id ? updated : item
+      )) ?? [updated]);
+      onConnectionsChanged?.();
+      setNotice(updated.status === "active"
+        ? { kind: "success", text: `${updated.label} is active.` }
+        : {
+            kind: "error",
+            text: `${updated.label} still needs attention in the provider account.`,
+          });
+    } catch {
+      setNotice({ kind: "error", text: "Could not recheck this connection." });
     } finally {
       setBusyAction(null);
     }
@@ -461,6 +499,19 @@ export function AiConnectionsPanel({
                         ? `Last successful tutor use ${friendlyDate(connection.lastUsedAt)}`
                         : "No successful tutor use yet"}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => void validateConnection(connection)}
+                      disabled={busy}
+                      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-200 transition hover:border-neutral-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 disabled:opacity-50"
+                    >
+                      {busyAction === `validate:${connection.id}` ? (
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      {busyAction === `validate:${connection.id}` ? "Checking" : "Recheck connection"}
+                    </button>
                   </div>
                   {confirmDeleteId !== connection.id && (
                     <button
