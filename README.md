@@ -29,6 +29,7 @@ It started as a one-learner quiz app for a Grade 5 student and grew into a multi
   > while their copy says "Stage 7". Getting this backwards teaches a whole
   > year below where the learner actually is.
 - **AI Tutor (Miss Vidya)** — Claude Haiku via the AI SDK. System prompts are board-, grade-, and subject-aware, with scope guards so a Class 6 student doesn't get over-taught Class 7 content.
+- **Parent-controlled AI connections** - signed-in parents can store multiple encrypted OpenAI, Anthropic, Google Gemini, xAI, or OpenRouter credentials. OpenRouter account linking uses OAuth with PKCE, and sensitive changes require recent Clerk reverification.
 - **AI Principal (Daily Assembly)** — generates a thought-for-the-day, plan, and closing line per learner.
 - **Exam Prep mode** — generic ExamPack shape: overview → syllabus checklist (with weak/ok/strong confidence tagging) → flashcards → practice MCQs with model answers → common mistakes → morning cheat sheet.
 - **Music Room** — Sargam ↔ Western keyboard (`A S D F G H J K`), recording, named multi-composition library that persists.
@@ -68,6 +69,21 @@ Every key is optional for local poking:
 
 The learner app works without a database and keeps its local-first behavior. Linked-device sync, parent account linking, capability usage and safety signals require `DATABASE_URL` or `POSTGRES_URL` plus the migrations in `db/migrations/`.
 
+### Parent AI connection setup
+
+Parent-owned provider credentials are entered in the signed-in parent dashboard. They are encrypted server-side and are never placed in public environment variables or returned by the connection API. The deployment itself needs a credential-encryption key and database migrations:
+
+```bash
+openssl rand -base64 32
+# Put the output in AI_CREDENTIAL_ENCRYPTION_KEY, then set:
+# AI_CREDENTIAL_ENCRYPTION_KEY_VERSION=v1
+# AI_OAUTH_CALLBACK_ORIGIN=http://localhost:3000
+
+node --env-file=.env.local scripts/migrate.mjs
+```
+
+Use the deployment's exact HTTPS origin for `AI_OAUTH_CALLBACK_ORIGIN` in production. Keep previous decryption keys in `AI_CREDENTIAL_DECRYPTION_KEYS` during a planned key rotation. The current release implements connection storage, direct key validation, removal, and OpenRouter OAuth. Learner assignment, model selection, budget enforcement, and child tutor routing are still pending, so a saved connection alone does not enable AI for a child.
+
 ## Deployment
 
 Production is the Vercel project **`vidya`** (team `techbirdit-ej`), serving
@@ -81,10 +97,11 @@ Production is the Vercel project **`vidya`** (team `techbirdit-ej`), serving
 
 Two things are **not** configured on the live deployment:
 
-- **No AI key.** Neither `ANTHROPIC_API_KEY` nor `AI_GATEWAY_API_KEY` is set,
-  so the Daily Assembly serves its offline fallback (`source: "local"`) and
-  Miss Vidya shows the "ask a grown-up" message. The AI tutor does not work in
-  production until one is added.
+- **No operator AI fallback key.** Neither `ANTHROPIC_API_KEY` nor
+  `AI_GATEWAY_API_KEY` is set, so the Daily Assembly serves its offline fallback
+  (`source: "local"`) and Miss Vidya shows the connection notice. Parents can
+  save their own encrypted provider connections, but those connections are not
+  used by learner requests until assignment and budget controls are released.
 - **Clerk is using test keys** (`pk_test_` / `sk_test_`) on a real custom
   domain. Swap for live keys before treating this as a real product.
 
@@ -149,7 +166,7 @@ Exam packs are large. Importing `ALL_PACKS` on the client pulled every pack body
 Being explicit, because these shape what is safe to promise:
 
 - **Anonymous profiles remain local-first.** A learner can use Vidya without an account, so that profile stays in localStorage until a parent deliberately links it. Linked learners sync through Postgres with revision conflict handling, and families can export and merge a credential-stripped backup. The authenticated parent dashboard still reads learning reports from the browser it is opened on instead of loading the synced state remotely.
-- **AI is not configured in production.** The Daily Assembly uses its local fallback and Miss Vidya shows a connection notice. Tutor capability enforcement is implemented server-side, but minimum-rung enforcement stays in observe mode until `ENFORCE_TUTOR_RUNG=true`. The assembly endpoint remains anonymous, same-origin and rate-limited.
+- **Parent AI runtime routing is not live yet.** Parents can connect multiple encrypted provider credentials, including OpenRouter through OAuth, but cannot assign a connection, model, or budget to a learner yet. The current Tutor and Daily Assembly routes still use the optional operator-funded AI configuration. Without it, Daily Assembly uses its local fallback and Miss Vidya shows a connection notice.
 - **The verification ladder is only partly live.** Rung 2 is granted through a parent-issued, single-use claim code and a revocable device token. Rungs 1 and 3 are unreachable. Capability policies remain a static map; per-learner daily tutor usage is durable, while burst limits remain best-effort and per instance.
 - **Adaptation is incomplete.** Missed questions use a tested Leitner spaced-repetition schedule, but topic mastery is still a flat attempts/correct ratio. There is no diagnostic assessment, concept dependency graph or next-best-lesson engine.
 - **Curriculum depth is uneven.** The catalog models broad board and grade ranges, while authored packs currently concentrate on Cambridge Primary Grade 5, Cambridge Lower Secondary Grade 6, IGCSE Grade 10, ICSE Grades 6 and 7, and CBSE Grade 7. Known learner grades require exact pack matches, so Vidya does not silently substitute another grade's content.

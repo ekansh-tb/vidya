@@ -1,24 +1,19 @@
 import "server-only";
 
+import type {
+  AiConnectionSource,
+  AiConnectionStatus,
+  AiConnectionSummary,
+} from "../ai/connection-summary";
 import type { EncryptedCredential } from "../ai/credential-vault";
-import { isAiProviderId, type AiProviderId } from "../ai/provider-validation";
+import { isAiProviderId, type AiProviderId } from "../ai/providers";
 import { getSql, type Row } from "./client";
 
-export type AiConnectionSource = "api_key" | "oauth";
-export type AiConnectionStatus = "active" | "needs_attention";
-
-export type AiConnectionSummary = {
-  id: string;
-  provider: AiProviderId;
-  label: string;
-  source: AiConnectionSource;
-  status: AiConnectionStatus;
-  credentialHint: string;
-  lastValidatedAt: string;
-  lastUsedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
+export type {
+  AiConnectionSource,
+  AiConnectionStatus,
+  AiConnectionSummary,
+} from "../ai/connection-summary";
 
 export type AiConnectionCredential = {
   id: string;

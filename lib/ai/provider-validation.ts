@@ -1,31 +1,19 @@
 import "server-only";
 
-export const AI_PROVIDER_IDS = [
-  "openrouter",
-  "openai",
-  "anthropic",
-  "google",
-  "xai",
-] as const;
+import { type AiProviderId } from "./providers";
 
-export type AiProviderId = (typeof AI_PROVIDER_IDS)[number];
+export {
+  AI_PROVIDER_IDS,
+  AI_PROVIDER_LABELS,
+  isAiProviderId,
+  type AiProviderId,
+} from "./providers";
+
 export type CredentialValidation =
   | { kind: "valid" }
   | { kind: "needs_attention" }
   | { kind: "invalid" }
   | { kind: "unavailable" };
-
-export const AI_PROVIDER_LABELS: Record<AiProviderId, string> = {
-  openrouter: "OpenRouter",
-  openai: "OpenAI",
-  anthropic: "Anthropic",
-  google: "Google Gemini",
-  xai: "xAI",
-};
-
-export function isAiProviderId(value: unknown): value is AiProviderId {
-  return typeof value === "string" && AI_PROVIDER_IDS.includes(value as AiProviderId);
-}
 
 export function providerCredentialRequest(provider: AiProviderId, secret: string): Request {
   const headers = new Headers({ accept: "application/json" });
