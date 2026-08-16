@@ -16,6 +16,7 @@ import {
   getAiConnectionCredentialForParent,
   listAiConnectionsForParent,
   markAiConnectionUsedForParent,
+  replaceDirectAiConnectionCredentialForParent,
   setAiConnectionStatusForParent,
 } from "./ai-connections";
 import { upsertParent } from "./queries";
@@ -27,6 +28,7 @@ const PARENT_A = `${RUN}-parent-a`;
 const PARENT_B = `${RUN}-parent-b`;
 const CONNECTION_A = randomUUID();
 const CONNECTION_B = randomUUID();
+const CONNECTION_OAUTH = randomUUID();
 const encrypted = (value: string): EncryptedCredential => ({
   ciphertext: Buffer.from(value).toString("base64"),
   iv: Buffer.alloc(12, 1).toString("base64"),
@@ -60,6 +62,18 @@ d("AI connection database isolation", { timeout: DB_TIMEOUT_MS }, () => {
       status: "active",
       encryptedCredential: encrypted("parent-b-secret"),
       credentialFingerprint: "b".repeat(64),
+      credentialHint: "cret",
+    });
+    await createAiConnectionForParent({
+      id: CONNECTION_OAUTH,
+      parentId: PARENT_A,
+      actorId: PARENT_A,
+      provider: "openrouter",
+      label: `${RUN} OpenRouter linked`,
+      source: "oauth",
+      status: "active",
+      encryptedCredential: encrypted("parent-a-oauth-secret"),
+      credentialFingerprint: "d".repeat(64),
       credentialHint: "cret",
     });
   }, DB_TIMEOUT_MS);
@@ -148,6 +162,47 @@ d("AI connection database isolation", { timeout: DB_TIMEOUT_MS }, () => {
     expect(rows.map((row) => row.event)).toContain("created");
     expect(JSON.stringify(rows)).not.toContain("parent-a-secret");
     expect(JSON.stringify(rows)).not.toContain("encrypted");
+  });
+
+  it("replaces only the owner's direct credential and records a safe audit event", async () => {
+    const replacement = encrypted("parent-a-replacement");
+    const input = {
+      parentId: PARENT_A,
+      connectionId: CONNECTION_A,
+      actorId: PARENT_A,
+      status: "active" as const,
+      encryptedCredential: replacement,
+      credentialFingerprint: "e".repeat(64),
+      credentialHint: "5678",
+    };
+
+    expect(await replaceDirectAiConnectionCredentialForParent({
+      ...input,
+      connectionId: CONNECTION_B,
+    })).toBeNull();
+    expect(await replaceDirectAiConnectionCredentialForParent({
+      ...input,
+      connectionId: CONNECTION_OAUTH,
+    })).toBeNull();
+
+    const updated = await replaceDirectAiConnectionCredentialForParent(input);
+    expect(updated?.credentialHint).toBe("5678");
+    expect(updated?.lastUsedAt).toBeNull();
+
+    const stored = await getAiConnectionCredentialForParent(PARENT_A, CONNECTION_A);
+    expect(stored?.source).toBe("api_key");
+    expect(stored?.encryptedCredential).toEqual(replacement);
+
+    const sql = getSql();
+    const auditRows = await sql`
+      select event, detail from ai_connection_audit
+      where parent_id = ${PARENT_A} and connection_id = ${CONNECTION_A}
+      order by created_at desc
+      limit 1
+    `;
+    expect(auditRows[0]?.event).toBe("credential_replaced");
+    expect(JSON.stringify(auditRows)).not.toContain("parent-a-replacement");
+    expect(JSON.stringify(auditRows)).not.toContain(replacement.ciphertext);
   });
 
   it("records successful use only on the parent's active connection", async () => {

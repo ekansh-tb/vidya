@@ -35,6 +35,7 @@ type DirectConnectionInput = {
   label: string;
   credential: string;
 };
+type ReplaceConnectionInput = { id: string; credential: string };
 
 const fieldClass = "min-h-11 w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950";
 const primaryButtonClass = "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-violet-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-not-allowed disabled:opacity-50";
@@ -58,6 +59,7 @@ export function AiConnectionsPanel({
   const directLabelId = useId();
   const credentialId = useId();
   const oauthLabelId = useId();
+  const replacementCredentialId = useId();
   const [connections, setConnections] = useState<AiConnectionSummary[] | null>(null);
   const [loadingConnections, setLoadingConnections] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -68,6 +70,8 @@ export function AiConnectionsPanel({
   const [directLabel, setDirectLabel] = useState("");
   const [credential, setCredential] = useState("");
   const [oauthLabel, setOauthLabel] = useState("Family OpenRouter");
+  const [replacementForId, setReplacementForId] = useState<string | null>(null);
+  const [replacementCredential, setReplacementCredential] = useState("");
 
   const loadConnections = useCallback(async () => {
     setLoadingConnections(true);
@@ -148,9 +152,24 @@ export function AiConnectionsPanel({
     return responseJson(response);
   }, []);
 
+  const replaceRequest = useCallback(async (
+    input: ReplaceConnectionInput,
+  ): Promise<unknown> => {
+    const response = await fetch(
+      `/api/parent/ai-connections/${encodeURIComponent(input.id)}`,
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ credential: input.credential }),
+      },
+    );
+    return responseJson(response);
+  }, []);
+
   const createWithReverification = useReverification(createRequest);
   const startOpenRouterWithReverification = useReverification(startOpenRouterRequest);
   const deleteWithReverification = useReverification(deleteRequest);
+  const replaceWithReverification = useReverification(replaceRequest);
 
   const cancelledNotice = (error: unknown): boolean => {
     if (!isReverificationCancelledError(error)) return false;
@@ -268,6 +287,49 @@ export function AiConnectionsPanel({
           });
     } catch {
       setNotice({ kind: "error", text: "Could not recheck this connection." });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const replaceCredential = async (
+    event: React.FormEvent<HTMLFormElement>,
+    connection: AiConnectionSummary,
+  ) => {
+    event.preventDefault();
+    const credential = replacementCredential.trim();
+    if (!credential) {
+      setNotice({ kind: "error", text: "Enter the replacement provider key." });
+      return;
+    }
+    setBusyAction(`replace:${connection.id}`);
+    setNotice(null);
+    try {
+      const payload = await replaceWithReverification({ id: connection.id, credential });
+      const updated = parseCreatedAiConnection(payload);
+      if (!updated) {
+        setNotice({
+          kind: "error",
+          text: apiErrorMessage(payload, "Could not replace this provider key."),
+        });
+        return;
+      }
+      setConnections((current) => current?.map((item) => (
+        item.id === updated.id ? updated : item
+      )) ?? [updated]);
+      setReplacementForId(null);
+      setReplacementCredential("");
+      onConnectionsChanged?.();
+      setNotice(updated.status === "active"
+        ? { kind: "success", text: `${updated.label} now uses the replacement key.` }
+        : {
+            kind: "error",
+            text: `${updated.label} saved the key but the provider account needs attention.`,
+          });
+    } catch (error) {
+      if (!cancelledNotice(error)) {
+        setNotice({ kind: "error", text: "Could not replace this provider key." });
+      }
     } finally {
       setBusyAction(null);
     }
@@ -499,19 +561,36 @@ export function AiConnectionsPanel({
                         ? `Last successful tutor use ${friendlyDate(connection.lastUsedAt)}`
                         : "No successful tutor use yet"}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => void validateConnection(connection)}
-                      disabled={busy}
-                      className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-200 transition hover:border-neutral-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 disabled:opacity-50"
-                    >
-                      {busyAction === `validate:${connection.id}` ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void validateConnection(connection)}
+                        disabled={busy}
+                        className="inline-flex min-h-11 items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-200 transition hover:border-neutral-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 disabled:opacity-50"
+                      >
+                        {busyAction === `validate:${connection.id}` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                        )}
+                        {busyAction === `validate:${connection.id}` ? "Checking" : "Recheck connection"}
+                      </button>
+                      {connection.source === "api_key" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReplacementForId(connection.id);
+                            setReplacementCredential("");
+                            setNotice(null);
+                          }}
+                          disabled={busy}
+                          className="inline-flex min-h-11 items-center gap-2 rounded-md border border-neutral-700 px-3 py-2 text-xs font-bold text-neutral-200 transition hover:border-neutral-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 disabled:opacity-50"
+                        >
+                          <KeyRound className="h-4 w-4" aria-hidden="true" />
+                          Replace key
+                        </button>
                       )}
-                      {busyAction === `validate:${connection.id}` ? "Checking" : "Recheck connection"}
-                    </button>
+                    </div>
                   </div>
                   {confirmDeleteId !== connection.id && (
                     <button
@@ -525,6 +604,56 @@ export function AiConnectionsPanel({
                     </button>
                   )}
                 </div>
+
+                {replacementForId === connection.id && (
+                  <form
+                    onSubmit={(event) => void replaceCredential(event, connection)}
+                    className="mt-4 rounded-md border border-violet-900/60 bg-violet-950/20 p-3"
+                  >
+                    <label
+                      htmlFor={`${replacementCredentialId}-${connection.id}`}
+                      className="block text-xs font-bold text-violet-100"
+                    >
+                      Replacement {AI_PROVIDER_LABELS[connection.provider]} key
+                    </label>
+                    <p id={`${replacementCredentialId}-${connection.id}-help`} className="mt-1 text-xs leading-relaxed text-neutral-400">
+                      The old key is replaced only after the provider accepts this one. Tutor use stays blocked if the provider account needs attention.
+                    </p>
+                    <input
+                      id={`${replacementCredentialId}-${connection.id}`}
+                      type="password"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={replacementCredential}
+                      onChange={(event) => setReplacementCredential(event.target.value)}
+                      aria-describedby={`${replacementCredentialId}-${connection.id}-help`}
+                      className={`${fieldClass} mt-3`}
+                    />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="submit"
+                        disabled={busy || !replacementCredential.trim()}
+                        className={primaryButtonClass}
+                      >
+                        {busyAction === `replace:${connection.id}` && (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        )}
+                        {busyAction === `replace:${connection.id}` ? "Replacing" : "Save replacement key"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setReplacementForId(null);
+                          setReplacementCredential("");
+                        }}
+                        className={secondaryButtonClass}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
 
                 {confirmDeleteId === connection.id && (
                   <div className="mt-4 rounded-md border border-red-900/60 bg-red-950/25 p-3">
