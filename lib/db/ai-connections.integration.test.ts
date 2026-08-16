@@ -15,6 +15,7 @@ import {
   deleteAiConnectionForParent,
   getAiConnectionCredentialForParent,
   listAiConnectionsForParent,
+  markAiConnectionUsedForParent,
   setAiConnectionStatusForParent,
 } from "./ai-connections";
 import { upsertParent } from "./queries";
@@ -147,6 +148,15 @@ d("AI connection database isolation", { timeout: DB_TIMEOUT_MS }, () => {
     expect(rows.map((row) => row.event)).toContain("created");
     expect(JSON.stringify(rows)).not.toContain("parent-a-secret");
     expect(JSON.stringify(rows)).not.toContain("encrypted");
+  });
+
+  it("records successful use only on the parent's active connection", async () => {
+    expect(await markAiConnectionUsedForParent(PARENT_A, CONNECTION_B)).toBe(false);
+    expect(await markAiConnectionUsedForParent(PARENT_A, CONNECTION_A)).toBe(true);
+
+    const mine = (await listAiConnectionsForParent(PARENT_A))
+      .find((connection) => connection.id === CONNECTION_A);
+    expect(mine?.lastUsedAt).not.toBeNull();
   });
 
   it("lets the owner update status and delete their connection", async () => {

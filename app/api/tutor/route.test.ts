@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   decryptCredential: vi.fn(),
   createParentTutorModel: vi.fn(),
   setAiConnectionStatusForParent: vi.fn(),
+  markAiConnectionUsedForParent: vi.fn(),
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -61,6 +62,7 @@ vi.mock("@/lib/ai/parent-tutor-model", () => ({
 }));
 vi.mock("@/lib/db/ai-connections", () => ({
   setAiConnectionStatusForParent: mocks.setAiConnectionStatusForParent,
+  markAiConnectionUsedForParent: mocks.markAiConnectionUsedForParent,
 }));
 
 import { POST } from "./route";
@@ -124,6 +126,7 @@ beforeEach(() => {
   mocks.decryptCredential.mockReturnValue("parent-provider-secret");
   mocks.createParentTutorModel.mockReturnValue({ provider: "test", modelId: "test-model" });
   mocks.setAiConnectionStatusForParent.mockResolvedValue({ status: "needs_attention" });
+  mocks.markAiConnectionUsedForParent.mockResolvedValue(true);
   mocks.convertToModelMessages.mockResolvedValue([{ role: "user", content: "question" }]);
   mocks.bumpCapabilityUsage.mockResolvedValue({ allowed: true, used: 1, perDay: 12 });
   mocks.toUIMessageStreamResponse.mockReturnValue(new Response("generated", { status: 200 }));
@@ -305,5 +308,21 @@ describe("POST parent-controlled tutor runtime", () => {
       "needs_attention",
       "system:tutor-runtime",
     );
+  });
+
+  it("records the parent connection only after a successful generation", async () => {
+    await POST(request());
+    const options = mocks.streamText.mock.calls[0][0];
+
+    expect(mocks.markAiConnectionUsedForParent).not.toHaveBeenCalled();
+    await options.onFinish({ finishReason: "stop" });
+    expect(mocks.markAiConnectionUsedForParent).toHaveBeenCalledWith(
+      "parent-a",
+      runtimePolicy.connectionId,
+    );
+
+    mocks.markAiConnectionUsedForParent.mockClear();
+    await options.onFinish({ finishReason: "error" });
+    expect(mocks.markAiConnectionUsedForParent).not.toHaveBeenCalled();
   });
 });

@@ -456,6 +456,11 @@ export function AiConnectionsPanel({
                     <p className="mt-1 text-[11px] text-neutral-600">
                       Checked {friendlyDate(connection.lastValidatedAt)}
                     </p>
+                    <p className="mt-1 text-[11px] text-neutral-600">
+                      {connection.lastUsedAt
+                        ? `Last successful tutor use ${friendlyDate(connection.lastUsedAt)}`
+                        : "No successful tutor use yet"}
+                    </p>
                   </div>
                   {confirmDeleteId !== connection.id && (
                     <button
