@@ -179,7 +179,10 @@ export async function setLearnerAiAssignmentForParent(input: {
       from learners l
       join ai_tutor_profiles p
         on p.id = ${input.tutorProfileId} and p.parent_id = ${input.parentId}
+      join ai_provider_connections c
+        on c.id = p.connection_id and c.parent_id = p.parent_id
       where l.id = ${input.learnerId} and l.parent_id = ${input.parentId}
+        and (${input.enabled} = false or c.status = 'active')
       on conflict (learner_id) do update set
         tutor_profile_id = excluded.tutor_profile_id,
         enabled = excluded.enabled,

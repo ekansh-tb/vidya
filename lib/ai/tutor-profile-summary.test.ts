@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseAiTutorProfilesResponse,
   parseCreatedAiTutorProfile,
+  parseLearnerAiAssignmentResponse,
   parseLearnerAiAssignmentSummary,
 } from "./tutor-profile-summary";
 
@@ -57,5 +58,9 @@ describe("AI tutor profile response parsing", () => {
       ...assignment,
       dailyTurnLimit: 61,
     })).toBeNull();
+    expect(parseLearnerAiAssignmentResponse({ assignment })).toEqual(assignment);
+    expect(parseLearnerAiAssignmentResponse({ assignment: null })).toBeNull();
+    expect(parseLearnerAiAssignmentResponse({ assignment: { ...assignment, enabled: "yes" } }))
+      .toBeUndefined();
   });
 });
