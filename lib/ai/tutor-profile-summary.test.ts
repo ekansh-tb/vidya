@@ -7,6 +7,7 @@ import {
   parseLearnerAiAssignmentDeletion,
   parseLearnerAiAssignmentResponse,
   parseLearnerAiAssignmentSummary,
+  parsePausedAiAssignments,
 } from "./tutor-profile-summary";
 
 const profile = {
@@ -104,5 +105,13 @@ describe("AI tutor profile response parsing", () => {
     expect(parseLearnerAiAssignmentDeletion({ deleted: true })).toBe(true);
     expect(parseLearnerAiAssignmentDeletion({ deleted: false })).toBe(false);
     expect(parseLearnerAiAssignmentDeletion({ deleted: "false" })).toBeNull();
+  });
+
+  it("parses a non-negative family pause count", () => {
+    expect(parsePausedAiAssignments({ pausedAssignments: 0 })).toBe(0);
+    expect(parsePausedAiAssignments({ pausedAssignments: 3 })).toBe(3);
+    expect(parsePausedAiAssignments({ pausedAssignments: -1 })).toBeNull();
+    expect(parsePausedAiAssignments({ pausedAssignments: 1.5 })).toBeNull();
+    expect(parsePausedAiAssignments({ pausedAssignments: "3" })).toBeNull();
   });
 });

@@ -266,6 +266,31 @@ export async function getLearnerAiAssignmentForParent(
   return rows.length ? learnerAiAssignmentSummaryFromRow(rows[0]) : null;
 }
 
+export async function pauseAllLearnerAiAssignmentsForParent(
+  parentId: string,
+  actorId: string,
+): Promise<number> {
+  const sql = getSql();
+  const rows = await sql`
+    with changed as (
+      update learner_ai_assignments
+      set enabled = false
+      where parent_id = ${parentId} and enabled = true
+      returning parent_id, tutor_profile_id, learner_id
+    ), audited as (
+      insert into ai_tutor_policy_audit (
+        parent_id, tutor_profile_id, learner_id, event, actor, detail
+      )
+      select parent_id, tutor_profile_id, learner_id, 'assignment_set', ${actorId},
+             jsonb_build_object('enabled', false, 'reason', 'family_pause')
+      from changed
+      returning id
+    )
+    select count(*)::int as paused_count from changed
+  `;
+  return Number(rows[0]?.paused_count ?? 0);
+}
+
 /**
  * Resolve the enabled tutor policy for a learner identity already authenticated
  * by a device token or learner session. Every join repeats the same parent id,

@@ -20,6 +20,7 @@ import {
   getLearnerAiAssignmentForParent,
   getLearnerAiTutorRuntimePolicy,
   listAiTutorProfilesForParent,
+  pauseAllLearnerAiAssignmentsForParent,
   removeLearnerAiAssignmentForParent,
   setLearnerAiAssignmentForParent,
 } from "./ai-tutor-policies";
@@ -244,6 +245,48 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
     expect(await removeLearnerAiAssignmentForParent(PARENT_B, learnerA, PARENT_B)).toBe(false);
     expect(await deleteAiTutorProfileForParent(PARENT_B, PROFILE_A, PARENT_B)).toBe(false);
     expect(await getLearnerAiAssignmentForParent(PARENT_A, learnerA)).not.toBeNull();
+  });
+
+  it("pauses every enabled assignment for one parent without touching another family", async () => {
+    await setLearnerAiAssignmentForParent({
+      parentId: PARENT_B,
+      actorId: PARENT_B,
+      learnerId: learnerB,
+      tutorProfileId: PROFILE_B,
+      enabled: true,
+      dailyTurnLimit: 18,
+      maxOutputTokens: 400,
+    });
+
+    expect(await pauseAllLearnerAiAssignmentsForParent(PARENT_A, PARENT_A)).toBe(1);
+    expect(await getLearnerAiAssignmentForParent(PARENT_A, learnerA))
+      .toMatchObject({ enabled: false });
+    expect(await getLearnerAiAssignmentForParent(PARENT_B, learnerB))
+      .toMatchObject({ enabled: true });
+    expect(await getLearnerAiTutorRuntimePolicy(learnerA)).toBeNull();
+    expect(await pauseAllLearnerAiAssignmentsForParent(PARENT_A, PARENT_A)).toBe(0);
+
+    const sql = getSql();
+    const auditRows = await sql`
+      select event, detail from ai_tutor_policy_audit
+      where parent_id = ${PARENT_A} and learner_id = ${learnerA}
+      order by created_at desc
+      limit 1
+    `;
+    expect(auditRows[0]).toMatchObject({
+      event: "assignment_set",
+      detail: { enabled: false, reason: "family_pause" },
+    });
+
+    await setLearnerAiAssignmentForParent({
+      parentId: PARENT_A,
+      actorId: PARENT_A,
+      learnerId: learnerA,
+      tutorProfileId: PROFILE_A,
+      enabled: true,
+      dailyTurnLimit: 24,
+      maxOutputTokens: 600,
+    });
   });
 
   it("records policy changes without credential material", async () => {

@@ -17,6 +17,7 @@ import { SafetyPanel } from "@/components/parent/safety-panel";
 import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
 import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
+import { FamilyAiPausePanel } from "@/components/parent/family-ai-pause-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
@@ -246,6 +247,10 @@ export function ParentDashboard() {
           key={`ai-tutors-${activeParentId}`}
           refreshToken={aiPolicyRevision}
           onProfilesChanged={() => setAiPolicyRevision((revision) => revision + 1)}
+        />
+        <FamilyAiPausePanel
+          key={`family-ai-pause-${activeParentId}`}
+          onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
         />
         <LearnerAiTutorAccessPanel
           key={`learner-ai-access-${activeParentId}`}
