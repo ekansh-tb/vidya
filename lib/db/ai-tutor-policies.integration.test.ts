@@ -10,7 +10,10 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { EncryptedCredential } from "../ai/credential-vault";
 import { dbConfigured, getSql } from "./client";
-import { createAiConnectionForParent } from "./ai-connections";
+import {
+  createAiConnectionForParent,
+  setAiConnectionStatusForParent,
+} from "./ai-connections";
 import {
   createAiTutorProfileForParent,
   deleteAiTutorProfileForParent,
@@ -174,6 +177,42 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
       dailyTurnLimit: 61,
       maxOutputTokens: 900,
     })).rejects.toThrow();
+  });
+
+  it("does not enable a tutor when its provider connection needs attention", async () => {
+    await setAiConnectionStatusForParent(
+      PARENT_A,
+      CONNECTION_A,
+      "needs_attention",
+      PARENT_A,
+    );
+    try {
+      expect(await setLearnerAiAssignmentForParent({
+        parentId: PARENT_A,
+        actorId: PARENT_A,
+        learnerId: learnerA,
+        tutorProfileId: PROFILE_A,
+        enabled: true,
+        dailyTurnLimit: 24,
+        maxOutputTokens: 600,
+      })).toBeNull();
+      expect(await setLearnerAiAssignmentForParent({
+        parentId: PARENT_A,
+        actorId: PARENT_A,
+        learnerId: learnerA,
+        tutorProfileId: PROFILE_A,
+        enabled: false,
+        dailyTurnLimit: 24,
+        maxOutputTokens: 600,
+      })).toMatchObject({ enabled: false });
+    } finally {
+      await setAiConnectionStatusForParent(
+        PARENT_A,
+        CONNECTION_A,
+        "active",
+        PARENT_A,
+      );
+    }
   });
 
   it("does not remove another parent's assignment or tutor profile", async () => {

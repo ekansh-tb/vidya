@@ -112,3 +112,12 @@ export function parseLearnerAiAssignmentSummary(
     updatedAt,
   };
 }
+
+export function parseLearnerAiAssignmentResponse(
+  value: unknown,
+): LearnerAiAssignmentSummary | null | undefined {
+  const payload = recordOf(value);
+  if (!payload || !("assignment" in payload)) return undefined;
+  if (payload.assignment === null) return null;
+  return parseLearnerAiAssignmentSummary(payload.assignment) ?? undefined;
+}
