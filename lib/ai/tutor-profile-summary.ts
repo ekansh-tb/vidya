@@ -167,3 +167,10 @@ export function parseLearnerAiAssignmentDeletion(value: unknown): boolean | null
   const deleted = recordOf(value)?.deleted;
   return typeof deleted === "boolean" ? deleted : null;
 }
+
+export function parsePausedAiAssignments(value: unknown): number | null {
+  const paused = recordOf(value)?.pausedAssignments;
+  return typeof paused === "number" && Number.isSafeInteger(paused) && paused >= 0
+    ? paused
+    : null;
+}
