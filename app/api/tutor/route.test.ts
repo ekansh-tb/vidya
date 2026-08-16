@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   streamText: vi.fn(),
+  toUIMessageStreamResponse: vi.fn(),
   convertToModelMessages: vi.fn(),
   isSameOrigin: vi.fn(),
   clientKey: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   credentialAad: vi.fn(),
   decryptCredential: vi.fn(),
   createParentTutorModel: vi.fn(),
+  setAiConnectionStatusForParent: vi.fn(),
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -56,6 +58,9 @@ vi.mock("@/lib/ai/credential-vault", () => ({
 }));
 vi.mock("@/lib/ai/parent-tutor-model", () => ({
   createParentTutorModel: mocks.createParentTutorModel,
+}));
+vi.mock("@/lib/db/ai-connections", () => ({
+  setAiConnectionStatusForParent: mocks.setAiConnectionStatusForParent,
 }));
 
 import { POST } from "./route";
@@ -118,10 +123,12 @@ beforeEach(() => {
   mocks.credentialAad.mockReturnValue("parent-bound-aad");
   mocks.decryptCredential.mockReturnValue("parent-provider-secret");
   mocks.createParentTutorModel.mockReturnValue({ provider: "test", modelId: "test-model" });
+  mocks.setAiConnectionStatusForParent.mockResolvedValue({ status: "needs_attention" });
   mocks.convertToModelMessages.mockResolvedValue([{ role: "user", content: "question" }]);
   mocks.bumpCapabilityUsage.mockResolvedValue({ allowed: true, used: 1, perDay: 12 });
+  mocks.toUIMessageStreamResponse.mockReturnValue(new Response("generated", { status: 200 }));
   mocks.streamText.mockReturnValue({
-    toUIMessageStreamResponse: () => new Response("generated", { status: 200 }),
+    toUIMessageStreamResponse: mocks.toUIMessageStreamResponse,
   });
 });
 
@@ -233,5 +240,70 @@ describe("POST parent-controlled tutor runtime", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("Try again later.");
     expect(mocks.streamText).not.toHaveBeenCalled();
+  });
+
+  it("marks only credential failures for parent attention and masks stream details", async () => {
+    await POST(request());
+    const options = mocks.streamText.mock.calls[0][0];
+    const credentialError = new Error("wrapper", {
+      cause: new (await import("ai")).APICallError({
+        message: "secret provider detail",
+        url: "https://provider.example/v1/messages",
+        requestBodyValues: {},
+        statusCode: 401,
+      }),
+    });
+
+    await options.onError({ error: credentialError });
+
+    expect(mocks.setAiConnectionStatusForParent).toHaveBeenCalledWith(
+      "parent-a",
+      runtimePolicy.connectionId,
+      "needs_attention",
+      "system:tutor-runtime",
+    );
+    expect(mocks.toUIMessageStreamResponse).toHaveBeenCalledWith({
+      onError: expect.any(Function),
+    });
+    const mask = mocks.toUIMessageStreamResponse.mock.calls[0][0].onError;
+    expect(mask(credentialError)).toBe("Miss Vidya is unavailable right now. Try again later.");
+  });
+
+  it("keeps the connection active for transient provider failures", async () => {
+    await POST(request());
+    const options = mocks.streamText.mock.calls[0][0];
+    const transientError = new (await import("ai")).APICallError({
+      message: "provider busy",
+      url: "https://provider.example/v1/messages",
+      requestBodyValues: {},
+      statusCode: 429,
+    });
+
+    await options.onError({ error: transientError });
+
+    expect(mocks.setAiConnectionStatusForParent).not.toHaveBeenCalled();
+  });
+
+  it("handles a credential failure thrown before streaming starts", async () => {
+    const credentialError = new (await import("ai")).APICallError({
+      message: "provider rejected credential",
+      url: "https://provider.example/v1/messages",
+      requestBodyValues: {},
+      statusCode: 403,
+    });
+    mocks.streamText.mockImplementation(() => {
+      throw credentialError;
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Miss Vidya is unavailable right now." });
+    expect(mocks.setAiConnectionStatusForParent).toHaveBeenCalledWith(
+      "parent-a",
+      runtimePolicy.connectionId,
+      "needs_attention",
+      "system:tutor-runtime",
+    );
   });
 });
