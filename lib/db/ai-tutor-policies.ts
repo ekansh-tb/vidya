@@ -37,6 +37,12 @@ function requiredString(value: unknown, field: string): string {
   return value;
 }
 
+function timestampString(value: unknown, field: string): string {
+  if (typeof value === "string" && value.length > 0) return value;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
+  throw new Error(`Database row contains an invalid ${field}.`);
+}
+
 export function aiTutorProfileSummaryFromRow(row: Row): AiTutorProfileSummary {
   if (!isAiProviderId(row.provider)) {
     throw new Error("Database row contains an unsupported AI provider.");
@@ -55,8 +61,8 @@ export function aiTutorProfileSummaryFromRow(row: Row): AiTutorProfileSummary {
     provider: row.provider,
     connectionStatus: row.connection_status,
     modelId: row.model_id,
-    createdAt: requiredString(row.created_at, "created timestamp"),
-    updatedAt: requiredString(row.updated_at, "updated timestamp"),
+    createdAt: timestampString(row.created_at, "created timestamp"),
+    updatedAt: timestampString(row.updated_at, "updated timestamp"),
   };
 }
 
@@ -75,8 +81,8 @@ export function learnerAiAssignmentSummaryFromRow(row: Row): LearnerAiAssignment
     enabled: row.enabled,
     dailyTurnLimit,
     maxOutputTokens,
-    createdAt: requiredString(row.created_at, "created timestamp"),
-    updatedAt: requiredString(row.updated_at, "updated timestamp"),
+    createdAt: timestampString(row.created_at, "created timestamp"),
+    updatedAt: timestampString(row.updated_at, "updated timestamp"),
   };
 }
 
