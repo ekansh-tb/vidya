@@ -1,11 +1,18 @@
 import { requireParent } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
 import { usageForParent } from "@/lib/db/queries";
+import { getLearnerAiAssignmentForParent } from "@/lib/db/ai-tutor-policies";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import type { CapabilityKey } from "@/lib/auth/types";
 import { isSameOrigin } from "@/lib/api/guard";
 
 export const runtime = "nodejs";
+
+const privateHeaders = { "cache-control": "private, no-store" };
+
+function json(body: unknown, status = 200) {
+  return Response.json(body, { status, headers: privateHeaders });
+}
 
 /**
  * How much of each metered capability this learner has used, per day.
@@ -19,28 +26,30 @@ export const runtime = "nodejs";
  * 404 rather than 403 so another family's learner id is never confirmed.
  */
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  if (!isSameOrigin(req)) return Response.json({ error: "Forbidden" }, { status: 403 });
-  if (!dbConfigured()) return Response.json({ error: "Storage unavailable" }, { status: 503 });
+  if (!isSameOrigin(req)) return json({ error: "Forbidden" }, 403);
+  if (!dbConfigured()) return json({ error: "Storage unavailable" }, 503);
 
   const parent = await requireParent();
-  if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!parent) return json({ error: "Unauthorized" }, 401);
 
   const { id } = await ctx.params;
   try {
     const rows = await usageForParent(parent.userId, id, 7);
-    if (!rows) return Response.json({ error: "Not found" }, { status: 404 });
+    if (!rows) return json({ error: "Not found" }, 404);
+    const assignment = await getLearnerAiAssignmentForParent(parent.userId, id);
 
-    // The ceilings come from the policy map rather than the database, so the
-    // number a parent reads is the one actually being enforced right now — not
-    // whatever was in force on the day the row was written.
+    // Shared capabilities still use the capability map. Full tutor usage is
+    // different because each learner has a parent-selected daily limit.
     const limits: Record<string, number> = {};
     for (const key of Object.keys(CAPABILITY_POLICIES) as CapabilityKey[]) {
+      if (key === "ai.tutor.full") continue;
       const perDay = CAPABILITY_POLICIES[key].rateLimit?.perDay;
       if (perDay) limits[key] = perDay;
     }
-    return Response.json({ usage: rows, limits });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/usage] failed:", e);
-    return Response.json({ error: "Could not read usage" }, { status: 500 });
+    if (assignment) limits["ai.tutor.full"] = assignment.dailyTurnLimit;
+    return json({ usage: rows, limits });
+  } catch {
+    console.error("[api/parent/learners/:id/usage] failed");
+    return json({ error: "Could not read usage" }, 500);
   }
 }
