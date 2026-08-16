@@ -19,7 +19,10 @@ import {
 } from "@/lib/ai/credential-vault";
 import { createParentTutorModel } from "@/lib/ai/parent-tutor-model";
 import { isProviderCredentialError } from "@/lib/ai/provider-errors";
-import { setAiConnectionStatusForParent } from "@/lib/db/ai-connections";
+import {
+  markAiConnectionUsedForParent,
+  setAiConnectionStatusForParent,
+} from "@/lib/db/ai-connections";
 import {
   detectCrisisInMessages, supportMessage, escalates, excerptFor,
   DESPAIR_PROMPT_HINT,
@@ -568,6 +571,17 @@ export async function POST(req: Request) {
       messages: modelMessages,
       maxOutputTokens: runtimePolicy.maxOutputTokens,
       onError: ({ error }) => handleProviderError(error, runtimePolicy),
+      onFinish: async ({ finishReason }) => {
+        if (finishReason === "error") return;
+        try {
+          await markAiConnectionUsedForParent(
+            runtimePolicy.parentId,
+            runtimePolicy.connectionId,
+          );
+        } catch {
+          console.error("[api/tutor] provider last-used update failed");
+        }
+      },
     });
     return result.toUIMessageStreamResponse({
       onError: () => "Miss Vidya is unavailable right now. Try again later.",

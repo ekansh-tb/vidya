@@ -170,6 +170,22 @@ export async function setAiConnectionStatusForParent(
   return rows.length ? aiConnectionSummaryFromRow(rows[0]) : null;
 }
 
+export async function markAiConnectionUsedForParent(
+  parentId: string,
+  connectionId: string,
+): Promise<boolean> {
+  const sql = getSql();
+  const rows = await sql`
+    update ai_provider_connections
+    set last_used_at = now()
+    where id = ${connectionId}
+      and parent_id = ${parentId}
+      and status = 'active'
+    returning id
+  `;
+  return rows.length > 0;
+}
+
 export async function deleteAiConnectionForParent(
   parentId: string,
   connectionId: string,
