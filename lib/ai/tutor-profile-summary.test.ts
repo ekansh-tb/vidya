@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  isDeletedAiTutorProfile,
+  parseAiTutorModelsResponse,
   parseAiTutorProfilesResponse,
   parseCreatedAiTutorProfile,
   parseLearnerAiAssignmentResponse,
@@ -62,5 +64,38 @@ describe("AI tutor profile response parsing", () => {
     expect(parseLearnerAiAssignmentResponse({ assignment: null })).toBeNull();
     expect(parseLearnerAiAssignmentResponse({ assignment: { ...assignment, enabled: "yes" } }))
       .toBeUndefined();
+  });
+
+  it("parses a bounded, unique model catalog", () => {
+    const payload = {
+      provider: "openrouter",
+      models: [
+        { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5" },
+        { id: "openai/gpt-5-mini", name: "GPT-5 mini" },
+      ],
+      truncated: false,
+    };
+    expect(parseAiTutorModelsResponse(payload)).toEqual(payload);
+    expect(parseAiTutorModelsResponse({ ...payload, provider: "unknown" })).toBeNull();
+    expect(parseAiTutorModelsResponse({
+      ...payload,
+      models: [...payload.models, payload.models[0]],
+    })).toBeNull();
+    expect(parseAiTutorModelsResponse({
+      ...payload,
+      models: [{ id: "model with spaces", name: "Bad" }],
+    })).toBeNull();
+    expect(parseAiTutorModelsResponse({
+      ...payload,
+      models: Array.from({ length: 501 }, (_, index) => ({
+        id: `model-${index}`,
+        name: `Model ${index}`,
+      })),
+    })).toBeNull();
+  });
+
+  it("parses tutor deletion without accepting loose truthy values", () => {
+    expect(isDeletedAiTutorProfile({ deleted: true })).toBe(true);
+    expect(isDeletedAiTutorProfile({ deleted: "true" })).toBe(false);
   });
 });

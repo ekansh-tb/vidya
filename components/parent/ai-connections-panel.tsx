@@ -49,7 +49,11 @@ function friendlyDate(value: string): string {
   return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleString();
 }
 
-export function AiConnectionsPanel() {
+export function AiConnectionsPanel({
+  onConnectionsChanged,
+}: {
+  onConnectionsChanged?: () => void;
+}) {
   const providerId = useId();
   const directLabelId = useId();
   const credentialId = useId();
@@ -195,6 +199,7 @@ export function AiConnectionsPanel() {
       setConnections((current) => [created, ...(current ?? []).filter((item) => item.id !== created.id)]);
       setDirectLabel("");
       setCredential("");
+      onConnectionsChanged?.();
       setNotice({
         kind: "success",
         text: `${AI_PROVIDER_LABELS[created.provider]} is connected. No learner can use it until you assign it.`,
@@ -219,6 +224,7 @@ export function AiConnectionsPanel() {
       }
       setConnections((current) => current?.filter((item) => item.id !== connection.id) ?? []);
       setConfirmDeleteId(null);
+      onConnectionsChanged?.();
       setNotice({ kind: "success", text: `${connection.label} was removed.` });
     } catch (error) {
       if (!cancelledNotice(error)) {
