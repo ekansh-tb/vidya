@@ -36,6 +36,23 @@ describe("AI tutor policy persistence shapes", () => {
     expect(JSON.stringify(profile)).not.toContain("never-public");
   });
 
+  it("normalizes Date objects returned by the Neon driver", () => {
+    const createdAt = new Date(profileRow.created_at);
+    const updatedAt = new Date("2026-08-16T11:00:00.000Z");
+    expect(aiTutorProfileSummaryFromRow({
+      ...profileRow,
+      created_at: createdAt,
+      updated_at: updatedAt,
+    })).toMatchObject({
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+    });
+    expect(() => aiTutorProfileSummaryFromRow({
+      ...profileRow,
+      created_at: new Date(Number.NaN),
+    })).toThrow(/invalid created timestamp/);
+  });
+
   it("fails closed for an unsupported provider, status, or model id", () => {
     expect(() => aiTutorProfileSummaryFromRow({ ...profileRow, provider: "unknown" }))
       .toThrow(/unsupported AI provider/);
