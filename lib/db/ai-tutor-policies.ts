@@ -1,34 +1,21 @@
 import "server-only";
 
-import { isAiProviderId, type AiProviderId } from "../ai/providers";
+import { isAiProviderId } from "../ai/providers";
 import {
   isTutorDailyTurnLimit,
   isTutorMaxOutputTokens,
   isTutorModelId,
 } from "../ai/tutor-policy";
+import type {
+  AiTutorProfileSummary,
+  LearnerAiAssignmentSummary,
+} from "../ai/tutor-profile-summary";
 import { getSql, type Row } from "./client";
 
-export type AiTutorProfileSummary = {
-  id: string;
-  name: string;
-  connectionId: string;
-  connectionLabel: string;
-  provider: AiProviderId;
-  connectionStatus: "active" | "needs_attention";
-  modelId: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type LearnerAiAssignmentSummary = {
-  learnerId: string;
-  tutorProfileId: string;
-  enabled: boolean;
-  dailyTurnLimit: number;
-  maxOutputTokens: number;
-  createdAt: string;
-  updatedAt: string;
-};
+export type {
+  AiTutorProfileSummary,
+  LearnerAiAssignmentSummary,
+} from "../ai/tutor-profile-summary";
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.length === 0) {

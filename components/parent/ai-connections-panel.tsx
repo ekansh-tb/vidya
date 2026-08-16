@@ -467,7 +467,7 @@ export function AiConnectionsPanel() {
                 {confirmDeleteId === connection.id && (
                   <div className="mt-4 rounded-md border border-red-900/60 bg-red-950/25 p-3">
                     <p className="text-xs leading-relaxed text-red-100">
-                      Remove {connection.label}? Future learner assignments using it will need another connection.
+                      Remove {connection.label}? This also removes AI tutor profiles and learner assignments that use it.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
