@@ -15,6 +15,7 @@ import { UsagePanel } from "@/components/parent/usage-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
 import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
+import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
@@ -49,6 +50,7 @@ export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [aiConnectionsRevision, setAiConnectionsRevision] = useState(0);
   const [remoteReportCache, setRemoteReportCache] = useState<{
     parentId: string | null;
     reports: Record<string, ParentReportLoadState | { status: "denied" }>;
@@ -235,7 +237,14 @@ export function ParentDashboard() {
           </div>
         </div>
 
-        <AiConnectionsPanel />
+        <AiConnectionsPanel
+          key={`ai-connections-${activeParentId}`}
+          onConnectionsChanged={() => setAiConnectionsRevision((revision) => revision + 1)}
+        />
+        <AiTutorControlsPanel
+          key={`ai-tutors-${activeParentId}`}
+          refreshToken={aiConnectionsRevision}
+        />
 
         {/* Empty state — no learners yet */}
         {learners.length === 0 && pendingLinkedLearners > 0 && (

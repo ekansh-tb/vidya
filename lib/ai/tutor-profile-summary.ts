@@ -27,6 +27,17 @@ export type LearnerAiAssignmentSummary = {
   updatedAt: string;
 };
 
+export type AiTutorModelSummary = {
+  id: string;
+  name: string;
+};
+
+export type AiTutorModelsResponse = {
+  provider: AiProviderId;
+  models: AiTutorModelSummary[];
+  truncated: boolean;
+};
+
 function recordOf(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -83,6 +94,36 @@ export function parseAiTutorProfilesResponse(value: unknown): AiTutorProfileSumm
 export function parseCreatedAiTutorProfile(value: unknown): AiTutorProfileSummary | null {
   const payload = recordOf(value);
   return payload ? parseAiTutorProfileSummary(payload.profile) : null;
+}
+
+export function parseAiTutorModelsResponse(value: unknown): AiTutorModelsResponse | null {
+  const payload = recordOf(value);
+  if (
+    !payload
+    || !isAiProviderId(payload.provider)
+    || !Array.isArray(payload.models)
+    || typeof payload.truncated !== "boolean"
+    || payload.models.length > 500
+  ) {
+    return null;
+  }
+
+  const models: AiTutorModelSummary[] = [];
+  const seen = new Set<string>();
+  for (const value of payload.models) {
+    const model = recordOf(value);
+    const id = model && isTutorModelId(model.id) ? model.id : null;
+    const name = model ? stringOf(model.name) : null;
+    if (!id || !name || name.length > 160 || seen.has(id)) return null;
+    seen.add(id);
+    models.push({ id, name });
+  }
+
+  return { provider: payload.provider, models, truncated: payload.truncated };
+}
+
+export function isDeletedAiTutorProfile(value: unknown): boolean {
+  return recordOf(value)?.deleted === true;
 }
 
 export function parseLearnerAiAssignmentSummary(
