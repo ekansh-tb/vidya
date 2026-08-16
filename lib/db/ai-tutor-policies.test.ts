@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aiTutorProfileSummaryFromRow,
   learnerAiAssignmentSummaryFromRow,
+  learnerAiTutorRuntimePolicyFromRow,
 } from "./ai-tutor-policies";
 
 const profileRow = {
@@ -97,5 +98,51 @@ describe("AI tutor policy persistence shapes", () => {
       created_at: profileRow.created_at,
       updated_at: profileRow.updated_at,
     })).toThrow(/invalid tutor enabled state/);
+  });
+
+  it("maps a server-only learner runtime policy with encrypted credential material", () => {
+    expect(learnerAiTutorRuntimePolicyFromRow({
+      learner_id: "33333333-3333-4333-8333-333333333333",
+      parent_id: "parent-private",
+      tutor_profile_id: profileRow.id,
+      connection_id: profileRow.connection_id,
+      provider: "openrouter",
+      model_id: profileRow.model_id,
+      daily_turn_limit: 20,
+      max_output_tokens: 500,
+      credential_ciphertext: "private-ciphertext",
+      credential_iv: "private-iv",
+      credential_tag: "private-tag",
+      credential_key_version: "v1",
+    })).toEqual({
+      learnerId: "33333333-3333-4333-8333-333333333333",
+      parentId: "parent-private",
+      tutorProfileId: profileRow.id,
+      connectionId: profileRow.connection_id,
+      provider: "openrouter",
+      modelId: profileRow.model_id,
+      dailyTurnLimit: 20,
+      maxOutputTokens: 500,
+      encryptedCredential: {
+        ciphertext: "private-ciphertext",
+        iv: "private-iv",
+        tag: "private-tag",
+        keyVersion: "v1",
+      },
+    });
+    expect(() => learnerAiTutorRuntimePolicyFromRow({
+      learner_id: "33333333-3333-4333-8333-333333333333",
+      parent_id: "parent-private",
+      tutor_profile_id: profileRow.id,
+      connection_id: profileRow.connection_id,
+      provider: "unknown",
+      model_id: profileRow.model_id,
+      daily_turn_limit: 20,
+      max_output_tokens: 500,
+      credential_ciphertext: "private-ciphertext",
+      credential_iv: "private-iv",
+      credential_tag: "private-tag",
+      credential_key_version: "v1",
+    })).toThrow(/unsupported AI provider/);
   });
 });

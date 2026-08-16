@@ -18,6 +18,7 @@ import {
   createAiTutorProfileForParent,
   deleteAiTutorProfileForParent,
   getLearnerAiAssignmentForParent,
+  getLearnerAiTutorRuntimePolicy,
   listAiTutorProfilesForParent,
   removeLearnerAiAssignmentForParent,
   setLearnerAiAssignmentForParent,
@@ -179,6 +180,20 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
     })).rejects.toThrow();
   });
 
+  it("resolves only the authenticated learner's enabled runtime policy", async () => {
+    expect(await getLearnerAiTutorRuntimePolicy(learnerA)).toMatchObject({
+      learnerId: learnerA,
+      parentId: PARENT_A,
+      tutorProfileId: PROFILE_A,
+      connectionId: CONNECTION_A,
+      provider: "openrouter",
+      modelId: "anthropic/claude-haiku-4.5",
+      dailyTurnLimit: 24,
+      maxOutputTokens: 600,
+    });
+    expect(await getLearnerAiTutorRuntimePolicy(learnerB)).toBeNull();
+  });
+
   it("does not enable a tutor when its provider connection needs attention", async () => {
     await setAiConnectionStatusForParent(
       PARENT_A,
@@ -187,6 +202,7 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
       PARENT_A,
     );
     try {
+      expect(await getLearnerAiTutorRuntimePolicy(learnerA)).toBeNull();
       expect(await setLearnerAiAssignmentForParent({
         parentId: PARENT_A,
         actorId: PARENT_A,
@@ -212,6 +228,15 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
         "active",
         PARENT_A,
       );
+      await setLearnerAiAssignmentForParent({
+        parentId: PARENT_A,
+        actorId: PARENT_A,
+        learnerId: learnerA,
+        tutorProfileId: PROFILE_A,
+        enabled: true,
+        dailyTurnLimit: 24,
+        maxOutputTokens: 600,
+      });
     }
   });
 

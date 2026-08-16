@@ -1,6 +1,7 @@
 import "server-only";
 
-import { isAiProviderId } from "../ai/providers";
+import type { EncryptedCredential } from "../ai/credential-vault";
+import { isAiProviderId, type AiProviderId } from "../ai/providers";
 import {
   isTutorDailyTurnLimit,
   isTutorMaxOutputTokens,
@@ -16,6 +17,18 @@ export type {
   AiTutorProfileSummary,
   LearnerAiAssignmentSummary,
 } from "../ai/tutor-profile-summary";
+
+export type LearnerAiTutorRuntimePolicy = {
+  learnerId: string;
+  parentId: string;
+  tutorProfileId: string;
+  connectionId: string;
+  provider: AiProviderId;
+  modelId: string;
+  dailyTurnLimit: number;
+  maxOutputTokens: number;
+  encryptedCredential: EncryptedCredential;
+};
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || value.length === 0) {
@@ -70,6 +83,36 @@ export function learnerAiAssignmentSummaryFromRow(row: Row): LearnerAiAssignment
     maxOutputTokens,
     createdAt: timestampString(row.created_at, "created timestamp"),
     updatedAt: timestampString(row.updated_at, "updated timestamp"),
+  };
+}
+
+export function learnerAiTutorRuntimePolicyFromRow(row: Row): LearnerAiTutorRuntimePolicy {
+  const dailyTurnLimit = Number(row.daily_turn_limit);
+  const maxOutputTokens = Number(row.max_output_tokens);
+  if (!isTutorDailyTurnLimit(dailyTurnLimit) || !isTutorMaxOutputTokens(maxOutputTokens)) {
+    throw new Error("Database row contains invalid tutor limits.");
+  }
+  if (!isAiProviderId(row.provider)) {
+    throw new Error("Database row contains an unsupported AI provider.");
+  }
+  if (!isTutorModelId(row.model_id)) {
+    throw new Error("Database row contains an invalid tutor model id.");
+  }
+  return {
+    learnerId: requiredString(row.learner_id, "learner id"),
+    parentId: requiredString(row.parent_id, "parent id"),
+    tutorProfileId: requiredString(row.tutor_profile_id, "tutor profile id"),
+    connectionId: requiredString(row.connection_id, "AI connection id"),
+    provider: row.provider,
+    modelId: row.model_id,
+    dailyTurnLimit,
+    maxOutputTokens,
+    encryptedCredential: {
+      ciphertext: requiredString(row.credential_ciphertext, "credential ciphertext"),
+      iv: requiredString(row.credential_iv, "credential iv"),
+      tag: requiredString(row.credential_tag, "credential tag"),
+      keyVersion: requiredString(row.credential_key_version, "credential key version"),
+    },
   };
 }
 
@@ -221,6 +264,36 @@ export async function getLearnerAiAssignmentForParent(
     limit 1
   `;
   return rows.length ? learnerAiAssignmentSummaryFromRow(rows[0]) : null;
+}
+
+/**
+ * Resolve the enabled tutor policy for a learner identity already authenticated
+ * by a device token or learner session. Every join repeats the same parent id,
+ * so a corrupted cross-family reference cannot expose another parent's key.
+ */
+export async function getLearnerAiTutorRuntimePolicy(
+  learnerId: string,
+): Promise<LearnerAiTutorRuntimePolicy | null> {
+  const sql = getSql();
+  const rows = await sql`
+    select a.learner_id, a.parent_id, a.tutor_profile_id,
+           a.daily_turn_limit, a.max_output_tokens,
+           p.model_id, c.id as connection_id, c.provider,
+           c.credential_ciphertext, c.credential_iv,
+           c.credential_tag, c.credential_key_version
+    from learner_ai_assignments a
+    join learners l
+      on l.id = a.learner_id and l.parent_id = a.parent_id
+    join ai_tutor_profiles p
+      on p.id = a.tutor_profile_id and p.parent_id = a.parent_id
+    join ai_provider_connections c
+      on c.id = p.connection_id and c.parent_id = a.parent_id
+    where a.learner_id = ${learnerId}
+      and a.enabled = true
+      and c.status = 'active'
+    limit 1
+  `;
+  return rows.length ? learnerAiTutorRuntimePolicyFromRow(rows[0]) : null;
 }
 
 export async function removeLearnerAiAssignmentForParent(
