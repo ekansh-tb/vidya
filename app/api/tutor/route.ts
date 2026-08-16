@@ -18,6 +18,8 @@ import {
   decryptCredential,
 } from "@/lib/ai/credential-vault";
 import { createParentTutorModel } from "@/lib/ai/parent-tutor-model";
+import { isProviderCredentialError } from "@/lib/ai/provider-errors";
+import { setAiConnectionStatusForParent } from "@/lib/db/ai-connections";
 import {
   detectCrisisInMessages, supportMessage, escalates, excerptFor,
   DESPAIR_PROMPT_HINT,
@@ -318,6 +320,24 @@ function staticReply(text: string, init?: { headers?: Record<string, string> }):
   return createUIMessageStreamResponse({ stream, headers: init?.headers });
 }
 
+async function handleProviderError(
+  error: unknown,
+  policy: { parentId: string; connectionId: string },
+) {
+  console.error("[api/tutor] provider generation failed");
+  if (!isProviderCredentialError(error)) return;
+  try {
+    await setAiConnectionStatusForParent(
+      policy.parentId,
+      policy.connectionId,
+      "needs_attention",
+      "system:tutor-runtime",
+    );
+  } catch {
+    console.error("[api/tutor] provider connection status update failed");
+  }
+}
+
 export async function POST(req: Request) {
   // 1. Same-origin. A browser always sends Origin/Referer cross-origin, so a
   //    request with neither is not a browser.
@@ -547,12 +567,13 @@ export async function POST(req: Request) {
         (despairHint ? `\n\n${despairHint}` : ""),
       messages: modelMessages,
       maxOutputTokens: runtimePolicy.maxOutputTokens,
+      onError: ({ error }) => handleProviderError(error, runtimePolicy),
     });
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      onError: () => "Miss Vidya is unavailable right now. Try again later.",
+    });
   } catch (e) {
-    // Log server-side; never echo provider/internal error text to the client —
-    // it can carry model names, key hints and stack detail.
-    console.error("[api/tutor] generation failed:", e);
+    await handleProviderError(e, runtimePolicy);
     return Response.json({ error: "Miss Vidya is unavailable right now." }, { status: 500 });
   }
 }
