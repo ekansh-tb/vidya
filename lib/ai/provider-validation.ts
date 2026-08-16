@@ -60,16 +60,24 @@ export async function validateProviderCredential(
   provider: AiProviderId,
   secret: string,
   fetcher: typeof fetch = fetch,
+  timeoutMs = 10_000,
 ): Promise<CredentialValidation> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetcher(providerCredentialRequest(provider, secret));
+    const request = new Request(providerCredentialRequest(provider, secret), {
+      signal: controller.signal,
+    });
+    const response = await fetcher(request);
     if (response.ok) return { kind: "valid" };
     if (response.status === 401 || response.status === 403) return { kind: "invalid" };
-    if (response.status === 402 || response.status === 429) {
+    if (response.status === 402) {
       return { kind: "needs_attention" };
     }
     return { kind: "unavailable" };
   } catch {
     return { kind: "unavailable" };
+  } finally {
+    clearTimeout(timeout);
   }
 }

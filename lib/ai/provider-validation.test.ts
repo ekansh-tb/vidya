@@ -39,11 +39,11 @@ describe("provider credential validation", () => {
     });
   });
 
-  it("treats rate-limited credentials as real but needing attention", async () => {
+  it("does not treat a rate limit as proof that a credential is valid", async () => {
     const limitedFetch = vi.fn(async () => new Response("{}", { status: 429 }));
 
     await expect(validateProviderCredential("anthropic", "secret", limitedFetch)).resolves.toEqual({
-      kind: "needs_attention",
+      kind: "unavailable",
     });
   });
 
@@ -57,5 +57,25 @@ describe("provider credential validation", () => {
 
     expect(result).toEqual({ kind: "invalid" });
     expect(JSON.stringify(result)).not.toContain("secret provider detail");
+  });
+
+  it("aborts a stalled provider validation request", async () => {
+    vi.useFakeTimers();
+    const fetcher: typeof fetch = async (input) => {
+      const request = input instanceof Request ? input : new Request(input);
+      return new Promise<Response>((_resolve, reject) => {
+        request.signal.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"));
+        });
+      });
+    };
+
+    try {
+      const validation = validateProviderCredential("openai", "secret", fetcher, 5);
+      await vi.advanceTimersByTimeAsync(5);
+      await expect(validation).resolves.toEqual({ kind: "unavailable" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
