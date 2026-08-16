@@ -66,9 +66,8 @@ export async function resolveCapabilityServer(
  * USE THIS ONE FROM THE KID-FACING ROUTES. `resolveIdentity()` alone reads a
  * Clerk session, and the child does not have one — they hold a device token
  * (see redeemClaimCode). So resolving without the request would classify every
- * linked learner as anonymous, put them at rung 0, and mean that turning on
- * ENFORCE_TUTOR_RUNG switched the tutor off for exactly the families who had
- * done the linking properly.
+ * linked learner as anonymous and put them at rung 0, blocking the parent's
+ * tutor assignment for exactly the families who linked properly.
  */
 export async function resolveCapabilityForRequest(
   key: CapabilityKey,

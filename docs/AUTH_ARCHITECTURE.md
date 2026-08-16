@@ -329,13 +329,12 @@ Known gaps, re-checked 2026-08-16:
   route resolves and bills only `ai.tutor.full`. Making rung 1 reachable would
   not activate the limited tier by itself; the route would also need explicit
   limited-tier resolution and billing.
-- **`/api/tutor`'s RUNG check runs in OBSERVE MODE.** It resolves the real
-  capability from the request's device token, logs the decision, and allows it
-  anyway. `ENFORCE_TUTOR_RUNG=true` makes that half binding — safe once the
-  family has linked a device, and not before, since it switches the tutor off
-  for every unlinked learner at once. The parent's explicit switch-off is
-  honoured immediately either way: an adult who turned a feature off has made
-  a decision, and there is no transition to ease them through.
+- **`/api/tutor` requires parent control for normal turns.** The route resolves
+  the linked learner from the request's device token, requires the full tutor
+  capability, loads that learner's enabled parent assignment, decrypts the
+  selected provider credential only on the server, and enforces the parent's
+  daily-turn and output-token limits. The deterministic crisis reply remains
+  available before every identity, policy, budget, and provider gate.
 - **The capability hook is still a UX affordance, not a boundary.** It reads
   `verifiedLevel` out of localStorage, which a child can edit. The boundary is
   the server: the device token, and the rung column behind it.

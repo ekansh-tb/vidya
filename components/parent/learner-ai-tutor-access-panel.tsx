@@ -533,7 +533,7 @@ export function LearnerAiTutorAccessPanel({
       )}
 
       <p className="mt-5 text-xs leading-relaxed text-neutral-500">
-        This saves the parent policy. The learner tutor will enforce it after the child-runtime integration is released.
+        This policy is enforced on the learner&apos;s next tutor turn. Pausing access or changing limits takes effect on their next request.
       </p>
     </section>
   );
