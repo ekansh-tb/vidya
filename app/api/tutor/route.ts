@@ -8,15 +8,20 @@ import {
   clientKey, rateLimit, rateHeaders, LIMITS,
 } from "@/lib/api/guard";
 import { resolveCapabilityForRequest } from "@/lib/capabilities/server";
-import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { bumpCapabilityUsage, recordSafetySignal } from "@/lib/db/queries";
-import { identityFromRequest, type Identity } from "@/lib/auth/session";
+import { identityFromRequest } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
+import { getLearnerAiTutorRuntimePolicy } from "@/lib/db/ai-tutor-policies";
+import {
+  configuredCredentialKeyring,
+  credentialAad,
+  decryptCredential,
+} from "@/lib/ai/credential-vault";
+import { createParentTutorModel } from "@/lib/ai/parent-tutor-model";
 import {
   detectCrisisInMessages, supportMessage, escalates, excerptFor,
   DESPAIR_PROMPT_HINT,
 } from "@/lib/safety/crisis";
-import { aiProviderConfigured, resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
 
 export const maxDuration = 30;
 export const runtime = "nodejs";
@@ -417,54 +422,31 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3b. Capability check, server-side.
+  // 5. Capability and parent policy checks, server-side.
   //
   // Resolved FROM THE REQUEST, because the child has no Clerk session — they
   // hold a device token minted when a parent's claim code was redeemed. See
   // resolveCapabilityForRequest.
   //
-  // Two things can deny here, and they are different:
-  //   - below_min_rung — this device has never been linked by an adult.
-  //   - feature_disabled — an adult linked it and then switched Miss Vidya
-  //     off for this child specifically. That one is honoured even in observe
-  //     mode: a parent who turns a feature off has made a decision, and there
-  //     is no transition to ease them through.
-  //
-  // The rung half stays in OBSERVE MODE by default. Enforcing it before a
-  // family has linked would switch the tutor off for them mid-term, so
-  // ENFORCE_TUTOR_RUNG=true is the single visible change that makes it binding.
-  const ENFORCE_TUTOR_RUNG = process.env.ENFORCE_TUTOR_RUNG === "true";
-  // Held outside the try so the usage accounting below can bill the turn to
-  // the learner this request proved it is. Stays null if identity resolution
-  // threw, in which case nobody is billed — an accounting gap is the right
-  // failure here, since the alternative is charging the wrong child.
-  let tutorIdentity: Identity | null = null;
+  // Normal tutor turns now require a linked learner and a parent's enabled
+  // assignment. Parent-disabled and unlinked callers get the same neutral
+  // response, so the child is never told which adult setting caused it.
+  let learnerId: string;
   try {
     const decision = await resolveCapabilityForRequest("ai.tutor.full", req);
-    tutorIdentity = decision.identity;
-    if (!decision.allowed) {
-      if (decision.reason === "feature_disabled") {
-        // Deliberately not "your parent turned this off". Per
-        // [[parent-invisible-config]] the child is never told a grown-up
-        // configured something — disabled features are absent, not blamed.
-        return Response.json(
-          { error: "Miss Vidya isn't available right now." },
-          { status: 403, headers: rateHeaders(verdict, RATE.limit) },
-        );
-      }
-      if (ENFORCE_TUTOR_RUNG) {
-        return Response.json(
-          { error: "Miss Vidya isn't open for this account yet." },
-          { status: 403, headers: rateHeaders(verdict, RATE.limit) },
-        );
-      }
-      console.info(
-        `[api/tutor] would deny (${decision.reason}, identity=${decision.identity.kind}) — observe mode`,
+    if (!decision.allowed || decision.identity.kind !== "learner") {
+      return Response.json(
+        { error: "Miss Vidya isn't available right now." },
+        { status: 403, headers: rateHeaders(verdict, RATE.limit) },
       );
     }
-  } catch (e) {
-    // Never let an identity lookup take the tutor down.
-    console.error("[api/tutor] capability check failed, allowing:", e);
+    learnerId = decision.identity.learner.id;
+  } catch {
+    console.error("[api/tutor] capability check failed");
+    return staticReply(
+      "Miss Vidya isn't available right now. Try again later.",
+      { headers: rateHeaders(verdict, RATE.limit) },
+    );
   }
 
   if (totalChars(messages) > LIMITS.maxCharsTotal) {
@@ -474,53 +456,89 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3c. The capability's own declared daily allowance, per learner.
-  //
-  // CAPABILITY_POLICIES has carried `rateLimit: { perDay, burst }` since the
-  // capability map shipped and nothing read it — the limiter above is keyed on
-  // a spoofable IP, is per-instance, and resets on deploy, so a *daily* budget
-  // expressed there was fiction. This one is keyed on the learner and lives in
-  // Postgres, which only became possible once a device could prove which child
-  // it speaks for.
-  //
-  // Runs last, after the cheap validity checks, so a malformed request never
-  // spends a child's allowance. A database failure allows the turn: an
-  // accounting problem must not become an outage in the middle of homework.
-  if (tutorIdentity?.kind === "learner") {
-    const perDay = CAPABILITY_POLICIES["ai.tutor.full"].rateLimit?.perDay;
-    if (perDay) {
-      try {
-        const usage = await bumpCapabilityUsage(tutorIdentity.learner.id, "ai.tutor.full", perDay);
-        if (!usage.allowed) {
-          return Response.json(
-            {
-              // Kid-legible, and it says when rather than just no. Nothing here
-              // mentions a parent or a setting — see parent-invisible-config.
-              error: "Miss Vidya has done a lot of thinking today. She'll be ready again tomorrow.",
-            },
-            { status: 429, headers: rateHeaders(verdict, RATE.limit) },
-          );
-        }
-      } catch (e) {
-        console.error("[api/tutor] usage accounting failed, allowing:", e);
-      }
-    }
+  let runtimePolicy;
+  try {
+    runtimePolicy = await getLearnerAiTutorRuntimePolicy(learnerId);
+  } catch {
+    console.error("[api/tutor] parent AI policy lookup failed");
+    return staticReply(
+      "Miss Vidya isn't available right now. Try again later.",
+      { headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
+  if (!runtimePolicy) {
+    return staticReply(
+      "Miss Vidya isn't available right now.",
+      { headers: rateHeaders(verdict, RATE.limit) },
+    );
   }
 
-  if (!aiProviderConfigured()) {
+  let model;
+  try {
+    const credential = decryptCredential(
+      runtimePolicy.encryptedCredential,
+      credentialAad({
+        parentId: runtimePolicy.parentId,
+        connectionId: runtimePolicy.connectionId,
+        provider: runtimePolicy.provider,
+      }),
+      configuredCredentialKeyring(),
+    );
+    model = createParentTutorModel({
+      provider: runtimePolicy.provider,
+      modelId: runtimePolicy.modelId,
+      credential,
+    });
+  } catch {
+    console.error("[api/tutor] parent AI credential preparation failed");
     return staticReply(
-      "Miss Vidya isn't connected yet. An AI provider needs setting up in Vidya. Ask a grown-up.",
+      "Miss Vidya isn't available right now. Try again later.",
+      { headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
+
+  let modelMessages;
+  try {
+    // The zod schema is deliberately permissive about UIMessage internals (the
+    // AI SDK evolves its part kinds); it enforces role, shape and size. The
+    // cast hands the validated value back to the SDK's own type.
+    modelMessages = await convertToModelMessages(messages as unknown as UIMessage[]);
+  } catch {
+    return Response.json(
+      { error: "That conversation could not be read. Start a fresh chat with Miss Vidya." },
+      { status: 400, headers: rateHeaders(verdict, RATE.limit) },
+    );
+  }
+
+  // Spend the learner's parent-defined daily allowance only after every local
+  // validation and credential check succeeds, and immediately before provider
+  // execution. Accounting failure is closed because bypassing it could spend
+  // money beyond the parent's chosen limit.
+  try {
+    const usage = await bumpCapabilityUsage(
+      learnerId,
+      "ai.tutor.full",
+      runtimePolicy.dailyTurnLimit,
+    );
+    if (!usage.allowed) {
+      return Response.json(
+        {
+          error: "Miss Vidya has done a lot of thinking today. She'll be ready again tomorrow.",
+        },
+        { status: 429, headers: rateHeaders(verdict, RATE.limit) },
+      );
+    }
+  } catch {
+    console.error("[api/tutor] usage accounting failed");
+    return staticReply(
+      "Miss Vidya isn't available right now. Try again later.",
       { headers: rateHeaders(verdict, RATE.limit) },
     );
   }
 
   try {
-    // The zod schema is deliberately permissive about UIMessage internals (the
-    // AI SDK evolves its part kinds); it enforces role, shape and size. The
-    // cast hands the validated value back to the SDK's own type.
-    const modelMessages = await convertToModelMessages(messages as unknown as UIMessage[]);
     const result = streamText({
-      model: resolveVidyaModel(VIDYA_MODELS.haiku),
+      model,
       // Appended at the call site rather than threaded through systemPrompt's
       // four branches: the hint is about this one turn, not about who the
       // learner is, and it must read as the last instruction the model sees.
@@ -528,8 +546,7 @@ export async function POST(req: Request) {
         systemPrompt({ subject, topic, name, grade, board, school, interests, careNote, aiTone }) +
         (despairHint ? `\n\n${despairHint}` : ""),
       messages: modelMessages,
-      maxOutputTokens: 900,
-      temperature: 0.6,
+      maxOutputTokens: runtimePolicy.maxOutputTokens,
     });
     return result.toUIMessageStreamResponse();
   } catch (e) {

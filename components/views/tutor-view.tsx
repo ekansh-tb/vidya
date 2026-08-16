@@ -113,9 +113,8 @@ function TutorRoom({
       new DefaultChatTransport({
         api: "/api/tutor",
         // How this device proves it was linked by an adult. Without it the
-        // server sees an anonymous caller at rung 0 — fine today, but it is
-        // what ENFORCE_TUTOR_RUNG will read, and it is how the parent's
-        // per-learner switch-off reaches the endpoint at all.
+        // server sees an anonymous caller at rung 0. The server requires this
+        // identity before it can apply the parent's tutor assignment and limits.
         headers: learner.deviceToken ? { [DEVICE_TOKEN_HEADER]: learner.deviceToken } : undefined,
         body: () => ({
           subject: subjectId,
