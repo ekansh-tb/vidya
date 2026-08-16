@@ -19,6 +19,12 @@ import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import type { LearnerProfile } from "@/lib/types";
 import {
+  chooseParentReportState,
+  parseParentReportResponse,
+  type ParentReportDecision,
+  type ParentReportLoadState,
+} from "@/lib/parent-report";
+import {
   RecentReflections,
   WellnessSignals,
   CapabilityMap,
@@ -30,9 +36,9 @@ import {
 /**
  * Parent Clerk dashboard.
  *
- * Same-device contract: a parent signing into /parent on the same browser
- * the kid uses sees that kid's localStorage learners. Cross-device sync
- * is a future commit (needs a DB).
+ * Linked-profile contract: the learner roster comes from this browser. When a
+ * profile has a remote id, reporting fields prefer its validated server sync,
+ * while an explicit local fallback keeps the dashboard useful offline.
  *
  * The dashboard mirrors the in-kid-app parent room (parent-view.tsx) but
  * with no PIN gate (Clerk auth IS the gate), a learner picker, and a
@@ -42,14 +48,118 @@ export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [remoteReportCache, setRemoteReportCache] = useState<{
+    parentId: string | null;
+    reports: Record<string, ParentReportLoadState | { status: "denied" }>;
+  }>({ parentId: null, reports: {} });
 
   useEffect(() => { hydrate(); }, [hydrate]);
 
-  const learners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
-  const selected = useMemo(
-    () => (selectedId && profiles.learners[selectedId]) || learners[0] || null,
-    [selectedId, profiles.learners, learners],
+  const activeParentId = isSignedIn ? user?.id ?? null : null;
+  const localLearners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
+  const activeReports = useMemo(
+    () => remoteReportCache.parentId === activeParentId ? remoteReportCache.reports : {},
+    [activeParentId, remoteReportCache],
   );
+  // A linked local profile is not parent-visible until the ownership-scoped
+  // endpoint confirms it for this Clerk account. This prevents an account
+  // switch on a shared browser from briefly revealing another parent's child.
+  const learners = useMemo(() => localLearners.filter((learner) => {
+    if (!learner.remoteId) return true;
+    const report = activeReports[learner.remoteId];
+    return report?.status !== "loading" && report?.status !== "denied" && Boolean(report);
+  }), [activeReports, localLearners]);
+  const selected = useMemo(
+    () => learners.find((learner) => learner.id === selectedId) || learners[0] || null,
+    [learners, selectedId],
+  );
+  const linkedRemoteIdsKey = useMemo(
+    () => [...new Set(localLearners.map((learner) => learner.remoteId).filter((id): id is string => Boolean(id)))]
+      .sort()
+      .join(","),
+    [localLearners],
+  );
+
+  useEffect(() => {
+    if (!isLoaded || !hydrated) return;
+    if (!activeParentId) {
+      setRemoteReportCache({ parentId: null, reports: {} });
+      return;
+    }
+    if (!linkedRemoteIdsKey) {
+      setRemoteReportCache({ parentId: activeParentId, reports: {} });
+      return;
+    }
+
+    const controller = new AbortController();
+    const capturedParentId = activeParentId;
+    const remoteIds = linkedRemoteIdsKey.split(",");
+    setRemoteReportCache({
+      parentId: capturedParentId,
+      reports: Object.fromEntries(remoteIds.map((id) => [id, { status: "loading" }])),
+    });
+
+    remoteIds.forEach((remoteId) => {
+      void (async () => {
+        try {
+          const response = await fetch(`/api/parent/learners/${encodeURIComponent(remoteId)}/state`, {
+            signal: controller.signal,
+            cache: "no-store",
+          });
+          const raw: unknown = await response.json().catch(() => null);
+          const parsed = response.ok ? parseParentReportResponse(raw) : null;
+          if (controller.signal.aborted) return;
+
+          let next: ParentReportLoadState | { status: "denied" } = { status: "unavailable" };
+          if (parsed?.status === "ready") {
+            next = {
+              status: "ready",
+              state: parsed.state,
+              revision: parsed.revision,
+              updatedAt: parsed.updatedAt,
+            };
+          } else if (parsed?.status === "absent") {
+            next = { status: "absent" };
+          } else if ([401, 403, 404].includes(response.status)) {
+            next = { status: "denied" };
+          }
+
+          setRemoteReportCache((current) => current.parentId === capturedParentId
+            ? { ...current, reports: { ...current.reports, [remoteId]: next } }
+            : current);
+        } catch {
+          if (controller.signal.aborted) return;
+          setRemoteReportCache((current) => current.parentId === capturedParentId
+            ? {
+                ...current,
+                reports: {
+                  ...current.reports,
+                  [remoteId]: { status: "unavailable" },
+                },
+              }
+            : current);
+        }
+      })();
+    });
+
+    return () => controller.abort();
+  }, [activeParentId, hydrated, isLoaded, linkedRemoteIdsKey]);
+
+  const selectedReport = useMemo(() => {
+    if (!selected) return null;
+    const remote = selected.remoteId
+      ? activeReports[selected.remoteId]
+      : { status: "unlinked" as const };
+    if (!remote || remote.status === "denied") return null;
+    return chooseParentReportState(selected.state, remote);
+  }, [activeReports, selected]);
+
+  const pendingLinkedLearners = localLearners.filter((learner) =>
+    learner.remoteId && (!activeReports[learner.remoteId] || activeReports[learner.remoteId].status === "loading"),
+  ).length;
+  const deniedLinkedLearners = localLearners.filter((learner) =>
+    learner.remoteId && activeReports[learner.remoteId]?.status === "denied",
+  ).length;
 
   const displayName =
     user?.firstName?.trim() ||
@@ -125,7 +235,25 @@ export function ParentDashboard() {
         </div>
 
         {/* Empty state — no learners yet */}
-        {learners.length === 0 && (
+        {learners.length === 0 && pendingLinkedLearners > 0 && (
+          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center" role="status" aria-live="polite">
+            <h2 className="font-display text-xl font-bold mb-2">Checking linked learners</h2>
+            <p className="text-sm text-neutral-400 max-w-md mx-auto">
+              Confirming which synced learner profiles belong to this signed-in parent account.
+            </p>
+          </div>
+        )}
+
+        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners > 0 && (
+          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center">
+            <h2 className="font-display text-xl font-bold mb-2">No linked learners for this account</h2>
+            <p className="text-sm text-neutral-400 max-w-md mx-auto">
+              The learner profiles linked on this browser belong to a different parent account.
+            </p>
+          </div>
+        )}
+
+        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners === 0 && (
           <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
             <h2 className="font-display text-xl font-bold mb-2">No learner profiles yet on this browser</h2>
             <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
@@ -206,7 +334,8 @@ export function ParentDashboard() {
             />
             <SelectedLearnerView
               key={selected.id}
-              learner={selected}
+              learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
+              reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
               onUpdateLearner={(patch) => updateLearnerMeta(selected.id, patch)}
             />
           </>
@@ -224,9 +353,10 @@ export function ParentDashboard() {
 }
 
 function SelectedLearnerView({
-  learner, onUpdateLearner,
+  learner, reportSource, onUpdateLearner,
 }: {
   learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
+  reportSource: ParentReportDecision;
   onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
 }) {
   const state = learner.state;
@@ -253,6 +383,10 @@ function SelectedLearnerView({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="md:col-span-3">
+        <ReportSourceNotice source={reportSource} />
+      </div>
+
       {/* Top-of-fold opinion + identity */}
       <div className="md:col-span-3 rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
         <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Profile</div>
@@ -304,7 +438,7 @@ function SelectedLearnerView({
           missedQuestions={learnerMisses}
           questionStatsAvailable={questionStatsAvailable}
         />
-        <ReportExport learner={learner} subjectStats={subjectStats} />
+        <ReportExport learner={learner} subjectStats={subjectStats} reportSource={reportSource} />
       </div>
 
       <div className="space-y-4">
@@ -344,20 +478,68 @@ function SelectedLearnerView({
   );
 }
 
+function ReportSourceNotice({ source }: { source: ParentReportDecision }) {
+  if (source.source === "remote") {
+    const updated = source.updatedAt
+      ? new Date(source.updatedAt).toLocaleString()
+      : "the latest sync";
+    return (
+      <div
+        className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-4 py-3"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-300">
+          Synced progress
+        </div>
+        <p className="mt-1 text-xs text-neutral-400">
+          Reporting uses the learner&apos;s validated server sync from {updated}.
+        </p>
+      </div>
+    );
+  }
+
+  const isFallback = source.fallbackReason !== "unlinked";
+  const detail = source.fallbackReason === "loading"
+    ? "Showing progress stored on this device while synced progress loads."
+    : source.fallbackReason === "absent"
+      ? "No synced progress has been saved yet. Showing progress stored on this device."
+      : source.fallbackReason === "unavailable"
+        ? "Synced progress is unavailable right now. Showing progress stored on this device."
+        : "This profile is not linked. Reporting uses progress stored on this device.";
+
+  return (
+    <div
+      className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-4 py-3"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="text-[10px] uppercase tracking-widest font-bold text-amber-300">
+        {isFallback ? "Local fallback" : "Local report"}
+      </div>
+      <p className="mt-1 text-xs text-neutral-400">{detail}</p>
+    </div>
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Markdown report export — for sharing with teachers / paediatricians / self.
 // Parent owns the data; we just shape it into a useful document.
 // -----------------------------------------------------------------------------
 
 function ReportExport({
-  learner, subjectStats,
+  learner, subjectStats, reportSource,
 }: {
   learner: LearnerProfile;
   subjectStats: SubjectLearningStat[];
+  reportSource: ParentReportDecision;
 }) {
   const [copiedAt, setCopiedAt] = useState<number | null>(null);
 
-  const report = useMemo(() => buildMarkdownReport(learner, subjectStats), [learner, subjectStats]);
+  const report = useMemo(
+    () => buildMarkdownReport(learner, subjectStats, reportSource),
+    [learner, reportSource, subjectStats],
+  );
 
   const [copyFailed, setCopyFailed] = useState(false);
 
@@ -436,6 +618,7 @@ function ReportExport({
 function buildMarkdownReport(
   learner: LearnerProfile,
   subjectStats: SubjectLearningStat[],
+  reportSource: ParentReportDecision,
 ): string {
   const state = learner.state;
   const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
@@ -480,10 +663,19 @@ function buildMarkdownReport(
     .join("\n") || "_None logged._";
 
   const missesCount = missedQuestionsForLearner(learner, state.missedQuestions).length;
+  const sourceNote = reportSource.source === "remote"
+    ? `Numbers use synced learner progress last updated ${new Date(reportSource.updatedAt!).toLocaleString()}.`
+    : reportSource.fallbackReason === "loading"
+      ? "Synced progress was still loading, so numbers use progress stored on this device."
+      : reportSource.fallbackReason === "absent"
+        ? "No synced progress was available, so numbers use progress stored on this device."
+        : reportSource.fallbackReason === "unavailable"
+          ? "Synced progress could not be reached, so numbers use progress stored on this device."
+          : "This profile is not linked, so numbers use progress stored on this device.";
 
-  return `# Vidya — ${learner.name || "Learner"} report
+  return `# Vidya: ${learner.name || "Learner"} report
 
-_Generated ${today} on the family device. Numbers come from local sessions only._
+_Generated ${today}. ${sourceNote}_
 
 ## Profile
 - **Grade**: ${learner.grade}

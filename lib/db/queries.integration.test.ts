@@ -28,7 +28,7 @@ import { getSql, dbConfigured } from "./client";
 import {
   upsertParent, createLearner, listLearnersForParent, getLearnerForParent,
   getLearnerForClerkUser, issueClaimCode, redeemClaimCode,
-  pushLearnerState, getLearnerState,
+  pushLearnerState, getLearnerState, getLearnerStateForParent,
   getLearnerForDeviceToken, listDevicesForParent, revokeDeviceForParent,
   clearSelfLink, hashDeviceToken, setDisabledCapabilities, resolveDeviceToken,
   disabledCapabilitiesForTokens, bumpCapabilityUsage, capabilityUsedToday, usageForParent,
@@ -99,6 +99,14 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       // The whole reason there is no getLearnerById(id).
       const stolen = await getLearnerForParent(PARENT_A, learnerB);
       expect(stolen, "parent A must not read parent B's child by id").toBeNull();
+    });
+
+    it("scopes parent state reads by ownership and distinguishes no sync yet", async () => {
+      const owned = await getLearnerStateForParent(PARENT_A, learnerA);
+      const stolen = await getLearnerStateForParent(PARENT_A, learnerB);
+
+      expect(owned).toEqual({ state: null, revision: 0, updatedAt: null });
+      expect(stolen, "parent A must not read parent B's synced state").toBeNull();
     });
 
     it("a parent cannot mint a claim code for someone else's child", async () => {
@@ -474,6 +482,11 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       const r = await pushLearnerState({ learnerId: learnerA, state: state(10), expectedRevision: 0 });
       expect(r.ok).toBe(true);
       if (r.ok) expect(r.revision).toBe(1);
+
+      const owned = await getLearnerStateForParent(PARENT_A, learnerA);
+      const stolen = await getLearnerStateForParent(PARENT_B, learnerA);
+      expect(owned?.state).toMatchObject({ xp: 10 });
+      expect(stolen, "another parent must not read the new sync").toBeNull();
     });
 
     it("accepts a push at the current revision", async () => {

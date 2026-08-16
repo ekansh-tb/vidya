@@ -32,7 +32,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
 import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
-import { resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
+import { aiProviderConfigured, resolveVidyaModel, VIDYA_MODELS } from "@/lib/ai/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -103,6 +103,12 @@ export async function POST(req: Request) {
 
   const parent = await requireParent();
   if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!aiProviderConfigured()) {
+    return Response.json(
+      { error: "Syllabus extraction is unavailable until an AI provider is configured." },
+      { status: 503 },
+    );
+  }
 
   const verdict = rateLimit(`syllabus:${clientKey(req)}`, RATE);
   if (!verdict.ok) {

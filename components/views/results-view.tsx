@@ -5,19 +5,22 @@ import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { Clock, Crown, Flame, BookOpen, ChevronDown, ChevronUp, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Mascot } from "@/components/ui/mascot";
+import { NextBestQuestCard } from "@/components/learning/next-best-quest-card";
 import { CelebrationBurst } from "@/components/effects/celebrate";
 import { Confetti } from "@/components/effects/particles";
 import { BADGES, TIER_STYLES } from "@/lib/content/badges";
+import type { NextQuestRecommendation } from "@/lib/adaptive/recommendation";
 import type { GameState, QuizResult } from "@/lib/types";
 import { useState, useEffect } from "react";
 
 export function ResultsView({
-  result, state, onDone, onNextQuest,
+  result, state, recommendation, onDone, onStartRecommendation,
 }: {
   result: QuizResult;
   state: GameState;
+  recommendation?: NextQuestRecommendation;
   onDone: () => void;
-  onNextQuest?: () => void;
+  onStartRecommendation?: () => void;
 }) {
   const [confetti, setConfetti] = useState(false);
   const [showWrong, setShowWrong] = useState(false);
@@ -68,7 +71,7 @@ export function ResultsView({
             <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="xl" mood={accuracy === 100 ? "celebrate" : "happy"} />
           </motion.div>
           <motion.div variants={item} className="mt-6">
-            <div className="font-display text-6xl font-bold text-gradient-sunset">{headline}</div>
+            <h1 className="font-display text-6xl font-bold text-gradient-sunset">{headline}</h1>
             <div className="text-white/70 mt-1">{subheadline}</div>
           </motion.div>
 
@@ -181,15 +184,20 @@ export function ResultsView({
             </motion.div>
           )}
 
+          {recommendation && (
+            <motion.div variants={item} className="mt-4">
+              <NextBestQuestCard
+                recommendation={recommendation}
+                onStart={onStartRecommendation}
+                compact
+              />
+            </motion.div>
+          )}
+
           <motion.div variants={item} className="mt-6 space-y-2">
-            {!isDaily && onNextQuest && (
-              <Button size="lg" className="w-full" onClick={onNextQuest}>
-                Next Quest
-              </Button>
-            )}
             <Button
               size="lg"
-              variant={!isDaily && onNextQuest ? "secondary" : "primary"}
+              variant={onStartRecommendation ? "secondary" : "primary"}
               className="w-full"
               onClick={onDone}
             >

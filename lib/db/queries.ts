@@ -237,6 +237,43 @@ export async function getLearnerState(learnerId: string): Promise<StateEnvelope 
   };
 }
 
+export type ParentStateEnvelope = {
+  state: unknown | null;
+  revision: number;
+  updatedAt: string | null;
+};
+
+/**
+ * Read synced state only when the requesting parent owns the learner.
+ *
+ * The ownership condition and state join live in one SQL statement. A guessed
+ * learner id from another family produces no row, while an owned learner with
+ * no sync row produces a row with null state so the API can distinguish 404
+ * from an honest "not synced yet" response.
+ */
+export async function getLearnerStateForParent(
+  parentId: string,
+  learnerId: string,
+): Promise<ParentStateEnvelope | null> {
+  const sql = getSql();
+  const rows = await sql`
+    select s.state, s.revision, s.updated_at
+    from learners l
+    left join learner_states s on s.learner_id = l.id
+    where l.id = ${learnerId} and l.parent_id = ${parentId}
+    limit 1
+  `;
+  if (!rows.length) return null;
+  if (rows[0].state == null) {
+    return { state: null, revision: 0, updatedAt: null };
+  }
+  return {
+    state: rows[0].state,
+    revision: Number(rows[0].revision),
+    updatedAt: String(rows[0].updated_at),
+  };
+}
+
 export type PushResult =
   | { ok: true; revision: number }
   | { ok: false; reason: "conflict"; serverRevision: number; serverState: GameState };

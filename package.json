@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "books:build": "node scripts/build-library-books.mjs",
+    "content:audit": "vitest run lib/content/curriculum-coverage-audit.test.ts --reporter=verbose",
     "security:audit": "npm audit --audit-level=high",
     "verify": "npm run typecheck && npm run lint && npm run test"
   },
