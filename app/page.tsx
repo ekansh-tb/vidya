@@ -32,6 +32,7 @@ import { SaveErrorBanner } from "@/components/effects/save-error-banner";
 import { BadgeToast } from "@/components/effects/badge-toast";
 import { ThemeApplier, themeForGrade, type ThemeId } from "@/components/theme-applier";
 import { useGameStore } from "@/lib/game-store";
+import { recommendNextQuest } from "@/lib/adaptive/recommendation";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
@@ -45,9 +46,16 @@ export default function HomePage() {
   } = useGameStore();
   const [view, setView] = useState<{ name: ViewName; params?: Record<string, unknown> }>({ name: "home" });
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
+  const [recommendationNow, setRecommendationNow] = useState(() => Date.now());
   const [showAddLearner, setShowAddLearner] = useState(false);
 
   useEffect(() => { hydrate(); }, [hydrate]);
+
+  useEffect(() => {
+    if (!quizResult) return;
+    const timer = window.setInterval(() => setRecommendationNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [quizResult]);
 
   // Mirrors the active learner's progress to the server once they are linked.
   // No-op for anonymous device-local profiles, and never blocks play.
@@ -162,28 +170,54 @@ export default function HomePage() {
     setView({ name, params });
   };
   const back = () => setView({ name: "home" });
+  const showQuizResult = (result: QuizResult) => {
+    setRecommendationNow(Date.now());
+    setQuizResult(result);
+  };
 
   let content: React.ReactNode;
   if (quizResult) {
+    const recommendation = quizResult.isDaily
+      ? undefined
+      : recommendNextQuest({
+          learner,
+          progress: state.progress,
+          missedQuestions: state.missedQuestions,
+          rotationIndex: state.stats.quizzesCompleted,
+          now: recommendationNow,
+          recentTopic: quizResult.subjectId && quizResult.topicId
+            ? { subjectId: quizResult.subjectId, topicId: quizResult.topicId }
+            : undefined,
+        });
     const goBack = () => {
       const sId = quizResult.subjectId;
       setQuizResult(null);
       if (!quizResult.isDaily && sId) setView({ name: "subject", params: { subjectId: sId } });
       else back();
     };
-    const nextQuest = quizResult.isDaily || !quizResult.subjectId
+    const startRecommendation = !recommendation || recommendation.kind === "unavailable"
       ? undefined
       : () => {
-          const sId = quizResult.subjectId!;
           setQuizResult(null);
-          setView({ name: "subject", params: { subjectId: sId } });
+          if (recommendation.kind === "due-review") {
+            setView({ name: "review" });
+            return;
+          }
+          setView({
+            name: "quiz",
+            params: {
+              subjectId: recommendation.subjectId,
+              topicId: recommendation.topicId,
+            },
+          });
         };
     content = (
       <ResultsView
         result={quizResult}
         state={state}
+        recommendation={recommendation}
         onDone={goBack}
-        onNextQuest={nextQuest}
+        onStartRecommendation={startRecommendation}
       />
     );
   } else {
@@ -213,7 +247,7 @@ export default function HomePage() {
             learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
-            onFinish={(r) => setQuizResult(r)}
+            onFinish={showQuizResult}
             onClose={() => navigate("subject", { subjectId: view.params!.subjectId })}
             voiceEnabled={state.settings.voice}
           />
@@ -227,7 +261,7 @@ export default function HomePage() {
             learner={learner}
             state={state}
             setState={set}
-            onFinish={(r) => setQuizResult(r)}
+            onFinish={showQuizResult}
             onClose={() => navigate("subject", { subjectId: view.params!.subjectId })}
           />
         );
@@ -240,7 +274,7 @@ export default function HomePage() {
             learnerSubjects={learnerSubjects}
             state={state}
             setState={set}
-            onFinish={(r) => setQuizResult(r)}
+            onFinish={showQuizResult}
             onClose={back}
             voiceEnabled={state.settings.voice}
           />

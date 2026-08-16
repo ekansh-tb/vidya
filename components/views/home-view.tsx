@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Coins, Target, ArrowRight, Trophy, Gem, Settings, Check, Users,
   MessageCircle, Globe, BookOpen, Clock, Mic, NotebookPen, Music, Wind,
@@ -13,13 +13,14 @@ import { XPBar } from "@/components/ui/xp-bar";
 import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators";
 import { TiltCard } from "@/components/effects/tilt-card";
 import { DiyaCompanion } from "@/components/effects/diya";
+import { NextBestQuestCard } from "@/components/learning/next-best-quest-card";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
+import { questionsForLearner } from "@/lib/content/questions/availability";
+import { recommendNextQuest } from "@/lib/adaptive/recommendation";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { useCapability } from "@/lib/capabilities/use-capability";
 import { xpToLevel } from "@/lib/economy";
 import { todayKey } from "@/lib/utils";
-import { dueCount } from "@/lib/spaced-repetition";
 import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 import { sfx } from "@/lib/audio";
@@ -49,12 +50,6 @@ export function HomeView({
   const todayQuestDone = state.dailyQuest?.completed && state.dailyQuest?.date === todayKey();
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
   const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
-  const setGameState = useGameStore((s) => s.set);
-  // Recomputed each render on purpose: cards become due with the passage of
-  // time, not in response to a state change, so a memo keyed on the notebook
-  // would keep yesterday's answer until something else happened to move.
-  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
-  const dueMisses = dueCount(learnerMisses);
 
   // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
   const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
@@ -82,6 +77,26 @@ export function HomeView({
     [learner.board, learner.pickedSubjects, learner.grade],
   );
   const questionBanks = questionsForLearner(learner);
+  const nextBestQuest = useMemo(() => recommendNextQuest({
+    learner,
+    progress: state.progress,
+    missedQuestions: state.missedQuestions,
+    rotationIndex: state.stats.quizzesCompleted,
+    now: now.getTime(),
+  }), [learner, now, state.missedQuestions, state.progress, state.stats.quizzesCompleted]);
+
+  const startNextBestQuest = () => {
+    if (nextBestQuest.kind === "unavailable") return;
+    sfx.click();
+    if (nextBestQuest.kind === "due-review") {
+      onNavigate("review");
+      return;
+    }
+    onNavigate("quiz", {
+      subjectId: nextBestQuest.subjectId,
+      topicId: nextBestQuest.topicId,
+    });
+  };
 
   // The Daily Quest pool is drawn from this learner's own subjects. Only the
   // six Cambridge Primary Stage 5 subjects have question banks today, so for
@@ -160,6 +175,7 @@ export function HomeView({
 
   return (
     <div className="min-h-screen pb-28 max-w-2xl mx-auto">
+      <h1 className="sr-only">Vidya home for {state.name.split(" ")[0] || "learner"}</h1>
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-between mb-5">
@@ -254,6 +270,13 @@ export function HomeView({
             </button>
           </motion.div>
         )}
+
+        <motion.div {...rise()} className="mb-5">
+          <NextBestQuestCard
+            recommendation={nextBestQuest}
+            onStart={nextBestQuest.kind === "unavailable" ? undefined : startNextBestQuest}
+          />
+        </motion.div>
 
         {/* School Day banner */}
         <motion.div
@@ -452,7 +475,10 @@ export function HomeView({
         <motion.button
           {...rise()}
           whileTap={{ scale: 0.99 }}
-          onClick={() => { sfx.click(); !todayQuestDone && onNavigate("daily"); }}
+          onClick={() => {
+            sfx.click();
+            if (!todayQuestDone) onNavigate("daily");
+          }}
           disabled={todayQuestDone}
           className={`w-full rounded-3xl p-4 text-left relative overflow-hidden ${
             todayQuestDone ? "glass border-emerald-400/30" : "border-2 border-white/10"
@@ -495,39 +521,6 @@ export function HomeView({
       <div className="px-5">
         {/* Daily reflection — kid-authored, end-of-day prompt */}
         <DailyReflectionCard state={state} />
-
-        {/* Review-your-misses banner — DUE cards only.
-            This counted the whole notebook, which was fine when a card left on
-            the first correct answer. Under spaced repetition most cards are
-            resting most of the time, so the old count would have told a kid who
-            was fully caught up that they had thirty questions waiting. */}
-        {dueMisses > 0 && (
-          <motion.button
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => { sfx.click(); onNavigate("review"); }}
-            className="w-full glass-card p-3 mb-3 flex items-center gap-3 text-left active:scale-[0.99]"
-            style={{ border: "1px solid rgba(244, 114, 182, 0.35)" }}
-          >
-            <div
-              className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center text-base font-display font-bold"
-              style={{ background: "rgba(244, 114, 182, 0.18)", color: "#F472B6" }}
-            >
-              {dueMisses}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-bold text-sm" style={{ color: "var(--text)" }}>
-                Review your misses
-              </div>
-              <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-                {dueMisses === 1 ? "1 question" : `${dueMisses} questions`} ready for another try
-              </div>
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#F472B6" }}>
-              Open →
-            </span>
-          </motion.button>
-        )}
 
         {/* Single fluid grid — auto-balances to 4 wide × 2 rows whether AI is
             gated (7 tiles) or open (8 tiles). No layout holes either way. */}

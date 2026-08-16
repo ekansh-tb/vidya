@@ -1,6 +1,7 @@
 import "server-only";
 
 import { anthropic } from "@ai-sdk/anthropic";
+import { configuredAiProvider } from "./provider-config";
 
 type ModelChoice = {
   gateway: string;
@@ -19,11 +20,11 @@ export const VIDYA_MODELS = {
 } as const satisfies Record<string, ModelChoice>;
 
 export function aiProviderConfigured(): boolean {
-  return Boolean(
-    process.env.AI_GATEWAY_API_KEY ||
-      process.env.VERCEL_OIDC_TOKEN ||
-      process.env.ANTHROPIC_API_KEY,
-  );
+  return configuredAiProvider({
+    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  }) !== null;
 }
 
 /**
@@ -32,10 +33,15 @@ export function aiProviderConfigured(): boolean {
  * request still attempts gateway authentication.
  */
 export function resolveVidyaModel(choice: ModelChoice) {
-  if (process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN) {
+  const provider = configuredAiProvider({
+    AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
+    VERCEL_OIDC_TOKEN: process.env.VERCEL_OIDC_TOKEN,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  });
+  if (provider === "gateway") {
     return choice.gateway;
   }
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (provider === "anthropic") {
     return anthropic(choice.directAnthropic);
   }
   return choice.gateway;
