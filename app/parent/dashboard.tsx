@@ -14,6 +14,7 @@ import { DevicePanel } from "@/components/parent/device-panel";
 import { UsagePanel } from "@/components/parent/usage-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
+import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
@@ -233,6 +234,8 @@ export function ParentDashboard() {
             {learners.length} learner{learners.length === 1 ? "" : "s"} on this device
           </div>
         </div>
+
+        <AiConnectionsPanel />
 
         {/* Empty state — no learners yet */}
         {learners.length === 0 && pendingLinkedLearners > 0 && (
