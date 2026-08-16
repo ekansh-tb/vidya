@@ -18,6 +18,7 @@ export type {
 export type AiConnectionCredential = {
   id: string;
   provider: AiProviderId;
+  source: AiConnectionSource;
   encryptedCredential: EncryptedCredential;
 };
 
@@ -61,6 +62,7 @@ export function aiConnectionCredentialFromRow(row: Row): AiConnectionCredential 
   return {
     id: String(row.id),
     provider: providerFromRow(row),
+    source: sourceFromRow(row),
     encryptedCredential: {
       ciphertext: String(row.credential_ciphertext),
       iv: String(row.credential_iv),
@@ -90,13 +92,53 @@ export async function getAiConnectionCredentialForParent(
 ): Promise<AiConnectionCredential | null> {
   const sql = getSql();
   const rows = await sql`
-    select id, provider, credential_ciphertext, credential_iv,
+    select id, provider, source, credential_ciphertext, credential_iv,
            credential_tag, credential_key_version
     from ai_provider_connections
     where id = ${connectionId} and parent_id = ${parentId}
     limit 1
   `;
   return rows.length ? aiConnectionCredentialFromRow(rows[0]) : null;
+}
+
+export async function replaceDirectAiConnectionCredentialForParent(input: {
+  parentId: string;
+  connectionId: string;
+  actorId: string;
+  status: AiConnectionStatus;
+  encryptedCredential: EncryptedCredential;
+  credentialFingerprint: string;
+  credentialHint: string;
+}): Promise<AiConnectionSummary | null> {
+  const sql = getSql();
+  const rows = await sql`
+    with changed as (
+      update ai_provider_connections
+      set status = ${input.status},
+          credential_ciphertext = ${input.encryptedCredential.ciphertext},
+          credential_iv = ${input.encryptedCredential.iv},
+          credential_tag = ${input.encryptedCredential.tag},
+          credential_key_version = ${input.encryptedCredential.keyVersion},
+          credential_fingerprint = ${input.credentialFingerprint},
+          credential_hint = ${input.credentialHint},
+          last_validated_at = now(),
+          last_used_at = null
+      where id = ${input.connectionId}
+        and parent_id = ${input.parentId}
+        and source = 'api_key'
+      returning *
+    ), audited as (
+      insert into ai_connection_audit (
+        parent_id, connection_id, provider, event, actor, detail
+      )
+      select parent_id, id, provider, 'credential_replaced', ${input.actorId},
+             jsonb_build_object('status', status)
+      from changed
+      returning id
+    )
+    select * from changed
+  `;
+  return rows.length ? aiConnectionSummaryFromRow(rows[0]) : null;
 }
 
 export async function createAiConnectionForParent(input: {

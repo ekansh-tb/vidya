@@ -53,6 +53,7 @@ describe("AI connection persistence shapes", () => {
     expect(aiConnectionCredentialFromRow(privateRow)).toEqual({
       id: privateRow.id,
       provider: "openai",
+      source: "api_key",
       encryptedCredential: {
         ciphertext: "encrypted-secret",
         iv: "encrypted-iv",
