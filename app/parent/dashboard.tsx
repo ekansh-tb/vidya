@@ -16,6 +16,7 @@ import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
 import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
+import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
 import { useGameStore } from "@/lib/game-store";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
@@ -50,7 +51,7 @@ export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [aiConnectionsRevision, setAiConnectionsRevision] = useState(0);
+  const [aiPolicyRevision, setAiPolicyRevision] = useState(0);
   const [remoteReportCache, setRemoteReportCache] = useState<{
     parentId: string | null;
     reports: Record<string, ParentReportLoadState | { status: "denied" }>;
@@ -239,11 +240,17 @@ export function ParentDashboard() {
 
         <AiConnectionsPanel
           key={`ai-connections-${activeParentId}`}
-          onConnectionsChanged={() => setAiConnectionsRevision((revision) => revision + 1)}
+          onConnectionsChanged={() => setAiPolicyRevision((revision) => revision + 1)}
         />
         <AiTutorControlsPanel
           key={`ai-tutors-${activeParentId}`}
-          refreshToken={aiConnectionsRevision}
+          refreshToken={aiPolicyRevision}
+          onProfilesChanged={() => setAiPolicyRevision((revision) => revision + 1)}
+        />
+        <LearnerAiTutorAccessPanel
+          key={`learner-ai-access-${activeParentId}`}
+          learner={selected}
+          refreshToken={aiPolicyRevision}
         />
 
         {/* Empty state — no learners yet */}

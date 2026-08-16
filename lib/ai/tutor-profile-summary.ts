@@ -162,3 +162,8 @@ export function parseLearnerAiAssignmentResponse(
   if (payload.assignment === null) return null;
   return parseLearnerAiAssignmentSummary(payload.assignment) ?? undefined;
 }
+
+export function parseLearnerAiAssignmentDeletion(value: unknown): boolean | null {
+  const deleted = recordOf(value)?.deleted;
+  return typeof deleted === "boolean" ? deleted : null;
+}

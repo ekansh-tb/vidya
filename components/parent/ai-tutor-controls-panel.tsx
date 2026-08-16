@@ -41,8 +41,10 @@ function unavailableMessage(payload: unknown, fallback: string): string {
 }
 
 export function AiTutorControlsPanel({
+  onProfilesChanged,
   refreshToken,
 }: {
+  onProfilesChanged?: () => void;
   refreshToken: number;
 }) {
   const headingId = useId();
@@ -199,6 +201,7 @@ export function AiTutorControlsPanel({
       }
       setProfiles((current) => [created, ...(current ?? []).filter((item) => item.id !== created.id)]);
       setProfileName("");
+      onProfilesChanged?.();
       setNotice({
         kind: "success",
         text: `${created.name} was created. It remains unavailable to learners until you save an assignment below.`,
@@ -224,6 +227,7 @@ export function AiTutorControlsPanel({
       const remaining = (profiles ?? []).filter((item) => item.id !== profile.id);
       setProfiles(remaining);
       setConfirmDeleteProfileId(null);
+      onProfilesChanged?.();
       setNotice({ kind: "success", text: `${profile.name} was deleted.` });
     } catch (error) {
       if (!handleCancelledReverification(error)) {

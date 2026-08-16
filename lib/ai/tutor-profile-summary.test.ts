@@ -4,6 +4,7 @@ import {
   parseAiTutorModelsResponse,
   parseAiTutorProfilesResponse,
   parseCreatedAiTutorProfile,
+  parseLearnerAiAssignmentDeletion,
   parseLearnerAiAssignmentResponse,
   parseLearnerAiAssignmentSummary,
 } from "./tutor-profile-summary";
@@ -97,5 +98,11 @@ describe("AI tutor profile response parsing", () => {
   it("parses tutor deletion without accepting loose truthy values", () => {
     expect(isDeletedAiTutorProfile({ deleted: true })).toBe(true);
     expect(isDeletedAiTutorProfile({ deleted: "true" })).toBe(false);
+  });
+
+  it("parses learner assignment deletion as an explicit boolean", () => {
+    expect(parseLearnerAiAssignmentDeletion({ deleted: true })).toBe(true);
+    expect(parseLearnerAiAssignmentDeletion({ deleted: false })).toBe(false);
+    expect(parseLearnerAiAssignmentDeletion({ deleted: "false" })).toBeNull();
   });
 });
