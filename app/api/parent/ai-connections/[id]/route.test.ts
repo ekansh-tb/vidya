@@ -83,7 +83,8 @@ describe("DELETE parent AI connection", () => {
   it("deletes only through the ownership-scoped query", async () => {
     const response = await DELETE(request(), context());
 
-    expect(response.status).toBe(204);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ deleted: true });
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(mocks.deleteAiConnectionForParent).toHaveBeenCalledWith(
       "parent-a",

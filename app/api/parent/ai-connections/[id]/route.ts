@@ -53,7 +53,7 @@ export async function DELETE(
       parent.userId,
     );
     if (!deleted) return json({ error: "Not found" }, 404);
-    return new Response(null, { status: 204, headers: privateHeaders });
+    return json({ deleted: true }, 200);
   } catch {
     console.error("[api/parent/ai-connections/:id] delete failed");
     return json({ error: "Could not delete AI connection" }, 500);
