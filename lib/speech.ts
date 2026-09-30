@@ -4,6 +4,7 @@
 // Picks an Indian English voice when available, otherwise a UK/US English voice.
 
 import { readPersistedAudioSettings } from "./audio-bootstrap";
+import { selectSpeechVoice } from "./speech-voices";
 
 let voiceCache: SpeechSynthesisVoice[] | null = null;
 let currentLine: string | null = null;
@@ -25,26 +26,6 @@ function getVoices(): SpeechSynthesisVoice[] {
   if (voiceCache && voiceCache.length) return voiceCache;
   voiceCache = window.speechSynthesis.getVoices();
   return voiceCache;
-}
-
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  const voices = getVoices();
-  if (!voices.length) return undefined;
-
-  const base = lang.split("-")[0];
-  const priorities = [
-    (v: SpeechSynthesisVoice) => v.lang === lang && /female|priya|veena|raveena|kalpana|samantha|karen|fiona/i.test(v.name),
-    (v: SpeechSynthesisVoice) => v.lang === lang,
-    (v: SpeechSynthesisVoice) => v.lang.startsWith(base) && /female|priya|veena|raveena|samantha|karen|fiona/i.test(v.name),
-    (v: SpeechSynthesisVoice) => v.lang.startsWith(base),
-    (v: SpeechSynthesisVoice) => /female|samantha|karen|fiona|veena|priya/i.test(v.name),
-  ];
-
-  for (const filter of priorities) {
-    const found = voices.find(filter);
-    if (found) return found;
-  }
-  return voices[0];
 }
 
 const DEFAULT_VOICE_VOLUME = 0.9;
@@ -75,15 +56,17 @@ function currentVoiceVolume(): number {
 
 export function speak(text: string, opts: { lang?: string; rate?: number; pitch?: number; volume?: number; onEnd?: () => void } = {}) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const { lang = "en-IN", rate = 0.95, pitch = 1.1, volume = currentVoiceVolume(), onEnd } = opts;
+  const saved = readPersistedAudioSettings();
+  if (saved?.voice === false) return;
+  const { lang = "en", rate = 0.98, pitch = 1, volume = saved?.voiceVolume ?? currentVoiceVolume(), onEnd } = opts;
 
   // Cancel any ongoing speech
   window.speechSynthesis.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  const voice = pickVoice(lang);
+  const voice = selectSpeechVoice(getVoices(), lang, saved?.voiceURI);
   if (voice) utterance.voice = voice;
-  utterance.lang = lang;
+  utterance.lang = voice?.lang ?? lang;
   utterance.rate = rate;
   utterance.pitch = pitch;
   utterance.volume = volume;
@@ -106,30 +89,28 @@ function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length
 
 export const vidya = {
   greet: (name: string) => speak(pick([
-    `Hello Madam ${name}! Ready to make today legendary?`,
-    `Namaskar ${name}! Let's stack up some XP, shall we?`,
-    `Welcome back, ${name} Madam! I missed you. Let's go!`,
-    `Hey ${name}! Your buddy Mor and I have been waiting. Let's learn!`,
+    `Hi ${name}. I'm Vidya, your learning guide. What would you like to explore?`,
+    `Welcome, ${name}. Let's learn something together, at your pace.`,
   ])),
   correct: () => speak(pick([
     "Brilliant!",
     "Absolutely correct!",
     "You got it, superstar!",
-    "Spot on, Madam!",
+    "Spot on!",
     "Excellent thinking!",
     "Flawless!",
   ])),
   wrong: () => speak(pick([
     "Not quite, but good try!",
     "Close one! Let's understand this.",
-    "Almost there, Madam. You'll get the next.",
+    "Let's try another way. Take your time.",
     "Good attempt! Read the hint.",
   ])),
-  combo: (n: number) => speak(`${n} in a row! You're on fire, Madam!`),
+  combo: (n: number) => speak(`${n} in a row. Your practice is paying off!`),
   levelUp: (level: number) => speak(`Level ${level} unlocked! Outstanding work!`),
   badge: (name: string) => speak(`New badge earned. ${name}. Beautifully done!`),
   perfect: () => speak(pick([
-    "Flawless quiz! That was a clinic, Madam!",
+    "You answered every question correctly. Well done!",
     "A perfect score! Phenomenal!",
     "Hundred percent! You absolutely smashed it!",
   ])),
@@ -137,12 +118,12 @@ export const vidya = {
   daily: () => speak("Daily quest complete! Bonus rewards loaded."),
   subjectIntro: (name: string) => speak(`Let's dive into ${name}!`),
   encourage: () => speak(pick([
-    "Take your time, Madam. Think it through.",
+    "Take your time. Think it through.",
     "You've got this!",
     "Read it once more, then choose.",
   ])),
   goodbye: () => speak(pick([
-    "See you tomorrow, Madam!",
+    "See you next time!",
     "Great session today!",
     "Ace stuff! Come back soon.",
   ])),

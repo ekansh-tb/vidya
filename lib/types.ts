@@ -253,6 +253,8 @@ export type GameState = {
     musicVolume: number;
     sfxVolume: number;
     voiceVolume: number;
+    /** Optional device voice selected by this learner. */
+    voiceURI?: string;
   };
   onboarded: boolean;
 };
