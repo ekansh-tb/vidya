@@ -59,12 +59,14 @@ new Function("require", "exports", compiled)((id: string) => {
 function render(board: LearnerProfile["board"] = "cambridge-primary") {
   const onNavigate = vi.fn();
   const state = { ...DEFAULT_STATE, name: "Sample", streak: 3, lastSubjectId: "maths" as const };
-  const learner = {
+  const learner: LearnerProfile = {
     id: "synthetic", name: "Sample", board, grade: 5,
     pickedSubjects: board === "cambridge-igcse" ? ["igcse-cs"] : ["maths"],
-    familyNote: { body: "Synthetic encouragement", seenAt: null },
-    upcomingExams: [{ title: "Practice", date: "2026-10-02", subjectId: "maths" }],
-  } as LearnerProfile;
+    familyNote: { body: "Synthetic encouragement", postedAt: "2026-10-01T00:00:00Z" },
+    upcomingExams: [{ id: "synthetic-exam", title: "Practice", date: "2026-10-02", subjectId: "maths" }],
+    createdAt: "2026-10-01T00:00:00Z",
+    state,
+  };
   const html = renderToStaticMarkup(React.createElement(exports.HomeView!, { state, learner, onNavigate }));
   return { html, onNavigate };
 }
