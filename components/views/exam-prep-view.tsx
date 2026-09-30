@@ -476,7 +476,6 @@ function QuizSection({ pack }: { pack: ExamPack }) {
     sfx.click();
     if (!q.opts && !revealed) {
       setRevealed(true);
-      setAttempted((a) => a + 1);
       return;
     }
     const nextIdx = (idx + 1) % pack.questions.length;
@@ -491,7 +490,9 @@ function QuizSection({ pack }: { pack: ExamPack }) {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       <div className="flex items-center justify-between mb-3 px-1 text-xs">
         <div style={{ color: "var(--text-faint)" }}>Question <span className="font-bold" style={{ color: "var(--text)" }}>{idx + 1}</span> / {pack.questions.length}</div>
-        <div className="font-semibold" style={{ color: "var(--text-muted)" }}>Score {score} / {attempted}</div>
+        <div className="font-semibold" style={{ color: "var(--text-muted)" }}>
+          {attempted > 0 ? `Multiple-choice score ${score} / ${attempted}` : "Practice at your own pace"}
+        </div>
       </div>
 
       <div className="glass-card p-4 mb-3">
@@ -535,7 +536,7 @@ function QuizSection({ pack }: { pack: ExamPack }) {
         <div className="space-y-2">
           {!revealed ? (
             <button
-              onClick={() => { sfx.click(); setRevealed(true); setAttempted((a) => a + 1); }}
+              onClick={() => { sfx.click(); setRevealed(true); }}
               className="w-full glass-card p-3 text-left text-sm active:scale-[0.99] transition"
               style={{ color: "var(--text-muted)" }}
             >
