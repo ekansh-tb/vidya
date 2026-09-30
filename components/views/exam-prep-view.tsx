@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import {
-  ChevronLeft, Cpu, Clock, AlertTriangle, BookOpen, Sparkles,
-  CircleHelp, Code2, ListChecks, Brain, Check, X, ChevronRight,
+  ChevronLeft, Cpu, AlertTriangle, BookOpen, Sparkles,
+  CircleHelp, ListChecks, Brain, Check, X, ChevronRight,
   Rocket, NotebookPen, FileText, ExternalLink, Lightbulb, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

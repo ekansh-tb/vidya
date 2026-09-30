@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { ChevronLeft, Sparkles, Plus, Check } from "lucide-react";
+import { ChevronLeft, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Board, LearnerProfile } from "@/lib/types";
 import { BOARDS, boardOption } from "@/lib/content/boards";

@@ -659,10 +659,9 @@ function boardLabel(board: LearnerProfile["board"]): string {
 // -----------------------------------------------------------------------------
 
 export function RecentReflections({ state, name }: { state: GameState; name: string }) {
-  const reflections = state.dailyReflections || [];
   const recent = useMemo(
-    () => [...reflections].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 5),
-    [reflections],
+    () => [...(state.dailyReflections || [])].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 5),
+    [state.dailyReflections],
   );
   const privateCount = recent.filter((r) => r.private).length;
 
