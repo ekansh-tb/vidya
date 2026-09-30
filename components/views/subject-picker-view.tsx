@@ -15,7 +15,17 @@ export function SubjectPickerView({
   learner: LearnerProfile;
   onSave: (picked: SubjectId[]) => void;
 }) {
-  const groups = useMemo(() => pickerGroupsForBoard(learner.board, learner.grade), [learner.board, learner.grade]);
+  const groups = useMemo(() => {
+    const offered = pickerGroupsForBoard(learner.board, learner.grade);
+    const offeredIds = new Set(offered.flatMap((group) => group.subjects));
+    const retained = [...new Set(learner.pickedSubjects || [])].filter((id) => !offeredIds.has(id));
+    return retained.length ? [...offered, {
+      id: "retained",
+      label: "Previously selected",
+      description: "Kept from your saved choices. Remove a subject only if you no longer want it.",
+      subjects: retained,
+    }] : offered;
+  }, [learner.board, learner.grade, learner.pickedSubjects]);
   const compulsory = useMemo(
     () => new Set<SubjectId>(groups.flatMap((g) => g.compulsoryIds || [])),
     [groups],
@@ -37,17 +47,8 @@ export function SubjectPickerView({
 
   const totalChosen = picked.size;
   const optionalCount = totalChosen - compulsory.size;
-  // Read the label off the shared board list — the old hardcoded ladder fell
-  // through to "Cambridge Primary" for Lower Secondary and CBSE learners.
+  // Use the shared pathway label when no school has been entered.
   const boardLabel = boardOption(learner.board).label;
-  const isIgcse = learner.board === "cambridge-igcse";
-  // Marathi is state-mandated in Maharashtra, but it is only a subject this
-  // learner can see if their board's picker actually offers it — don't explain
-  // a subject that isn't on the page.
-  const offersMarathi = useMemo(
-    () => groups.some((g) => g.subjects.some((sid) => sid.includes("marathi"))),
-    [groups],
-  );
 
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto">
@@ -59,7 +60,8 @@ export function SubjectPickerView({
           <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>{learner.school || boardLabel} · Grade {learner.grade}</div>
           <h1 className="font-display text-3xl font-bold mt-1" style={{ color: "var(--text)" }}>Pick your subjects</h1>
           <p className="text-sm mt-2 px-4" style={{ color: "var(--text-muted)" }}>
-            Welcome {learner.name.split(" ")[0]}. Tap the optionals you&apos;re actually taking. The compulsory ones are picked for you.
+            Welcome {learner.name.split(" ")[0]}. Choose the subjects you study or want to explore.
+            {compulsory.size > 0 && " Pathway core subjects are already selected."}
           </p>
         </motion.div>
 
@@ -68,12 +70,7 @@ export function SubjectPickerView({
             <span className="text-white font-bold">{totalChosen}</span> chosen
             <span className="text-white/40"> · {optionalCount} optional</span>
           </div>
-          {/* The ICE award and the 6-subject minimum are Cambridge IGCSE rules —
-              they were being shown to ICSE, CBSE and Cambridge school learners
-              too, none of whom sit an ICE. */}
-          {isIgcse
-            ? <div className="text-white/40">Min 6 · ICE award needs 7 across groups</div>
-            : <div className="text-white/40">{compulsory.size} required</div>}
+          <div className="text-white/40">{compulsory.size > 0 ? `${compulsory.size} pathway core` : "Choose at least one to start"}</div>
         </div>
 
         {groups.map((g, gi) => (
@@ -100,6 +97,7 @@ export function SubjectPickerView({
                     key={sid}
                     onClick={() => toggle(sid)}
                     disabled={isCompulsory}
+                    aria-pressed={isPicked}
                     className={`relative rounded-2xl p-3 text-left border transition-all ${
                       isPicked
                         ? "border-violet-400/60 bg-violet-500/15 shadow-[0_0_24px_rgba(167,139,250,0.3)]"
@@ -137,20 +135,14 @@ export function SubjectPickerView({
           </motion.div>
         ))}
 
-        {/* The assessment detail here is IGCSE/CNS-specific — it was being shown
-            to every board. The Act itself applies to all of them, so keep the
-            fact and drop the framing that doesn't apply. */}
-        {offersMarathi && (
-          <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-white/60">
-            <Info className="w-4 h-4 flex-shrink-0 text-cyan-300 mt-0.5" />
-            <div>
-              Marathi is mandated by the Maharashtra Compulsory Marathi Act 2020 for all schools in Maharashtra through Std 10.
-              {isIgcse
-                ? " From AY 2025–26 it's marks-based for IGCSE students. Verify with the school office if it's assessed at CNS."
-                : " Check with the school office how it's assessed on your board."}
-            </div>
+        <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-white/60">
+          <Info className="w-4 h-4 flex-shrink-0 text-cyan-300 mt-0.5" />
+          <div>
+            This is Vidya&apos;s available subject catalog, not a complete curriculum or an exam registration check.
+            School and local requirements are not inferred from your pathway or school name.
+            Check your own learning plan for any additional requirements. Saved choices stay selected until you change them.
           </div>
-        )}
+        </div>
       </div>
 
       <div className="fixed bottom-0 inset-x-0 z-40">
@@ -163,7 +155,7 @@ export function SubjectPickerView({
               const chosen = [...picked];
               onSave(chosen);
             }}
-            disabled={totalChosen < 4}
+            disabled={totalChosen < 1}
           >
             <span className="inline-flex items-center gap-2">
               Open my school <ChevronRight className="w-5 h-5" />

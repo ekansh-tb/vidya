@@ -69,7 +69,7 @@ export const SUBJECTS_PRIMARY: Subject[] = [
   {
     id: "gk",
     name: "GK & World",
-    tagline: "Pune · India · cosmos",
+    tagline: "People · places · cosmos",
     gradient: "from-sky-400 via-blue-500 to-indigo-500",
     accent: "#22D3EE",
     soft: "rgba(34, 211, 238, 0.15)",
@@ -81,10 +81,10 @@ export const SUBJECTS_PRIMARY: Subject[] = [
 
 // =========================
 // Cambridge IGCSE (Grade 9–10)
-// Source: CNS Pune Grade 9–10 IGCSE page (verified May 2026)
+// Catalog choices do not establish a learner's school requirements.
 // =========================
 export const SUBJECTS_IGCSE: Subject[] = [
-  // Compulsory — Group 1 Languages
+  // Group 1 Languages
   {
     id: "igcse-english",
     name: "English (First Language)",
@@ -96,7 +96,7 @@ export const SUBJECTS_IGCSE: Subject[] = [
     glow: "rgba(244, 114, 182, 0.5)",
     icon: BookOpen,
   },
-  // Compulsory — Group 4 Maths
+  // Group 4 Maths
   {
     id: "igcse-maths",
     name: "Mathematics",
@@ -213,7 +213,7 @@ export const SUBJECTS_IGCSE: Subject[] = [
   {
     id: "igcse-globalperspectives",
     name: "Global Perspectives",
-    tagline: "0457 · 7th-subject only",
+    tagline: "0457 · research · perspectives",
     gradient: "from-fuchsia-400 via-purple-500 to-violet-500",
     accent: "#D946EF",
     soft: "rgba(217, 70, 239, 0.15)",
@@ -268,11 +268,11 @@ export const SUBJECTS_IGCSE: Subject[] = [
     icon: Languages,
     isDeva: true,
   },
-  // Maharashtra-mandated (legally required at all Maharashtra schools through Std 10)
+  // Additional language choice; no jurisdiction is inferred.
   {
     id: "igcse-marathi",
     name: "मराठी",
-    tagline: "Aksharbharati · state-mandated",
+    tagline: "Aksharbharati · Marathi",
     gradient: "from-orange-400 via-red-500 to-rose-500",
     accent: "#EA580C",
     soft: "rgba(234, 88, 12, 0.15)",
@@ -284,7 +284,7 @@ export const SUBJECTS_IGCSE: Subject[] = [
 ];
 
 // =========================
-// ICSE Class 7 (CISCE) — Wisdom World School Hadapsar Pune
+// ICSE Class 7 (CISCE) catalog
 // =========================
 export const SUBJECTS_ICSE7: Subject[] = [
   {
@@ -424,7 +424,8 @@ export const SUBJECTS_ICSE7: Subject[] = [
   },
 ];
 
-// ICSE Class 7 typical grouping at CISCE schools (Wisdom World School Hadapsar)
+// ICSE upper-primary catalog. Language choices do not establish a jurisdiction.
+// Subject areas: https://www.cisce.org/wp-content/uploads/2022/10/UpperPrimary.pdf
 export type IcseGroup = {
   id: string;
   label: string;
@@ -437,9 +438,9 @@ export const ICSE7_GROUPS: IcseGroup[] = [
   {
     id: "languages",
     label: "Languages",
-    description: "First language English + state-mandated languages.",
+    description: "English and additional language choices. Select the languages you study.",
     subjects: ["icse-english-lang", "icse-english-lit", "icse-hindi", "icse-marathi", "icse-sanskrit"],
-    compulsoryIds: ["icse-english-lang", "icse-english-lit", "icse-hindi", "icse-marathi"],
+    compulsoryIds: ["icse-english-lang", "icse-english-lit"],
   },
   {
     id: "core",
@@ -451,7 +452,7 @@ export const ICSE7_GROUPS: IcseGroup[] = [
   {
     id: "skills",
     label: "Skills",
-    description: "Computer Studies — compulsory at most ICSE schools.",
+    description: "Computer Studies in the upper-primary pathway.",
     subjects: ["icse-computer"],
     compulsoryIds: ["icse-computer"],
   },
@@ -608,10 +609,9 @@ export const CBSE_MIDDLE_GROUPS: IcseGroup[] = [
   },
   {
     id: "languages",
-    label: "Languages (3-language formula)",
-    description: "English + Hindi + Sanskrit (typical at CBSE schools in Maharashtra).",
+    label: "Languages",
+    description: "Select the languages you study. This catalog is not a complete list of language options.",
     subjects: ["cbse-english", "cbse-hindi", "cbse-sanskrit"],
-    compulsoryIds: ["cbse-english", "cbse-hindi"],
   },
   {
     id: "co",
@@ -624,12 +624,8 @@ export const CBSE_MIDDLE_GROUPS: IcseGroup[] = [
 // =========================
 // Cambridge Lower Secondary (Grades 6–8 = Stages 7–9)
 // =========================
-// Verified 2026-08-11 against the CNS Amanora "Cambridge Lower Secondary
-// Grade 6 to 8" page: Cambridge Primary is Grades 1–5 and Lower Secondary is
-// Grades 6–8, so Grade 6 is Stage 7 — NOT Primary Stage 6. Grades 6 & 7 take
-// combined Science; Grade 8 splits it into Physics, Chemistry and Biology and
-// drops Marathi, Global Perspectives and Art.
-// https://amanora.cns.ac.in/cambridge-lower-secondary-grade-6-to-8/
+// The app retains its existing grade/stage mapping for content lookup.
+// A grade alone does not establish a school timetable or subject mandate.
 
 export const SUBJECTS_CLS: Subject[] = [
   {
@@ -704,10 +700,7 @@ export const SUBJECTS_CLS: Subject[] = [
     accent: "#F87171", soft: "rgba(248, 113, 113, 0.15)", deep: "#7F1D1D",
     glow: "rgba(248, 113, 113, 0.5)", icon: Languages,
   },
-  // Timetabled in Grades 6–7 at CNS but missing from the app until now, so a
-  // Grade 6 learner had no way to see three of their own periods. PE (0081) and
-  // Music (0078) are Cambridge Lower Secondary frameworks; Hobby is a school
-  // slot, so it carries no framework code.
+  // Optional activity subjects retain their existing IDs and progress.
   {
     id: "cls-pe", name: "Physical Education", tagline: "Move · play · train",
     gradient: "from-red-400 via-rose-500 to-pink-600",
@@ -726,7 +719,7 @@ export const SUBJECTS_CLS: Subject[] = [
     accent: "#2DD4BF", soft: "rgba(45, 212, 191, 0.15)", deep: "#134E4A",
     glow: "rgba(45, 212, 191, 0.5)", icon: Sparkles,
   },
-  // Grade 8 (Stage 9) only — combined Science splits into three
+  // Separate science choices retained alongside combined Science.
   {
     id: "cls-physics", name: "Physics", tagline: "Forces · energy · waves",
     gradient: "from-cyan-400 via-blue-500 to-indigo-600",
@@ -747,95 +740,57 @@ export const SUBJECTS_CLS: Subject[] = [
   },
 ];
 
-/** Grades 6–7 (Stages 7–8) take combined Science, Marathi, Global Perspectives and Art. */
+/** Generic catalog choices, not a particular school's timetable.
+ * Cambridge allows any combination of Lower Secondary subjects:
+ * https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-lower-secondary/curriculum
+ */
 export const CLS_GROUPS_6_7: IcseGroup[] = [
   {
     id: "core",
-    label: "Core Academics",
-    description: "Taken by every Lower Secondary learner.",
+    label: "English, Mathematics & Science",
+    description: "Choose the subjects in your learning plan.",
     subjects: ["cls-english", "cls-maths", "cls-science"],
-    compulsoryIds: ["cls-english", "cls-maths", "cls-science"],
   },
   {
     id: "humanities",
     label: "Humanities",
-    description: "History and Geography run all through Lower Secondary.",
+    description: "Choose the humanities subjects you study.",
     subjects: ["cls-history", "cls-geography", "cls-globalperspectives"],
-    compulsoryIds: ["cls-history", "cls-geography", "cls-globalperspectives"],
   },
   {
     id: "languages",
-    label: "Second language",
-    description: "Pick the language option you take at school — Hindi, French or Spanish.",
+    label: "Languages",
+    description: "Choose from the available language options.",
     subjects: ["cls-hindi", "cls-french", "cls-spanish"],
   },
   {
     id: "state",
-    label: "Maharashtra mandate",
-    description: "Marathi is legally required at all Maharashtra schools (Compulsory Marathi Act 2020).",
+    label: "Additional language",
+    description: "Choose Marathi if it is part of your learning plan.",
     subjects: ["cls-marathi"],
-    compulsoryIds: ["cls-marathi"],
   },
   {
     id: "creative",
     label: "ICT & Art",
-    // Both are timetabled at CNS in Grades 6–7 — the school's own subject list
-    // names Art alongside ICT — so neither is a pick. Art was previously
-    // optional here, which meant a Grade 6 learner could end up with no Art
-    // tile at all despite having Art periods every week.
-    description: "Part of the timetable at CNS through Grades 6–7.",
+    description: "Choose technology and creative subjects you study.",
     subjects: ["cls-ict", "cls-art"],
-    compulsoryIds: ["cls-ict", "cls-art"],
   },
   {
-    // The CNS Grade 6–8 page lists PE, Music/Dance/Drama and Hobby alongside the
-    // academic subjects. PE and Music are timetabled for everyone, so they are
-    // compulsory here; Hobby is the slot the learner chooses, so it is offered
-    // rather than forced. None of the three has an exam pack yet — the subject
-    // screen already handles that (cls-marathi has been in the same state).
     id: "wellbeing",
     label: "PE, Performing Arts & Hobby",
-    description: "The periods that aren't at a desk. Timetabled at CNS in Grades 6–7.",
+    description: "Choose movement, performance or project activities.",
     subjects: ["cls-pe", "cls-music", "cls-hobby"],
-    compulsoryIds: ["cls-pe", "cls-music"],
   },
 ];
 
-/** Grade 8 (Stage 9) splits Science and drops Marathi / Global Perspectives / Art. */
+/** Grade 8 keeps the same choices, with separate science options also offered. */
 export const CLS_GROUPS_8: IcseGroup[] = [
-  {
-    id: "core",
-    label: "Core Academics",
-    description: "Taken by every Grade 8 learner.",
-    subjects: ["cls-english", "cls-maths"],
-    compulsoryIds: ["cls-english", "cls-maths"],
-  },
+  ...CLS_GROUPS_6_7,
   {
     id: "sciences",
     label: "Sciences",
-    description: "Grade 8 splits combined Science into the three separate sciences.",
+    description: "Choose separate sciences if you study them. Combined Science remains available.",
     subjects: ["cls-physics", "cls-chemistry", "cls-biology"],
-    compulsoryIds: ["cls-physics", "cls-chemistry", "cls-biology"],
-  },
-  {
-    id: "humanities",
-    label: "Humanities",
-    description: "History and Geography continue into Grade 8.",
-    subjects: ["cls-history", "cls-geography"],
-    compulsoryIds: ["cls-history", "cls-geography"],
-  },
-  {
-    id: "languages",
-    label: "Second language",
-    description: "Pick the language option you take at school.",
-    subjects: ["cls-hindi", "cls-french", "cls-spanish"],
-  },
-  {
-    id: "creative",
-    label: "ICT",
-    description: "Runs through Grade 8.",
-    subjects: ["cls-ict"],
-    compulsoryIds: ["cls-ict"],
   },
 ];
 
@@ -856,17 +811,9 @@ export function cambridgeStageForGrade(board: Board, grade?: number): number | u
 export const SUBJECTS: Subject[] = [...SUBJECTS_PRIMARY, ...SUBJECTS_CLS, ...SUBJECTS_IGCSE, ...SUBJECTS_ICSE7, ...ALL_CBSE];
 export const SUBJECT_MAP = Object.fromEntries(SUBJECTS.map((s) => [s.id, s])) as Record<string, Subject>;
 
-// IGCSE subject grouping (per the CNS Amanora Grade 9–10 page, re-verified
-// 2026-08-11: https://amanora.cns.ac.in/cambridge-upper-secondary-igcse-grade-9-to-10/).
-//
-// CNS rules: Mathematics – International is compulsory; a subject runs only
-// with 10+ takers; and a student needs 6 subjects excluding Drama, PE and
-// Global Perspectives to apply to Indian colleges.
-//
-// Still unmodelled from the school's published list — these have no SubjectId
-// yet, so a student taking them cannot select them: Literature in English,
-// Environmental Management (counts as Group 2 OR 3), Accounting, Additional
-// Mathematics, Music, Drama, Physical Education.
+// IGCSE catalog grouping, not a school or award enrollment policy.
+// Cambridge offers subjects in any combination:
+// https://www.cambridgeinternational.org/programmes-and-qualifications/cambridge-upper-secondary/cambridge-igcse/curriculum/
 export type IgcseGroup = {
   id: string;
   label: string;
@@ -879,28 +826,26 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
   {
     id: "g1",
     label: "Group 1 · Languages",
-    description: "English First Language is compulsory. Pick a second language.",
+    description: "Choose the language subjects you study.",
     subjects: ["igcse-english", "igcse-hindi", "igcse-french", "igcse-spanish"],
-    compulsoryIds: ["igcse-english"],
   },
   {
     id: "g2",
     label: "Group 2 · Humanities & Social Sciences",
-    description: "Pick one (if taking 6+ subjects).",
+    description: "Choose the humanities and social sciences you study.",
     subjects: ["igcse-history", "igcse-geography", "igcse-economics", "igcse-globalperspectives"],
   },
   {
     id: "g3",
     label: "Group 3 · Sciences",
-    description: "Pick one or more.",
+    description: "Choose the sciences you study.",
     subjects: ["igcse-physics", "igcse-chemistry", "igcse-biology"],
   },
   {
     id: "g4",
     label: "Group 4 · Mathematics",
-    description: "Mathematics is compulsory.",
+    description: "Choose this syllabus if you study International Mathematics (0607).",
     subjects: ["igcse-maths"],
-    compulsoryIds: ["igcse-maths"],
   },
   {
     id: "g5",
@@ -910,10 +855,9 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
   },
   {
     id: "state",
-    label: "Maharashtra mandate",
-    description: "Marathi is legally required at all Maharashtra schools through Std 10 (Compulsory Marathi Act 2020).",
+    label: "Additional language",
+    description: "Choose Marathi if it is part of your learning plan.",
     subjects: ["igcse-marathi"],
-    compulsoryIds: ["igcse-marathi"],
   },
 ];
 
@@ -928,9 +872,8 @@ export function subjectsForLearner(
     const groups = clsGroupsForGrade(grade);
     const compulsory = groups.flatMap((g) => g.compulsoryIds || []);
     const chosen = new Set<SubjectId>([...compulsory, ...(pickedSubjects || [])]);
-    // Preserve SUBJECTS_CLS order, but only surface subjects offered at this grade.
-    const offered = new Set<SubjectId>(groups.flatMap((g) => g.subjects));
-    return SUBJECTS_CLS.filter((s) => chosen.has(s.id) && offered.has(s.id));
+    // Retained selections must remain visible even after a grade change.
+    return SUBJECTS_CLS.filter((s) => chosen.has(s.id));
   }
   if (board === "cambridge-igcse") {
     const compulsory = IGCSE_GROUPS.flatMap((g) => g.compulsoryIds || []);

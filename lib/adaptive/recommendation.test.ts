@@ -54,8 +54,8 @@ describe("recommendNextQuest", () => {
   });
 
   it.each([
-    { board: "cambridge-lower-secondary" as Board, grade: 6 },
-    { board: "cambridge-igcse" as Board, grade: 10 },
+    { board: "cambridge-lower-secondary" as Board, grade: 6, pickedSubjects: ["cls-maths" as const] },
+    { board: "cambridge-igcse" as Board, grade: 10, pickedSubjects: ["igcse-maths" as const] },
     { board: "icse" as Board, grade: 6 },
     { board: "icse" as Board, grade: 7 },
     { board: "cbse" as Board, grade: 7 },
@@ -66,7 +66,10 @@ describe("recommendNextQuest", () => {
   });
 
   it("rotates study suggestions daily without needing a completed quiz", () => {
-    const learner = { board: "cambridge-lower-secondary" as const, grade: 6 };
+    const learner = {
+      board: "cambridge-lower-secondary" as const, grade: 6,
+      pickedSubjects: ["cls-maths" as const, "cls-english" as const],
+    };
     const first = recommend({ learner });
     expect(recommend({ learner })).toEqual(first);
     expect(recommend({ learner, now: NOW + 86_400_000 })).not.toEqual(first);
@@ -81,9 +84,14 @@ describe("recommendNextQuest", () => {
       const result = recommend({ learner, rotationIndex });
       expect(result.kind).toBe("study-pack");
       if (result.kind === "study-pack") {
-        expect(["igcse-english", "igcse-maths", "igcse-cs"]).toContain(result.subjectId);
+        expect(result.subjectId).toBe("igcse-cs");
       }
     }
+  });
+
+  it("does not infer Cambridge study subjects before explicit selection", () => {
+    expect(recommend({ learner: { board: "cambridge-lower-secondary", grade: 6, pickedSubjects: [] } }).kind)
+      .toBe("unavailable");
   });
 
   it("prioritizes an admitted due review over topic practice", () => {
