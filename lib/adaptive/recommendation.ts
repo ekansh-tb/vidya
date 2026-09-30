@@ -1,9 +1,11 @@
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import { isDue } from "@/lib/spaced-repetition";
+import { hasPack } from "@/lib/content/packs/pack-index";
+import { subjectsForLearner } from "@/lib/content/subjects";
 import type { GameState, LearnerProfile, SubjectId } from "@/lib/types";
 
 type RecommendationInput = {
-  learner: Pick<LearnerProfile, "board" | "grade">;
+  learner: Pick<LearnerProfile, "board" | "grade" | "pickedSubjects">;
   progress: GameState["progress"];
   missedQuestions: GameState["missedQuestions"];
   /** A changing whole number supplied by the caller, such as quizzes completed. */
@@ -15,6 +17,11 @@ type RecommendationInput = {
 };
 
 export type NextQuestRecommendation =
+  | {
+      kind: "study-pack";
+      subjectId: SubjectId;
+      subjectName: string;
+    }
   | {
       kind: "due-review";
       dueCount: number;
@@ -72,6 +79,18 @@ export function recommendNextQuest({
 }: RecommendationInput): NextQuestRecommendation {
   const banks = questionsForLearner(learner);
   if (Object.keys(banks).length === 0) {
+    const available = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade)
+      .filter((subject) => hasPack(subject.id, learner.grade));
+    if (available.length > 0) {
+      // Rotate by calendar day because studying a pack does not increment the
+      // quiz counter. This is exploration, not an inferred mastery assessment.
+      const date = new Date(now);
+      const day = Number.isFinite(now)
+        ? Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000)
+        : 0;
+      const subject = rotate(available, day + safeWholeNumber(rotationIndex));
+      return { kind: "study-pack", subjectId: subject.id, subjectName: subject.name };
+    }
     return { kind: "unavailable", reason: "no-verified-question-bank" };
   }
 

@@ -16,7 +16,7 @@ export function NextBestQuestCard({
 }) {
   const headingId = useId();
   const descriptionId = useId();
-  const subject = recommendation.kind === "topic"
+  const subject = recommendation.kind === "topic" || recommendation.kind === "study-pack"
     ? SUBJECT_MAP[recommendation.subjectId]
     : undefined;
 
@@ -48,20 +48,23 @@ export function NextBestQuestCard({
   }
 
   const isReview = recommendation.kind === "due-review";
+  const isPack = recommendation.kind === "study-pack";
   const title = isReview
     ? `${recommendation.dueCount} review ${recommendation.dueCount === 1 ? "question is" : "questions are"} ready`
-    : recommendation.topicTitle;
+    : isPack ? `Explore ${recommendation.subjectName}` : recommendation.topicTitle;
   const description = isReview
     ? "A quick revisit can help the answer stick."
-    : recommendation.source === "weakest-attempted"
+    : isPack
+      ? "A study pack for your grade, with explanations, flashcards and practice. Try a small section today."
+      : recommendation.source === "weakest-attempted"
       ? "This topic has the most room to grow from the quizzes you have tried."
       : recommendation.source === "unseen"
         ? "No topic quiz result is recorded here yet, so this is ready to explore."
         : "A quick practice round can keep this skill fresh.";
-  const actionLabel = isReview ? "Open review" : "Start quest";
+  const actionLabel = isReview ? "Open review" : isPack ? "Open study pack" : "Start quest";
   const accessibleActionLabel = isReview
     ? `Review ${recommendation.dueCount} ready ${recommendation.dueCount === 1 ? "question" : "questions"}`
-    : `Start ${recommendation.topicTitle} quest`;
+    : isPack ? `Open ${recommendation.subjectName} study pack` : `Start ${recommendation.topicTitle} quest`;
 
   return (
     <section
@@ -82,7 +85,7 @@ export function NextBestQuestCard({
           style={{ background: subject?.soft || "rgba(244, 114, 182, 0.16)" }}
           aria-hidden="true"
         >
-          {isReview ? (
+          {isReview || isPack ? (
             <BookOpenCheck className="w-6 h-6 text-rose-300" />
           ) : (
             <span className="text-2xl">{recommendation.topicIcon}</span>

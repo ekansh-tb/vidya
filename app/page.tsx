@@ -203,6 +203,10 @@ export default function HomePage() {
             setView({ name: "review" });
             return;
           }
+          if (recommendation.kind === "study-pack") {
+            setView({ name: "exam-prep", params: { subjectId: recommendation.subjectId } });
+            return;
+          }
           setView({
             name: "quiz",
             params: {

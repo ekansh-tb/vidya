@@ -38,9 +38,9 @@ function validMiss(overrides: Partial<MissedQuestion> = {}): MissedQuestion {
 describe("recommendNextQuest", () => {
   it.each([
     { board: "cambridge-primary" as Board, grade: 4 },
-    { board: "cambridge-lower-secondary" as Board, grade: 6 },
-    { board: "cambridge-igcse" as Board, grade: 10 },
-    { board: "icse" as Board, grade: 7 },
+    { board: "cambridge-lower-secondary" as Board, grade: 7 },
+    { board: "cambridge-igcse" as Board, grade: 9 },
+    { board: "icse" as Board, grade: 8 },
     { board: "cbse" as Board, grade: 5 },
   ])("does not assess unavailable $board Grade $grade content", (learner) => {
     expect(recommend({
@@ -51,6 +51,39 @@ describe("recommendNextQuest", () => {
         },
       },
     })).toEqual({ kind: "unavailable", reason: "no-verified-question-bank" });
+  });
+
+  it.each([
+    { board: "cambridge-lower-secondary" as Board, grade: 6 },
+    { board: "cambridge-igcse" as Board, grade: 10 },
+    { board: "icse" as Board, grade: 6 },
+    { board: "icse" as Board, grade: 7 },
+    { board: "cbse" as Board, grade: 7 },
+  ])("offers an exact-grade study pack for $board Grade $grade", (learner) => {
+    const result = recommend({ learner, missedQuestions: [validMiss()] });
+    expect(result.kind).toBe("study-pack");
+    expect(result).not.toHaveProperty("mastery");
+  });
+
+  it("rotates study suggestions daily without needing a completed quiz", () => {
+    const learner = { board: "cambridge-lower-secondary" as const, grade: 6 };
+    const first = recommend({ learner });
+    expect(recommend({ learner })).toEqual(first);
+    expect(recommend({ learner, now: NOW + 86_400_000 })).not.toEqual(first);
+  });
+
+  it("does not suggest an unselected optional subject", () => {
+    const learner = {
+      board: "cambridge-igcse" as const, grade: 10,
+      pickedSubjects: ["igcse-cs" as const],
+    };
+    for (let rotationIndex = 0; rotationIndex < 20; rotationIndex++) {
+      const result = recommend({ learner, rotationIndex });
+      expect(result.kind).toBe("study-pack");
+      if (result.kind === "study-pack") {
+        expect(["igcse-english", "igcse-maths", "igcse-cs"]).toContain(result.subjectId);
+      }
+    }
   });
 
   it("prioritizes an admitted due review over topic practice", () => {
