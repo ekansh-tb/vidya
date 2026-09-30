@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 /**
  * "You didn't open a screen. You walked into a room."
@@ -65,8 +65,9 @@ export function RoomEnter({
 }
 
 /**
- * Full enter/exit version. Note this unmounts the outgoing view, so the
- * caller must be happy for that view's local state to be discarded.
+ * Mount the selected room immediately. Decorative animation must never gate
+ * navigation or leave content hidden when animation frames are suspended.
+ * Changing the key still discards the previous view's local state.
  */
 export function RoomTransition({
   roomKey,
@@ -81,21 +82,10 @@ export function RoomTransition({
 
   return (
     <div style={reduce ? undefined : { perspective: 1400 }}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={roomKey}
-          initial={reduce ? { opacity: 0 } : { opacity: 0, z: -120, rotateX: 4, y: 10 }}
-          animate={reduce ? { opacity: 1 } : { opacity: 1, z: 0, rotateX: 0, y: 0 }}
-          // The room you leave falls away behind you rather than blinking out,
-          // so Back always feels like a place you can walk to again.
-          exit={reduce ? { opacity: 0 } : { opacity: 0, z: -70, transition: { duration: 0.16 } }}
-          transition={reduce ? { duration: 0.18 } : { duration: 0.34, ease: ENTER_EASE }}
-          style={{ transformOrigin: "50% 40%" }}
-        >
-          {children}
-          {door && !reduce && <DoorSweep />}
-        </motion.div>
-      </AnimatePresence>
+      <div key={roomKey}>
+        {children}
+        {door && !reduce && <DoorSweep />}
+      </div>
     </div>
   );
 }
