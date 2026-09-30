@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { AVATARS } from "@/lib/content/avatars";
 import { BOARDS, gradesForBoard } from "@/lib/content/boards";
 import { cambridgeStageForGrade } from "@/lib/content/subjects";
-import { initAudio, startMusic, sfx } from "@/lib/audio";
 import { vidya } from "@/lib/speech";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import type { Board } from "@/lib/types";
@@ -70,15 +69,15 @@ export function OnboardingView({
   const [grade, setGrade] = useState<number | null>(null);
   const [avatarId, setAvatarId] = useState("peacock");
   const [interests, setInterests] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const toggleInterest = (id: string) => {
-    sfx.click();
     setInterests((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
   // Changing board drops the grade — a grade only means something inside a
   // board's own range, so we never carry one across.
   const chooseBoard = (id: Board) => {
-    sfx.click();
     if (id === board) return;
     setBoard(id);
     setGrade(null);
@@ -106,14 +105,20 @@ export function OnboardingView({
   const handleStart = async () => {
     // Belt and braces: the button is disabled until both are chosen, so a
     // learner can never reach the app on an assumed board or grade.
-    if (!board || grade == null) return;
-    await initAudio();
-    sfx.coin();
-    await onComplete({ name: name.trim(), avatarId, interests, board, grade });
-    setTimeout(() => {
-      startMusic();
-      vidya.greet(name.trim().split(" ")[0]);
-    }, 300);
+    if (!board || grade == null || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      // Enrollment must finish even when audio is blocked or cannot load.
+      await onComplete({ name: name.trim(), avatarId, interests, board, grade });
+      setTimeout(() => {
+        try { vidya.greet(name.trim().split(" ")[0]); } catch { /* Optional greeting. */ }
+      }, 300);
+    } catch {
+      setSaveError("We could not finish setting up. Your choices are still here. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // ── STORY MODE ─────────────────────────────────────────────────────────
@@ -122,7 +127,7 @@ export function OnboardingView({
       <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
         <CosmicBg mode="parent" intensity={0.85} />
         <button
-          onClick={() => { sfx.click(); setPhase("form"); }}
+          onClick={() => setPhase("form")}
           className="absolute top-5 right-5 z-20 text-[11px] uppercase tracking-widest font-bold flex items-center gap-1.5 px-3 py-2 rounded-full active:scale-95 transition"
           style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
@@ -248,7 +253,7 @@ export function OnboardingView({
                           <motion.button
                             key={g}
                             type="button"
-                            onClick={() => { sfx.click(); setGrade(g); }}
+                            onClick={() => setGrade(g)}
                             aria-pressed={active}
                             aria-label={`Grade ${g}`}
                             whileTap={reduced ? undefined : { scale: 0.92 }}
@@ -371,10 +376,11 @@ export function OnboardingView({
                 <Button variant="ghost" onClick={() => setStep(2)}>
                   <ChevronLeft className="inline w-5 h-5 -mt-0.5" /> Back
                 </Button>
-                <Button size="lg" onClick={handleStart} disabled={!classChosen}>
-                  <Sparkles className="inline w-5 h-5 -mt-0.5 mr-1" /> Walk into Vidya
+                <Button size="lg" onClick={handleStart} disabled={!classChosen || saving}>
+                  <Sparkles className="inline w-5 h-5 -mt-0.5 mr-1" /> {saving ? "Setting up…" : "Walk into Vidya"}
                 </Button>
               </div>
+              {saveError && <p role="alert" className="text-center text-rose-200 text-sm mt-4">{saveError}</p>}
               <p className="text-center text-white/40 text-xs mt-6">
                 Music stays off by default. Toggle it on anytime in settings.
               </p>
