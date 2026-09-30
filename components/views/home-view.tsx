@@ -92,6 +92,10 @@ export function HomeView({
       onNavigate("review");
       return;
     }
+    if (nextBestQuest.kind === "study-pack") {
+      onNavigate("exam-prep", { subjectId: nextBestQuest.subjectId });
+      return;
+    }
     onNavigate("quiz", {
       subjectId: nextBestQuest.subjectId,
       topicId: nextBestQuest.topicId,
@@ -588,6 +592,7 @@ export function HomeView({
           {subjectMastery.map((s, i) => {
             const Icon = s.icon;
             const isNow = period.subjectId === s.id;
+            const packReady = hasPack(s.id, learner.grade);
             return (
               <motion.div
                 key={s.id}
@@ -622,7 +627,7 @@ export function HomeView({
                         className="rounded-full px-2 py-1 text-[9px] uppercase tracking-widest font-bold"
                         style={{ background: s.soft, color: s.accent }}
                       >
-                        Soon
+                        {packReady ? "Study pack" : "Soon"}
                       </div>
                     ) : (
                       <ProgressRing percent={s.mastery} size={42} stroke={4} color={s.accent} />
@@ -634,7 +639,9 @@ export function HomeView({
                   <div className={`text-xs text-white/50 ${s.id === "marathi" ? "font-deva" : ""}`}>{s.tagline}</div>
                   <div className="mt-2 flex items-center gap-2">
                     <div className="text-[10px] uppercase tracking-widest font-bold text-white/40">
-                      {s.mastery == null ? "Lessons coming soon" : `${s.mastery}% mastered`}
+                      {s.mastery == null
+                        ? packReady ? "Study pack ready" : "Lessons coming soon"
+                        : `${s.mastery}% mastered`}
                     </div>
                     {isNow && (
                       <div
