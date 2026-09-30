@@ -26,6 +26,11 @@ import middleware from "./middleware";
 
 const event = {} as NextFetchEvent;
 const request = (path: string) => new NextRequest(`https://vidya.example${path}`);
+async function responseFor(path: string) {
+  const response = await middleware(request(path), event);
+  if (!response) throw new Error("Expected a middleware response");
+  return response;
+}
 
 beforeEach(() => {
   mocks.configured = true;
@@ -39,7 +44,7 @@ describe("exact public health middleware bypass", () => {
     "/api/health?probe=1", "/api/health/ready?probe=1",
   ])("does not invoke unavailable Clerk for %s", async (path) => {
     mocks.clerk.mockImplementation(() => { throw new Error("Clerk unavailable"); });
-    const response = await middleware(request(path), event);
+    const response = await responseFor(path);
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(mocks.clerk).not.toHaveBeenCalled();
     expect(mocks.auth).not.toHaveBeenCalled();
@@ -47,7 +52,7 @@ describe("exact public health middleware bypass", () => {
 
   it.each(["/api/health", "/api/health/ready"])("also works without Clerk configured: %s", async (path) => {
     mocks.configured = false;
-    const response = await middleware(request(path), event);
+    const response = await responseFor(path);
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(mocks.clerk).not.toHaveBeenCalled();
   });
@@ -66,7 +71,7 @@ describe("exact public health middleware bypass", () => {
 
 describe("existing parent and auth behavior", () => {
   it.each(["/parent", "/parent/dashboard"])("keeps anonymous parent path guarded: %s", async (path) => {
-    const response = await middleware(request(path), event);
+    const response = await responseFor(path);
     const location = new URL(response.headers.get("location")!);
     expect(response.status).toBe(307);
     expect(location.pathname).toBe("/sign-in");
@@ -77,7 +82,7 @@ describe("existing parent and auth behavior", () => {
 
   it("allows an authenticated parent only after Clerk runs", async () => {
     mocks.auth.mockResolvedValue({ userId: "synthetic-parent" });
-    const response = await middleware(request("/parent/dashboard"), event);
+    const response = await responseFor("/parent/dashboard");
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(mocks.auth).toHaveBeenCalledOnce();
   });
@@ -89,14 +94,14 @@ describe("existing parent and auth behavior", () => {
 
   it.each(["/parent/dashboard", "/sign-in", "/sign-up"])("preserves the unconfigured fallback for %s", async (path) => {
     mocks.configured = false;
-    const response = await middleware(request(path), event);
+    const response = await responseFor(path);
     expect(new URL(response.headers.get("location")!).pathname).toBe("/");
     expect(mocks.clerk).not.toHaveBeenCalled();
   });
 
   it("preserves the signed-in redirect away from auth pages", async () => {
     mocks.auth.mockResolvedValue({ userId: "synthetic-parent" });
-    const response = await middleware(request("/sign-in"), event);
+    const response = await responseFor("/sign-in");
     expect(new URL(response.headers.get("location")!).pathname).toBe("/");
     expect(mocks.auth).toHaveBeenCalledOnce();
   });
