@@ -2,7 +2,14 @@ import { spawnSync } from "node:child_process";
 
 const raw = process.env.VIDYA_TEST_DATABASE_URL;
 if (!raw) throw new Error("VIDYA_TEST_DATABASE_URL is required. Use the dedicated test database.");
-const url = new URL(raw);
+let url;
+try {
+  url = new URL(raw);
+} catch {
+  // Node's Invalid URL error includes the raw input, which may contain secrets.
+  console.error("Invalid VIDYA_TEST_DATABASE_URL. Use a valid dedicated test database URL.");
+  process.exit(1);
+}
 if (url.pathname !== "/vidya_integration" || url.username !== "vidya_test_runner") {
   throw new Error("Refusing integration tests outside the dedicated database and role.");
 }

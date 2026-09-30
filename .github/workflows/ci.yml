@@ -26,6 +26,12 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Verify PostgreSQL migration safety
+        timeout-minutes: 3
+        run: node test/migrations/postgres-harness.mjs --run-postgres-integration
+        env:
+          VIDYA_RUN_MIGRATION_INTEGRATION: "1"
+          VIDYA_TEST_DATABASE_URL: ${{ secrets.VIDYA_TEST_DATABASE_URL }}
       - name: Isolated database integration tests
         run: node scripts/test-integration.mjs
         env:
@@ -61,6 +67,9 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Migration runner tests
+        run: node --test test/migrations/*.test.mjs
 
       - name: Build
         run: npm run build
