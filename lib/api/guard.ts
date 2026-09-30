@@ -118,7 +118,11 @@ export type TutorRequest = z.infer<typeof tutorRequestSchema>;
 export type AssemblyRequest = z.infer<typeof assemblyRequestSchema>;
 
 /** Total characters a request would push at the model. */
-export function totalChars(messages: z.input<typeof tutorRequestSchema>["messages"]): number {
+export function totalChars(messages: ReadonlyArray<{
+  role: string;
+  content?: string;
+  parts?: ReadonlyArray<{ type: string; text?: string }>;
+}>): number {
   let n = 0;
   for (const m of messages) {
     if (typeof m.content === "string") n += m.content.length;
