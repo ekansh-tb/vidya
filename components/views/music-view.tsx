@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Composition, GameState } from "@/lib/types";
 import { sfx } from "@/lib/audio";
-import { SONGS, searchSongs, type Song } from "@/lib/content/songs";
+import { searchSongs, type Song } from "@/lib/content/songs";
 
 // Western + Hindustani sargam, mapped to keyboard keys.
 const NOTES = [

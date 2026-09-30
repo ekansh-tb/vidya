@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { ChevronLeft, ChevronRight, KeyRound, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, KeyRound, Lock, Flame, TrendingUp, Brain, Trophy, Upload, Trash2, Heart } from "lucide-react";
 import { Mascot } from "@/components/ui/mascot";
 import { XPBar } from "@/components/ui/xp-bar";
 import { AVATARS } from "@/lib/content/avatars";

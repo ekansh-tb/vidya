@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, Users, Trophy, Megaphone, Heart, Send, Sparkles, Flame } from "lucide-react";
-import type { GameState, LearnerProfile, ClassMember, ClassNote, FriendStreak } from "@/lib/types";
+import type { GameState, LearnerProfile, ClassNote, FriendStreak } from "@/lib/types";
 import {
   seedClassRoster,
   seedClassNotes,
