@@ -80,11 +80,11 @@ describe("tutorRequestSchema", () => {
     expect(tutorRequestSchema.safeParse({ messages: [msg("hi")], grade: 0 }).success).toBe(false);
   });
 
-  it("tolerates unknown message part kinds the AI SDK may add", () => {
+  it("rejects tool message parts from clients", () => {
     const r = tutorRequestSchema.safeParse({
       messages: [{ role: "assistant", parts: [{ type: "tool-invocation", state: "result" }] }],
     });
-    expect(r.success).toBe(true);
+    expect(r.success).toBe(false);
   });
 });
 
