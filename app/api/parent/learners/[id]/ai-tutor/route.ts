@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { readBoundedJson } from "@/lib/api/bounded-json";
-import { clientKey, isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import { TUTOR_POLICY_LIMITS } from "@/lib/ai/tutor-policy";
 import { requireParent } from "@/lib/auth/session";
 import { requireRecentParentReverification } from "@/lib/auth/reverification";
@@ -82,10 +82,15 @@ export async function PUT(
   const resolved = await parentAndLearner(req, ctx);
   if (!resolved.ok) return resolved.response;
 
-  const verdict = rateLimit(
-    `parent-learner-ai-set:${resolved.parentId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-learner-ai-set:${resolved.parentId}`,
     RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json({ error: "Too many requests" }, 429, rateHeaders(verdict, RATE.limit));
   }
@@ -122,10 +127,15 @@ export async function DELETE(
   const resolved = await parentAndLearner(req, ctx);
   if (!resolved.ok) return resolved.response;
 
-  const verdict = rateLimit(
-    `parent-learner-ai-delete:${resolved.parentId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-learner-ai-delete:${resolved.parentId}`,
     RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json({ error: "Too many requests" }, 429, rateHeaders(verdict, RATE.limit));
   }

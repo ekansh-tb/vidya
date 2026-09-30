@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 /** Assembly is once-a-day content, so this can be tight. Denials fall back to
  *  the hand-written local assembly rather than erroring — the kid still gets a
- *  greeting. See lib/api/guard.ts for the best-effort caveat. */
+ *  greeting. Store outages block paid generation with a safe 503. */
 const RATE = { limit: 12, windowMs: 10 * 60 * 1000 };
 
 const FALLBACK_THOUGHTS = [
@@ -49,10 +49,6 @@ export async function POST(req: Request) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Over the limit, serve the offline assembly instead of an error — the kid
-  // should never see the school fail to open.
-  const verdict = rateLimit(`assembly:${clientKey(req)}`, RATE);
-
   let raw: unknown = {};
   try {
     raw = await req.json();
@@ -63,14 +59,23 @@ export async function POST(req: Request) {
   const parsed = assemblyRequestSchema.safeParse(raw ?? {});
   const body = parsed.success ? parsed.data : {};
 
+  if (!aiProviderConfigured()) {
+    return Response.json(dailyFallback(body.name));
+  }
+
+  // Over the limit, serve the offline assembly instead of an error — the kid
+  // should never see the school fail to open.
+  const verdict = await rateLimit(`assembly:${clientKey(req)}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
+
   if (!verdict.ok) {
     return Response.json(dailyFallback(body.name), {
       headers: rateHeaders(verdict, RATE.limit),
     });
-  }
-
-  if (!aiProviderConfigured()) {
-    return Response.json(dailyFallback(body.name));
   }
 
   const today = new Date().toLocaleDateString("en-IN", {

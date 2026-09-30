@@ -1,4 +1,4 @@
-import { clientKey, isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import { requireParent } from "@/lib/auth/session";
 import { requireRecentParentReverification } from "@/lib/auth/reverification";
 import { dbConfigured } from "@/lib/db/client";
@@ -23,10 +23,15 @@ export async function POST(req: Request) {
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(
-    `parent-ai-pause-all:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-ai-pause-all:${parent.userId}`,
     RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json({ error: "Too many requests" }, 429, rateHeaders(verdict, RATE.limit));
   }

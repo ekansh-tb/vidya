@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
-import { clientKey, isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import {
   configuredCredentialKeyring,
   credentialAad,
@@ -37,10 +37,15 @@ export async function POST(
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(
-    `parent-ai-connection-validate:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-ai-connection-validate:${parent.userId}`,
     RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json({ error: "Too many requests" }, 429, rateHeaders(verdict, RATE.limit));
   }

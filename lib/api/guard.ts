@@ -1,39 +1,11 @@
-// Request guards for the public AI routes.
-//
-// WHY THIS EXISTS
-// ---------------
-// `/api/tutor` and `/api/assembly` forward requests to a paid model on the
-// project's credentials. The kid app is deliberately anonymous — there is no
-// kid sign-in — so we CANNOT require a session without breaking the product.
-// That leaves these routes reachable by anyone who knows the URL.
-//
-// The client-side `useCapability("ai.tutor.full")` gate is a UX affordance,
-// not a security boundary: calling the endpoint directly bypasses it entirely.
-//
-// WHAT THIS DOES
-//   1. Same-origin enforcement — real CSRF protection, and a speed bump for
-//      direct callers. Be precise about which: a BROWSER cannot forge Origin,
-//      so a malicious page cannot make a victim's browser act on their session
-//      here. A non-browser caller sets both Origin and Host itself and sails
-//      straight through, so this is not authentication and never was. What
-//      actually bounds direct abuse is the body caps and the model spend cap.
-//   2. Body validation + hard caps — bounds how much text one call can push
-//      into the model, so a single request cannot be an expensive one.
-//   3. Best-effort rate limiting per client.
-//
-// WHAT THIS DOES NOT DO — read before trusting it
-//   The rate limiter is IN-MEMORY and therefore PER-INSTANCE. Vercel's Fluid
-//   Compute reuses instances, so it does meaningfully throttle a single
-//   attacker, but it is not authoritative: concurrent instances each keep
-//   their own counters and all counters reset on deploy. It raises the cost of
-//   abuse; it does not make it impossible.
-//
-//   For a real limit, back it with a shared store (Upstash Redis via the Vercel
-//   Marketplace) and put Vercel BotID / Vercel Firewall in front. Until then,
-//   keep a spend cap on the model provider account — that is the actual
-//   backstop. See the `vidya-ai-endpoints-unprotected` project memory.
+// Validation and same-origin guards for API routes.
+// Shared fixed-window request limits use PostgreSQL atomically across workers.
+// Missing or failed storage denies requests; callers must return a safe 503
+// when verdict.unavailable is true. There is no in-memory fallback.
+// Proxy IP keys still require a trusted ingress. This is not authentication.
 
 import { z } from "zod";
+import { consumeRequestLimit, type RequestLimitOptions, type RequestLimitVerdict } from "@/lib/db/request-limits";
 
 // ---------------------------------------------------------------- caps
 
@@ -167,25 +139,6 @@ export function isSameOrigin(req: Request): boolean {
 
 // ---------------------------------------------------------------- rate limit
 
-type Bucket = { count: number; resetAt: number };
-
-/** Per-instance counters. See the caveat at the top of this file. */
-const buckets = new Map<string, Bucket>();
-/** Hard ceiling on tracked clients so a spray of unique IPs cannot grow this
- *  map without bound. Oldest-resetting entries are evicted first. */
-const MAX_TRACKED = 5_000;
-
-function evictIfNeeded(now: number) {
-  if (buckets.size < MAX_TRACKED) return;
-  for (const [k, b] of buckets) {
-    if (b.resetAt <= now) buckets.delete(k);
-  }
-  if (buckets.size < MAX_TRACKED) return;
-  // Still full: drop the entries closest to resetting.
-  const sorted = [...buckets.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
-  for (let i = 0; i < Math.ceil(sorted.length * 0.2); i++) buckets.delete(sorted[i][0]);
-}
-
 /** Best-effort client key. `x-forwarded-for` is set by Vercel's proxy; its
  *  first entry is the real client. Spoofable in principle, which is another
  *  reason this is best-effort. */
@@ -195,44 +148,28 @@ export function clientKey(req: Request): string {
   return ip || "unknown";
 }
 
-export type RateVerdict = {
-  ok: boolean;
-  remaining: number;
-  resetAt: number;
-  retryAfterSeconds: number;
-};
+export type RateVerdict = RequestLimitVerdict;
 
 /**
- * Fixed-window limiter.
+ * Shared-store failures are distinguishable from quota exhaustion, never thrown.
+ * Every caller must await this and handle unavailable with a private no-store
+ * 503 + Retry-After before checking ok (quota exhaustion remains 429).
  *
- * Defaults mirror the `ai.tutor.limited` capability policy (20/day, burst 5) in
- * spirit but operate on a short window, because an in-memory counter cannot
- * honour a daily budget across deploys. When a shared store lands, move the
- * budget here and read it from CAPABILITY_POLICIES instead of hardcoding.
+ * Release wiring owned by the identity worker:
+ * - lib/auth/account-link-http.ts: make accountLinkRateLimit async, await this,
+ *   distinguish unavailable (503) from exhausted (429), preserve rate headers.
+ * - Await that helper in account/parent-enrollment, account/learner-link and
+ *   parent/learners/[id]/account-link routes and update their rate-limit mocks.
+ * - __resetRateLimiter is a compatibility no-op; tests must mock shared storage.
+ * No identity-owned files are modified by this implementation.
  */
-export function rateLimit(
-  key: string,
-  { limit, windowMs }: { limit: number; windowMs: number },
-): RateVerdict {
-  const now = Date.now();
-  evictIfNeeded(now);
-
-  const existing = buckets.get(key);
-  if (!existing || existing.resetAt <= now) {
-    const resetAt = now + windowMs;
-    buckets.set(key, { count: 1, resetAt });
-    return { ok: true, remaining: limit - 1, resetAt, retryAfterSeconds: 0 };
+export async function rateLimit(key: string, options: RequestLimitOptions): Promise<RateVerdict> {
+  try {
+    return await consumeRequestLimit(key, options);
+  } catch {
+    // Do not log errors: driver diagnostics can contain private connection data.
+    return { ok: false, unavailable: true, remaining: 0, resetAt: Date.now() + 5000, retryAfterSeconds: 5 };
   }
-
-  existing.count += 1;
-  const remaining = Math.max(0, limit - existing.count);
-  const ok = existing.count <= limit;
-  return {
-    ok,
-    remaining,
-    resetAt: existing.resetAt,
-    retryAfterSeconds: ok ? 0 : Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
-  };
 }
 
 /** Standard headers so the client can back off politely. */
@@ -246,7 +183,5 @@ export function rateHeaders(v: RateVerdict, limit: number): Record<string, strin
   return h;
 }
 
-/** Test seam — lets unit tests start from a clean limiter. */
-export function __resetRateLimiter() {
-  buckets.clear();
-}
+/** Compatibility seam for existing callers' tests. Shared counters have no local reset. */
+export function __resetRateLimiter() {}

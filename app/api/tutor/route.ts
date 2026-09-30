@@ -32,8 +32,7 @@ export const maxDuration = 30;
 export const runtime = "nodejs";
 
 /** Tutor turns per client per window. Deliberately generous for a studying
- *  kid, tight enough that scripted abuse is not free. Best-effort — see the
- *  caveats at the top of lib/api/guard.ts. */
+ *  kid, tight enough that scripted abuse is not free. Shared across workers. */
 const RATE = { limit: 30, windowMs: 10 * 60 * 1000 };
 
 const SUBJECT_BLURBS: Record<string, string> = {
@@ -437,7 +436,12 @@ export async function POST(req: Request) {
   const despairHint = crisis && !escalating ? DESPAIR_PROMPT_HINT : "";
 
   // 4. Rate limit.
-  const verdict = rateLimit(`tutor:${clientKey(req)}`, RATE);
+  const verdict = await rateLimit(`tutor:${clientKey(req)}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return Response.json(
       { error: "Miss Vidya needs a short break. Try again in a few minutes." },

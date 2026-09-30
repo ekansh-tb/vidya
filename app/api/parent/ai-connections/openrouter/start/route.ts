@@ -2,7 +2,7 @@ import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
 import { requireRecentParentReverification } from "@/lib/auth/reverification";
 import { readBoundedJson } from "@/lib/api/bounded-json";
-import { clientKey, isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import { configuredCredentialKeyring } from "@/lib/ai/credential-vault";
 import {
   configuredOpenRouterCallbackUrl,
@@ -47,10 +47,15 @@ export async function POST(req: Request) {
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(
-    `parent-openrouter-start:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-openrouter-start:${parent.userId}`,
     START_RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json(
       { error: "Too many requests" },

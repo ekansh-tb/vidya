@@ -48,7 +48,12 @@ export async function POST(req: Request) {
   if (!isSameOrigin(req)) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!dbConfigured()) return Response.json({ error: "Storage unavailable" }, { status: 503 });
 
-  const verdict = rateLimit(`state:${clientKey(req)}`, RATE);
+  const verdict = await rateLimit(`state:${clientKey(req)}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return Response.json({ error: "Too many requests" }, {
       status: 429, headers: rateHeaders(verdict, RATE.limit),

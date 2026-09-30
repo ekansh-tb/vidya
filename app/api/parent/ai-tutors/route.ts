@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { readBoundedJson } from "@/lib/api/bounded-json";
-import { clientKey, isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import {
   configuredCredentialKeyring,
   credentialAad,
@@ -66,7 +66,12 @@ export async function POST(req: Request) {
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(`parent-ai-tutor-create:${parent.userId}:${clientKey(req)}`, RATE);
+  const verdict = await rateLimit(`parent-ai-tutor-create:${parent.userId}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json({ error: "Too many requests" }, 429, rateHeaders(verdict, RATE.limit));
   }

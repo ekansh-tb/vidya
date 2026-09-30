@@ -110,7 +110,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const verdict = rateLimit(`syllabus:${clientKey(req)}`, RATE);
+  const verdict = await rateLimit(`syllabus:${clientKey(req)}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return Response.json(
       { error: "Too many uploads. Try again shortly." },
