@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   Coins, Target, ArrowRight, Trophy, Gem, Settings, Check, Users,
@@ -178,12 +178,12 @@ export function HomeView({
   };
 
   return (
-    <div className="min-h-screen pb-28 max-w-2xl mx-auto">
+    <div className="min-h-screen pb-28 max-w-2xl mx-auto [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-cyan-200">
       <h1 className="sr-only">Vidya home for {state.name.split(" ")[0] || "learner"}</h1>
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-between mb-5">
-          <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="flex items-center gap-3 active:scale-95 transition">
+          <button onClick={() => { sfx.click(); onNavigate("profile"); }} aria-label={`Open profile for ${state.name.split(" ")[0] || "learner"}`} className="flex min-h-11 items-center gap-3 motion-safe:active:scale-95 transition">
             <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="sm" />
             <div className="text-left">
               <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{greeting}</div>
@@ -192,14 +192,14 @@ export function HomeView({
           </button>
           <div className="flex items-center gap-2">
             <StatPill icon={Coins} value={state.coins} accent="#FBBF24" />
-            <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-full px-3 py-1.5 active:scale-95">
+            <button onClick={() => { sfx.click(); onNavigate("profile"); }} aria-label={`View ${state.streak}-day streak and profile`} className="glass rounded-full min-w-11 min-h-11 px-3 py-1.5 motion-safe:active:scale-95">
               <StreakFlame streak={state.streak} large shields={state.inventory?.freeze || 0} />
             </button>
-            <button onClick={() => { sfx.click(); onNavigate("learners"); }} className="glass rounded-full w-10 h-10 flex items-center justify-center active:scale-95" aria-label="Switch learner">
-              <Repeat className="w-4 h-4 text-white/70" />
+            <button onClick={() => { sfx.click(); onNavigate("learners"); }} className="glass rounded-full w-11 h-11 shrink-0 flex items-center justify-center motion-safe:active:scale-95" aria-label="Switch learner">
+              <Repeat aria-hidden="true" className="w-4 h-4 text-white/70" />
             </button>
-            <button onClick={() => { sfx.click(); onNavigate("settings"); }} className="glass rounded-full w-10 h-10 flex items-center justify-center active:scale-95">
-              <Settings className="w-4 h-4 text-white/70" />
+            <button onClick={() => { sfx.click(); onNavigate("settings"); }} aria-label="Settings" className="glass rounded-full w-11 h-11 shrink-0 flex items-center justify-center motion-safe:active:scale-95">
+              <Settings aria-hidden="true" className="w-4 h-4 text-white/70" />
             </button>
           </div>
         </div>
@@ -215,10 +215,10 @@ export function HomeView({
           const Icon = lastSub.icon;
           return (
             <motion.button
-              initial={{ opacity: 0, y: 6 }}
+              initial={reduced ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => { sfx.click(); onNavigate("subject", { subjectId: lastSub.id }); }}
-              className="w-full p-3 mb-3 rounded-2xl flex items-center gap-3 text-left active:scale-[0.99]"
+              className="w-full p-3 mb-3 rounded-2xl flex items-center gap-3 text-left motion-safe:active:scale-[0.99]"
               style={{
                 background: "linear-gradient(90deg, var(--surface) 0%, color-mix(in oklab, var(--accent) 12%, transparent) 100%)",
                 border: "1px solid var(--border)",
@@ -246,7 +246,7 @@ export function HomeView({
         {/* Family note from parent — top-of-fold until acknowledged */}
         {unseenNote && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={reduced ? false : { opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="rounded-3xl p-5 mb-5 relative overflow-hidden"
@@ -267,7 +267,7 @@ export function HomeView({
             </div>
             <button
               onClick={ackNote}
-              className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest active:scale-95"
+              className="rounded-full min-h-11 px-4 py-1.5 text-xs font-bold uppercase tracking-widest motion-safe:active:scale-95"
               style={{ background: "rgba(244,114,182,0.28)", color: "rgba(255,255,255,0.95)" }}
             >
               <Check className="w-3 h-3 inline -mt-0.5 mr-1" /> Got it
@@ -311,9 +311,9 @@ export function HomeView({
                 <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full rounded-full"
-                    initial={{ width: 0 }}
+                    initial={reduced ? false : { width: 0 }}
                     animate={{ width: `${Math.round(progress * 100)}%` }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: reduced ? 0 : 0.6 }}
                     style={{ background: "linear-gradient(90deg, #A78BFA, #22D3EE)" }}
                   />
                 </div>
@@ -328,9 +328,9 @@ export function HomeView({
 
           {recommendedSubject && (
             <motion.button
-              whileTap={{ scale: 0.99 }}
+              whileTap={reduced ? undefined : { scale: 0.99 }}
               onClick={() => { sfx.click(); onNavigate("subject", { subjectId: recommendedSubject.id }); }}
-              className="mt-4 w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left active:scale-[0.99] transition"
+              className="mt-4 w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left motion-safe:active:scale-[0.99] transition"
               style={{ background: recommendedSubject.soft, color: recommendedSubject.accent, boxShadow: `0 0 24px ${recommendedSubject.glow}` }}
             >
               <div>
@@ -348,7 +348,7 @@ export function HomeView({
         {isExamReady && firstPack && (
           <motion.button
             {...rise()}
-            whileTap={{ scale: 0.99 }}
+            whileTap={reduced ? undefined : { scale: 0.99 }}
             onClick={() => { sfx.click(); onNavigate("exam-prep", { subjectId: firstPack.id }); }}
             className="w-full p-4 text-left mb-5 relative overflow-hidden"
             style={{
@@ -385,7 +385,7 @@ export function HomeView({
         {isIgcse && takingCS && (
           <motion.button
             {...rise()}
-            whileTap={{ scale: 0.99 }}
+            whileTap={reduced ? undefined : { scale: 0.99 }}
             onClick={() => { sfx.click(); onNavigate("exam-prep"); }}
             className="w-full rounded-3xl p-4 text-left mb-5 relative overflow-hidden"
             style={{
@@ -396,7 +396,7 @@ export function HomeView({
           >
             <motion.div
               className="absolute inset-0 aurora-bg opacity-15"
-              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+              animate={reduced ? undefined : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
               transition={{ duration: 12, repeat: Infinity }}
             />
             <div className="relative flex items-center gap-3">
@@ -427,7 +427,7 @@ export function HomeView({
         {upcomingExam && (
           <motion.button
             {...rise()}
-            whileTap={{ scale: 0.99 }}
+            whileTap={reduced ? undefined : { scale: 0.99 }}
             onClick={() => {
               sfx.click();
               if (upcomingExam.subjectId) onNavigate("exam-prep", { subjectId: upcomingExam.subjectId });
@@ -478,7 +478,7 @@ export function HomeView({
         {hasDailyQuest && (
         <motion.button
           {...rise()}
-          whileTap={{ scale: 0.99 }}
+          whileTap={reduced ? undefined : { scale: 0.99 }}
           onClick={() => {
             sfx.click();
             if (!todayQuestDone) onNavigate("daily");
@@ -496,7 +496,7 @@ export function HomeView({
           {!todayQuestDone && (
             <motion.div
               className="absolute inset-0 aurora-bg opacity-10"
-              animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+              animate={reduced ? undefined : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
               transition={{ duration: 12, repeat: Infinity }}
             />
           )}
@@ -596,9 +596,9 @@ export function HomeView({
             return (
               <motion.div
                 key={s.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={reduced ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: reduced ? 0 : i * 0.05 }}
               >
                 {/* Tilt gives each classroom door physical presence — it reads
                     as an object you reach into rather than a flat rectangle.
@@ -665,11 +665,11 @@ export function HomeView({
             that a child could set the PIN for. Grown-up controls now live on
             their own screen, reached from Settings or vidyagyan.study/parent. */}
         <div className="mt-6 grid grid-cols-2 gap-2">
-          <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-2xl p-3 text-center active:scale-95">
+          <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-2xl p-3 text-center motion-safe:active:scale-95">
             <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-300" />
             <div className="text-xs font-semibold text-white/80">Badges</div>
           </button>
-          <button onClick={() => { sfx.click(); onNavigate("shop"); }} className="glass rounded-2xl p-3 text-center active:scale-95">
+          <button onClick={() => { sfx.click(); onNavigate("shop"); }} className="glass rounded-2xl p-3 text-center motion-safe:active:scale-95">
             <Gem className="w-5 h-5 mx-auto mb-1 text-violet-300" />
             <div className="text-xs font-semibold text-white/80">Power-ups</div>
           </button>
@@ -688,17 +688,18 @@ function RoomTile({
   onClick: () => void;
   badge?: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <motion.button
-      whileTap={{ scale: 0.97 }}
+      whileTap={reduced ? undefined : { scale: 0.97 }}
       onClick={onClick}
-      className="relative rounded-2xl glass p-3 flex flex-col items-center justify-center gap-1 text-center active:scale-95 transition"
+      className="relative rounded-2xl glass p-3 flex flex-col items-center justify-center gap-1 text-center motion-safe:active:scale-95 transition"
       style={{ background: accent }}
     >
       {icon}
       <div className="text-xs font-semibold text-white/85 leading-tight">{label}</div>
       {badge && (
-        <div className="absolute top-1 right-1 text-[9px] font-bold uppercase tracking-widest rounded-full px-1.5 py-0.5 bg-gradient-to-br from-fuchsia-500 to-amber-500 text-white shadow-sm">
+        <div className="absolute top-1 right-1 text-[9px] font-bold uppercase tracking-widest rounded-full px-1.5 py-0.5 bg-gradient-to-br from-fuchsia-500 to-amber-500 text-slate-950 shadow-sm">
           {badge}
         </div>
       )}
@@ -716,6 +717,9 @@ function RoomTile({
  * over surveillance.
  */
 function DailyReflectionCard({ state }: { state: GameState }) {
+  const reduced = useReducedMotion();
+  const reflectionId = useId();
+  const privacyId = useId();
   const setGameState = useGameStore((s) => s.set);
   const [draft, setDraft] = useState("");
   const [justSaved, setJustSaved] = useState(false);
@@ -760,7 +764,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={reduced ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-3xl p-4 mb-3 relative overflow-hidden"
       style={{
@@ -769,7 +773,7 @@ function DailyReflectionCard({ state }: { state: GameState }) {
       }}
     >
       {justSaved ? (
-        <div className="flex items-center gap-2 py-2">
+        <div role="status" className="flex items-center gap-2 py-2">
           <Check className="w-5 h-5 text-emerald-300" />
           <div>
             <div className="text-sm font-bold text-white">Reflection saved · +5 XP</div>
@@ -784,31 +788,35 @@ function DailyReflectionCard({ state }: { state: GameState }) {
               Today&apos;s reflection
             </span>
           </div>
-          <div className="text-sm font-medium text-white/95 mb-2 leading-snug">
+          <label htmlFor={reflectionId} className="block text-sm font-medium text-white/95 mb-2 leading-snug">
             What did you learn today?
-          </div>
+          </label>
           <textarea
+            id={reflectionId}
+            aria-describedby={privacyId}
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, 200))}
             placeholder="One sentence is enough."
             rows={2}
-            className="w-full px-3 py-2 rounded-xl text-sm resize-none text-white/95 placeholder:text-white/30"
+            className="w-full px-3 py-2 rounded-xl text-sm resize-none text-white/95 placeholder:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
           />
           <div className="flex items-center justify-between mt-2 gap-2">
             <button
               type="button"
+              aria-label="Keep reflection private"
+              aria-pressed={keepPrivate}
               onClick={() => { sfx.click(); setKeepPrivate((v) => !v); }}
-              className="text-[10px] italic flex items-center gap-1.5 active:scale-95"
-              style={{ color: keepPrivate ? "rgba(244,114,182,0.95)" : "rgba(255,255,255,0.45)" }}
+              className="min-h-11 text-[10px] italic flex items-center gap-1.5 motion-safe:active:scale-95"
+              style={{ color: keepPrivate ? "rgba(244,114,182,0.95)" : "rgba(255,255,255,0.75)" }}
             >
-              <span className="text-sm leading-none">{keepPrivate ? "🔒" : "🔓"}</span>
-              {keepPrivate ? "Just for me" : "Your parent can read this"} · {draft.length}/200
+              <span aria-hidden="true" className="text-sm leading-none">{keepPrivate ? "🔒" : "🔓"}</span>
+              <span id={privacyId}>{keepPrivate ? "Just for me" : "Your parent can read this"} · {draft.length}/200</span>
             </button>
             <button
               onClick={save}
               disabled={!draft.trim()}
-              className="rounded-full px-4 min-h-[44px] text-xs font-bold uppercase tracking-widest active:scale-95 disabled:opacity-40"
+              className="rounded-full px-4 min-h-[44px] text-xs font-bold uppercase tracking-widest motion-safe:active:scale-95 disabled:opacity-40"
               style={{ background: "rgba(167,139,250,0.3)", color: "white" }}
             >
               Save · +5 XP
