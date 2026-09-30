@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { ChevronLeft, ChevronRight, BarChart3, Volume2, VolumeX, Music, Mic } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, BarChart3, Volume2, Music, Mic } from "lucide-react";
 import type { GameState, ViewName } from "@/lib/types";
 import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
-import { stopSpeaking, setVoiceVolume } from "@/lib/speech";
+import { speak, stopSpeaking, setVoiceVolume } from "@/lib/speech";
 
 export function SettingsView({
   state, setState, onBack, onNavigate,
@@ -14,6 +14,14 @@ export function SettingsView({
   onBack: () => void;
   onNavigate?: (v: ViewName, params?: Record<string, unknown>) => void;
 }) {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const refresh = () => setVoices(window.speechSynthesis.getVoices().filter((voice) => /^en(?:-|_|$)/i.test(voice.lang)));
+    refresh();
+    window.speechSynthesis.addEventListener("voiceschanged", refresh);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", refresh);
+  }, []);
   // Push the two settings the engines cannot see for themselves. An effect
   // rather than a line in each handler: it also covers mount and a mid-session
   // learner switch, both of which change these values without a toggle press.
@@ -78,6 +86,7 @@ export function SettingsView({
               </div>
               <button
                 onClick={toggleMusic}
+                role="switch" aria-checked={state.settings.music} aria-label="Background music"
                 className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.music ? "gradient-cosmic" : "bg-white/10"}`}
               >
                 <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.music ? "translate-x-6" : "translate-x-1"}`} />
@@ -86,6 +95,7 @@ export function SettingsView({
             {state.settings.music && (
               <input
                 type="range" min={-40} max={0} step={1}
+                aria-label="Music volume"
                 value={state.settings.musicVolume}
                 onChange={onMusicVol}
                 className="w-full accent-fuchsia-400"
@@ -101,6 +111,7 @@ export function SettingsView({
               </div>
               <button
                 onClick={toggleSound}
+                role="switch" aria-checked={state.settings.sound} aria-label="Sound effects"
                 className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.sound ? "gradient-cosmic" : "bg-white/10"}`}
               >
                 <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.sound ? "translate-x-6" : "translate-x-1"}`} />
@@ -109,6 +120,7 @@ export function SettingsView({
             {state.settings.sound && (
               <input
                 type="range" min={-40} max={0} step={1}
+                aria-label="Sound effects volume"
                 value={state.settings.sfxVolume}
                 onChange={onSfxVol}
                 className="w-full accent-cyan-400"
@@ -127,18 +139,41 @@ export function SettingsView({
               </div>
               <button
                 onClick={toggleVoice}
+                role="switch" aria-checked={state.settings.voice} aria-label="Spoken guidance"
                 className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.voice ? "gradient-cosmic" : "bg-white/10"}`}
               >
                 <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.voice ? "translate-x-6" : "translate-x-1"}`} />
               </button>
             </div>
             {state.settings.voice && (
+              <div className="space-y-3">
               <input
                 type="range" min={0} max={1} step={0.05}
+                aria-label="Voice volume"
                 value={state.settings.voiceVolume}
                 onChange={onVoiceVol}
                 className="w-full accent-amber-400"
               />
+              <label className="block text-sm text-white/80">
+                English guidance voice
+                <select
+                  value={state.settings.voiceURI ?? ""}
+                  onChange={(event) => {
+                    stopSpeaking();
+                    const voiceURI = event.target.value || undefined;
+                    setState((previous) => ({ ...previous, settings: { ...previous.settings, voiceURI } }));
+                  }}
+                  className="block w-full mt-2 rounded-xl bg-slate-900 border border-white/30 p-3 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+                >
+                  <option value="">Automatic: prefer a natural voice</option>
+                  {voices.map((voice) => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} ({voice.lang})</option>)}
+                </select>
+              </label>
+              <p className="text-xs text-white/70">Voices come from this device. Natural or enhanced voices sound clearer when available. This changes spoken guidance, not the lesson language.</p>
+              <button type="button" disabled={!voices.length} onClick={() => speak("Hello. I'm Vidya, your learning guide. We can take this one step at a time.")} className="rounded-xl border border-white/30 px-4 py-2 text-sm text-white disabled:opacity-50">Preview voice</button>
+              <button type="button" onClick={stopSpeaking} className="rounded-xl px-4 py-2 text-sm text-white/80">Stop preview</button>
+              {!voices.length && <p role="status" className="text-xs text-white/70">No English device voice is available yet. You can keep learning with text.</p>}
+              </div>
             )}
           </div>
         </div>
@@ -169,7 +204,7 @@ export function SettingsView({
           <ul className="space-y-1 list-disc list-inside">
             <li>Music is generated live by your browser, no files needed</li>
             <li>Miss Vidya uses your device&apos;s built-in voice synthesis</li>
-            <li>Best voice quality on Mac and recent iOS / Android</li>
+            <li>Voice quality depends on the voices installed on this device</li>
           </ul>
         </div>
       </div>
