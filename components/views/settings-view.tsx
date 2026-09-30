@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight, BarChart3, Volume2, Music, Mic } from "lucide-react";
 import type { GameState, ViewName } from "@/lib/types";
 import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
@@ -198,6 +199,10 @@ export function SettingsView({
             <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
           </button>
         )}
+
+        <Link href="/mission" className="mt-6 flex min-h-11 items-center rounded-xl px-4 text-sm text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2">
+          Our shared learning mission
+        </Link>
 
         <div className="glass-card p-4 mt-6 text-xs text-white/50">
           <div className="font-bold text-white/70 mb-1">About audio</div>
