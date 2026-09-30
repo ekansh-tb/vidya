@@ -61,8 +61,8 @@ describe("Move Break activities", () => {
 });
 
 describe("Art at Grade 6", () => {
-  it("is on the timetable, so it is not something the learner has to pick", () => {
-    const ids = subjectsForLearner("cambridge-lower-secondary", [], 6).map((s) => s.id);
-    expect(ids).toContain("cls-art");
+  it("appears when selected without assuming a school timetable", () => {
+    expect(subjectsForLearner("cambridge-lower-secondary", [], 6).map((s) => s.id)).not.toContain("cls-art");
+    expect(subjectsForLearner("cambridge-lower-secondary", ["cls-art"], 6).map((s) => s.id)).toContain("cls-art");
   });
 });

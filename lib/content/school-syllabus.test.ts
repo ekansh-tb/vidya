@@ -162,27 +162,27 @@ describe("parent-uploaded syllabus", () => {
 describe("Grade 6 Cambridge Lower Secondary subjects", () => {
   const ids = () => subjectsForLearner("cambridge-lower-secondary", [], 6).map((s) => s.id);
 
-  it("offers History and Geography without the learner picking them", () => {
-    expect(ids()).toEqual(expect.arrayContaining(["cls-history", "cls-geography"]));
+  it("does not infer compulsory subjects from a school timetable", () => {
+    expect(ids()).toEqual([]);
   });
 
-  it("offers PE and Music/Dance/Drama, which CNS timetables in Grade 6", () => {
-    expect(ids()).toEqual(expect.arrayContaining(["cls-pe", "cls-music"]));
+  it("retains explicitly selected PE and performing arts", () => {
+    expect(subjectsForLearner("cambridge-lower-secondary", ["cls-pe", "cls-music"], 6).map((s) => s.id))
+      .toEqual(expect.arrayContaining(["cls-pe", "cls-music"]));
   });
 
   it("offers Hobby in the picker but does not force it", () => {
     const groups = pickerGroupsForBoard("cambridge-lower-secondary", 6);
     const wellbeing = groups.find((g) => g.id === "wellbeing");
     expect(wellbeing?.subjects).toContain("cls-hobby");
-    expect(wellbeing?.compulsoryIds).not.toContain("cls-hobby");
+    expect(wellbeing?.compulsoryIds || []).not.toContain("cls-hobby");
     expect(ids()).not.toContain("cls-hobby");
     expect(subjectsForLearner("cambridge-lower-secondary", ["cls-hobby"], 6).map((s) => s.id))
       .toContain("cls-hobby");
   });
 
-  it("keeps the new subjects out of Grade 8, which has its own lineup", () => {
-    const g8 = subjectsForLearner("cambridge-lower-secondary", [], 8).map((s) => s.id);
-    expect(g8).not.toContain("cls-pe");
-    expect(g8).not.toContain("cls-hobby");
+  it("keeps chosen activities visible when the learner reaches Grade 8", () => {
+    const g8 = subjectsForLearner("cambridge-lower-secondary", ["cls-pe", "cls-hobby"], 8).map((s) => s.id);
+    expect(g8).toEqual(expect.arrayContaining(["cls-pe", "cls-hobby"]));
   });
 });
