@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ExamPack } from "../exam-pack";
 import type { Board, LearnerSyllabus, SubjectId } from "../../types";
 import { hasPack, loadPack } from "./pack-index";
@@ -14,6 +14,8 @@ export type UsePackResult = {
   pack: ExamPack | undefined;
   /** A pack exists but hasn't arrived yet — render a skeleton. */
   loading: boolean;
+  error: boolean;
+  retry: () => void;
 };
 
 /**
@@ -34,11 +36,15 @@ export function usePack(
 ): UsePackResult {
   const exists = subjectId ? hasPack(subjectId, grade) : false;
   const [pack, setPack] = useState<ExamPack | undefined>(undefined);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   const school = schoolCtx?.school;
   const board = schoolCtx?.board;
   const uploaded = schoolCtx?.uploaded;
 
   useEffect(() => {
+    setError(false);
     if (!subjectId || !exists) {
       setPack(undefined);
       return;
@@ -50,16 +56,21 @@ export function usePack(
     loadPack(subjectId, grade)
       .then((p) => {
         if (cancelled) return;
+        if (!p) {
+          setError(true);
+          return;
+        }
         setPack(p && board ? applySchoolSyllabus(p, { school, board, grade, uploaded }) : p);
       })
       .catch((e) => {
         if (!cancelled) {
           console.error(`[usePack] failed to load ${subjectId} (grade ${grade}):`, e);
           setPack(undefined);
+          setError(true);
         }
       });
     return () => { cancelled = true; };
-  }, [subjectId, grade, exists, school, board, uploaded]);
+  }, [subjectId, grade, exists, school, board, uploaded, attempt]);
 
-  return { exists, pack, loading: exists && pack === undefined };
+  return { exists, pack, loading: exists && pack === undefined && !error, error, retry };
 }

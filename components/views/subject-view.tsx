@@ -28,7 +28,7 @@ export function SubjectView({
   const hasQuiz = Object.keys(quizTopics).length > 0;
   // `hasExamPack` is synchronous so the layout never flashes an empty state;
   // `pack` arrives from its own chunk. See lib/content/packs/pack-index.ts.
-  const { exists: hasExamPack, pack } = usePack(subjectId, learner.grade, {
+  const { exists: hasExamPack, pack, error: packError, retry: retryPack } = usePack(subjectId, learner.grade, {
     school: learner.school,
     board: learner.board,
     uploaded: learner.schoolSyllabus,
@@ -224,9 +224,16 @@ export function SubjectView({
               {/* The lazy chunk resolving swaps skeleton rows for real chapters
                   with nothing to announce the change. */}
               <div aria-live="polite" className="sr-only">
-                {pack ? `${pack.topics.length} chapters loaded.` : "Loading chapters."}
+                {packError ? "Chapters could not be loaded." : pack ? `${pack.topics.length} chapters loaded.` : "Loading chapters."}
               </div>
-              {!pack ? (
+              {packError ? (
+                <div className="glass-card p-5 space-y-3" role="status">
+                  <p>Chapters could not be loaded. Check your connection and try again.</p>
+                  <button type="button" onClick={retryPack} className="min-h-11 rounded-xl border border-white/20 px-4 py-2 font-semibold focus-visible:outline focus-visible:outline-2">
+                    Try again
+                  </button>
+                </div>
+              ) : !pack ? (
                 // Chapter list lives in a lazily-loaded chunk. Placeholder rows keep
                 // the layout stable instead of collapsing then jumping.
                 <div className="space-y-3" aria-busy="true" aria-label="Loading chapters">

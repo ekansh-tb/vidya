@@ -54,7 +54,7 @@ export function ExamPrepView({
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
   // Pack bodies are large and load as their own chunk — see pack-index.ts.
-  const { exists: packExists, pack } = usePack(
+  const { exists: packExists, pack, error: packError, retry: retryPack } = usePack(
     currentId,
     grade,
     board ? { school, board, uploaded } : undefined,
@@ -134,7 +134,7 @@ export function ExamPrepView({
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="w-4 h-4" style={{ color: "var(--accent)" }} />
                 <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
-                  {pack ? pack.context : "Loading\u2026"}
+                  {packError ? "Study pack could not be loaded" : pack ? pack.context : "Loading..."}
                 </span>
               </div>
               <div className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
@@ -181,10 +181,15 @@ export function ExamPrepView({
           {/* The pack is fetched, so the skeleton swapping for content is a
               silent change unless it is announced. */}
           <div aria-live="polite" className="sr-only">
-            {pack ? "Exam pack ready." : "Loading exam pack."}
+            {packError ? "Study pack could not be loaded." : pack ? "Exam pack ready." : "Loading exam pack."}
           </div>
 
-          {!pack ? (
+          {packError ? (
+            <div className="glass-card p-6 space-y-3" role="status">
+              <p>This study pack could not be loaded. Check your connection and try again.</p>
+              <Button onClick={retryPack}>Try again</Button>
+            </div>
+          ) : !pack ? (
             <div className="glass-card p-6 space-y-3 animate-pulse" aria-busy="true" aria-label="Loading exam pack">
               <div className="h-3.5 rounded bg-white/10 w-1/2" />
               <div className="h-2.5 rounded bg-white/[0.07] w-full" />
