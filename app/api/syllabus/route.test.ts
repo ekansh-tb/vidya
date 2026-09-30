@@ -70,3 +70,13 @@ describe("POST syllabus readiness", () => {
     expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 });
+
+it("fails closed before document parsing or provider work when shared limits are unavailable", async () => {
+  mocks.aiProviderConfigured.mockReturnValue(true);
+  mocks.rateLimit.mockResolvedValue({ ok: false, unavailable: true, retryAfterSeconds: 5 });
+  const response = await POST(request());
+  expect(response.status).toBe(503);
+  expect(response.headers.get("retry-after")).toBe("5");
+  expect(await response.json()).toEqual({ error: "Service temporarily unavailable" });
+  expect(mocks.generateObject).not.toHaveBeenCalled();
+});

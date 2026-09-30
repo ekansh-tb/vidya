@@ -2,7 +2,7 @@ import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
 import { listLearnersForParent, createLearner } from "@/lib/db/queries";
-import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
+import { isSameOrigin, rateLimit, rateHeaders } from "@/lib/api/guard";
 
 export const runtime = "nodejs";
 
@@ -42,15 +42,20 @@ export async function POST(req: Request) {
   if (!isSameOrigin(req)) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!dbConfigured()) return Response.json({ error: "Storage unavailable" }, { status: 503 });
 
-  const verdict = rateLimit(`parent-learners:${clientKey(req)}`, RATE);
+  const parent = await requireParent();
+  if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const verdict = await rateLimit(`parent-learners:${parent.userId}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return Response.json({ error: "Too many requests" }, {
       status: 429, headers: rateHeaders(verdict, RATE.limit),
     });
   }
-
-  const parent = await requireParent();
-  if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   let raw: unknown;
   try { raw = await req.json(); } catch { return Response.json({ error: "Bad request" }, { status: 400 }); }

@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   tutorRequestSchema, assemblyRequestSchema, totalChars, isSameOrigin,
-  clientKey, rateLimit, rateHeaders, __resetRateLimiter, LIMITS,
+  clientKey, rateLimit, rateHeaders, LIMITS,
 } from "./guard";
+
+const store = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/db/request-limits", () => ({ consumeRequestLimit: store }));
 
 // ---------------------------------------------------------------- helpers
 
@@ -188,70 +191,34 @@ describe("clientKey", () => {
 
 // ---------------------------------------------------------------- rate limit
 
-describe("rateLimit", () => {
-  beforeEach(() => __resetRateLimiter());
-
-  const opts = { limit: 3, windowMs: 60_000 };
-
-  it("allows up to the limit then denies", () => {
-    expect(rateLimit("a", opts).ok).toBe(true);
-    expect(rateLimit("a", opts).ok).toBe(true);
-    expect(rateLimit("a", opts).ok).toBe(true);
-    expect(rateLimit("a", opts).ok).toBe(false);
+describe("shared rateLimit", () => {
+  beforeEach(() => { store.mockReset(); });
+  it("awaits and forwards the shared result without another counter", async () => {
+    const verdict = { ok: true, remaining: 2, resetAt: 100000, retryAfterSeconds: 0 };
+    store.mockResolvedValue(verdict);
+    expect(await rateLimit("a", { limit: 3, windowMs: 60000 })).toEqual(verdict);
+    expect(store).toHaveBeenCalledWith("a", { limit: 3, windowMs: 60000 });
   });
-
-  it("counts each client separately", () => {
-    rateLimit("a", opts); rateLimit("a", opts); rateLimit("a", opts);
-    expect(rateLimit("a", opts).ok).toBe(false);
-    expect(rateLimit("b", opts).ok).toBe(true);
+  it("fails closed in production without logging store errors or falling back locally", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    store.mockRejectedValue(new Error("private database credential"));
+    try {
+      const results = await Promise.all(Array.from({ length: 10 }, () => rateLimit("a", { limit: 3, windowMs: 60000 })));
+      for (const result of results) {
+        expect(result).toMatchObject({ ok: false, unavailable: true, remaining: 0, retryAfterSeconds: 5 });
+        expect(JSON.stringify(result)).not.toContain("credential");
+      }
+      expect(log).not.toHaveBeenCalled();
+    } finally { vi.unstubAllEnvs(); log.mockRestore(); }
   });
-
-  it("reports remaining budget accurately", () => {
-    expect(rateLimit("a", opts).remaining).toBe(2);
-    expect(rateLimit("a", opts).remaining).toBe(1);
-    expect(rateLimit("a", opts).remaining).toBe(0);
+  it("distinguishes exhausted budget from unavailable storage", async () => {
+    store.mockResolvedValue({ ok: false, remaining: 0, resetAt: 100000, retryAfterSeconds: 10 });
+    const result = await rateLimit("a", { limit: 3, windowMs: 60000 });
+    expect(result.unavailable).toBeUndefined();
+    expect(rateHeaders(result, 3)).toEqual({ "x-ratelimit-limit": "3", "x-ratelimit-remaining": "0", "x-ratelimit-reset": "100", "retry-after": "10" });
   });
-
-  it("never reports negative remaining once over", () => {
-    for (let i = 0; i < 8; i++) rateLimit("a", opts);
-    expect(rateLimit("a", opts).remaining).toBe(0);
-  });
-
-  it("reopens after the window expires", () => {
-    // The window must be comfortably longer than the gap between the first two
-    // calls, or a loaded machine can roll it over early and the "denied"
-    // assertion flakes. 60ms is far more than two synchronous calls need.
-    const short = { limit: 1, windowMs: 60 };
-    expect(rateLimit("a", short).ok).toBe(true);
-    expect(rateLimit("a", short).ok).toBe(false);
-    // Busy-wait comfortably past the window rather than faking timers, since
-    // the limiter reads Date.now() directly.
-    const until = Date.now() + 120;
-    while (Date.now() < until) { /* spin */ }
-    expect(rateLimit("a", short).ok).toBe(true);
-  });
-
-  it("supplies a positive retry-after only when denied", () => {
-    expect(rateLimit("a", opts).retryAfterSeconds).toBe(0);
-    rateLimit("a", opts); rateLimit("a", opts);
-    expect(rateLimit("a", opts).retryAfterSeconds).toBeGreaterThan(0);
-  });
-});
-
-describe("rateHeaders", () => {
-  beforeEach(() => __resetRateLimiter());
-
-  it("omits retry-after while the client is under budget", () => {
-    const h = rateHeaders(rateLimit("a", { limit: 2, windowMs: 60_000 }), 2);
-    expect(h["retry-after"]).toBeUndefined();
-    expect(h["x-ratelimit-limit"]).toBe("2");
-    expect(h["x-ratelimit-remaining"]).toBe("1");
-  });
-
-  it("sets retry-after once denied", () => {
-    const opts = { limit: 1, windowMs: 60_000 };
-    rateLimit("a", opts);
-    const h = rateHeaders(rateLimit("a", opts), 1);
-    expect(Number(h["retry-after"])).toBeGreaterThan(0);
+  it("preserves allowed headers without retry-after", () => {
+    expect(rateHeaders({ ok: true, remaining: 1, resetAt: 60001, retryAfterSeconds: 0 }, 2)).toEqual({ "x-ratelimit-limit": "2", "x-ratelimit-remaining": "1", "x-ratelimit-reset": "61" });
   });
 });

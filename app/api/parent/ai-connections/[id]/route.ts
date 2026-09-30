@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
 import { requireRecentParentReverification } from "@/lib/auth/reverification";
-import { isSameOrigin, clientKey, rateHeaders, rateLimit } from "@/lib/api/guard";
+import { isSameOrigin, rateHeaders, rateLimit } from "@/lib/api/guard";
 import { readBoundedJson } from "@/lib/api/bounded-json";
 import {
   configuredCredentialKeyring,
@@ -54,10 +54,15 @@ export async function PATCH(
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(
-    `parent-ai-connection-replace:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-ai-connection-replace:${parent.userId}`,
     REPLACE_RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json(
       { error: "Too many requests" },
@@ -147,10 +152,15 @@ export async function DELETE(
   const parent = await requireParent();
   if (!parent) return json({ error: "Unauthorized" }, 401);
 
-  const verdict = rateLimit(
-    `parent-ai-connection-delete:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-ai-connection-delete:${parent.userId}`,
     DELETE_RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return json(
       { error: "Too many requests" },

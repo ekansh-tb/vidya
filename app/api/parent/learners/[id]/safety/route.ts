@@ -1,7 +1,7 @@
 import { requireParent } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
 import { safetySignalsForParent, markSafetySignalsSeen } from "@/lib/db/queries";
-import { isSameOrigin, clientKey, rateLimit, rateHeaders } from "@/lib/api/guard";
+import { isSameOrigin, rateLimit, rateHeaders } from "@/lib/api/guard";
 
 export const runtime = "nodejs";
 
@@ -57,15 +57,20 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!isSameOrigin(req)) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!dbConfigured()) return Response.json({ error: "Storage unavailable" }, { status: 503 });
 
-  const verdict = rateLimit(`safety:${clientKey(req)}`, RATE);
+  const parent = await requireParent();
+  if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const verdict = await rateLimit(`safety:${parent.userId}`, RATE);
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) {
     return Response.json({ error: "Too many requests" }, {
       status: 429, headers: rateHeaders(verdict, RATE.limit),
     });
   }
-
-  const parent = await requireParent();
-  if (!parent) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
   try {

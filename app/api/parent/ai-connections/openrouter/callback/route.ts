@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireParent } from "@/lib/auth/session";
-import { clientKey, rateLimit } from "@/lib/api/guard";
+import { rateLimit } from "@/lib/api/guard";
 import {
   configuredCredentialKeyring,
   credentialAad,
@@ -88,10 +88,15 @@ export async function GET(req: Request) {
   const parent = await requireParent();
   if (!parent) return parentRedirect(callbackUrl, "sign_in_required");
 
-  const verdict = rateLimit(
-    `parent-openrouter-callback:${parent.userId}:${clientKey(req)}`,
+  const verdict = await rateLimit(
+    `parent-openrouter-callback:${parent.userId}`,
     CALLBACK_RATE,
   );
+  if (verdict.unavailable) {
+    return Response.json({ error: "Service temporarily unavailable" }, {
+      status: 503, headers: { "cache-control": "private, no-store", "retry-after": String(verdict.retryAfterSeconds) },
+    });
+  }
   if (!verdict.ok) return parentRedirect(callbackUrl, "connection_failed");
 
   const code = querySchema.safeParse(new URL(req.url).searchParams.get("code"));
