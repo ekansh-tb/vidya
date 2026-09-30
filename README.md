@@ -4,6 +4,10 @@
 
 **Live**: https://vidyagyan.study
 
+**Mission:** One world. One app. Free learning for every child.
+
+The long-term vision covers every curriculum worldwide, from school through university and lifelong learning. India-focused curricula and international Cambridge pathways are starting points. Current coverage remains incomplete; this is not a claim of university affiliation, accreditation or worldwide content availability. See [the global curriculum direction](docs/global-curriculum-vision.md).
+
 Vidya is an experiment in what a personal school could look like if it lived entirely in a web app: structured around a real curriculum (Cambridge Primary, Cambridge IGCSE, ICSE — multiple grades supported), narrated by an AI tutor, gamified for retention, and skinned differently for every age band.
 
 It started as a one-learner quiz app for a Grade 5 student and grew into a multi-tenant "school of the future" — same codebase, three themes (Gen Alpha playful → early-teen vivid → Gen Z senior terminal), and per-learner profile isolation.
@@ -82,7 +86,7 @@ openssl rand -base64 32
 node --env-file=.env.local scripts/migrate.mjs
 ```
 
-Use the deployment's exact HTTPS origin for `AI_OAUTH_CALLBACK_ORIGIN` in production. Keep previous decryption keys in `AI_CREDENTIAL_DECRYPTION_KEYS` during a planned key rotation. The current release implements connection storage, direct key validation, removal, and OpenRouter OAuth. Learner assignment, model selection, budget enforcement, and child tutor routing are still pending, so a saved connection alone does not enable AI for a child.
+Use the deployment's exact HTTPS origin for `AI_OAUTH_CALLBACK_ORIGIN` in production. Keep previous decryption keys in `AI_CREDENTIAL_DECRYPTION_KEYS` during a planned key rotation. The current code implements connection storage, validation, credential rotation, OpenRouter OAuth, learner assignments, model selection, daily turn limits, output-token limits, and parent pause controls. A saved connection alone does not enable AI: the parent must enable an assignment for a linked learner. Deployment configuration and migrations must be verified separately.
 
 ## Deployment
 
@@ -95,13 +99,13 @@ Production is the Vercel project **`vidya`** (team `techbirdit-ej`), serving
 > allocated, for ~76 days, while GitHub Actions built the same commits green.
 > It has been unlinked from GitHub. Don't deploy to it.
 
-Two things are **not** configured on the live deployment:
+Historical deployment observations (2026-08-16, not a current configuration audit):
 
 - **No operator AI fallback key.** Neither `ANTHROPIC_API_KEY` nor
   `AI_GATEWAY_API_KEY` is set, so the Daily Assembly serves its offline fallback
-  (`source: "local"`) and Miss Vidya shows the connection notice. Parents can
-  save their own encrypted provider connections, but those connections are not
-  used by learner requests until assignment and budget controls are released.
+  (`source: "local"`) and Miss Vidya shows the connection notice. Current code now routes normal tutor requests through an enabled parent-owned
+  connection and learner assignment. The assembly still uses the optional operator
+  configuration. Verify live configuration before promising either service.
 - **Clerk is using test keys** (`pk_test_` / `sk_test_`) on a real custom
   domain. Swap for live keys before treating this as a real product.
 
@@ -165,10 +169,10 @@ Exam packs are large. Importing `ALL_PACKS` on the client pulled every pack body
 
 Being explicit, because these shape what is safe to promise:
 
-- **Anonymous profiles remain local-first.** A learner can use Vidya without an account, so that profile stays in localStorage until a parent deliberately links it. Linked learners sync through Postgres with revision conflict handling, and families can export and merge a credential-stripped backup. The authenticated parent dashboard still reads learning reports from the browser it is opened on instead of loading the synced state remotely.
-- **Parent AI runtime routing is not live yet.** Parents can connect multiple encrypted provider credentials, including OpenRouter through OAuth, but cannot assign a connection, model, or budget to a learner yet. The current Tutor and Daily Assembly routes still use the optional operator-funded AI configuration. Without it, Daily Assembly uses its local fallback and Miss Vidya shows a connection notice.
+- **Anonymous profiles remain local-first.** A learner can use Vidya without an account, so that profile stays in localStorage until a parent deliberately links it. Linked learners sync through Postgres with revision conflict handling, and families can export and merge a credential-stripped backup. Parent reports can load ownership-checked synced state; complete discovery of the parent's remote learner roster is still being improved.
+- **Parent AI routing requires configuration.** Normal tutor turns use parent-owned provider connections, learner assignments, daily turn limits and output-token limits. The database, encryption key, parent identity and enabled assignment must be configured. These controls are implemented; a live end-to-end provider call has not been verified in the October audit. Daily Assembly separately uses the optional operator configuration or its local fallback.
 - **The verification ladder is only partly live.** Rung 2 is granted through a parent-issued, single-use claim code and a revocable device token. Rungs 1 and 3 are unreachable. Capability policies remain a static map; per-learner daily tutor usage is durable, while burst limits remain best-effort and per instance.
-- **Adaptation is incomplete.** Missed questions use a tested Leitner spaced-repetition schedule, but topic mastery is still a flat attempts/correct ratio. There is no diagnostic assessment, concept dependency graph or next-best-lesson engine.
+- **Adaptation is incomplete.** Verified quiz banks support due-review, weakest-attempted and unseen-topic suggestions. Learners with exact-grade study packs receive a daily rotating exploration suggestion, without an inferred mastery score. Topic mastery remains a flat attempts/correct ratio; diagnostic assessment and concept dependencies remain open.
 - **Curriculum depth is uneven.** The catalog models broad board and grade ranges, while authored packs currently concentrate on Cambridge Primary Grade 5, Cambridge Lower Secondary Grade 6, IGCSE Grade 10, ICSE Grades 6 and 7, and CBSE Grade 7. Known learner grades require exact pack matches, so Vidya does not silently substitute another grade's content.
 - **Offline support is intentionally narrow.** The credential-free public root shell and its static build files are cached so an installed app can relaunch offline. Personalized HTML, parent and authentication pages, and API responses are never cached. Public book and field-trip assets become available after they are requested successfully. Other offline navigations show a generic retry page, and learning progress remains local-first.
 
