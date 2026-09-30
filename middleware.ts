@@ -60,6 +60,11 @@ const withClerk = clerkMiddleware(async (auth, req) => {
 });
 
 export default function middleware(req: NextRequest, event: import("next/server").NextFetchEvent) {
+  // Only these exact public probes skip Clerk. Other APIs keep their own guards.
+  const pathname = req.nextUrl.pathname;
+  if (pathname === "/api/health" || pathname === "/api/health/ready") {
+    return NextResponse.next();
+  }
   if (!clerkConfigured) return withoutClerk(req);
   return withClerk(req, event);
 }
