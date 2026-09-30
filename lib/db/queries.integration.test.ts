@@ -1,12 +1,9 @@
 /**
  * Integration tests against a real Postgres.
  *
- * SKIPPED unless DATABASE_URL is set, so CI stays green without a database and
- * nobody is forced to provision one to run the unit suite. Run locally with:
- *
- *   vercel env pull .env.local && npx vitest run --mode development \
- *     lib/db/queries.integration.test.ts
- *   (or: DATABASE_URL=... npx vitest run lib/db/queries.integration.test.ts)
+ * Run with VIDYA_TEST_DATABASE_URL and `node scripts/test-integration.mjs`.
+ * The runner requires the dedicated database and role. An ambient application
+ * DATABASE_URL never enables these destructive fixture tests.
  *
  * These exercise the properties that unit tests cannot: that isolation is
  * genuinely enforced by the SQL, that a claim code is really single-use, and
@@ -24,7 +21,8 @@
 const DB_TIMEOUT_MS = 60_000;
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { getSql, dbConfigured } from "./client";
+import { getSql } from "./client";
+import { integrationDatabaseConfigured } from "@/test/integration-database";
 import {
   upsertParent, createLearner, listLearnersForParent, getLearnerForParent,
   getLearnerForClerkUser, issueClaimCode, redeemClaimCode,
@@ -36,7 +34,7 @@ import {
 } from "./queries";
 import type { GameState } from "../types";
 
-const hasDb = dbConfigured();
+const hasDb = integrationDatabaseConfigured();
 const d = hasDb ? describe : describe.skip;
 
 // Namespaced so a failed run cannot collide with a later one.
@@ -511,7 +509,7 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
 });
 
 // Keeps the file from reporting "no tests" when it is skipped wholesale.
-(hasDb ? describe.skip : describe)("db integration (skipped)", () => {
+if (!hasDb) describe("db integration (skipped)", () => {
   it("requires DATABASE_URL — see the note at the top of this file", () => {
     expect(hasDb).toBe(false);
   });

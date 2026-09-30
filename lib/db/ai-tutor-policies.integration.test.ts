@@ -1,15 +1,16 @@
 /**
  * Integration checks for parent-owned tutor profiles and learner assignments.
  *
- * Skipped unless DATABASE_URL is configured. Apply all migrations before
- * running this file against a development database.
+ * Run with VIDYA_TEST_DATABASE_URL and `node scripts/test-integration.mjs`.
+ * Only the dedicated test database and role are accepted.
  */
 const DB_TIMEOUT_MS = 60_000;
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { EncryptedCredential } from "../ai/credential-vault";
-import { dbConfigured, getSql } from "./client";
+import { getSql } from "./client";
+import { integrationDatabaseConfigured } from "@/test/integration-database";
 import {
   createAiConnectionForParent,
   setAiConnectionStatusForParent,
@@ -26,7 +27,7 @@ import {
 } from "./ai-tutor-policies";
 import { createLearner, upsertParent } from "./queries";
 
-const hasDb = dbConfigured();
+const hasDb = integrationDatabaseConfigured();
 const d = hasDb ? describe : describe.skip;
 const RUN = `ai-tutor-itest-${Date.now()}`;
 const PARENT_A = `${RUN}-parent-a`;
@@ -308,7 +309,7 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
   });
 });
 
-(hasDb ? describe.skip : describe)("AI tutor policy database integration (skipped)", () => {
+if (!hasDb) describe("AI tutor policy database integration (skipped)", () => {
   it("requires DATABASE_URL and migration 0007", () => {
     expect(hasDb).toBe(false);
   });

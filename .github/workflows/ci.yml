@@ -11,6 +11,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  integration:
+    # Never expose credentials to fork PRs. No pull_request_target execution.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: vidya-isolated-database
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Isolated database integration tests
+        run: node scripts/test-integration.mjs
+        env:
+          VIDYA_TEST_DATABASE_URL: ${{ secrets.VIDYA_TEST_DATABASE_URL }}
+
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
