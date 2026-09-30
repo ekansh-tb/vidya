@@ -163,13 +163,11 @@ export function OnboardingView({
     <div className="min-h-screen flex items-center justify-center p-6 relative">
       <CosmicBg mode="parent" intensity={0.8} />
       <div className="max-w-xl w-full relative z-10">
-        <AnimatePresence mode="wait">
+        {/* Form navigation must not wait for animation completion callbacks. */}
+        <div key={step}>
           {step === 0 && (
-            <motion.div
+            <div
               key="step0"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
               <motion.div
@@ -196,15 +194,12 @@ export function OnboardingView({
               <Button size="lg" onClick={() => name.trim() && setStep(1)} disabled={!name.trim()}>
                 Continue <ChevronRight className="inline w-5 h-5 -mt-0.5" />
               </Button>
-            </motion.div>
+            </div>
           )}
 
           {step === 1 && (
-            <motion.div
+            <div
               key="step1"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
             >
               <h2 className="font-display text-4xl font-bold text-center mb-2 text-white">
                 Which class are you in?
@@ -292,15 +287,12 @@ export function OnboardingView({
                   Choose a board and a grade to keep going.
                 </p>
               )}
-            </motion.div>
+            </div>
           )}
 
           {step === 2 && (
-            <motion.div
+            <div
               key="step2"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
             >
               <h2 className="font-display text-5xl font-bold text-center mb-2 text-white">
                 Hey <span className="text-gradient-sunset">{name.split(" ")[0]}</span>
@@ -331,15 +323,12 @@ export function OnboardingView({
                   Next <ChevronRight className="inline w-5 h-5 -mt-0.5" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === 3 && (
-            <motion.div
+            <div
               key="step3"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
             >
               <h2 className="font-display text-4xl font-bold text-center mb-2 text-white">
                 What do you love?
@@ -384,9 +373,9 @@ export function OnboardingView({
               <p className="text-center text-white/40 text-xs mt-6">
                 Music stays off by default. Toggle it on anytime in settings.
               </p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );
