@@ -50,23 +50,35 @@ export const LIMITS = {
 
 // ---------------------------------------------------------------- schemas
 
-/** One part of a UIMessage. Permissive about `type` — the AI SDK adds new
- *  part kinds over time — but hard-capped on text length. */
-const uiPartSchema = z
-  .object({
-    type: z.string().max(64),
-    text: z.string().max(LIMITS.maxCharsPerMessage).optional(),
-  })
-  .loose();
+/** The tutor client sends text only. SDK assistant stream bookkeeping is
+ * accepted for round trips, then discarded before model conversion. */
+const uiTextPartSchema = z.object({
+  type: z.literal("text"),
+  text: z.string().max(LIMITS.maxCharsPerMessage),
+  state: z.enum(["streaming", "done"]).optional(),
+  providerMetadata: z.unknown().optional(),
+}).strict().transform(({ type, text }) => ({ type, text }));
+const uiPartSchema = z.union([
+  uiTextPartSchema,
+  z.object({ type: z.literal("step-start") }).strict(),
+]);
 
-const uiMessageSchema = z
-  .object({
-    id: z.string().max(128).optional(),
-    role: z.enum(["system", "user", "assistant"]),
-    parts: z.array(uiPartSchema).max(64).optional(),
-    content: z.string().max(LIMITS.maxCharsPerMessage).optional(),
-  })
-  .loose();
+const uiMessageSchema = z.object({
+  id: z.string().max(128).optional(),
+  role: z.enum(["user", "assistant"]),
+  parts: z.array(uiPartSchema).min(1).max(64).optional(),
+  content: z.string().max(LIMITS.maxCharsPerMessage).optional(),
+  metadata: z.unknown().optional(),
+}).strict().refine((message) => (
+  (message.parts !== undefined) !== (message.content !== undefined)
+  && (message.role === "assistant" || message.parts?.every((part) => part.type === "text") !== false)
+), { message: "Expected a text conversation message" }).transform(({ id, role, parts, content }) => ({
+  ...(id === undefined ? {} : { id }),
+  role,
+  parts: parts
+    ? parts.filter((part): part is { type: "text"; text: string } => part.type === "text")
+    : [{ type: "text" as const, text: content! }],
+}));
 
 const boardSchema = z.enum([
   "cambridge-primary",
@@ -106,7 +118,7 @@ export type TutorRequest = z.infer<typeof tutorRequestSchema>;
 export type AssemblyRequest = z.infer<typeof assemblyRequestSchema>;
 
 /** Total characters a request would push at the model. */
-export function totalChars(messages: TutorRequest["messages"]): number {
+export function totalChars(messages: z.input<typeof tutorRequestSchema>["messages"]): number {
   let n = 0;
   for (const m of messages) {
     if (typeof m.content === "string") n += m.content.length;
