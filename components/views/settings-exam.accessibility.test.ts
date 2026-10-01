@@ -6,6 +6,7 @@ import ts from "typescript";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState } from "@/lib/types";
+import * as schoolSyllabus from "@/lib/content/school-syllabus";
 
 // Use the existing SSR fixture approach without changing shared JSX configuration.
 const require = createRequire(import.meta.url);
@@ -44,6 +45,7 @@ function load(file: string, syllabus = false) {
     } };
     if (id === "@/lib/audio") return audio;
     if (id === "@/lib/speech") return speech;
+    if (id === "@/lib/content/school-syllabus") return schoolSyllabus;
     if (id.startsWith("@/")) return {};
     if (id === "next/link") return { default: (props: Props) => React.createElement("a", props) };
     return require(id);
