@@ -126,9 +126,9 @@ Use clear, warm, respectful language. Do not infer age, curriculum stage, school
     const cleaned = text.replace(/^```(?:json)?/, "").replace(/```$/, "").trim();
     const parsed = JSON.parse(cleaned);
     return Response.json({ ...parsed, source: "ai" });
-  } catch (e) {
+  } catch {
     // Non-fatal by design: the assembly always opens, AI or not.
-    console.error("[api/assembly] falling back to local assembly:", e);
+    console.error("[api/assembly] falling back to local assembly");
     return Response.json(dailyFallback(body.name));
   }
 }

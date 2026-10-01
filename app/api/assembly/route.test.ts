@@ -115,11 +115,12 @@ describe("assembly free fallback and quota boundaries", () => {
   it.each(["provider failure", "invalid JSON"])("falls back after %s", async (failure) => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      if (failure === "provider failure") mocks.generateText.mockRejectedValue(new Error("synthetic failure"));
+      if (failure === "provider failure") mocks.generateText.mockRejectedValue(Object.assign(new Error("fake-provider-key private-learner-text"), { cause: { authorization: "Bearer fake-provider-key" } }));
       else mocks.generateText.mockResolvedValue({ text: "invalid" });
       const response = await POST(request());
       expect(response.status).toBe(200);
       expect(await response.json()).toHaveProperty("source", "local");
+      expect(log.mock.calls).toEqual([["[api/assembly] falling back to local assembly"]]);
     } finally {
       log.mockRestore();
     }

@@ -191,8 +191,8 @@ async function tutorResponse(req: Request) {
           );
         }
       }
-    } catch (e) {
-      console.error("[api/tutor] could not record safety signal:", e);
+    } catch {
+      console.error("[api/tutor] could not record safety signal");
     }
 
     return staticReply(supportMessage(crisis.signal));

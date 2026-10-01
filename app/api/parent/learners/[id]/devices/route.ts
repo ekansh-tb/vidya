@@ -33,8 +33,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const devices = await listDevicesForParent(parent.userId, id);
     if (!devices) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json({ devices });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/devices] list failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/devices] list failed");
     return Response.json({ error: "Could not read devices" }, { status: 500 });
   }
 }
@@ -73,8 +73,8 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     const result = await revokeDeviceForParent(parent.userId, id, parsed.data.deviceId);
     if (!result) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json({ ok: true, revoked: result.revoked });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/devices] revoke failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/devices] revoke failed");
     return Response.json({ error: "Could not unlink" }, { status: 500 });
   }
 }

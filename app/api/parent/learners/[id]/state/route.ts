@@ -41,8 +41,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       console.error("[api/parent/learners/:id/state] invalid stored report state");
     }
     return json(report);
-  } catch (error) {
-    console.error("[api/parent/learners/:id/state] failed:", error);
+  } catch {
+    console.error("[api/parent/learners/:id/state] failed");
     return json({ error: "Could not read synced progress" }, 500);
   }
 }

@@ -76,8 +76,8 @@ export async function POST(req: Request) {
       subjectsLocked: parsed.data.subjectsLocked ?? false,
     });
     return Response.json({ learner }, { status: 201 });
-  } catch (e) {
-    console.error("[api/parent/learners] create failed:", e);
+  } catch {
+    console.error("[api/parent/learners] create failed");
     return Response.json({ error: "Could not create learner" }, { status: 500 });
   }
 }

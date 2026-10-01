@@ -46,8 +46,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     // another family's learner id exists.
     if (!issued) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json(issued);
-  } catch (e) {
-    console.error("[api/parent/learners/:id/claim-code] failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/claim-code] failed");
     return Response.json({ error: "Could not issue a code" }, { status: 500 });
   }
 }
