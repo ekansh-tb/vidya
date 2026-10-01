@@ -58,7 +58,8 @@ export const CLS7_SCIENCE_PACK: ExamPack = {
         "The three variables: independent (the one thing you change), dependent (the thing you measure), control (everything you keep the same). A fair test changes only the independent variable.",
         "Not every investigation is a fair test — classifying, pattern-seeking across a place, modelling and research using secondary sources are all valid enquiry types.",
         "Accuracy = how close a reading is to the true value. Precision = how close repeated readings are to each other. Repeat readings enough times to trust them, then take a mean.",
-        "Spot anomalous results (readings that break the pattern) and leave them out of the mean. Record in a table with headings and units; line graph for numbers, bar chart for categories.",
+        // Scientific reasoning source: https://itl.nist.gov/div898/handbook/eda/section3/eda35h.htm
+        "Flag unusual readings, keep the original record and investigate. Do not exclude a reading just because it differs; explain evidence for any correction or exclusion. Use table headings and units; line graph for numbers, bar chart for categories.",
         "Conclusions must be supported by your own results, and you must state their limits. Then evaluate: what went wrong, what you would change, and why. Check hazard symbols before any practical.",
         "Models (particle diagrams, circuit symbols, the flow-of-electrons picture) have strengths AND limitations — be ready to say both. Secondary sources can be biased.",
       ],
@@ -273,13 +274,13 @@ export const CLS7_SCIENCE_PACK: ExamPack = {
       id: "cs7-3", topic: "twsc",
       q: "A learner measures the time for a trolley to roll down a ramp five times: 2.1 s, 2.2 s, 2.0 s, 3.8 s, 2.1 s. What should she do with the 3.8 s reading and why?",
       opts: [
-        "Include it — all data must be used",
-        "Treat it as anomalous, leave it out of the mean, and say so",
+        "Always include it, even if a recording error is confirmed",
+        "Keep the record, investigate the unusual reading and repeat measurements if possible",
         "Delete it quietly and take four readings",
         "Repeat the whole experiment from scratch",
       ],
-      a: "Treat it as anomalous, leave it out of the mean, and say so",
-      model: "3.8 s clearly breaks the pattern, so it is an anomalous result — probably a slip with the stopwatch. You exclude it from the mean but you still record it and state that you excluded it. Hiding data is not science.",
+      a: "Keep the record, investigate the unusual reading and repeat measurements if possible",
+      model: "3.8 s is unusual compared with the other readings, but the numbers alone do not show a timing error. Keep the original record, check the method and repeat measurements if possible. If an error is confirmed, explain any correction or exclusion. Otherwise, do not discard it merely because it differs; report the uncertainty.",
     },
     {
       id: "cs7-4", topic: "cells",
@@ -479,7 +480,7 @@ export const CLS7_SCIENCE_PACK: ExamPack = {
       bullets: [
         "Independent = what I change. Dependent = what I measure. Control = what I keep the same.",
         "Fair test = exactly one independent variable. Not every enquiry is a fair test (classifying, pattern-seeking, modelling, research all count).",
-        "Repeat readings → spot anomalies → exclude them from the mean → say that you did.",
+        "Flag unusual readings, keep the record, investigate and repeat if possible. Explain evidence for any exclusion; a different value alone is not enough.",
         "Accuracy = close to the true value. Precision = repeats close to each other.",
         "Table with headings AND units. Line graph for numbers on the x-axis, bar chart for categories.",
         "Conclusion must come from YOUR results, and you must state its limits. Then evaluate and suggest an improvement — with a reason.",
