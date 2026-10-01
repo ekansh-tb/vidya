@@ -2,8 +2,135 @@ import { describe, it, expect } from "vitest";
 import { mergeGameState } from "./merge";
 import { DEFAULT_STATE } from "../game-store";
 import type { GameState } from "../types";
+import type { ExamPack } from "../content/exam-pack";
+import { confidenceStorageKey, readTopicConfidence, saveTopicConfidence, topicConfidenceIdentity } from "../content/school-syllabus";
 
 const base = (patch: Partial<GameState> = {}): GameState => ({ ...DEFAULT_STATE, ...patch });
+
+describe("v2 confidence through mergeGameState", () => {
+  const pack: ExamPack = {
+    subjectId: "cls-history", grade: 6, title: "History", context: "Framework",
+    topics: [], plan: [], questions: [], flashcards: [], mistakes: [], cheat: [],
+  };
+  const topic = { id: "sch-1", title: "First unit", blurb: "", syllabus: ["Objective"], syllabusRevision: "revision-one" };
+  const scope = { board: "cambridge-lower-secondary" as const, grade: 6 };
+  const first = topicConfidenceIdentity(pack, topic, scope);
+  const second = topicConfidenceIdentity(pack, { ...topic, id: "sch-2", title: "Second unit" }, scope);
+  const revisedTopic = { ...topic, syllabusRevision: "revision-two" };
+  const revised = topicConfidenceIdentity(pack, revisedTopic, scope);
+  const key = confidenceStorageKey(pack);
+  const merge = (local: Record<string, string>, remote: Record<string, string>) =>
+    mergeGameState(base({ notebook: local }), base({ notebook: remote })).notebook;
+
+  it("preserves independent identities and old revisions from real confidence saves on both devices", () => {
+    const legacyKey = "__cs-confidence-cls-history";
+    const legacy = '{"sch-1":"strong"}';
+    const local = saveTopicConfidence({ [legacyKey]: legacy, maths: "My notes" }, pack, first, "strong");
+    const remote = saveTopicConfidence(saveTopicConfidence({}, pack, second, "ok"), pack, revised, "weak");
+    const out = merge(local, remote);
+    expect(readTopicConfidence(out[key])).toEqual({ [first]: "strong", [second]: "ok", [revised]: "weak" });
+    expect(out[legacyKey]).toBe(legacy);
+    expect(out.maths).toBe("My notes");
+    expect(merge(remote, local)[key]).toBe(out[key]);
+    expect(readTopicConfidence(local[key])).toEqual({ [first]: "strong" });
+  });
+
+  it("resolves every equal-time conflicting pair conservatively in either direction", () => {
+    const ratings = ["unknown", "weak", "ok", "strong"] as const;
+    for (const [i, left] of ratings.entries()) {
+      for (const [j, right] of ratings.entries()) {
+        const a = saveTopicConfidence({}, pack, first, left, 1000);
+        const b = saveTopicConfidence({}, pack, first, right, 1000);
+        const expected = { [first]: ratings[Math.min(i, j)] };
+        expect(readTopicConfidence(merge(a, b)[key])).toEqual(expected);
+        expect(readTopicConfidence(merge(b, a)[key])).toEqual(expected);
+      }
+    }
+  });
+
+  it("keeps a later intentional upgrade against an older weak server rating across repeated syncs", () => {
+    const server = saveTopicConfidence({}, pack, first, "weak", 1000);
+    const client = merge({}, server);
+    const upgraded = saveTopicConfidence(client, pack, first, "strong", 2000);
+    const synced = merge(upgraded, server);
+    expect(JSON.parse(synced[key])[first]).toEqual({ rating: "strong", editedAt: 2000 });
+    expect(merge(server, upgraded)[key]).toBe(synced[key]);
+    expect(merge(synced, server)[key]).toBe(synced[key]);
+  });
+
+  it("honors a later downgrade and reset to unknown in both sync directions", () => {
+    const server = saveTopicConfidence({}, pack, first, "strong", 1000);
+    for (const rating of ["weak", "unknown"] as const) {
+      const updated = saveTopicConfidence(server, pack, first, rating, 2000);
+      expect(JSON.parse(merge(updated, server)[key])[first]).toEqual({ rating, editedAt: 2000 });
+      expect(merge(server, updated)[key]).toBe(merge(updated, server)[key]);
+    }
+  });
+
+  it("uses recorded device times for offline conflicts even when a device clock is ahead", () => {
+    const ahead = saveTopicConfidence({}, pack, first, "weak", 9000);
+    const laterActionOnSlowerClock = saveTopicConfidence({}, pack, first, "strong", 8000);
+    expect(JSON.parse(merge(ahead, laterActionOnSlowerClock)[key])[first]).toEqual({ rating: "weak", editedAt: 9000 });
+    expect(merge(laterActionOnSlowerClock, ahead)[key]).toBe(merge(ahead, laterActionOnSlowerClock)[key]);
+  });
+
+  it("keeps undated entries undated and gives explicit edits precedence without fabricating a timestamp", () => {
+    const undated = { [key]: JSON.stringify({ [first]: "weak", [second]: "ok" }) };
+    const edited = saveTopicConfidence({}, pack, first, "strong", 0);
+    const out = merge(undated, edited);
+    expect(JSON.parse(out[key])).toEqual({ [first]: { rating: "strong", editedAt: 0 }, [second]: "ok" });
+    expect(merge(edited, undated)[key]).toBe(out[key]);
+    const conflict = { [key]: JSON.stringify({ [first]: "strong" }) };
+    expect(JSON.parse(merge(undated, conflict)[key])[first]).toBe("weak");
+    expect(merge(conflict, undated)[key]).toBe(merge(undated, conflict)[key]);
+  });
+
+  it("is associative and idempotent with deterministic key order", () => {
+    const a = saveTopicConfidence({}, pack, first, "strong", 2000);
+    const b = saveTopicConfidence(saveTopicConfidence({}, pack, second, "ok", 1000), pack, first, "weak", 1000);
+    const c = saveTopicConfidence({ [key]: JSON.stringify({ [second]: "weak" }) }, pack, revised, "strong", 3000);
+    const out = merge(merge(a, b), c);
+    expect(merge(a, merge(b, c))[key]).toBe(out[key]);
+    expect(merge(out, out)[key]).toBe(out[key]);
+    expect(Object.keys(JSON.parse(out[key]))).toEqual([first, second, revised].sort());
+  });
+
+  it("recovers valid ratings against malformed or partially invalid remote maps", () => {
+    const valid = saveTopicConfidence({}, pack, first, "ok");
+    for (const bad of ["broken", "null", "[]", '"text"', '{"bad":"expert"}']) {
+      expect(readTopicConfidence(merge(valid, { [key]: bad })[key])).toEqual({ [first]: "ok" });
+      expect(readTopicConfidence(merge({ [key]: bad }, valid)[key])).toEqual({ [first]: "ok" });
+    }
+    const partial = { [key]: JSON.stringify({ [second]: "weak", invalid: 42 }) };
+    expect(readTopicConfidence(merge(valid, partial)[key])).toEqual({ [first]: "ok", [second]: "weak" });
+  });
+
+  it("preserves opaque data with the existing fallback when neither side has valid ratings", () => {
+    expect(merge({ [key]: "broken" }, { [key]: "longer broken data" })[key]).toBe("longer broken data");
+    expect(merge({ [key]: "null" }, { [key]: "true" })[key]).toBe("null");
+    expect(merge({ [key]: "{}" }, {})[key]).toBe("{}");
+  });
+
+  it("keeps legacy and arbitrary notebook semantics even for JSON-looking content", () => {
+    for (const otherKey of ["maths", "__cs-confidence-cls-history", "__cs-confidence-v1-cls-history", "__cs-confidence-v2-"]) {
+      const short = '{"a":"ok"}';
+      const long = '{"b":"strong"}';
+      expect(merge({ [otherKey]: short }, { [otherKey]: long })[otherKey]).toBe(long);
+      expect(merge({ [otherKey]: long }, { [otherKey]: short })[otherKey]).toBe(long);
+      expect(merge({ [otherKey]: "left" }, { [otherKey]: "rght" })[otherKey]).toBe("left");
+    }
+  });
+
+  it("preserves own properties safely without prototype-key collisions", () => {
+    const a = { [key]: '{"__proto__":"weak","constructor":"strong"}' };
+    const b = { [key]: '{"constructor":"ok","toString":"unknown"}' };
+    const out = JSON.parse(merge(a, b)[key]);
+    expect(Object.keys(out)).toEqual(["__proto__", "constructor", "toString"]);
+    expect(out.__proto__).toBe("weak");
+    expect(out.constructor).toBe("ok");
+    expect(out.toString).toBe("unknown");
+  });
+});
 
 describe("mergeGameState — never lose earned progress", () => {
   it("takes the higher XP and coins", () => {

@@ -1,5 +1,6 @@
 import type { GameState, MissedQuestion, ReadingProgress } from "../types";
 import { mergeCard, capNotebook } from "../spaced-repetition";
+import { readTopicConfidenceEntries, type TopicConfidence, type TopicConfidenceEntry } from "../content/school-syllabus";
 
 /**
  * Merges two copies of a learner's GameState.
@@ -135,7 +136,8 @@ function mergeSeen(a: unknown, b: unknown): GameState["seenQuestions"] {
  * Notebook: subject → text. Both sides may hold real writing, and there is no
  * safe way to interleave prose, so the LONGER text wins — a proxy for "more
  * was written" that never silently discards the bigger piece of work. Equal
- * lengths keep the local copy.
+ * lengths keep the local copy. Only the reserved v2 confidence namespace uses
+ * entry-wise merging; legacy confidence and arbitrary notes retain this rule.
  */
 function mergeNotebook(local: unknown, remote: unknown): Rec<string> {
   const out: Rec<string> = {};
@@ -144,9 +146,51 @@ function mergeNotebook(local: unknown, remote: unknown): Rec<string> {
   for (const key of new Set([...Object.keys(l), ...Object.keys(r)])) {
     const lv = typeof l[key] === "string" ? (l[key] as string) : "";
     const rv = typeof r[key] === "string" ? (r[key] as string) : "";
+    if (key.startsWith("__cs-confidence-v2-") && key.length > "__cs-confidence-v2-".length) {
+      const merged = mergeConfidence(lv, rv);
+      if (merged !== undefined) {
+        out[key] = merged;
+        continue;
+      }
+    }
     out[key] = rv.length > lv.length ? rv : lv;
   }
   return out;
+}
+
+/** Union exact identities, including older revisions. Recorded device edit time
+ * wins for conflicts, whether the rating increases or decreases. Equal times
+ * choose lower confidence (unknown < weak < ok < strong). A timestamped edit
+ * takes precedence over an undated rating by policy, not inferred chronology;
+ * two undated ratings also choose lower confidence and remain undated.
+ * Valid-entry merging is commutative, associative and idempotent. Device clocks
+ * can disagree, including offline: this is not authoritative real-world ordering.
+ * Sort identities for deterministic serialization. Ignore malformed entries
+ * when valid ratings can be recovered; if neither side has any, preserve the
+ * existing longer-string/local-tie fallback rather than erase opaque data.
+ */
+function mergeConfidence(local: string, remote: string): string | undefined {
+  const rank: Record<TopicConfidence, number> = { unknown: 0, weak: 1, ok: 2, strong: 3 };
+  const merged = new Map<string, TopicConfidenceEntry>();
+  for (const [identity, entry] of [
+    ...Object.entries(readTopicConfidenceEntries(local)),
+    ...Object.entries(readTopicConfidenceEntries(remote)),
+  ]) {
+    const existing = merged.get(identity);
+    const time = typeof entry === "string" ? undefined : entry.editedAt;
+    const existingTime = typeof existing === "string" ? undefined : existing?.editedAt;
+    const rating = typeof entry === "string" ? entry : entry.rating;
+    const existingRating = typeof existing === "string" ? existing : existing?.rating;
+    if (existing === undefined ||
+        (time !== undefined && (existingTime === undefined || time > existingTime)) ||
+        (time === existingTime && existingRating !== undefined && rank[rating] < rank[existingRating])) {
+      merged.set(identity, entry);
+    }
+  }
+  if (merged.size === 0) return undefined;
+  return JSON.stringify(Object.fromEntries(
+    [...merged.keys()].sort().map((identity) => [identity, merged.get(identity)]),
+  ));
 }
 
 function validReadingProgress(value: unknown): value is ReadingProgress {

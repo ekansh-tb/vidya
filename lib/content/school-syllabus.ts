@@ -118,11 +118,79 @@ export function schoolSyllabusFor(opts: {
   );
 }
 
-/** Swaps the "not loaded" caveat for a named source, without duplicating it. */
-function stampSyllabus(pack: ExamPack, year: string): ExamPack["highlights"] {
-  const value = `School scheme of work, ${year}`;
-  const rest = (pack.highlights || []).filter((h) => h.label !== "Syllabus");
-  return [...rest, { label: "Syllabus", value }];
+/** Only the topic list comes from the school source. No practice mapping exists. */
+function labelTopicSource(pack: ExamPack, value: string): ExamPack["highlights"] {
+  const rest = (pack.highlights || []).filter((h) =>
+    !["Syllabus", "Syllabus topics", "Practice provenance"].includes(h.label));
+  return [
+    ...rest,
+    { label: "Syllabus topics", value: `${value}. Retained topics come from the original pack.` },
+    { label: "Practice provenance", value: "Original pack material: supplemental and unmapped to school topics; school approval not verified." },
+  ];
+}
+
+// Metadata is attached only to replaced topics, never to retained framework skills.
+type VersionedTopic = SyllabusTopic & { syllabusRevision?: string };
+
+export type TopicConfidence = "unknown" | "weak" | "ok" | "strong";
+/** Strings are historical ratings with unknown edit time. Never date them on read. */
+export type TopicConfidenceEntry = TopicConfidence | { rating: TopicConfidence; editedAt: number };
+export const confidenceStorageKey = (pack: ExamPack): string => `__cs-confidence-v2-${pack.subjectId}`;
+
+/** Exact tuples avoid hash collisions and positional-ID reuse. No legacy fallback:
+ * old maps lack the content/revision evidence needed for a safe migration.
+ * Pack display copy is deliberately excluded from structural identity. */
+export function topicConfidenceIdentity(
+  pack: ExamPack,
+  topic: SyllabusTopic,
+  scope: { board?: Board; grade?: number; school?: string },
+): string {
+  return JSON.stringify([
+    "topic-confidence-v2", scope.board ?? null, scope.grade ?? null,
+    scope.school ?? null, pack.subjectId, pack.grade ?? null,
+    (topic as VersionedTopic).syllabusRevision ?? "original-pack",
+    topic.id, topic.title, topic.blurb, topic.syllabus, topic.paper ?? null, topic.skill ?? false,
+  ]);
+}
+
+function isConfidence(value: unknown): value is TopicConfidence {
+  return value === "unknown" || value === "weak" || value === "ok" || value === "strong";
+}
+
+function validEditTime(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 8_640_000_000_000_000;
+}
+
+export function readTopicConfidenceEntries(raw: string | undefined): Record<string, TopicConfidenceEntry> {
+  try {
+    const parsed: unknown = JSON.parse(raw || "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(Object.entries(parsed).flatMap<[string, TopicConfidenceEntry]>(([identity, value]) => {
+      if (isConfidence(value)) return [[identity, value]];
+      if (value && typeof value === "object" && !Array.isArray(value) &&
+          isConfidence(value.rating) && validEditTime(value.editedAt)) {
+        return [[identity, { rating: value.rating, editedAt: value.editedAt }]];
+      }
+      return [];
+    }));
+  } catch { return {}; }
+}
+
+export function readTopicConfidence(raw: string | undefined): Record<string, TopicConfidence> {
+  return Object.fromEntries(Object.entries(readTopicConfidenceEntries(raw)).map(([id, entry]) =>
+    [id, typeof entry === "string" ? entry : entry.rating]));
+}
+
+/** Merge against the latest notebook, preserving old revisions and legacy maps. */
+export function saveTopicConfidence(
+  notebook: Record<string, string>, pack: ExamPack, identity: string, confidence: TopicConfidence,
+  editedAt: number = Date.now(),
+): Record<string, string> {
+  if (!validEditTime(editedAt)) throw new RangeError("Invalid confidence edit time");
+  const key = confidenceStorageKey(pack);
+  return { ...notebook, [key]: JSON.stringify({
+    ...readTopicConfidenceEntries(notebook[key]), [identity]: { rating: confidence, editedAt },
+  }) };
 }
 
 /**
@@ -154,19 +222,23 @@ export function applySchoolSyllabus(
 ): ExamPack {
   const fromUpload = opts.uploaded?.subjects?.[pack.subjectId];
   if (fromUpload && fromUpload.topics.length > 0) {
-    const year = opts.uploaded!.academicYear || "this year";
+    const year = opts.uploaded!.academicYear || "year not supplied";
+    const revision = JSON.stringify([
+      "parent-upload-v1", opts.uploaded!.academicYear,
+      opts.uploaded!.uploadedAt, opts.uploaded!.sourceLabel,
+    ]);
     return {
       ...pack,
-      context: `${pack.context} · ${year} scheme of work`,
-      highlights: stampSyllabus(pack, year),
+      highlights: labelTopicSource(pack, `Parent upload: ${opts.uploaded!.sourceLabel}, ${year}; curriculum and grade not verified`),
       topics: [
         ...pack.topics.filter((t) => t.skill),
-        ...fromUpload.topics.map((t, i) => ({
+        ...fromUpload.topics.map((t, i): VersionedTopic => ({
           id: t.id,
           num: i + 1,
           title: t.title,
           blurb: t.term ? `${t.term} · ${t.blurb}` : t.blurb,
           syllabus: t.syllabus,
+          syllabusRevision: revision,
         })),
       ],
     };
@@ -185,10 +257,15 @@ export function applySchoolSyllabus(
 
   return {
     ...pack,
-    context: `${pack.context} · ${entry.academicYear} scheme of work`,
-    highlights: stampSyllabus(pack, entry.academicYear),
+    highlights: labelTopicSource(pack, `School source: ${entry.source.label}, ${entry.academicYear}`),
     // School units follow the skills topics that survived.
-    topics: [...kept, ...subject.topics],
+    topics: [...kept, ...subject.topics.map((topic): VersionedTopic => ({
+      ...topic,
+      syllabusRevision: JSON.stringify([
+        "school-registry-v1", entry.board, entry.grade, entry.academicYear,
+        entry.schoolKeys, entry.source.label, entry.source.kind, entry.source.notedOn, entry.source.url ?? null,
+      ]),
+    }))],
   };
 }
 
@@ -204,5 +281,6 @@ export function isGenericSyllabus(opts: {
   if (opts.subjectId && (opts.uploaded?.subjects?.[opts.subjectId]?.topics.length ?? 0) > 0) {
     return false;
   }
-  return schoolSyllabusFor(opts) === undefined;
+  const entry = schoolSyllabusFor(opts);
+  return opts.subjectId ? !entry?.subjects[opts.subjectId]?.topics.length : entry === undefined;
 }
