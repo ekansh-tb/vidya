@@ -17,6 +17,7 @@ import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
 import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
 import { FamilyAiPausePanel } from "@/components/parent/family-ai-pause-panel";
+import { LearnerGuidancePanel } from "@/components/parent/learner-guidance-panel";
 import { ParentAccountLinkPanel } from "./parent-account-link-panel";
 import { loadOwnedRoster, loadOwnedReport, visibleRoster, type RosterSnapshot, type OwnedReport, type OwnedLearner, type RemoteParentReport } from "@/lib/parent/owned-roster";
 import { subjectsForLearner } from "@/lib/content/subjects";
@@ -196,12 +197,13 @@ function OwnedLearnerControls({ learner, aiPolicyRevision }: { learner: OwnedLea
     <h2 className="font-display text-2xl font-bold">{learner.name} · Grade {learner.grade}</h2>
     <SafetyPanel learner={learner} />
     <LearnerAiTutorAccessPanel learner={learner} refreshToken={aiPolicyRevision} />
+    <LearnerGuidancePanel key={learner.remoteId} learnerId={learner.remoteId} />
     <ParentAccountLinkPanel key={`account:${learner.remoteId}`} learnerId={learner.remoteId} />
     <LearnerLinkPanel learner={learner} />
     <DevicePanel learner={learner} />
     <UsagePanel learner={learner} />
     <OwnedCapabilityControls learner={learner} />
-    <p className="text-sm text-neutral-400">Device-local family notes, syllabus uploads and profile preferences are not loaded or edited here.</p>
+    <p className="text-sm text-neutral-400">Teaching guidance is saved to this learner&apos;s account. Device-local family notes, syllabus uploads and profile preferences are not loaded or edited here.</p>
     <button type="button" onClick={() => setAttempt((value) => value + 1)} className="min-h-11 rounded border border-neutral-700 px-4 text-sm">Reload synced report</button>
     {result.status === "ready"
       ? <SelectedLearnerView learner={{ ...learner, state: result.report.state }} reportSource={result.report} />
