@@ -1,5 +1,6 @@
 import type { LearnerProfile, MissedQuestion, SubjectId, Topic } from "../../types";
 import { QUESTIONS } from ".";
+import { reviewIdentityForCard } from "./identity";
 
 export type LearnerQuestionBanks = Partial<Record<SubjectId, Record<string, Topic>>>;
 
@@ -31,9 +32,5 @@ export function missedQuestionsForLearner(
 ): MissedQuestion[] {
   const banks = questionsForLearner(learner);
 
-  return (missedQuestions || []).filter((miss) => {
-    if (!miss.subjectId || !miss.topicId) return false;
-    const topic = banks[miss.subjectId]?.[miss.topicId];
-    return !!topic?.items.some((item) => item.q === miss.q);
-  });
+  return (missedQuestions || []).filter((miss) => reviewIdentityForCard(learner, miss, banks) !== null);
 }

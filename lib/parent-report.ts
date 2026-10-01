@@ -25,6 +25,10 @@ const syncedStateSchema = z.object({
   missedQuestions: z.array(z.object({
     id: z.string().min(1).max(160),
     q: z.string().min(1).max(4_000),
+    // Needed to validate review content revision, not the learner's given answer.
+    correct: z.string().max(4_000).optional(),
+    ex: z.string().max(8_000).optional(),
+    questionKey: z.string().max(32_000).optional(),
     subjectId: z.string().min(1).max(80).optional(),
     topicId: z.string().min(1).max(160).optional(),
     missedAt: isoTimestampSchema,
@@ -179,8 +183,9 @@ function applyRemoteReport(localState: GameState, remoteState: ParentReportState
     id: miss.id,
     q: miss.q,
     given: "",
-    correct: "",
-    ex: "",
+    correct: miss.correct ?? "",
+    ex: miss.ex ?? "",
+    questionKey: miss.questionKey,
     subjectId: miss.subjectId as SubjectId | undefined,
     topicId: miss.topicId,
     missedAt: miss.missedAt,
