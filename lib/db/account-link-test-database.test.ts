@@ -64,7 +64,7 @@ describe("account integration database safety", () => {
   it("bounds connection, queries and idle transactions", async () => {
     await connectAccountTestDatabase();
     expect(m.constructor).toHaveBeenCalledWith(expect.objectContaining({
-      connectionTimeoutMillis: 5000, statement_timeout: 7000,
+      connectionTimeoutMillis: 15000, statement_timeout: 7000,
       query_timeout: 10000, idle_in_transaction_session_timeout: 10000,
     }));
   });
