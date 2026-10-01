@@ -23,7 +23,9 @@ const env = {
 };
 for (const args of [
   ["scripts/migrate.mjs"],
-  ["node_modules/vitest/vitest.mjs", "run", "lib/db/queries.integration.test.ts", "lib/db/ai-connections.integration.test.ts", "lib/db/ai-tutor-policies.integration.test.ts", "lib/db/request-limits.integration.test.ts"],
+  // Suites share database-level locks; keep files serial while race tests use
+  // independent connections concurrently within their own controlled fixtures.
+  ["node_modules/vitest/vitest.mjs", "run", "--no-file-parallelism", "lib/db/queries.integration.test.ts", "lib/db/ai-connections.integration.test.ts", "lib/db/ai-tutor-policies.integration.test.ts", "lib/db/request-limits.integration.test.ts", "lib/db/account-links.integration.test.ts", "lib/db/parent-enrollment.integration.test.ts", "lib/db/account-links.races.integration.test.ts"],
 ]) {
   const result = spawnSync(process.execPath, args, { env, stdio: "inherit" });
   if (result.error || result.status !== 0) process.exit(result.status || 1);
