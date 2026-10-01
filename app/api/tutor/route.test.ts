@@ -70,7 +70,7 @@ import { POST } from "./route";
 const learnerIdentity = {
   kind: "learner",
   userId: "device:learner-a",
-  learner: { id: "learner-a" },
+  learner: { id: "learner-a", name: "Learner A", grade: 5, board: "cambridge-primary", school: null, pickedSubjects: null },
   verificationLevel: 2,
 };
 
@@ -142,6 +142,7 @@ describe("POST parent-controlled tutor runtime", () => {
 
     expect(response.status).toBe(200);
     expect(body).toContain("1098");
+    expect(response.headers.get("cache-control")).toContain("no-store");
     expect(mocks.resolveCapabilityForRequest).not.toHaveBeenCalled();
     expect(mocks.getLearnerAiTutorRuntimePolicy).not.toHaveBeenCalled();
     expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
@@ -266,6 +267,7 @@ describe("POST parent-controlled tutor runtime", () => {
       "system:tutor-runtime",
     );
     expect(mocks.toUIMessageStreamResponse).toHaveBeenCalledWith({
+      headers: { "cache-control": "private, no-store" },
       onError: expect.any(Function),
     });
     const mask = mocks.toUIMessageStreamResponse.mock.calls[0][0].onError;
@@ -324,5 +326,103 @@ describe("POST parent-controlled tutor runtime", () => {
     mocks.markAiConnectionUsedForParent.mockClear();
     await options.onFinish({ finishReason: "error" });
     expect(mocks.markAiConnectionUsedForParent).not.toHaveBeenCalled();
+  });
+});
+
+it("returns a safe 503 before tutor policy or provider work when the shared limiter fails", async () => {
+  mocks.rateLimit.mockResolvedValue({ ok: false, unavailable: true, remaining: 0, resetAt: 0, retryAfterSeconds: 5 });
+  const response = await POST(request());
+  expect(response.status).toBe(503);
+  expect(response.headers.get("retry-after")).toBe("5");
+  expect(response.headers.get("cache-control")).toContain("no-store");
+  expect(await response.json()).toEqual({ error: "Service temporarily unavailable" });
+  expect(mocks.resolveCapabilityForRequest).not.toHaveBeenCalled();
+  expect(mocks.streamText).not.toHaveBeenCalled();
+});
+
+async function curriculumRequest(overrides: Record<string, unknown> = {}) {
+  const base = request();
+  const body = await base.json();
+  return new Request(base.url, { method: "POST", headers: base.headers, body: JSON.stringify({ ...body, ...overrides }) });
+}
+function storedLearner(overrides: Record<string, unknown>) {
+  mocks.resolveCapabilityForRequest.mockResolvedValue({
+    allowed: true, identity: { ...learnerIdentity, learner: { ...learnerIdentity.learner, ...overrides } },
+  });
+}
+
+describe("authoritative tutor curriculum", () => {
+  it.each([
+    ["cbse", 6, "cbse-maths", "CBSE"],
+    ["cbse", 9, "cbse-science", "CBSE"],
+    ["icse", 9, "icse-maths", "ICSE (CISCE)"],
+    ["cambridge-primary", 2, "maths", "Cambridge Primary"],
+    ["cambridge-lower-secondary", 6, "cls-maths", "Cambridge Lower Secondary"],
+    ["cambridge-igcse", 10, "igcse-cs", "Cambridge IGCSE"],
+  ])("uses stored %s grade %i despite mismatched body metadata", async (board, grade, subject, label) => {
+    storedLearner({ board, grade, school: "Stored Example School", name: "Stored Learner" });
+    await POST(await curriculumRequest({ board: "cambridge-igcse", grade: 10, school: "CLIENT_SCHOOL", name: "CLIENT_NAME", subject }));
+    const system = mocks.streamText.mock.calls[0][0].system;
+    expect(system).toContain(`${label}, Grade ${grade}`);
+    expect(system).toContain("Stored Example School");
+    expect(system).toContain('"firstName":"Stored"');
+    expect(system).not.toMatch(/CLIENT_SCHOOL|CLIENT_NAME|Stage [0-9]|year.old|Pune|Hadapsar/);
+    if (board !== "cambridge-igcse") expect(system).not.toContain("Cambridge IGCSE");
+  });
+
+  it("does not fall back to a body school when the stored school is absent", async () => {
+    await POST(await curriculumRequest({ school: "CLIENT_SCHOOL", grade: undefined, board: undefined, name: undefined }));
+    expect(mocks.streamText.mock.calls[0][0].system).toContain('"school":null');
+    expect(mocks.streamText.mock.calls[0][0].system).not.toContain("CLIENT_SCHOOL");
+  });
+  it("keeps identical curriculum prompts when body scope changes or is omitted", async () => {
+    for (const values of [
+      { board: "icse", grade: 9, school: "Wrong school", name: "Wrong name" },
+      { board: "cbse", grade: 2, school: "Another school", name: "Another name" },
+      { board: undefined, grade: undefined, school: undefined, name: undefined },
+    ]) await POST(await curriculumRequest(values));
+    expect(new Set(mocks.streamText.mock.calls.map(([options]) => options.system)).size).toBe(1);
+  });
+
+  it.each([
+    { board: "cbse", grade: 13 }, { board: "cambridge-primary", grade: 9 },
+    { board: undefined }, { grade: undefined }, { board: "unsupported" },
+  ])("does not repair invalid stored scope from a valid request %j", async (stored) => {
+    storedLearner(stored);
+    const response = await POST(request());
+    expect(await response.text()).toContain("profile settings");
+    expect(mocks.streamText).not.toHaveBeenCalled();
+    expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
+    expect(mocks.decryptCredential).not.toHaveBeenCalled();
+  });
+  it.each([undefined, "igcse-cs", "unknown", "__proto__"])("clarifies missing or incompatible subject %s without spending a turn", async (subject) => {
+    const response = await POST(await curriculumRequest({ subject }));
+    expect(await response.text()).toContain("choose a subject");
+    expect(mocks.streamText).not.toHaveBeenCalled();
+    expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
+  });
+  it("allows explicit within-board exploration without claiming school enrollment", async () => {
+    storedLearner({ board: "cbse", grade: 6, pickedSubjects: ["cbse-maths"] });
+    await POST(await curriculumRequest({ subject: "cbse-science" }));
+    expect(mocks.streamText.mock.calls[0][0].system).toContain('"id":"cbse-science"');
+    expect(mocks.streamText.mock.calls[0][0].system).toContain("it does not establish enrollment");
+  });
+  it.each(["unlinked", "revoked"])("preserves the guest/denied behavior for %s identity", async (reason) => {
+    mocks.resolveCapabilityForRequest.mockResolvedValue({ allowed: false, identity: { kind: "anonymous", reason } });
+    const response = await POST(request());
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "Miss Vidya isn't available right now." });
+    expect(mocks.streamText).not.toHaveBeenCalled();
+  });
+  it("preserves free crisis support even with invalid curriculum and subject", async () => {
+    storedLearner({ board: "unknown", grade: 99 });
+    const base = await curriculumRequest({ subject: "unknown" });
+    const body = await base.json();
+    body.messages = [{ role: "user", parts: [{ type: "text", text: "I want to kill myself" }] }];
+    const response = await POST(new Request(base.url, { method: "POST", headers: base.headers, body: JSON.stringify(body) }));
+    expect(await response.text()).toContain("1098");
+    expect(mocks.resolveCapabilityForRequest).not.toHaveBeenCalled();
+    expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
   });
 });
