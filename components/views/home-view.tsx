@@ -182,7 +182,7 @@ export function HomeView({
       <h1 className="sr-only">Vidya home for {state.name.split(" ")[0] || "learner"}</h1>
       {/* Header */}
       <div className="px-5 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <button onClick={() => { sfx.click(); onNavigate("profile"); }} aria-label={`Open profile for ${state.name.split(" ")[0] || "learner"}`} className="flex min-h-11 items-center gap-3 motion-safe:active:scale-95 transition">
             <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="sm" />
             <div className="text-left">
