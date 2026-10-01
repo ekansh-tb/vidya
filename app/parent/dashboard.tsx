@@ -6,197 +6,59 @@ import { useUser, SignOutButton } from "@clerk/nextjs";
 import { Check, Copy, FileDown } from "lucide-react";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 import { OpinionCard } from "@/components/parent/opinion-card";
+import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
 import { copyText } from "@/lib/clipboard";
 import { dayKeyOf } from "@/lib/utils";
-import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { DevicePanel } from "@/components/parent/device-panel";
 import { UsagePanel } from "@/components/parent/usage-panel";
-import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
 import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
 import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
 import { FamilyAiPausePanel } from "@/components/parent/family-ai-pause-panel";
-import { useGameStore } from "@/lib/game-store";
+import { ParentAccountLinkPanel } from "./parent-account-link-panel";
+import { loadOwnedRoster, loadOwnedReport, visibleRoster, type RosterSnapshot, type OwnedReport, type OwnedLearner, type RemoteParentReport } from "@/lib/parent/owned-roster";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import type { LearnerProfile } from "@/lib/types";
 import {
-  chooseParentReportState,
-  parseParentReportResponse,
-  type ParentReportDecision,
-  type ParentReportLoadState,
-} from "@/lib/parent-report";
-import {
   RecentReflections,
   WellnessSignals,
-  CapabilityMap,
-  FamilyNoteComposer,
-  CareNoteComposer,
   type SubjectLearningStat,
 } from "@/components/views/parent-view";
 
 /**
  * Parent Clerk dashboard.
  *
- * Linked-profile contract: the learner roster comes from this browser. When a
- * profile has a remote id, reporting fields prefer its validated server sync,
- * while an explicit local fallback keeps the dashboard useful offline.
- *
- * The dashboard mirrors the in-kid-app parent room (parent-view.tsx) but
- * with no PIN gate (Clerk auth IS the gate), a learner picker, and a
- * desktop-friendly layout.
+ * The server-owned family roster is the only source of learner identities.
+ * No shared-device profiles, reports or credentials enter this dashboard.
  */
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
+  if (!isLoaded) return <main className="p-8" role="status">Loading your parent account...</main>;
+  if (!isSignedIn || !user) return <main className="p-8"><Link href="/sign-in?next=/parent">Sign in to continue</Link></main>;
+  // Remount every stateful control when Clerk switches accounts.
+  return <OwnedParentDashboard key={user.id} parentId={user.id} displayName={user.firstName || user.username || "Parent"} email={user.primaryEmailAddress?.emailAddress ?? ""} />;
+}
+
+function OwnedParentDashboard({ parentId, displayName, email }: { parentId: string; displayName: string; email: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [aiPolicyRevision, setAiPolicyRevision] = useState(0);
-  const [remoteReportCache, setRemoteReportCache] = useState<{
-    parentId: string | null;
-    reports: Record<string, ParentReportLoadState | { status: "denied" }>;
-  }>({ parentId: null, reports: {} });
-
-  useEffect(() => { hydrate(); }, [hydrate]);
-
-  const activeParentId = isSignedIn ? user?.id ?? null : null;
-  const localLearners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
-  const activeReports = useMemo(
-    () => remoteReportCache.parentId === activeParentId ? remoteReportCache.reports : {},
-    [activeParentId, remoteReportCache],
-  );
-  // A linked local profile is not parent-visible until the ownership-scoped
-  // endpoint confirms it for this Clerk account. This prevents an account
-  // switch on a shared browser from briefly revealing another parent's child.
-  const learners = useMemo(() => localLearners.filter((learner) => {
-    if (!learner.remoteId) return true;
-    const report = activeReports[learner.remoteId];
-    return report?.status !== "loading" && report?.status !== "denied" && Boolean(report);
-  }), [activeReports, localLearners]);
-  const selected = useMemo(
-    () => learners.find((learner) => learner.id === selectedId) || learners[0] || null,
-    [learners, selectedId],
-  );
-  const linkedRemoteIdsKey = useMemo(
-    () => [...new Set(localLearners.map((learner) => learner.remoteId).filter((id): id is string => Boolean(id)))]
-      .sort()
-      .join(","),
-    [localLearners],
-  );
+  const [generation, setGeneration] = useState(0);
+  const [roster, setRoster] = useState<RosterSnapshot>({ parentId, generation: -1, result: { status: "loading", learners: [] } });
+  const learners = visibleRoster(roster, parentId, generation);
+  const ready = roster.parentId === parentId && roster.generation === generation && roster.result.status === "ready";
+  const selected = learners.find((learner) => learner.id === selectedId) ?? learners[0] ?? null;
+  const activeParentId = parentId;
 
   useEffect(() => {
-    if (!isLoaded || !hydrated) return;
-    if (!activeParentId) {
-      setRemoteReportCache({ parentId: null, reports: {} });
-      return;
-    }
-    if (!linkedRemoteIdsKey) {
-      setRemoteReportCache({ parentId: activeParentId, reports: {} });
-      return;
-    }
-
     const controller = new AbortController();
-    const capturedParentId = activeParentId;
-    const remoteIds = linkedRemoteIdsKey.split(",");
-    setRemoteReportCache({
-      parentId: capturedParentId,
-      reports: Object.fromEntries(remoteIds.map((id) => [id, { status: "loading" }])),
+    void loadOwnedRoster(parentId, controller.signal).then((result) => {
+      if (!controller.signal.aborted) setRoster({ parentId, generation, result });
     });
-
-    remoteIds.forEach((remoteId) => {
-      void (async () => {
-        try {
-          const response = await fetch(`/api/parent/learners/${encodeURIComponent(remoteId)}/state`, {
-            signal: controller.signal,
-            cache: "no-store",
-          });
-          const raw: unknown = await response.json().catch(() => null);
-          const parsed = response.ok ? parseParentReportResponse(raw) : null;
-          if (controller.signal.aborted) return;
-
-          let next: ParentReportLoadState | { status: "denied" } = { status: "unavailable" };
-          if (parsed?.status === "ready") {
-            next = {
-              status: "ready",
-              state: parsed.state,
-              revision: parsed.revision,
-              updatedAt: parsed.updatedAt,
-            };
-          } else if (parsed?.status === "absent") {
-            next = { status: "absent" };
-          } else if ([401, 403, 404].includes(response.status)) {
-            next = { status: "denied" };
-          }
-
-          setRemoteReportCache((current) => current.parentId === capturedParentId
-            ? { ...current, reports: { ...current.reports, [remoteId]: next } }
-            : current);
-        } catch {
-          if (controller.signal.aborted) return;
-          setRemoteReportCache((current) => current.parentId === capturedParentId
-            ? {
-                ...current,
-                reports: {
-                  ...current.reports,
-                  [remoteId]: { status: "unavailable" },
-                },
-              }
-            : current);
-        }
-      })();
-    });
-
     return () => controller.abort();
-  }, [activeParentId, hydrated, isLoaded, linkedRemoteIdsKey]);
-
-  const selectedReport = useMemo(() => {
-    if (!selected) return null;
-    const remote = selected.remoteId
-      ? activeReports[selected.remoteId]
-      : { status: "unlinked" as const };
-    if (!remote || remote.status === "denied") return null;
-    return chooseParentReportState(selected.state, remote);
-  }, [activeReports, selected]);
-
-  const pendingLinkedLearners = localLearners.filter((learner) =>
-    learner.remoteId && (!activeReports[learner.remoteId] || activeReports[learner.remoteId].status === "loading"),
-  ).length;
-  const deniedLinkedLearners = localLearners.filter((learner) =>
-    learner.remoteId && activeReports[learner.remoteId]?.status === "denied",
-  ).length;
-
-  const displayName =
-    user?.firstName?.trim() ||
-    user?.username ||
-    user?.emailAddresses?.[0]?.emailAddress ||
-    "Parent";
-  const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
-
-  // Loading guard
-  if (!isLoaded || !hydrated) {
-    return (
-      <main className="min-h-screen flex items-center justify-center text-neutral-400">
-        <CosmicBg mode="parent" intensity={0.6} />
-        <div className="text-sm">Loading…</div>
-      </main>
-    );
-  }
-
-  if (!isSignedIn) {
-    // Defence in depth — middleware should already gate this, but if for any
-    // reason the user isn't signed in, point them home rather than crash.
-    return (
-      <main className="min-h-screen flex items-center justify-center text-neutral-400">
-        <CosmicBg mode="parent" intensity={0.6} />
-        <div className="text-sm">
-          <Link href="/sign-in?next=/parent" className="text-violet-400 hover:text-violet-300 underline">
-            Sign in to continue →
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  }, [parentId, generation]);
 
   return (
     <main className="min-h-screen text-neutral-100 relative">
@@ -235,10 +97,19 @@ export function ParentDashboard() {
             {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
           </div>
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            {learners.length} learner{learners.length === 1 ? "" : "s"} on this device
+            {learners.length} learner{learners.length === 1 ? "" : "s"} in your account
           </div>
         </div>
 
+        <button type="button" onClick={() => setGeneration((value) => value + 1)} className="min-h-11 rounded border border-neutral-700 px-4 text-sm">Reload family roster</button>
+        {!ready && <div role="status" className="rounded-lg border border-neutral-800 p-5">
+          {roster.generation !== generation || roster.result.status === "loading"
+            ? "Loading your family roster..."
+            : roster.result.status === "denied"
+              ? <span>Parent access is required. <Link href="/parent/enroll" className="underline">Return to parent entry</Link>.</span>
+              : "Your family roster is unavailable. Reload to try again. No device-local profiles are shown."}
+        </div>}
+        {ready && <>
         <AiConnectionsPanel
           key={`ai-connections-${activeParentId}`}
           onConnectionsChanged={() => setAiPolicyRevision((revision) => revision + 1)}
@@ -252,46 +123,15 @@ export function ParentDashboard() {
           key={`family-ai-pause-${activeParentId}`}
           onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
         />
-        <LearnerAiTutorAccessPanel
-          key={`learner-ai-access-${activeParentId}`}
-          learner={selected}
-          refreshToken={aiPolicyRevision}
-        />
-
-        {/* Empty state — no learners yet */}
-        {learners.length === 0 && pendingLinkedLearners > 0 && (
-          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center" role="status" aria-live="polite">
-            <h2 className="font-display text-xl font-bold mb-2">Checking linked learners</h2>
-            <p className="text-sm text-neutral-400 max-w-md mx-auto">
-              Confirming which synced learner profiles belong to this signed-in parent account.
-            </p>
-          </div>
-        )}
-
-        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners > 0 && (
-          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">No linked learners for this account</h2>
-            <p className="text-sm text-neutral-400 max-w-md mx-auto">
-              The learner profiles linked on this browser belong to a different parent account.
-            </p>
-          </div>
-        )}
-
-        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners === 0 && (
+        {learners.length === 0 && (
           <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">No learner profiles yet on this browser</h2>
+            <h2 className="font-display text-xl font-bold mb-2">No learners in your account yet</h2>
             <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
-              The kid creates their profile from the lobby — name, avatar, what they love.
-              Once they do, this dashboard fills up with their signals automatically.
+              Create a learner below, then use their device-link code to connect their learning app. Profiles stored on this browser are not automatically added to your family.
             </p>
-            <Link
-              href="/"
-              className="inline-block rounded-md bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 transition"
-            >
-              Open the kid app →
-            </Link>
           </div>
         )}
+        <CreateOwnedLearner onCreated={() => setGeneration((value) => value + 1)} />
 
         {/* Learner picker (only show if multiple) */}
         {learners.length > 1 && selected && (
@@ -306,7 +146,7 @@ export function ParentDashboard() {
                   key={l.id}
                   // Local to this dashboard ONLY. This used to also call
                   // switchLearner(), which rewrites the shared
-                  // `currentLearnerId` — so a parent glancing at one child's
+                  // `currentLearnerId` - so a parent glancing at one child's
                   // numbers silently moved the kid app into that child's
                   // profile, and the next kid to open Vidya landed inside their
                   // sibling's account. Reading must never rewrite whose app it
@@ -326,49 +166,13 @@ export function ParentDashboard() {
           </div>
         )}
 
-        {selected && (
-          <>
-            {/* Above everything, including the setup panels, and it renders
-                nothing when there is nothing to say. If a child has disclosed
-                self-harm or that someone is hurting them, that cannot sit below
-                a syllabus form — a parent must not have to scroll to find it. */}
-            <SafetyPanel key={`safety-${selected.id}`} learner={selected} />
-
-            {/* Ownership first, then the code. Without a server row there is
-                nothing for a claim code to point at, which is why the link
-                panel used to say "nothing to link to" for every learner. */}
-            <ClaimAccountPanel
-              key={`claim-${selected.id}`}
-              learner={selected}
-              onClaimed={(remoteId) => updateLearnerMeta(selected.id, { remoteId })}
-            />
-            <LearnerLinkPanel key={`link-${selected.id}`} learner={selected} />
-
-            {/* Revoking lives behind Clerk only — the in-kid-app parent room is
-                PIN-guarded, which is a speed bump, not an authorisation. */}
-            <DevicePanel key={`devices-${selected.id}`} learner={selected} />
-
-            {/* A count, not analytics — see the note in the component on why
-                this one deliberately has no "this might mean". */}
-            <UsagePanel key={`usage-${selected.id}`} learner={selected} />
-            <SyllabusPanel
-              key={`syllabus-${selected.id}`}
-              learner={selected}
-              onSave={(patch) => updateLearnerMeta(selected.id, patch)}
-            />
-            <SelectedLearnerView
-              key={selected.id}
-              learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
-              reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
-              onUpdateLearner={(patch) => updateLearnerMeta(selected.id, patch)}
-            />
-          </>
-        )}
+        {selected && <OwnedLearnerControls key={`${parentId}:${generation}:${selected.id}`} learner={selected} aiPolicyRevision={aiPolicyRevision} />}
+        </>}
 
         <footer className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6 mt-8">
           VIDYA is built so that AI and humans can take care of each other.
           You teach the AI how to teach your kid; the AI helps your kid
-          flourish; we both observe quietly. Nothing here is ever a claim —
+          flourish; we both observe quietly. Nothing here is ever a claim -
           only an opinion you can verify, override, or discard.
         </footer>
       </section>
@@ -376,12 +180,107 @@ export function ParentDashboard() {
   );
 }
 
+function OwnedLearnerControls({ learner, aiPolicyRevision }: { learner: OwnedLearner; aiPolicyRevision: number }) {
+  const [attempt, setAttempt] = useState(0);
+  const [loaded, setLoaded] = useState<{ attempt: number; result: OwnedReport }>({ attempt: -1, result: { status: "loading" } });
+  const result: OwnedReport = loaded.attempt === attempt ? loaded.result : { status: "loading" };
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadOwnedReport(learner.remoteId, controller.signal).then((result) => {
+      if (!controller.signal.aborted) setLoaded({ attempt, result });
+    });
+    return () => controller.abort();
+  }, [learner.remoteId, attempt]);
+  if (result.status === "denied") return <div role="alert">Access to this learner is unavailable. Reload the family roster to check current access.</div>;
+  return <div className="space-y-6">
+    <h2 className="font-display text-2xl font-bold">{learner.name} · Grade {learner.grade}</h2>
+    <SafetyPanel learner={learner} />
+    <LearnerAiTutorAccessPanel learner={learner} refreshToken={aiPolicyRevision} />
+    <ParentAccountLinkPanel key={`account:${learner.remoteId}`} learnerId={learner.remoteId} />
+    <LearnerLinkPanel learner={learner} />
+    <DevicePanel learner={learner} />
+    <UsagePanel learner={learner} />
+    <OwnedCapabilityControls learner={learner} />
+    <p className="text-sm text-neutral-400">Device-local family notes, syllabus uploads and profile preferences are not loaded or edited here.</p>
+    <button type="button" onClick={() => setAttempt((value) => value + 1)} className="min-h-11 rounded border border-neutral-700 px-4 text-sm">Reload synced report</button>
+    {result.status === "ready"
+      ? <SelectedLearnerView learner={{ ...learner, state: result.report.state }} reportSource={result.report} />
+      : <p role="status" className="rounded border border-neutral-800 p-4 text-sm">{result.status === "loading"
+        ? "Loading synced progress..."
+        : result.status === "absent"
+          ? "No synced progress yet. Learner controls are available above."
+          : "Synced progress is unavailable. Retry when connected. No local report is substituted."}</p>}
+  </div>;
+}
+
+function OwnedCapabilityControls({ learner }: { learner: OwnedLearner }) {
+  const [disabled, setDisabled] = useState(learner.disabledCapabilities ?? []);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  async function toggle(key: string) {
+    setBusy(true); setNotice("");
+    const next = disabled.includes(key) ? disabled.filter((value) => value !== key) : [...disabled, key];
+    try {
+      const response = await fetch(`/api/parent/learners/${learner.remoteId}/capabilities`, {
+        method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ disabled: next }),
+      });
+      const data = await response.json();
+      if (!response.ok || !Array.isArray(data.disabled) || !data.disabled.every((value: unknown) => typeof value === "string")) throw new Error("Rejected");
+      setDisabled(data.disabled); setNotice("Saved to this learner's account.");
+    } catch { setNotice("Could not confirm the change. Reload the family roster before trying again."); }
+    finally { setBusy(false); }
+  }
+  const labels: Record<string, string> = {
+    "ai.tutor.limited": "Limited AI tutor", "ai.tutor.full": "Full AI tutor",
+    "share.crossNetwork": "Sharing", "byok.openai": "OpenAI account", "byok.anthropic": "Anthropic account",
+    "byok.google": "Google AI account", "byok.grok": "Grok account", "byok.openrouter": "OpenRouter account",
+    "incognito.enabled": "Incognito mode", "health.profile": "Health profile", "exam.alertsToParent": "Exam-day alerts",
+  };
+  return <section className="rounded-lg border border-neutral-800 p-5">
+    <h3 className="font-bold">Learner capabilities</h3>
+    <p className="mt-1 text-sm text-neutral-400">Allowing a capability does not bypass its verification requirements.</p>
+    <ul className="mt-3 space-y-2">{Object.entries(CAPABILITY_POLICIES).map(([key, policy]) => <li key={key} className="flex items-center justify-between gap-3 text-sm">
+      <span>{labels[key] ?? key}{(learner.verifiedLevel ?? 0) < policy.minRung ? " (verification required)" : ""}</span>
+      <button type="button" disabled={busy} aria-pressed={!disabled.includes(key)} onClick={() => void toggle(key)} className="min-h-11 rounded border border-neutral-700 px-3 disabled:opacity-50">{disabled.includes(key) ? "Off" : "Allowed"}</button>
+    </li>)}</ul>
+    <p role="status" className="mt-2 text-sm">{notice}</p>
+  </section>;
+}
+
+function CreateOwnedLearner({ onCreated }: { onCreated: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return <details className="rounded-lg border border-neutral-800 p-5">
+    <summary className="cursor-pointer font-bold">Add a learner to your account</summary>
+    <form className="mt-4 space-y-3" onSubmit={async (event) => {
+      event.preventDefault();
+      const fields = new FormData(event.currentTarget);
+      setBusy(true); setError("");
+      try {
+        const response = await fetch("/api/parent/learners", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), grade: Number(fields.get("grade")), board: fields.get("board") }) });
+        if (!response.ok) throw new Error("Rejected");
+        // Reload the owned roster instead of trusting a create response as access.
+        onCreated();
+      } catch { setError("Could not confirm learner creation. Reload your family roster before trying again."); }
+      finally { setBusy(false); }
+    }}>
+      <label className="block text-sm">Learner name<input name="name" required maxLength={80} disabled={busy} className="ml-3 rounded border border-neutral-700 bg-neutral-950 p-2" /></label>
+      <label className="block text-sm">Grade<input name="grade" type="number" min={1} max={13} required disabled={busy} className="ml-3 w-20 rounded border border-neutral-700 bg-neutral-950 p-2" /></label>
+      <label className="block text-sm">Board<select name="board" required defaultValue="" disabled={busy} className="ml-3 rounded border border-neutral-700 bg-neutral-950 p-2">
+        <option value="" disabled>Select a board</option>
+        {["cambridge-primary", "cambridge-lower-secondary", "cambridge-igcse", "icse", "cbse"].map((board) => <option key={board} value={board}>{boardLabel(board)}</option>)}
+      </select></label>
+      <button type="submit" disabled={busy} className="min-h-11 rounded bg-violet-600 px-4 disabled:opacity-50">{busy ? "Creating..." : "Create learner"}</button>
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+    </form>
+  </details>;
+}
+
 function SelectedLearnerView({
-  learner, reportSource, onUpdateLearner,
+  learner, reportSource,
 }: {
-  learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
-  reportSource: ParentReportDecision;
-  onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
+  learner: LearnerProfile;
+  reportSource: RemoteParentReport;
 }) {
   const state = learner.state;
   const questionBanks = questionsForLearner(learner);
@@ -438,23 +337,8 @@ function SelectedLearnerView({
         )}
       </div>
 
-      {/* Setup status — what the parent has and hasn't configured */}
-      <div className="md:col-span-3">
-        <SetupStatus learner={learner} />
-      </div>
-
       {/* Two-column body: communications + insights */}
       <div className="md:col-span-2 space-y-4">
-        <FamilyNoteComposer
-          name={learner.name || "your learner"}
-          note={learner.familyNote}
-          onChange={(next) => onUpdateLearner({ familyNote: next })}
-        />
-        <CareNoteComposer
-          name={learner.name || "your learner"}
-          note={learner.careNote}
-          onChange={(next) => onUpdateLearner({ careNote: next })}
-        />
         <RecentReflections state={state} name={learner.name || "your learner"} />
         <WellnessSignals
           state={state}
@@ -466,8 +350,6 @@ function SelectedLearnerView({
       </div>
 
       <div className="space-y-4">
-        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
-
         {/* Headline snapshot card */}
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
@@ -479,10 +361,10 @@ function SelectedLearnerView({
           </div>
         </div>
 
-        {/* Weekly recap — last 7 days of activity */}
+        {/* Weekly recap - last 7 days of activity */}
         <WeeklyRecap learner={learner} />
 
-        {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
+        {/* Sample OpinionCard - preserved as a "this is what richer findings will look like" */}
         <OpinionCard
           tone="warm"
           window={questionStatsAvailable ? "Over the whole profile" : `Grade ${learner.grade} curriculum availability`}
@@ -494,7 +376,7 @@ function SelectedLearnerView({
               ? "This means the curriculum content is still being prepared. It does not say anything about the learner's progress."
               : state.stats.totalAnswered === 0
               ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
-              : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
+              : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can - kids feel seen when adults reference their work specifically."
           }
         />
       </div>
@@ -502,52 +384,17 @@ function SelectedLearnerView({
   );
 }
 
-function ReportSourceNotice({ source }: { source: ParentReportDecision }) {
-  if (source.source === "remote") {
-    const updated = source.updatedAt
-      ? new Date(source.updatedAt).toLocaleString()
-      : "the latest sync";
-    return (
-      <div
-        className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-4 py-3"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-300">
-          Synced progress
-        </div>
-        <p className="mt-1 text-xs text-neutral-400">
-          Reporting uses the learner&apos;s validated server sync from {updated}.
-        </p>
-      </div>
-    );
-  }
-
-  const isFallback = source.fallbackReason !== "unlinked";
-  const detail = source.fallbackReason === "loading"
-    ? "Showing progress stored on this device while synced progress loads."
-    : source.fallbackReason === "absent"
-      ? "No synced progress has been saved yet. Showing progress stored on this device."
-      : source.fallbackReason === "unavailable"
-        ? "Synced progress is unavailable right now. Showing progress stored on this device."
-        : "This profile is not linked. Reporting uses progress stored on this device.";
-
+function ReportSourceNotice({ source }: { source: RemoteParentReport }) {
   return (
-    <div
-      className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-4 py-3"
-      role="status"
-      aria-live="polite"
-    >
-      <div className="text-[10px] uppercase tracking-widest font-bold text-amber-300">
-        {isFallback ? "Local fallback" : "Local report"}
-      </div>
-      <p className="mt-1 text-xs text-neutral-400">{detail}</p>
+    <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-4 py-3" role="status" aria-live="polite">
+      <div className="text-xs font-bold text-emerald-300">Synced progress</div>
+      <p className="mt-1 text-xs text-neutral-400">Reporting uses the learner&apos;s validated server sync from {source.updatedAt ? new Date(source.updatedAt).toLocaleString() : "the latest sync"}.</p>
     </div>
   );
 }
 
 // -----------------------------------------------------------------------------
-// Markdown report export — for sharing with teachers / paediatricians / self.
+// Markdown report export - for sharing with teachers / paediatricians / self.
 // Parent owns the data; we just shape it into a useful document.
 // -----------------------------------------------------------------------------
 
@@ -556,7 +403,7 @@ function ReportExport({
 }: {
   learner: LearnerProfile;
   subjectStats: SubjectLearningStat[];
-  reportSource: ParentReportDecision;
+  reportSource: RemoteParentReport;
 }) {
   const [copiedAt, setCopiedAt] = useState<number | null>(null);
 
@@ -569,7 +416,7 @@ function ReportExport({
 
   const copy = async () => {
     // copyText falls back to execCommand for webviews that block the async
-    // Clipboard API, and reports honestly when both routes fail — the old
+    // Clipboard API, and reports honestly when both routes fail - the old
     // code swallowed the error, so the button just did nothing.
     const ok = await copyText(report);
     if (ok) {
@@ -613,7 +460,7 @@ function ReportExport({
           }}
         >
           {copiedAt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copiedAt ? "Copied" : copyFailed ? "Couldn\u2019t copy \u2014 use Download" : "Copy to clipboard"}
+          {copiedAt ? "Copied" : copyFailed ? "Couldn\u2019t copy : use Download" : "Copy to clipboard"}
         </button>
         <button
           onClick={download}
@@ -642,7 +489,7 @@ function ReportExport({
 function buildMarkdownReport(
   learner: LearnerProfile,
   subjectStats: SubjectLearningStat[],
-  reportSource: ParentReportDecision,
+  reportSource: RemoteParentReport,
 ): string {
   const state = learner.state;
   const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
@@ -662,8 +509,8 @@ function buildMarkdownReport(
 
   // PRIVACY: reflections the kid marked "Just for me" must never appear here.
   // The kid is shown a lock and told their parent cannot read it; the on-screen
-  // parent view honours that, but this report — the one feature built for
-  // sharing onward with a teacher or doctor — used to quote every private body
+  // parent view honours that, but this report - the one feature built for
+  // sharing onward with a teacher or doctor - used to quote every private body
   // verbatim. Filter first, then say how many were withheld so the parent is
   // not misled about completeness.
   const reflections = state.dailyReflections || [];
@@ -674,7 +521,7 @@ function buildMarkdownReport(
       .slice()
       .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
       .slice(0, 5)
-      .map((r) => `- _${r.date}_ — "${r.body}"`)
+      .map((r) => `- _${r.date}_ - "${r.body}"`)
       .join("\n") || "_No reflections yet._") +
     (privateCount > 0
       ? `\n\n_${privateCount} reflection${privateCount === 1 ? "" : "s"} kept private by ${learner.name || "your learner"} and excluded from this report._`
@@ -683,19 +530,11 @@ function buildMarkdownReport(
   const examLines = (learner.upcomingExams || [])
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((e) => `- **${e.date}** — ${e.title}`)
+    .map((e) => `- **${e.date}** - ${e.title}`)
     .join("\n") || "_None logged._";
 
   const missesCount = missedQuestionsForLearner(learner, state.missedQuestions).length;
-  const sourceNote = reportSource.source === "remote"
-    ? `Numbers use synced learner progress last updated ${new Date(reportSource.updatedAt!).toLocaleString()}.`
-    : reportSource.fallbackReason === "loading"
-      ? "Synced progress was still loading, so numbers use progress stored on this device."
-      : reportSource.fallbackReason === "absent"
-        ? "No synced progress was available, so numbers use progress stored on this device."
-        : reportSource.fallbackReason === "unavailable"
-          ? "Synced progress could not be reached, so numbers use progress stored on this device."
-          : "This profile is not linked, so numbers use progress stored on this device.";
+  const sourceNote = `Numbers use synced learner progress last updated ${new Date(reportSource.updatedAt!).toLocaleString()}.`;
 
   return `# Vidya: ${learner.name || "Learner"} report
 
@@ -704,8 +543,8 @@ _Generated ${today}. ${sourceNote}_
 ## Profile
 - **Grade**: ${learner.grade}
 - **Board**: ${learner.board}
-- **School**: ${learner.school || "—"}${learner.city ? ` (${learner.city})` : ""}
-- **Interests**: ${(learner.interests || []).join(", ") || "—"}
+- **School**: ${learner.school || "-"}${learner.city ? ` (${learner.city})` : ""}
+- **Interests**: ${(learner.interests || []).join(", ") || "-"}
 
 ## Snapshot
 - **Accuracy**: ${!questionStatsAvailable ? "Unavailable for current curriculum" : accuracy == null ? "Not yet" : `${accuracy}%`}
@@ -729,132 +568,9 @@ ${examLines}
 
 ---
 
-_All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims — only opines._
+_All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims - only opines._
 `;
 }
-
-// -----------------------------------------------------------------------------
-// Setup status — at-a-glance "what's configured for this kid" checklist.
-// Read-only here; each row hints where to flip the bit.
-// -----------------------------------------------------------------------------
-
-function SetupStatus({ learner }: { learner: LearnerProfile }) {
-  const items = [
-    {
-      label: "Name + grade + board",
-      done: !!learner.name?.trim(),
-      hint: "Set during onboarding on the kid app.",
-    },
-    {
-      label: "Interests captured",
-      done: !!learner.interests && learner.interests.length > 0,
-      hint: learner.interests && learner.interests.length > 0
-        ? `${learner.interests.length} picked`
-        : "Kid can pick in their profile.",
-    },
-    {
-      label: "AI tone preference",
-      done: !!learner.aiTone,
-      hint: learner.aiTone ? `set to ${learner.aiTone}` : "Kid picks in their profile.",
-    },
-    {
-      // The old label claimed this PIN unlocked the AI tutor at rung 2. It
-      // never did after the rebuild — computeRung ignores parentPin entirely
-      // and reads verifiedLevel, which only a redeemed claim code sets. Saying
-      // otherwise sent parents to set a PIN and wonder why nothing opened.
-      label: "Parent PIN (guards the in-app parent room)",
-      done: !!learner.parentPin,
-      hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
-    },
-    {
-      label: "Device linked (this is what opens the AI tutor)",
-      done: (learner.verifiedLevel ?? 0) >= 2,
-      hint: (learner.verifiedLevel ?? 0) >= 2
-        ? "linked"
-        : "Create a code above and have them type it in.",
-    },
-    {
-      label: "Care note (parent → AI)",
-      done: !!learner.careNote?.trim(),
-      hint: learner.careNote?.trim() ? "written" : "Write a paragraph above.",
-    },
-    {
-      label: "Family note (parent → kid)",
-      done: !!learner.familyNote,
-      hint: learner.familyNote?.seenAt
-        ? `seen ${prettyRelative(learner.familyNote.seenAt)}`
-        : learner.familyNote
-          ? "sent, not seen yet"
-          : "Send one above.",
-    },
-    {
-      label: "Upcoming exam logged",
-      done: (learner.upcomingExams?.length ?? 0) > 0,
-      hint: (learner.upcomingExams?.length ?? 0) > 0
-        ? `${learner.upcomingExams!.length} on calendar`
-        : "Add one from the in-kid-app Parent room.",
-    },
-  ];
-  const doneCount = items.filter((i) => i.done).length;
-
-  return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            Setup status
-          </div>
-          <div className="text-sm text-neutral-300 mt-0.5">
-            {doneCount} of {items.length} configured
-          </div>
-        </div>
-        <div
-          className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest font-bold"
-          style={{
-            background: doneCount === items.length ? "rgba(52, 211, 153, 0.15)" : "rgba(167,139,250,0.15)",
-            color: doneCount === items.length ? "#86efac" : "#c4b5fd",
-          }}
-        >
-          {doneCount === items.length ? "Complete" : `${Math.round((doneCount / items.length) * 100)}%`}
-        </div>
-      </div>
-      <ul className="space-y-2">
-        {items.map((i, idx) => (
-          <li key={idx} className="flex items-start gap-3 text-xs">
-            <span
-              className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
-              style={{
-                background: i.done ? "rgba(52, 211, 153, 0.25)" : "rgba(255,255,255,0.06)",
-                color: i.done ? "#86efac" : "#71717a",
-              }}
-            >
-              {i.done ? "✓" : "·"}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className={i.done ? "text-neutral-200" : "text-neutral-400"}>{i.label}</div>
-              <div className="text-[11px] text-neutral-600">{i.hint}</div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function prettyRelative(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const m = Math.round(diffMs / 60_000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
-}
-
-// -----------------------------------------------------------------------------
-// Weekly recap — derived from state. No DB needed; everything is on-device.
-// -----------------------------------------------------------------------------
 
 function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
   const state = learner.state;
@@ -882,7 +598,7 @@ function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i));
     return {
       // dayKeyOf, not toISOString: `d` is LOCAL midnight, which in IST is
-      // 18:30 UTC the previous day — so the UTC form labelled every column
+      // 18:30 UTC the previous day - so the UTC form labelled every column
       // with yesterday's date and none of them matched `reflectionDates`,
       // whose keys are written from the local todayKey().
       iso: dayKeyOf(d),
