@@ -1,10 +1,9 @@
 // Cambridge Lower Secondary English 0861 — Stage 7 skills pack.
 //
-// GRADE MAPPING: CNS Amanora runs Cambridge Primary as Grades 1–5 and Cambridge
-// Lower Secondary as Grades 6–8, so a Grade 6 learner studies STAGE 7. This pack
-// carries `grade: 6` because the app matches packs by the learner's grade, while
-// every piece of on-screen copy says "Stage 7". The school timetables it as
-// "English Language & Literature", so both sides are covered here.
+// App convention: this Stage 7 pack is registered at grade: 6 for compatibility.
+// This is not a universal grade equivalence or a verified school assignment.
+// Preserve the registration and IDs; a learner's curriculum stage needs confirmation.
+// The app groups language and literature here, without asserting a school timetable.
 //
 // Verified 2026-08-11 against the official Cambridge curriculum framework:
 //   • Cambridge Lower Secondary English 0861 Curriculum Framework (from 2020)
@@ -19,7 +18,7 @@
 // way of reading, not as a set of texts to memorise.
 //
 // There is NO external exam at Stage 7. Lower Secondary Checkpoint is sat at the
-// end of Stage 9 (Grade 8 here), so this year is about building the moves, not
+// end of Stage 9, so this year is about building the moves, not
 // surviving a paper.
 //
 // STAGE DISCIPLINE — deliberately held back to Stage 8/9 and NOT taught here:
@@ -42,7 +41,7 @@ export const CLS7_ENGLISH_PACK: ExamPack = {
   subjectId: "cls-english",
   grade: 6,
   title: "English Language & Literature — Stage 7",
-  context: "Cambridge Lower Secondary English 0861 · Stage 7 (Grade 6 at CNS Amanora)",
+  context: "Cambridge Lower Secondary English 0861 · Stage 7 · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "0861 · from 2020" },
     { label: "Strands", value: "Reading · Writing · Speaking & Listening" },

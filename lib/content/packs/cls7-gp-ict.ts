@@ -1,15 +1,14 @@
 // Cambridge Lower Secondary Global Perspectives (1129) and ICT, Stage 7.
 //
-// Grade mapping: CNS Amanora runs Cambridge Primary as Grades 1–5 and Cambridge
-// Lower Secondary as Grades 6–8, so a Grade 6 learner sits Stage 7. Both packs
-// are registered with grade: 6 (the app matches packs by learner grade) while
-// all learner-facing copy says "Stage 7".
+// App convention: these Stage 7 packs are registered at grade: 6 for compatibility.
+// This is not a universal grade equivalence or a verified school assignment.
+// Preserve the registrations and IDs; a learner's curriculum stage needs confirmation.
 //
 // Codes verified 2026-08-11 against the Cambridge Lower Secondary curriculum
 // subject list: Global Perspectives 1129, Computing 0860, Digital Literacy 0082,
-// Science 0893, Mathematics 0862, English 0861. The school timetables its course
-// as "ICT", which sits across Cambridge's Computing (0860) and Digital Literacy
-// (0082) frameworks, so the ICT pack draws on both and says so.
+// Science 0893, Mathematics 0862, English 0861. The app's ICT pack draws on
+// Computing (0860) and Digital Literacy (0082), without asserting a school's
+// timetable or subject requirements.
 //
 // Global Perspectives is a SKILLS course, not a content course. Cambridge assesses
 // six skills — research, analysis, evaluation, reflection, collaboration,
@@ -38,10 +37,10 @@ export const CLS7_GLOBAL_PERSPECTIVES_PACK: ExamPack = {
   subjectId: "cls-globalperspectives",
   grade: 6,
   title: "Global Perspectives — Stage 7 · Cambridge Lower Secondary",
-  context: "Framework 1129 · Stage 7 (Grade 6) · a skills course, not a facts course · CNS Amanora",
+  context: "Framework 1129 · Stage 7 · a skills course, not a facts course · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "1129" },
-    { label: "Stage", value: "Stage 7 = Grade 6" },
+    { label: "App convention", value: "Grade 6 / Stage 7 · school mapping not verified" },
     { label: "Six skills", value: "Research · Analysis · Evaluation · Reflection · Collaboration · Communication" },
   ],
   pinnedRule: {
@@ -486,10 +485,10 @@ export const CLS7_ICT_PACK: ExamPack = {
   subjectId: "cls-ict",
   grade: 6,
   title: "ICT — Stage 7 · Cambridge Lower Secondary",
-  context: "Computing 0860 + Digital Literacy 0082 · Stage 7 (Grade 6) · CNS Amanora",
+  context: "Computing 0860 + Digital Literacy 0082 · Stage 7 · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Frameworks", value: "Computing 0860 · Digital Literacy 0082" },
-    { label: "Stage", value: "Stage 7 = Grade 6" },
+    { label: "App convention", value: "Grade 6 / Stage 7 · school mapping not verified" },
     { label: "Covers", value: "Algorithms · programming · data · networks · e-safety" },
   ],
   pinnedRule: {

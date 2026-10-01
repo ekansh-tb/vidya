@@ -1,9 +1,8 @@
 // Cambridge Lower Secondary Humanities — History and Geography, Stage 7.
 //
-// Grade mapping: CNS Amanora runs Cambridge Primary as Grades 1–5 and Cambridge
-// Lower Secondary as Grades 6–8, so a Grade 6 learner sits Stage 7. Both packs are
-// registered with grade: 6 (the app matches packs by learner grade) while all
-// learner-facing copy says "Stage 7".
+// App convention: these Stage 7 packs are registered at grade: 6 for compatibility.
+// This is not a universal grade equivalence or a verified school assignment.
+// Preserve the registrations and IDs; a learner's curriculum stage needs confirmation.
 //
 // Framework code — checked, and NOT what you might expect. There is no standalone
 // "Cambridge Lower Secondary History" or "Cambridge Lower Secondary Geography"
@@ -11,9 +10,8 @@
 // framework, code 0839, organised into three strands: People, Past (history) and
 // Places (geography). The IGCSE codes 0470/0460 and the Global Perspectives code
 // 0457 belong to other qualifications entirely and are deliberately not cited here.
-// Schools such as CNS timetable History and Geography as separate lessons, which is
-// why the app keeps them as separate subjects — so each pack names the strand it
-// draws on and links the official 0839 Humanities curriculum page.
+// The app groups History and Geography separately. This does not assert a school's
+// timetable. Each pack names its strand and links the 0839 curriculum page.
 //
 // Content topics vary by school. Cambridge groups the Stage 7–9 learning objectives
 // together and lets centres choose their own periods and case studies, so the
@@ -25,9 +23,7 @@
 //
 // WHY THERE IS NO "EXACT" STAGE 7 SYLLABUS TO COPY IN (re-checked 2026-08-12)
 // --------------------------------------------------------------------------
-// Asked for the exact CNS Grade 6 syllabus, the honest answer is that it is not
-// publicly obtainable, and the reasons are structural rather than a gap in the
-// search:
+// These packs do not establish any school's exact Grade 6 syllabus:
 //   · 0839's learning objectives are published for Stages 7–9 as ONE group. The
 //     framework itself never says "this is Stage 7", so no stage-level topic list
 //     exists to be copied.
@@ -36,10 +32,9 @@
 //   · There is no endorsed Stage 7 Humanities learner's book to take a contents
 //     page from — Cambridge University Press publishes a Stages 7–9 DIGITAL
 //     TEACHER'S RESOURCE for 0839 and nothing student-facing per stage.
-//   · CNS Amanora publishes its subject list but not its scheme of work.
-// So the school's own scheme of work is the only source that could make the word
-// "exact" true. lib/content/school-syllabus.ts is where it goes once we have the
-// document; until then this pack is framework-level and says so on screen.
+// A school-specific claim needs an applicable, verified scheme of work.
+// lib/content/school-syllabus.ts handles school overlays; these base packs remain
+// framework-level and do not establish a learner's school assignment.
 //
 // Sub-strand codes below are quoted from the official 0839 teacher guide (2024).
 // Code shape: 789 + strand (PP People / PT Past / PC Places) + sub-strand + .NN,
@@ -63,16 +58,16 @@
 import type { ExamPack } from "../exam-pack";
 
 // =========================
-// HISTORY — Stage 7 (Grade 6) · "Past" strand of Humanities 0839
+// HISTORY: Stage 7, app Grade 6 convention, "Past" strand of Humanities 0839
 // =========================
 export const CLS7_HISTORY_PACK: ExamPack = {
   subjectId: "cls-history",
   grade: 6,
   title: "History — Stage 7 · Cambridge Lower Secondary",
-  context: "Humanities framework 0839 · 'Past' strand · Stage 7 (Grade 6) · CNS Amanora",
+  context: "Humanities framework 0839 · 'Past' strand · Stage 7 · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "0839 Humanities · Past strand" },
-    { label: "Stage", value: "Stage 7 = Grade 6" },
+    { label: "App convention", value: "Grade 6 / Stage 7 · school mapping not verified" },
     { label: "Marks come from", value: "Evidence, not recall" },
     // Replaced by "School scheme of work, <year>" once one is registered for
     // this learner — see lib/content/school-syllabus.ts.
@@ -509,16 +504,16 @@ export const CLS7_HISTORY_PACK: ExamPack = {
 };
 
 // =========================
-// GEOGRAPHY — Stage 7 (Grade 6) · "Places" strand of Humanities 0839
+// GEOGRAPHY: Stage 7, app Grade 6 convention, "Places" strand of Humanities 0839
 // =========================
 export const CLS7_GEOGRAPHY_PACK: ExamPack = {
   subjectId: "cls-geography",
   grade: 6,
   title: "Geography — Stage 7 · Cambridge Lower Secondary",
-  context: "Humanities framework 0839 · 'Places' strand · Stage 7 (Grade 6) · CNS Amanora",
+  context: "Humanities framework 0839 · 'Places' strand · Stage 7 · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "0839 Humanities · Places strand" },
-    { label: "Stage", value: "Stage 7 = Grade 6" },
+    { label: "App convention", value: "Grade 6 / Stage 7 · school mapping not verified" },
     { label: "Marks come from", value: "Named places + map skills" },
     // Replaced by "School scheme of work, <year>" once one is registered for
     // this learner — see lib/content/school-syllabus.ts.
