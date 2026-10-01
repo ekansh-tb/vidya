@@ -3,11 +3,9 @@
 // Measure; Statistics and Probability — plus Thinking and Working Mathematically,
 // which runs through all four.
 //
-// GRADE ↔ STAGE: CNS Amanora maps Cambridge Primary to Grades 1–5 and Cambridge
-// Lower Secondary to Grades 6–8, so this learner is in GRADE 6 but studies
-// STAGE 7. The pack is registered with grade: 6 (the app matches on the
-// learner's grade) while every line of copy says Stage 7. They are not the same
-// number and must not be swapped.
+// App convention: this Stage 7 pack is registered at grade: 6 for compatibility.
+// This is not a universal grade equivalence or a verified school assignment.
+// Preserve the registration and IDs; a learner's curriculum stage needs confirmation.
 //
 // Textbook: Cambridge Lower Secondary Mathematics Learner's Book 7, Second
 // edition — Lynn Byrd, Greg Byrd & Chris Pearce (Cambridge University Press),
@@ -42,7 +40,7 @@ export const CLS7_MATHS_PACK: ExamPack = {
   subjectId: "cls-maths",
   grade: 6,
   title: "Mathematics — Stage 7",
-  context: "Cambridge Lower Secondary 0862 · Stage 7 (Grade 6) · CNS Amanora",
+  context: "Cambridge Lower Secondary 0862 · Stage 7 · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "0862 · from 2020" },
     { label: "Textbook", value: "Learner's Book 7 · 2nd ed." },

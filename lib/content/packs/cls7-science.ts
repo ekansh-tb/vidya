@@ -1,10 +1,9 @@
 // Cambridge Lower Secondary Science — curriculum framework 0893 (from 2020), Stage 7.
 //
-// Grade mapping: CNS Amanora runs Cambridge Primary as Grades 1–5 and Cambridge
-// Lower Secondary as Grades 6–8, so a Grade 6 learner sits Stage 7. The pack is
-// registered with grade: 6 (the app matches packs by learner grade) while all
-// learner-facing copy says "Stage 7". Grades 6–7 take combined Science; the split
-// into Physics / Chemistry / Biology happens in Grade 8.
+// App convention: this Stage 7 pack is registered at grade: 6 for compatibility.
+// This is not a universal grade equivalence or a verified school assignment.
+// Preserve the registration and IDs; a learner's curriculum stage needs confirmation.
+// This pack covers combined Science, without asserting a school's subject timetable.
 //
 // Every topic below is traced to a Stage 7 learning objective code in the official
 // 0893 framework (7TWSm/7TWSp/7TWSc/7TWSa, 7Bs/7Bp/7Be, 7Cm/7Cp/7Cc, 7Pf/7Ps/7Pe,
@@ -27,10 +26,10 @@ export const CLS7_SCIENCE_PACK: ExamPack = {
   subjectId: "cls-science",
   grade: 6,
   title: "Science — Stage 7 · Cambridge Lower Secondary",
-  context: "Framework 0893 · Stage 7 (Grade 6) · combined Science · CNS Amanora",
+  context: "Framework 0893 · Stage 7 · combined Science · App convention: Grade 6 · School mapping not verified",
   highlights: [
     { label: "Framework", value: "0893 (from 2020)" },
-    { label: "Stage", value: "Stage 7 = Grade 6" },
+    { label: "App convention", value: "Grade 6 / Stage 7 · school mapping not verified" },
     { label: "Strands", value: "TWSc · Bio · Chem · Phys · Earth & Space" },
   ],
   pinnedRule: {
