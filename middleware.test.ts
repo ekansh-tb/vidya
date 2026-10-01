@@ -106,3 +106,38 @@ describe("existing parent and auth behavior", () => {
     expect(mocks.auth).toHaveBeenCalledOnce();
   });
 });
+
+describe("exact parent host entry routing", () => {
+  it.each([null, "synthetic-parent"])("routes root after Clerk runs for %s", async (userId) => {
+    mocks.auth.mockResolvedValue({ userId });
+    const response = await middleware(new NextRequest("https://parents.vidyagyan.study/?next=/api/private"), event);
+    expect(response?.headers.get("location")).toBe("https://parents.vidyagyan.study/parent");
+    expect(mocks.auth).toHaveBeenCalledOnce();
+    const guarded = await middleware(new NextRequest("https://parents.vidyagyan.study/parent"), event);
+    if (!userId) expect(new URL(guarded!.headers.get("location")!).pathname).toBe("/sign-in");
+    else expect(guarded?.headers.get("x-middleware-next")).toBe("1");
+  });
+  it.each(["vidyagyan.study", "parents.vidyagyan.study.evil.example", "other.vidyagyan.study"])("does not route other host %s", async (host) => {
+    const response = await middleware(new NextRequest(`https://${host}/`), event);
+    expect(response?.headers.get("x-middleware-next")).toBe("1");
+    expect(mocks.auth).toHaveBeenCalledOnce();
+  });
+  it("leaves non-root paths on the parent host unchanged", async () => {
+    const response = await middleware(new NextRequest("https://parents.vidyagyan.study/learner/account"), event);
+    expect(response?.headers.get("x-middleware-next")).toBe("1");
+    expect(mocks.auth).toHaveBeenCalledOnce();
+  });
+  it("terminates the disabled-auth parent fallback at root without a loop", async () => {
+    mocks.configured = false;
+    const response = await middleware(new NextRequest("https://parents.vidyagyan.study/parent"), event);
+    const destination = response!.headers.get("location")!;
+    expect(destination).toBe("https://parents.vidyagyan.study/");
+    const root = await middleware(new NextRequest(destination), event);
+    expect(root?.headers.get("x-middleware-next")).toBe("1");
+    expect(mocks.clerk).not.toHaveBeenCalled();
+  });
+  it("does not bypass a Clerk failure at the parent root", async () => {
+    mocks.auth.mockRejectedValue(new Error("Clerk unavailable"));
+    await expect(middleware(new NextRequest("https://parents.vidyagyan.study/"), event)).rejects.toThrow("Clerk unavailable");
+  });
+});

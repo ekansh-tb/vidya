@@ -40,6 +40,15 @@ function withoutClerk(req: NextRequest) {
 const withClerk = clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
+  // Entry routing only. Clerk still runs, and /parent retains its authority gate.
+  // Keep this inside the configured branch so the keyless fallback cannot loop.
+  if (req.nextUrl.hostname === "parents.vidyagyan.study" && req.nextUrl.pathname === "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/parent";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
   // Parent area requires a signed-in user. Anonymous → /sign-in with return target.
   if (isParentArea(req) && !userId) {
     const url = req.nextUrl.clone();
