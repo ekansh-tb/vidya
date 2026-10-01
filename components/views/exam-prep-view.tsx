@@ -360,7 +360,7 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-3 flex items-center gap-1.5">
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] uppercase tracking-widest font-bold mr-1" style={{ color: "var(--text-faint)" }}>Confidence</span>
                     {(["weak", "ok", "strong"] as const).map((opt) => {
                       const bg =
@@ -378,8 +378,11 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                       return (
                         <button
                           key={opt}
+                          type="button"
+                          aria-pressed={c === opt}
+                          aria-label={`${opt} confidence for ${t.title}`}
                           onClick={() => setConf(identity, opt)}
-                          className="text-[11px] rounded-[var(--radius-pill)] px-2.5 py-1 font-bold uppercase tracking-wider"
+                          className="min-h-11 min-w-11 text-[11px] rounded-[var(--radius-pill)] px-2.5 py-1 font-bold uppercase tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                           style={{ background: bg, color }}
                         >
                           {opt}
