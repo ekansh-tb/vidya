@@ -14,13 +14,13 @@ import { sfx } from "@/lib/audio";
  * Wrong-Answer Notebook.
  *
  * Every question the learner got wrong (via quiz-view) is logged here.
- * Capped at 50 most-recent. When the learner answers the same question
- * correctly later, it auto-removes (mastered).
+ * Capped at 50 cards. Correct answers advance due cards through spaced reviews;
+ * a card retires after its final scheduled review.
  *
  * This view lets them:
  *  - Browse misses, filtered by subject
  *  - Read the correct answer + explanation
- *  - Mark a card "Got it" to manually clear it (frees the slot)
+ *  - Mark a review as correct to advance a due card's schedule
  *
  * Strictly per-learner — these never cross profiles.
  */
@@ -112,7 +112,7 @@ export function ReviewView({
                 </div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                   {all.length} card{all.length === 1 ? "" : "s"} ·
-                  {" "}answer it right in a quiz and it disappears automatically
+                  {" "}correct answers advance due cards through spaced reviews
                 </div>
               </div>
             </div>
@@ -182,10 +182,10 @@ export function ReviewView({
           {all.length > 0 && (
             <p className="text-[10px] mt-6 leading-relaxed text-center" style={{ color: "var(--text-faint)" }}>
               {readyCount === 0
-                ? "Nothing needs you right now — these come back on their own, spread out over the next few weeks."
+                ? "Nothing needs you right now. These come back on their own, spread out over the next few weeks."
                 : "Questions come back a few times, spread further apart each time you get them right."}
               <br />
-              A card leaves the notebook once you&apos;ve got it right on five different days.
+              A card leaves the notebook after its final scheduled review. Mark a review as correct only when you can recall the answer; early repeats do not advance the schedule.
             </p>
           )}
         </div>
@@ -266,8 +266,8 @@ function MissCard({ miss, revealed, onToggle, onMaster, reduced }: {
             surfaces on touch. 44px keeps it tappable. */}
         <button
           onClick={onMaster}
-          title="Mark as mastered"
-          aria-label="Mark as mastered"
+          title="Mark review as correct"
+          aria-label="Mark review as correct"
           className="flex-shrink-0 w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center active:scale-95"
           style={{ background: "rgba(16, 185, 129, 0.18)", color: "var(--success)" }}
         >

@@ -14,6 +14,7 @@ import type { Board, GameState, LearnerSyllabus, SubjectId, ViewName } from "@/l
 import type { ExamPack, ExamQuestion } from "@/lib/content/exam-pack";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { usePack } from "@/lib/content/packs/use-pack";
+import { confidenceStorageKey, readTopicConfidence, saveTopicConfidence, topicConfidenceIdentity, type TopicConfidence } from "@/lib/content/school-syllabus";
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 import { useCapability } from "@/lib/capabilities/use-capability";
@@ -208,7 +209,7 @@ export function ExamPrepView({
                 aiTutorAllowed={aiTutorAllowed}
               />
             )}
-            {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} />}
+            {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} board={board} grade={grade} school={school} />}
             {section === "flash" && <FlashSection key="flash" pack={pack} />}
             {section === "quiz" && <QuizSection key="quiz" pack={pack} />}
             {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
@@ -302,30 +303,28 @@ function Step({ n, title, hint, onClick }: { n: number; title: string; hint: str
 // =====================
 // Syllabus checklist
 // =====================
-function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: GameState; setState: (u: (s: GameState) => GameState) => void }) {
+function SyllabusSection({ pack, state, setState, board, grade, school }: { pack: ExamPack; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
   const reduceMotion = useReducedMotion();
   const [openId, setOpenId] = useState<string | null>(pack.topics[0]?.id ?? null);
-  type Conf = "unknown" | "weak" | "ok" | "strong";
-  const storageKey = `__cs-confidence-${pack.subjectId}`;
-  const map = useMemo(() => {
-    try { return JSON.parse(state.notebook?.[storageKey] || "{}") as Record<string, Conf>; }
-    catch { return {} as Record<string, Conf>; }
-  }, [state.notebook, storageKey]);
-  const setConf = (id: string, c: Conf) => {
+  const storageKey = confidenceStorageKey(pack);
+  const map = useMemo(() => readTopicConfidence(state.notebook?.[storageKey]), [state.notebook, storageKey]);
+  const setConf = (identity: string, c: TopicConfidence) => {
     sfx.click();
+    const editedAt = Date.now();
     setState((p) => ({
       ...p,
-      notebook: { ...(p.notebook || {}), [storageKey]: JSON.stringify({ ...map, [id]: c }) },
+      notebook: saveTopicConfidence(p.notebook || {}, pack, identity, c, editedAt),
     }));
   };
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       <div className="text-[11px] mb-3 px-1" style={{ color: "var(--text-faint)" }}>
-        Tap each topic. Tag your confidence — weak topics get priority tomorrow morning.
+        Tap each topic to tag your confidence for this syllabus version. Earlier ratings are kept separately when a topic or syllabus version changes. If devices disagree, the later recorded edit wins; inaccurate device clocks can affect this. Tied edit times keep the lower rating.
       </div>
       {pack.topics.map((t) => {
-        const c = map[t.id] || "unknown";
+        const identity = topicConfidenceIdentity(pack, t, { board, grade, school });
+        const c = map[identity] || "unknown";
         const isOpen = openId === t.id;
         return (
           <div key={t.id} className="mb-2">
@@ -361,7 +360,7 @@ function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: Gam
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-3 flex items-center gap-1.5">
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] uppercase tracking-widest font-bold mr-1" style={{ color: "var(--text-faint)" }}>Confidence</span>
                     {(["weak", "ok", "strong"] as const).map((opt) => {
                       const bg =
@@ -379,8 +378,11 @@ function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: Gam
                       return (
                         <button
                           key={opt}
-                          onClick={() => setConf(t.id, opt)}
-                          className="text-[11px] rounded-[var(--radius-pill)] px-2.5 py-1 font-bold uppercase tracking-wider"
+                          type="button"
+                          aria-pressed={c === opt}
+                          aria-label={`${opt} confidence for ${t.title}`}
+                          onClick={() => setConf(identity, opt)}
+                          className="min-h-11 min-w-11 text-[11px] rounded-[var(--radius-pill)] px-2.5 py-1 font-bold uppercase tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                           style={{ background: bg, color }}
                         >
                           {opt}

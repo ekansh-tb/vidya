@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ExamPack } from "./exam-pack";
 import type { LearnerSyllabus } from "../types";
 import type { SchoolSyllabus } from "./school-syllabus";
-import { applySchoolSyllabus, isGenericSyllabus, SCHOOL_SYLLABI } from "./school-syllabus";
+import { applySchoolSyllabus, confidenceStorageKey, isGenericSyllabus, readTopicConfidence, saveTopicConfidence, SCHOOL_SYLLABI, topicConfidenceIdentity } from "./school-syllabus";
 import { pickerGroupsForBoard, subjectsForLearner } from "./subjects";
 
 const BASE: ExamPack = {
@@ -67,10 +67,10 @@ describe("school syllabus overlay", () => {
         grade: 6,
       });
       expect(out.topics.map((t) => t.id)).toEqual(["sources", "t1"]);
-      expect(out.context).toContain("2026-27");
-      expect(out.highlights?.at(-1)).toEqual({
-        label: "Syllabus",
-        value: "School scheme of work, 2026-27",
+      expect(out.context).toBe(BASE.context);
+      expect(out.highlights).toContainEqual({
+        label: "Syllabus topics",
+        value: "School source: test, 2026-27. Retained topics come from the original pack.",
       });
     });
   });
@@ -132,8 +132,12 @@ describe("parent-uploaded syllabus", () => {
 
   it("replaces the 'not loaded' caveat rather than stacking a second one", () => {
     const out = applySchoolSyllabus(BASE, { ...ctx, uploaded });
-    const syl = out.highlights!.filter((h) => h.label === "Syllabus");
-    expect(syl).toEqual([{ label: "Syllabus", value: "School scheme of work, 2026-27" }]);
+    expect(out.context).toBe(BASE.context);
+    expect(out.highlights!.some((h) => h.label === "Syllabus")).toBe(false);
+    expect(out.highlights!.filter((h) => h.label === "Syllabus topics")).toEqual([{
+      label: "Syllabus topics",
+      value: "Parent upload: cns-grade6.pdf, 2026-27; curriculum and grade not verified. Retained topics come from the original pack.",
+    }]);
   });
 
   it("leaves a subject the upload says nothing about alone", () => {
@@ -156,6 +160,177 @@ describe("parent-uploaded syllabus", () => {
   it("reports the subject as no longer generic", () => {
     expect(isGenericSyllabus({ ...ctx, uploaded, subjectId: "cls-history" })).toBe(false);
     expect(isGenericSyllabus({ ...ctx, uploaded, subjectId: "cls-geography" })).toBe(true);
+  });
+
+  it("labels all retained practice as supplemental even when question topics are orphaned", () => {
+    const original: ExamPack = {
+      ...BASE,
+      questions: [{ id: "q1", topic: "empires", q: "Original question", model: "Original answer" }],
+      flashcards: [{ term: "Original term", def: "Original definition" }],
+      mistakes: [{ mistake: "Original mistake", fix: "Original fix" }],
+      cheat: [{ heading: "Original notes", bullets: ["Original fact"] }],
+    };
+    for (const source of ["upload", "registry"] as const) {
+      withSyllabus(CNS, () => {
+        const out = applySchoolSyllabus(original, { ...ctx, uploaded: source === "upload" ? uploaded : undefined });
+        for (const key of ["questions", "flashcards", "mistakes", "cheat", "plan"] as const) {
+          expect(out[key]).toBe(original[key]);
+        }
+        expect(out.topics.some((t) => t.id === out.questions[0].topic)).toBe(false);
+        expect(out.highlights).toContainEqual({
+          label: "Practice provenance",
+          value: "Original pack material: supplemental and unmapped to school topics; school approval not verified.",
+        });
+      });
+    }
+  });
+
+  const overlay = (changes: Partial<LearnerSyllabus> = {}) => applySchoolSyllabus(BASE, { ...ctx, uploaded: { ...uploaded, ...changes } });
+  const identity = (pack: ExamPack, index = 1) => topicConfidenceIdentity(pack, pack.topics[index], ctx);
+
+  it("keeps legacy progress verbatim without guessing a match to a positional ID", () => {
+    const pack = overlay();
+    const legacyKey = `__cs-confidence-${BASE.subjectId}`;
+    const old = { [legacyKey]: JSON.stringify({ "sch-1": "strong", sources: "ok" }), notes: "Keep my notes" };
+    expect(readTopicConfidence(old[confidenceStorageKey(pack)])[identity(pack)]).toBeUndefined();
+    const saved = saveTopicConfidence(old, pack, identity(pack), "weak");
+    expect(saved[legacyKey]).toBe(old[legacyKey]);
+    expect(saved.notes).toBe(old.notes);
+    expect(readTopicConfidence(saved[confidenceStorageKey(pack)])[identity(pack)]).toBe("weak");
+    expect(old).not.toHaveProperty(confidenceStorageKey(pack));
+  });
+
+  it("preserves confidence across pack display copy changes but isolates topic and revision changes", () => {
+    const before = overlay();
+    const legacyKey = `__cs-confidence-${BASE.subjectId}`;
+    const legacy = JSON.stringify({ "sch-1": "ok" });
+    const saved = saveTopicConfidence({ [legacyKey]: legacy }, before, identity(before), "strong");
+    const copyChanged = { ...before, title: "Updated display headline", context: "Reworded provenance label" };
+    expect(identity(copyChanged)).toBe(identity(before));
+    const map = readTopicConfidence(saved[confidenceStorageKey(copyChanged)]);
+    expect(map[identity(copyChanged)]).toBe("strong");
+
+    const topicChanged = {
+      ...copyChanged,
+      topics: copyChanged.topics.map((t) => ({ ...t, syllabus: ["A different learning objective"] })),
+    };
+    const revisionChanged = { ...overlay({ uploadedAt: "2026-09-01T00:00:00.000Z" }), title: copyChanged.title, context: copyChanged.context };
+    for (const changed of [topicChanged, revisionChanged]) {
+      expect(identity(changed)).not.toBe(identity(before));
+      expect(map[identity(changed)]).toBeUndefined();
+    }
+    const updated = saveTopicConfidence(saved, copyChanged, identity(copyChanged), "weak");
+    expect(updated[legacyKey]).toBe(legacy);
+    expect(Object.keys(readTopicConfidence(updated[confidenceStorageKey(copyChanged)]))).toEqual([identity(before)]);
+
+    // Original pack topics also survive editorial changes without an overlay.
+    expect(identity({ ...BASE, title: copyChanged.title, context: copyChanged.context }, 0)).toBe(identity(BASE, 0));
+  });
+
+  it("never transfers confidence to different content at the same positional ID", () => {
+    const before = overlay();
+    const saved = saveTopicConfidence({}, before, identity(before), "strong");
+    const topic = uploaded.subjects["cls-history"]!.topics[0];
+    for (const change of [
+      { title: "Ancient Greece" }, { syllabus: ["Different learning objective"] },
+      { blurb: "Revised scope" }, { term: "Term 2" },
+    ]) {
+      const after = overlay({ subjects: { "cls-history": { topics: [{ ...topic, ...change }] } } });
+      expect(identity(after)).not.toBe(identity(before));
+      const map = readTopicConfidence(saved[confidenceStorageKey(after)]);
+      expect(map[identity(after)]).toBeUndefined();
+      expect(map[identity(before)]).toBe("strong");
+    }
+  });
+
+  it("separates reaccepted uploads, years and sources while retaining earlier ratings", () => {
+    const before = overlay();
+    let saved = saveTopicConfidence({}, before, identity(before), "strong");
+    for (const change of [
+      { academicYear: "2027-28" }, { uploadedAt: "2026-09-01T00:00:00.000Z" }, { sourceLabel: "revised.pdf" },
+    ]) {
+      const after = overlay(change);
+      expect(identity(after)).not.toBe(identity(before));
+      expect(readTopicConfidence(saved[confidenceStorageKey(after)])[identity(after)]).toBeUndefined();
+      saved = saveTopicConfidence(saved, after, identity(after), "weak");
+    }
+    expect(readTopicConfidence(saved[confidenceStorageKey(before)])[identity(before)]).toBe("strong");
+    expect(Object.keys(readTopicConfidence(saved[confidenceStorageKey(before)]))).toHaveLength(4);
+  });
+
+  it("does not reuse a rating when reordering regenerates positional IDs", () => {
+    const a = uploaded.subjects["cls-history"]!.topics[0];
+    const b = { ...a, id: "sch-2", title: "Ancient Greece" };
+    const before = overlay({ subjects: { "cls-history": { topics: [a, b] } } });
+    const after = overlay({ subjects: { "cls-history": { topics: [{ ...b, id: a.id }, { ...a, id: b.id }] } } });
+    const saved = saveTopicConfidence({}, before, identity(before), "strong");
+    const map = readTopicConfidence(saved[confidenceStorageKey(after)]);
+    expect(map[identity(after, 1)]).toBeUndefined();
+    expect(map[identity(after, 2)]).toBeUndefined();
+    expect(map[identity(before)]).toBe("strong");
+  });
+
+  it("survives JSON reload and keeps unchanged original skills stable across uploads", () => {
+    const before = overlay();
+    expect(identity(JSON.parse(JSON.stringify(before)))).toBe(identity(before));
+    expect(identity(overlay({ uploadedAt: "later" }), 0)).toBe(identity(before, 0));
+    const changedNumber = { ...before, topics: before.topics.map((t) => ({ ...t, num: 99 })) };
+    expect(identity(changedNumber)).toBe(identity(before));
+  });
+
+  it("separates board, learner grade, pack grade, school and original topic content", () => {
+    const topic = BASE.topics[0];
+    const key = topicConfidenceIdentity(BASE, topic, ctx);
+    for (const change of [{ board: "icse" as const }, { grade: 7 }, { school: "Other school" }]) {
+      expect(topicConfidenceIdentity(BASE, topic, { ...ctx, ...change })).not.toBe(key);
+    }
+    expect(topicConfidenceIdentity({ ...BASE, grade: 7 }, topic, ctx)).not.toBe(key);
+    expect(topicConfidenceIdentity(BASE, { ...topic, syllabus: ["New scope"] }, ctx)).not.toBe(key);
+  });
+
+  it("rejects corrupt confidence maps and invalid ratings", () => {
+    for (const raw of ["null", "[]", "true", "42", "broken", '"text"']) {
+      expect(readTopicConfidence(raw)).toEqual({});
+    }
+    expect(readTopicConfidence('{"valid":"strong","invalid":"expert","object":{}}')).toEqual({ valid: "strong" });
+  });
+
+  it("records actual save time only for the edited identity, preserving undated and legacy entries", () => {
+    const pack = overlay();
+    const key = confidenceStorageKey(pack);
+    const old = { [key]: '{"undated":"weak"}', "__cs-confidence-cls-history": ' {"sch-1":"strong"} ' };
+    const clock = vi.spyOn(Date, "now").mockReturnValue(1234);
+    try {
+      const saved = saveTopicConfidence(old, pack, identity(pack), "strong");
+      expect(JSON.parse(saved[key])).toEqual({ undated: "weak", [identity(pack)]: { rating: "strong", editedAt: 1234 } });
+      expect(saved["__cs-confidence-cls-history"]).toBe(old["__cs-confidence-cls-history"]);
+      const second = saveTopicConfidence(saved, pack, identity(pack, 0), "ok", 2345);
+      expect(JSON.parse(second[key])[identity(pack)]).toEqual({ rating: "strong", editedAt: 1234 });
+      expect(JSON.parse(second[key])[identity(pack, 0)]).toEqual({ rating: "ok", editedAt: 2345 });
+      expect(JSON.parse(second[key]).undated).toBe("weak");
+    } finally { clock.mockRestore(); }
+  });
+
+  it("rejects invalid timestamps without treating them as undated ratings or changing saved data", () => {
+    const pack = overlay();
+    const original = { notes: "Keep this" };
+    for (const editedAt of [-1, 1.5, Infinity, NaN, Number.MAX_SAFE_INTEGER]) {
+      expect(() => saveTopicConfidence(original, pack, identity(pack), "ok", editedAt)).toThrow("Invalid confidence edit time");
+      expect(readTopicConfidence(JSON.stringify({ bad: { rating: "strong", editedAt } }))).toEqual({});
+    }
+    expect(readTopicConfidence('{"bad":{"rating":"strong"},"alsoBad":{"rating":"strong","editedAt":"1234"}}')).toEqual({});
+    expect(original).toEqual({ notes: "Keep this" });
+  });
+
+  it("version-scopes registry topics and does not claim missing subjects are school-specific", () => {
+    withSyllabus(CNS, () => {
+      const before = applySchoolSyllabus(BASE, ctx);
+      expect(isGenericSyllabus({ ...ctx, subjectId: "cls-geography" })).toBe(true);
+      withSyllabus({ ...CNS, academicYear: "2027-28" }, () => {
+        const after = applySchoolSyllabus(BASE, { ...ctx, academicYear: "2027-28" });
+        expect(identity(after)).not.toBe(identity(before));
+      });
+    });
   });
 });
 

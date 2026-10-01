@@ -6,6 +6,7 @@ import ts from "typescript";
 import { beforeEach, expect, it, vi } from "vitest";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState } from "@/lib/types";
+import * as schoolSyllabus from "@/lib/content/school-syllabus";
 
 // Use the existing SSR fixture approach without changing shared JSX configuration.
 const require = createRequire(import.meta.url);
@@ -44,6 +45,7 @@ function load(file: string, syllabus = false) {
     } };
     if (id === "@/lib/audio") return audio;
     if (id === "@/lib/speech") return speech;
+    if (id === "@/lib/content/school-syllabus") return schoolSyllabus;
     if (id.startsWith("@/")) return {};
     if (id === "next/link") return { default: (props: Props) => React.createElement("a", props) };
     return require(id);
@@ -57,10 +59,10 @@ const pack = { subjectId: "maths", topics: [
   { id: "one", title: "First topic", syllabus: ["First checklist"], blurb: "First" },
   { id: "two", title: "Second topic", syllabus: ["Second checklist"], blurb: "Second" },
 ] };
-function renderSyllabus() {
+function renderSyllabus(state = DEFAULT_STATE, setState: (update: (s: GameState) => GameState) => void = vi.fn()) {
   controls = [];
   motions = [];
-  return renderToStaticMarkup(React.createElement(Syllabus, { pack, state: DEFAULT_STATE, setState: vi.fn() }));
+  return renderToStaticMarkup(React.createElement(Syllabus, { pack, state, setState }));
 }
 
 beforeEach(() => {
@@ -121,6 +123,23 @@ it("keeps aria-expanded synchronized when closing, opening and switching topics"
   expect(expanders().map((p) => p["aria-expanded"])).toEqual([true, false]);
   expect(html).not.toContain("Second checklist");
   expect(expanders().every((p) => p.type === "button")).toBe(true);
+});
+
+it("announces the selected confidence after saving and keeps rating controls tappable", () => {
+  let state = { ...DEFAULT_STATE, notebook: {} };
+  const render = () => renderSyllabus(state, (update) => { state = update(state); });
+  render();
+  for (const rating of ["weak", "strong"]) {
+    const button = controls.find((p) => p["aria-label"] === `${rating} confidence for First topic`)!;
+    expect(button.type).toBe("button");
+    expect(button.className).toContain("min-h-11 min-w-11");
+    expect(button.className).toContain("focus-visible:outline");
+    button.onClick!();
+    render();
+    const selected = controls.filter((p) => p["aria-pressed"] === true);
+    expect(selected).toHaveLength(1);
+    expect(selected[0]["aria-label"]).toBe(`${rating} confidence for First topic`);
+  }
 });
 
 it.each([false, true])("respects reduced motion (%s) for topic expansion", (preference) => {
