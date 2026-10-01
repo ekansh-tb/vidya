@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LEARNER_ACCOUNT_DISCLOSURE = "Linking lets the parent or guardian who approves your account see your synced learning progress and safety reports, manage your AI tutor, and link or revoke devices. Reflections marked private have their text excluded from parent reports. This is not a promise that everything on a shared device is private. Linking this sign-in account is separate from linking a device.";
+export const LEARNER_ACCOUNT_DISCLOSURE = "Linking lets the parent or guardian who approves your account see your synced learning progress and safety reports, manage your AI tutor and teaching guidance, and link or revoke devices. Reflections marked private have their text excluded from parent reports. This is not a promise that everything on a shared device is private. Linking this sign-in account is separate from linking a device.";
 export const LEARNER_ACCOUNT_ACKNOWLEDGEMENT = "I want to use this sign-in as a learner account and ask my parent or guardian to link it. I understand that unlinking does not turn it into a parent account.";
 export const pairingTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const pairingRequestSchema = z.object({ accountId: z.string(), token: pairingTokenSchema, expiresAt: z.iso.datetime({ offset: true }) });
