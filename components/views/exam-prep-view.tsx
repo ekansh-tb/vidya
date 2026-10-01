@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import {
   ChevronLeft, Cpu, AlertTriangle, BookOpen, Sparkles,
@@ -303,6 +303,7 @@ function Step({ n, title, hint, onClick }: { n: number; title: string; hint: str
 // Syllabus checklist
 // =====================
 function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: GameState; setState: (u: (s: GameState) => GameState) => void }) {
+  const reduceMotion = useReducedMotion();
   const [openId, setOpenId] = useState<string | null>(pack.topics[0]?.id ?? null);
   type Conf = "unknown" | "weak" | "ok" | "strong";
   const storageKey = `__cs-confidence-${pack.subjectId}`;
@@ -330,7 +331,9 @@ function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: Gam
           <div key={t.id} className="mb-2">
             <button
               onClick={() => { sfx.click(); setOpenId(isOpen ? null : t.id); }}
-              className="w-full glass-card p-3 flex items-center gap-3 text-left active:scale-[0.99] transition"
+              type="button"
+              aria-expanded={isOpen}
+              className="w-full glass-card p-3 flex items-center gap-3 text-left motion-safe:active:scale-[0.99] transition"
             >
               <div className="w-9 h-9 rounded-[var(--radius-sm)] flex items-center justify-center text-sm font-bold flex-shrink-0"
                 style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
@@ -344,9 +347,9 @@ function SyllabusSection({ pack, state, setState }: { pack: ExamPack; state: Gam
             </button>
             {isOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -4, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                initial={reduceMotion ? false : { opacity: 0, y: -4, height: 0 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, height: "auto" }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
                 <div className="px-4 py-3 mt-1 glass rounded-[var(--radius-md)]">

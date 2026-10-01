@@ -88,9 +88,12 @@ export function SettingsView({
               <button
                 onClick={toggleMusic}
                 role="switch" aria-checked={state.settings.music} aria-label="Background music"
-                className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.music ? "gradient-cosmic" : "bg-white/10"}`}
+                type="button"
+                className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.music ? "translate-x-6" : "translate-x-1"}`} />
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.music ? "gradient-cosmic" : "bg-white/10"}`}>
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.music ? "translate-x-6" : "translate-x-1"}`} />
+                </span>
               </button>
             </div>
             {state.settings.music && (
@@ -113,9 +116,12 @@ export function SettingsView({
               <button
                 onClick={toggleSound}
                 role="switch" aria-checked={state.settings.sound} aria-label="Sound effects"
-                className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.sound ? "gradient-cosmic" : "bg-white/10"}`}
+                type="button"
+                className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.sound ? "translate-x-6" : "translate-x-1"}`} />
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.sound ? "gradient-cosmic" : "bg-white/10"}`}>
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.sound ? "translate-x-6" : "translate-x-1"}`} />
+                </span>
               </button>
             </div>
             {state.settings.sound && (
@@ -141,9 +147,12 @@ export function SettingsView({
               <button
                 onClick={toggleVoice}
                 role="switch" aria-checked={state.settings.voice} aria-label="Spoken guidance"
-                className={`relative w-12 h-7 rounded-full transition-colors ${state.settings.voice ? "gradient-cosmic" : "bg-white/10"}`}
+                type="button"
+                className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.voice ? "translate-x-6" : "translate-x-1"}`} />
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.voice ? "gradient-cosmic" : "bg-white/10"}`}>
+                  <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.voice ? "translate-x-6" : "translate-x-1"}`} />
+                </span>
               </button>
             </div>
             {state.settings.voice && (
