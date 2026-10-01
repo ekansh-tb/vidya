@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PARENT_ACKNOWLEDGEMENT_TEXT, PARENT_ACKNOWLEDGEMENT_VERSION } from "../auth/parent-enrollment-contract";
 
 const enabled = accountLinkTestDatabaseConfigured();
-describe.skipIf(!enabled)("account linking isolated Postgres contract", { timeout: 30000, hookTimeout: 60000 }, () => {
+describe.skipIf(!enabled)("account linking isolated Postgres contract", { timeout: 30000 }, () => {
   let db: AccountTestClient;
   let connected = false;
   let parent: string;
@@ -44,12 +44,12 @@ describe.skipIf(!enabled)("account linking isolated Postgres contract", { timeou
     parent = `${run}-parent`; other = `${run}-other`; child = `${run}-child`;
     await db.query("insert into parents(id) values ($1), ($2)", [parent, other]);
     learner = (await db.query("insert into learners(parent_id, name, grade, board) values ($1, 'Fixture', 6, 'cbse') returning id", [parent])).rows[0].id;
-  });
+  }, 60000);
   afterEach(async () => {
     if (connected) {
       try { await db.query("rollback"); } finally { await db.end(); }
     }
-  });
+  }, 60000);
   it("refuses parent accounts, including the learner's owner", async () => {
     expect(await request(parent)).toBeNull();
     expect(await request(other)).toBeNull();
