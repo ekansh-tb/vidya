@@ -426,3 +426,24 @@ describe("authoritative tutor curriculum", () => {
     expect(mocks.streamText).not.toHaveBeenCalled();
   });
 });
+
+it("keeps crisis support available without logging private safety-storage errors", async () => {
+  mocks.dbConfigured.mockReturnValue(true);
+  mocks.identityFromRequest.mockResolvedValue(learnerIdentity);
+  mocks.recordSafetySignal.mockRejectedValueOnce(Object.assign(
+    new Error("fake-db-password private-crisis-excerpt"),
+    { detail: "private-learner-identifier", cause: new Error("fake-db-connection-string") },
+  ));
+
+  const response = await POST(request("I want to kill myself"));
+  const body = await response.text();
+
+  expect(mocks.recordSafetySignal).toHaveBeenCalledTimes(1);
+  expect(response.status).toBe(200);
+  expect(body).toContain("1098");
+  expect(body).not.toContain("fake-db-password");
+  expect(body).not.toContain("private-crisis-excerpt");
+  expect(vi.mocked(console.error).mock.calls).toEqual([["[api/tutor] could not record safety signal"]]);
+  expect(mocks.streamText).not.toHaveBeenCalled();
+  expect(mocks.resolveCapabilityForRequest).not.toHaveBeenCalled();
+});

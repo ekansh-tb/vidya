@@ -210,9 +210,9 @@ export async function POST(req: Request) {
       { ...object, subjects, dropped },
       { headers: rateHeaders(verdict, RATE.limit) },
     );
-  } catch (e) {
-    // Never echo the provider error — it can carry model names and key hints.
-    console.error("[api/syllabus] extraction failed:", e);
+  } catch {
+    // Never log provider errors: they can contain credentials and document text.
+    console.error("[api/syllabus] extraction failed");
     return Response.json({ error: "Could not read that document." }, { status: 502 });
   }
 }

@@ -61,8 +61,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     // Null means "not yours" — 404 so we never confirm another family's id.
     if (!updated) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json({ disabled: updated.disabledCapabilities ?? [], dropped });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/capabilities] failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/capabilities] failed");
     return Response.json({ error: "Could not save that" }, { status: 500 });
   }
 }

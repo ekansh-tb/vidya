@@ -80,3 +80,33 @@ it("fails closed before document parsing or provider work when shared limits are
   expect(await response.json()).toEqual({ error: "Service temporarily unavailable" });
   expect(mocks.generateObject).not.toHaveBeenCalled();
 });
+
+it("omits provider credentials and document content from failure diagnostics", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  mocks.aiProviderConfigured.mockReturnValue(true);
+  mocks.generateObject.mockRejectedValueOnce(Object.assign(
+    new Error("Provider rejected fake-key-secret while reading learner-private-text"),
+    {
+      code: "untrusted-code-fake-key-secret",
+      request: { headers: { authorization: "Bearer fake-key-secret" } },
+      cause: new Error("learner-private-text"),
+    },
+  ));
+  const form = new FormData();
+  form.set("subjects", JSON.stringify([{ id: "maths", name: "Maths" }]));
+  form.set("text", "learner-private-text");
+
+  try {
+    const response = await POST(new Request("https://vidya.example/api/syllabus", {
+      method: "POST",
+      body: form,
+    }));
+
+    expect(mocks.generateObject).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "Could not read that document." });
+    expect(log.mock.calls).toEqual([["[api/syllabus] extraction failed"]]);
+  } finally {
+    log.mockRestore();
+  }
+});

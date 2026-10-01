@@ -117,8 +117,8 @@ export async function POST(req: Request) {
         },
       },
     );
-  } catch (e) {
-    console.error("[api/learner/redeem] failed:", e);
+  } catch {
+    console.error("[api/learner/redeem] failed");
     return Response.json({ error: "Could not link this account right now." }, { status: 500 });
   }
 }

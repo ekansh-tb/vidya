@@ -38,8 +38,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       signals,
       unseen: signals.filter((s) => !s.seenAt).length,
     });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/safety] read failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/safety] read failed");
     return Response.json({ error: "Could not read safety signals" }, { status: 500 });
   }
 }
@@ -77,8 +77,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const seen = await markSafetySignalsSeen(parent.userId, id);
     if (seen === null) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json({ ok: true, seen });
-  } catch (e) {
-    console.error("[api/parent/learners/:id/safety] acknowledge failed:", e);
+  } catch {
+    console.error("[api/parent/learners/:id/safety] acknowledge failed");
     return Response.json({ error: "Could not update" }, { status: 500 });
   }
 }

@@ -134,3 +134,27 @@ describe("GET parent learner state", () => {
     expect(mocks.getLearnerStateForParent).not.toHaveBeenCalled();
   });
 });
+
+it("omits database credentials and learner data from failure diagnostics", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  mocks.getLearnerStateForParent.mockRejectedValueOnce(Object.assign(
+    new Error("postgres://fake-user:fake-password@invalid.example/db"),
+    {
+      code: "untrusted-code-private-learner",
+      detail: "private learner reflection",
+      cause: new Error("private learner identifier"),
+    },
+  ));
+
+  try {
+    const response = await GET(request(), context());
+
+    expect(mocks.getLearnerStateForParent).toHaveBeenCalledWith("parent-a", LEARNER_ID);
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Could not read synced progress" });
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(log.mock.calls).toEqual([["[api/parent/learners/:id/state] failed"]]);
+  } finally {
+    log.mockRestore();
+  }
+});

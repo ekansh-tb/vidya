@@ -93,8 +93,8 @@ export async function POST(req: Request) {
       );
     }
     return Response.json({ ok: true, revision: result.revision });
-  } catch (e) {
-    console.error("[api/learner/state] push failed:", e);
+  } catch {
+    console.error("[api/learner/state] push failed");
     return Response.json({ error: "Could not save right now" }, { status: 500 });
   }
 }
