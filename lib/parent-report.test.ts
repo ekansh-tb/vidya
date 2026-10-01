@@ -69,6 +69,8 @@ describe("parent report response minimization", () => {
     expect(response.state.missedQuestions[0]).toEqual({
       id: "miss-1",
       q: "What is one half of eight?",
+      correct: "4",
+      ex: "Divide eight into two equal groups.",
       subjectId: "maths",
       topicId: "fractions",
       missedAt: UPDATED_AT,

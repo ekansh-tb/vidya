@@ -353,6 +353,8 @@ export type DailyReflection = {
 /** A wrong answer persisted into the learner's notebook for later review. */
 export type MissedQuestion = {
   id: string;
+  /** Versioned curriculum/content identity. Legacy card IDs remain unchanged. */
+  questionKey?: string;
   q: string;
   given: string;
   correct: string;
