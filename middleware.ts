@@ -21,6 +21,7 @@
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { parentReturnPath } from "@/lib/auth/parent-return";
 import { clerkConfigured } from "@/lib/auth/clerk-config";
 
 const isParentArea = createRouteMatcher(["/parent(.*)"]);
@@ -28,6 +29,10 @@ const isAuthArea = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
 /** Fallback used when Clerk has no keys: kid app open, everything auth-shaped closed. */
 function withoutClerk(req: NextRequest) {
+  if (req.nextUrl.hostname === "parents.vidyagyan.study" && (req.nextUrl.pathname === "/" || isParentArea(req) || isAuthArea(req))) {
+    const url = req.nextUrl.clone(); url.pathname = "/parent-unavailable"; url.search = "";
+    return NextResponse.rewrite(url);
+  }
   if (isParentArea(req) || isAuthArea(req)) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
@@ -48,11 +53,9 @@ const withClerk = clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in users hitting the auth pages get bounced to home.
+  // Signed-in users on parent auth pages return to a parent page.
   if (isAuthArea(req) && userId) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
-    url.search = "";
+    const url = new URL(parentReturnPath(req.nextUrl.searchParams.get("next")), req.url);
     return NextResponse.redirect(url);
   }
 
@@ -66,6 +69,10 @@ export default function middleware(req: NextRequest, event: import("next/server"
     return NextResponse.next();
   }
   if (!clerkConfigured) return withoutClerk(req);
+  if (req.nextUrl.hostname === "parents.vidyagyan.study" && pathname === "/") {
+    const url = req.nextUrl.clone(); url.pathname = "/parent"; url.search = "";
+    return NextResponse.redirect(url);
+  }
   return withClerk(req, event);
 }
 
