@@ -17,7 +17,7 @@ export type LearningActivity = {
 export type ActivityDraft = {
   activityId: string; revision: number; step: number; picks: string[]; marks: string[];
   attempts: number; independentResponses: number; hints: number; retries: number;
-  hinted: boolean; stepRetries?: number; paused?: boolean; updatedAt: string; startedDay: string;
+  hinted: boolean; responseStatus?: "correct" | "retry"; stepRetries?: number; paused?: boolean; updatedAt: string; startedDay: string;
 };
 export type ActivityCompletion = {
   key: string; activityId: string; revision: number; placement: string; language: LearningLanguage;

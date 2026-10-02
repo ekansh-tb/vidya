@@ -22,7 +22,6 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   const measure = useCallback((event: "start"|"complete"|"abandon"|"yes"|"later") => { if (placement) recordLocalMeasurement(learner.id, { placement:placementKey(placement), language:lang, device:window.innerWidth<600 ? "phone" : window.innerWidth<1000 ? "tablet" : "desktop" }, todayKey(), event); }, [learner.id, lang, placement]);
   const visitRecorded = useRef(false);
   useEffect(() => { if (!visitRecorded.current) { visitRecorded.current = true; if (!existing || existing.activityId !== activity.id) measure("start"); } }, [activity.id, existing, measure]);
-  const [feedback, feedbackSet] = useState("");
   const [paused, pause] = useState(existing?.paused ?? false);
   const [done, doneSet] = useState(false);
   const [colour, chooseColour] = useState("#248781");
@@ -30,18 +29,21 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   const [narration, narrationSet] = useState("");
   const [simulationInput, simulate] = useState<number | null>(null);
   const step = activity.steps[Math.min(draft.step, activity.steps.length - 1)];
+  const answered = draft.picks.length > 0 && (!step.answer || (activity.interaction === "sequence" ? draft.picks.join("|") === step.answer : draft.picks[0] === step.answer));
+  const responseStatus = draft.responseStatus ?? (answered ? "correct" : undefined);
+  const feedback = responseStatus === "correct" ? step.feedback[lang] : responseStatus === "retry" ? (hi ? "फिर देख सकते हो। मदद हमेशा मुफ़्त है।" : "Take another look. Help is always free.") : "";
   useEffect(() => () => stopSpeaking(), []);
   const save = (change: Partial<ActivityDraft>) => {
     set(s => ({ ...s, activities: { ...(s.activities ?? EMPTY), draft: { ...draft, ...change, updatedAt: new Date().toISOString() } } }));
   };
   const finishStep = (change: Partial<ActivityDraft> = {}) => {
     if (finished.current) return;
-    const next = { ...draft, ...change, step: draft.step + 1, picks: [], hinted: false, stepRetries: 0, paused: false, updatedAt: new Date().toISOString() };
+    const next = { ...draft, ...change, step: draft.step + 1, picks: [], hinted: false, responseStatus: undefined, stepRetries: 0, paused: false, updatedAt: new Date().toISOString() };
     if (next.step >= activity.steps.length && placement) {
       finished.current = true;
       set(s => ({ ...s, activities: completeActivity(s.activities ?? EMPTY, activity, next, { placement, language: lang, day: todayKey(), source: activity.interaction === "offline" ? "caregiver" : "app" }) }));
       measure("complete"); doneSet(true); stopSpeaking();
-    } else { save(next); feedbackSet(""); }
+    } else { save(next); }
   };
   const pick = (id: string) => {
     if (feedback || paused || done) return;
@@ -50,8 +52,8 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
     const picks = activity.interaction === "sequence" ? [...draft.picks, id] : [id];
     if (activity.interaction === "sequence" && picks.length < step.items.length) { save({ picks }); return; }
     const correct = !step.answer || (activity.interaction === "sequence" ? picks.join("|") === step.answer : id === step.answer);
-    if (correct) { save({ attempts, picks, independentResponses: draft.independentResponses + (!draft.hinted && (draft.stepRetries ?? 0) === 0 && !!step.answer ? 1 : 0) }); feedbackSet(step.feedback[lang]); }
-    else { save({ attempts, picks: [], retries: draft.retries + 1, stepRetries: (draft.stepRetries ?? 0) + 1 }); feedbackSet(hi ? "फिर देख सकते हो। मदद हमेशा मुफ़्त है।" : "Take another look. Help is always free."); }
+    if (correct) { save({ attempts, picks, responseStatus:"correct", independentResponses: draft.independentResponses + (!draft.hinted && (draft.stepRetries ?? 0) === 0 && !!step.answer ? 1 : 0) }); }
+    else { save({ attempts, picks: [], responseStatus:"retry", retries: draft.retries + 1, stepRetries: (draft.stepRetries ?? 0) + 1 }); }
   };
   const read = () => {
     if (typeof window === "undefined" || !window.speechSynthesis) { narrationSet(hi ? "यहाँ आवाज़ उपलब्ध नहीं है। बड़े निर्देश पढ़ सकते हैं।" : "Narration is unavailable here. A grown-up can read the instruction."); return; }
@@ -62,7 +64,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   const correctFeedback = feedback === step.feedback[lang];
   const safeExit = () => { if (!done && !existing) save({}); if (!done) measure("abandon"); stopSpeaking(); onExit(); };
   return <main className="activity-shell" lang={hi ? "hi" : "en"}>
-    <header className="learning-topbar"><button onClick={safeExit}>{hi ? "वापस · प्रगति सहेजी गई" : "Exit · keep progress"}</button><button onClick={() => { stopSpeaking(); updateLearnerMeta(learner.id, { learningLanguage: hi ? "en" : "hi" }); feedbackSet(""); }}>{hi ? "English" : "हिंदी"}</button></header>
+    <header className="learning-topbar"><button onClick={safeExit}>{hi ? "वापस और प्रगति सहेजो" : "Exit & save progress"}</button><button onClick={() => { stopSpeaking(); updateLearnerMeta(learner.id, { learningLanguage: hi ? "en" : "hi" }); narrationSet(""); }}>{hi ? "English" : "हिंदी"}</button></header>
     <h1>{activity.title[lang]}</h1>
     <p className="learning-caption">{activity.alignment === "ncf-foundational" ? (hi ? "NCF आधारित शुरुआती गतिविधि" : "NCF-based starter activity") : (hi ? "सामान्य खोज · स्कूल के पाठ्यक्रम का दावा नहीं" : "General exploration · no school syllabus claim")}</p>
     {done ? <section className="learning-panel"><LearningCompanion line={hi ? "तुमने हिस्सा लिया। अब असली दुनिया में कुछ खेलें?" : "You took part. Shall we try something away from the screen?"}/>{!desire && <div><p>{hi ? "कभी फिर खेलना चाहोगे?" : "Would you like to try this again another day?"}</p><button onClick={() => { measure("yes"); desireSet(true); }}>{hi ? "हाँ" : "Yes"}</button><button onClick={() => { measure("later"); desireSet(true); }}>{hi ? "बाद में" : "Maybe later"}</button></div>}<h2>{hi ? "अगला छोटा कदम" : "A little next step"}</h2><p>{activity.offline[lang]}</p><p>{hi ? "यह भागीदारी का रिकॉर्ड है, समझ का प्रमाण नहीं।" : "This records participation, not proof of understanding."}</p><button className="learning-primary" onClick={onExit}>{hi ? "मेरे खेल पर लौटो" : "Back to my activities"}</button></section> : paused ? <section className="learning-panel"><h2>{hi ? "विराम" : "Paused"}</h2><p>{hi ? "तुम्हारी जगह याद है।" : "Your place is saved."}</p><button className="learning-primary" onClick={() => { save({ paused: false }); pause(false); }}>{hi ? "फिर शुरू करो" : "Resume"}</button></section> : <section className="learning-panel">
@@ -75,7 +77,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
         <div className="learning-picture-choices">{step.items.map(item => <button key={item.id} disabled={!!feedback || draft.picks.includes(item.id)} onClick={() => pick(item.id)}><span aria-hidden="true">{hi ? item.pictureHi ?? item.picture : item.picture}</span><strong>{item.label[lang]}</strong>{draft.picks.includes(item.id) && <small>{draft.picks.indexOf(item.id)+1}</small>}</button>)}</div>
         {activity.interaction === "sequence" && <button onClick={() => save({ picks: [] })}>{hi ? "क्रम फिर से चुनो" : "Start the order again"}</button>}
         {simulationInput !== null && <div role="status" className="learning-feedback">{hi ? "इनपुट" : "Input"}: {simulationInput} → {hi ? "मॉडल आउटपुट" : "Model output"}: {simulationInput * 2}<p>{hi ? "यह सरल मॉडल है। इसमें वास्तविक मौसम या ऊर्जा हानि नहीं है।" : "This is a simplified model. Real weather and energy losses are excluded."}</p><button className="learning-primary" onClick={() => finishStep()}>{hi ? "मैंने मॉडल देखा" : "I explored the model"}</button></div>}
-        {feedback && <div role="status" className="learning-feedback"><p>{feedback}</p><button className="learning-primary" onClick={() => correctFeedback ? finishStep() : feedbackSet("")}>{correctFeedback ? (hi ? "आगे" : "Continue") : (hi ? "फिर कोशिश करो" : "Try again")}</button></div>}
+        {feedback && <div role="status" className="learning-feedback"><p>{feedback}</p><button className="learning-primary" onClick={() => correctFeedback ? finishStep() : save({ responseStatus:undefined, picks:[] })}>{correctFeedback ? (hi ? "आगे" : "Continue") : (hi ? "फिर कोशिश करो" : "Try again")}</button></div>}
       </>}
       <button onClick={() => { save({ hints: draft.hints + 1, hinted: true }); narrationSet(step.hint[lang]); speak(step.hint[lang], { lang:hi ? "hi-IN" : "en-IN", rate:0.85 }); }}>{hi ? "मुफ़्त मदद" : "Free hint"}</button>
       <p className="learning-caption">{activity.objective[lang]}</p>
