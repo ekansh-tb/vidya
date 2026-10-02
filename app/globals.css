@@ -401,3 +401,18 @@
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* Learning trail: controls stay legible across the existing appearance choices. */
+.buddy-home { color: var(--text); }
+.buddy-home button:focus-visible, .buddy-action:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+.buddy-panel { padding: 1.5rem; border-radius: 1.5rem; background: var(--surface); border: 1px solid var(--border); }
+.buddy-trail { border-left: 5px solid var(--accent); }
+.buddy-icon { display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; border:1px solid var(--border); border-radius:50%; background:var(--surface); }
+.buddy-tile { display:flex; align-items:center; gap:1rem; padding:1rem; min-height:84px; text-align:left; border-radius:1.1rem; background:var(--surface); border:1px solid var(--border); }
+.buddy-tile strong, .buddy-tile small { display:block; }
+.buddy-tile small { color:var(--text-muted); margin-top:.3rem; line-height:1.5; }
+.buddy-tile:hover { border-color:var(--accent); }
+.buddy-action { display:inline-flex; justify-content:center; align-items:center; gap:.5rem; min-height:48px; padding:.75rem 1rem; border-radius:1rem; font-weight:700; background:var(--accent-soft); color:var(--text); border:1px solid var(--border); }
+.buddy-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:min(100%,48rem); display:grid; grid-template-columns:repeat(4,1fr); padding:.65rem .5rem max(.65rem,env(safe-area-inset-bottom)); background:var(--bg-base); border-top:1px solid var(--border); z-index:40; }
+.buddy-nav button { min-height:56px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:.3rem; color:var(--text-muted); border-radius:.8rem; font-size:.8rem; }
+.buddy-nav button[aria-current=page] { background:var(--accent-soft); color:var(--text); font-weight:700; }

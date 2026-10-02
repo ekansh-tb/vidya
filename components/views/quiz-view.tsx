@@ -210,19 +210,17 @@ export function QuizView({
   };
 
   const useHint = () => {
-    if (hintUsed || revealed || state.inventory.hint < 1) return;
+    if (hintUsed || revealed) return;
     setHintUsed(true);
-    setState((prev) => ({ ...prev, inventory: { ...prev.inventory, hint: prev.inventory.hint - 1 } }));
     sfx.click();
   };
 
   const useFifty = () => {
-    if (fiftyUsed || revealed || state.inventory.fiftyFifty < 1) return;
+    if (fiftyUsed || revealed) return;
     const wrongs = shuffledOpts.filter((o) => o !== currentQ.a);
     const toRemove = shuffle(wrongs).slice(0, 2);
     setEliminated(toRemove);
     setFiftyUsed(true);
-    setState((prev) => ({ ...prev, inventory: { ...prev.inventory, fiftyFifty: prev.inventory.fiftyFifty - 1 } }));
     sfx.click();
   };
 
@@ -584,17 +582,17 @@ export function QuizView({
               {/* min-h-11 keeps the lifelines at a 44px target for small fingers. */}
               <button
                 onClick={useHint}
-                disabled={hintUsed || state.inventory.hint < 1}
+                disabled={hintUsed}
                 className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-amber-300 disabled:opacity-30 active:scale-95"
               >
-                <Lightbulb className="w-4 h-4" /> Hint · {state.inventory.hint}
+                <Lightbulb className="w-4 h-4" /> Hint · free
               </button>
               <button
                 onClick={useFifty}
-                disabled={fiftyUsed || state.inventory.fiftyFifty < 1}
+                disabled={fiftyUsed}
                 className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-violet-300 disabled:opacity-30 active:scale-95"
               >
-                <ScanLine className="w-4 h-4" /> 50:50 · {state.inventory.fiftyFifty}
+                <ScanLine className="w-4 h-4" /> Narrow the choices · free
               </button>
             </div>
           )}

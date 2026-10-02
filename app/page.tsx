@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { OnboardingView } from "@/components/views/onboarding-view";
-import { HomeView } from "@/components/views/home-view";
+import { HomeView, type HomeTab } from "@/components/views/home-view";
 import { SubjectView } from "@/components/views/subject-view";
 import { QuizView } from "@/components/views/quiz-view";
 import { MatchView } from "@/components/views/match-view";
@@ -227,7 +227,7 @@ export default function HomePage() {
   } else {
     switch (view.name) {
       case "home":
-        content = <HomeView state={state} learner={learner} onNavigate={navigate} />;
+        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
         break;
       case "subject":
         content = (
@@ -404,7 +404,7 @@ export default function HomePage() {
         );
         break;
       default:
-        content = <HomeView state={state} learner={learner} onNavigate={navigate} />;
+        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
     }
   }
 
