@@ -99,10 +99,26 @@ describe("existing parent and auth behavior", () => {
     expect(mocks.clerk).not.toHaveBeenCalled();
   });
 
-  it("preserves the signed-in redirect away from auth pages", async () => {
+  it("returns signed-in parents from auth pages to their portal", async () => {
     mocks.auth.mockResolvedValue({ userId: "synthetic-parent" });
     const response = await responseFor("/sign-in");
-    expect(new URL(response.headers.get("location")!).pathname).toBe("/");
+    expect(new URL(response.headers.get("location")!).pathname).toBe("/parent");
     expect(mocks.auth).toHaveBeenCalledOnce();
   });
 });
+
+ describe("parent domain entry", () => {
+   it("routes the exact parent host root to the guarded parent area", async () => {
+     const response = await middleware(new NextRequest("https://parents.vidyagyan.study/"), event) as Response;
+     expect(response.headers.get("location")).toBe("https://parents.vidyagyan.study/parent");
+   });
+   it("keeps the learner domain root open", async () => {
+     const response = await middleware(new NextRequest("https://vidyagyan.study/"), event) as Response;
+     expect(response.headers.get("x-middleware-next")).toBe("1");
+   });
+   it("does not create an auth-disabled redirect loop on the parent domain", async () => {
+     mocks.configured=false;
+     const response = await middleware(new NextRequest("https://parents.vidyagyan.study/"), event) as Response;
+     expect(response.headers.get("x-middleware-rewrite")).toBe("https://parents.vidyagyan.study/parent-unavailable");
+   });
+ });

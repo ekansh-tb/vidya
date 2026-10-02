@@ -1,3 +1,4 @@
+import { parentReturnPath } from "@/lib/auth/parent-return";
 import { SignIn } from "@clerk/nextjs";
 import { CosmicBg } from "@/components/effects/cosmic-bg";
 
@@ -13,12 +14,6 @@ import { CosmicBg } from "@/components/effects/cosmic-bg";
  * what require this form.
  */
 /** Only same-site paths are honoured, so `?next=` cannot become an open redirect. */
-function safeNext(next?: string): string | undefined {
-  if (!next) return undefined;
-  if (!next.startsWith("/") || next.startsWith("//")) return undefined;
-  return next;
-}
-
 export default async function SignInPage({
   searchParams,
 }: {
@@ -28,7 +23,7 @@ export default async function SignInPage({
   // was never read — Clerk fell back to "/" and dropped them in the kid lobby,
   // which reads as a failed sign-in. Thread it through.
   const { next } = await searchParams;
-  const redirectTo = safeNext(next) ?? "/parent";
+  const redirectTo = parentReturnPath(next);
   return (
     <main className="min-h-screen flex items-center justify-center px-4 relative">
       <CosmicBg mode="parent" intensity={0.85} />
