@@ -210,7 +210,7 @@ export function ParentDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href="https://vidyagyan.study"
               className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
             >
               Kid app →
@@ -286,7 +286,7 @@ export function ParentDashboard() {
               Once they do, this dashboard fills up with their signals automatically.
             </p>
             <Link
-              href="/"
+              href="https://vidyagyan.study"
               className="inline-block rounded-md bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 transition"
             >
               Open the kid app →

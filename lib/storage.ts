@@ -1,4 +1,4 @@
-import { placementFor, profilePlacementFields } from "./learning/placement";
+import { placementFor, storedProfilePlacementFields } from "./learning/placement";
 import type { GameState, LearnerProfile, LearnerId } from "./types";
 
 const V1_KEY = "vidya-quest:state:v1";
@@ -189,6 +189,6 @@ export const storage = {
 
 /** Add placement without changing learner identities, progress or credentials. */
 export function migrateProfiles(profiles: ProfilesV2): ProfilesV2 {
-  for (const learner of Object.values(profiles.learners)) profilePlacementFields.parse(learner);
+  for (const learner of Object.values(profiles.learners)) storedProfilePlacementFields.parse(learner);
   return { ...profiles, version: 3, learners: Object.fromEntries(Object.entries(profiles.learners).map(([id, learner]) => [id, { ...learner, placement: placementFor(learner) ?? learner.placement }])) };
 }

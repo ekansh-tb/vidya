@@ -33,3 +33,14 @@ export const profilePlacementFields = z.union([
   z.object({ board: boardSchema, grade: z.number().int().min(1).max(13), placement: placementSchema.optional() }).refine((p) => !p.placement || (p.placement.kind === "school" && p.placement.board === p.board && p.placement.grade === p.grade)),
   z.object({ board: z.null(), grade: z.null(), placement: placementSchema }).refine((p) => p.placement.kind === "early-years"),
 ]);
+
+/** An unfinished enrollment is not a placed learner and cannot enter any server API. */
+export const storedProfilePlacementFields = z.union([profilePlacementFields, z.object({
+  board: boardSchema.nullable(), grade: z.union([z.literal(0), z.null()]), placement:z.undefined().optional(),
+  state:z.object({onboarded:z.literal(false)}),
+})]);
+
+export function samePlacement(left: LearningPlacement | null, right: LearningPlacement | null): boolean {
+  if (!left || !right || left.version !== right.version || left.kind !== right.kind) return false;
+  return left.kind === "early-years" && right.kind === "early-years" ? left.level === right.level : left.kind === "school" && right.kind === "school" && left.board === right.board && left.grade === right.grade;
+}
