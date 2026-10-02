@@ -39,3 +39,8 @@ export const storedProfilePlacementFields = z.union([profilePlacementFields, z.o
   board: boardSchema.nullable(), grade: z.union([z.literal(0), z.null()]), placement:z.undefined().optional(),
   state:z.object({onboarded:z.literal(false)}),
 })]);
+
+export function samePlacement(left: LearningPlacement | null, right: LearningPlacement | null): boolean {
+  if (!left || !right || left.version !== right.version || left.kind !== right.kind) return false;
+  return left.kind === "early-years" && right.kind === "early-years" ? left.level === right.level : left.kind === "school" && right.kind === "school" && left.board === right.board && left.grade === right.grade;
+}
