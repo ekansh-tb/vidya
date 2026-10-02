@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, KeyRound, Check, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { placementFor } from "@/lib/learning/placement";
+import { placementFor, samePlacement } from "@/lib/learning/placement";
 import { useGameStore } from "@/lib/game-store";
 import { deviceLabel } from "@/lib/sync/client";
 import { sfx } from "@/lib/audio";
@@ -65,7 +65,7 @@ export function LinkAccountView({
         return;
       }
 
-      if (JSON.stringify(placementFor(learner)) !== JSON.stringify(placementFor(data.learner))) {
+      if (!samePlacement(placementFor(learner), placementFor(data.learner))) {
         setError("This code is for a different learning level. Ask your grown-up to check the profile before linking.");
         return;
       }
