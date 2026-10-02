@@ -5,8 +5,14 @@ export type LocalMeasurement = {
   desire: { yes: number; later: number }; placement: string; language: "en" | "hi"; device: "phone" | "tablet" | "desktop";
 };
 const prefix = "vidya:local-measurement:v1:";
+// A namespace, not encryption or an anonymity guarantee. Raw profile IDs may contain nicknames.
+function namespace(localId: string): string {
+  let hash = 14695981039346656037n;
+  for (const char of localId) { hash ^= BigInt(char.codePointAt(0)!); hash = BigInt.asUintN(64, hash * 1099511628211n); }
+  return hash.toString(16);
+}
 export function readLocalMeasurement(localId: string): LocalMeasurement | null {
-  try { const raw = localStorage.getItem(prefix+localId); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  try { const raw = localStorage.getItem(prefix+namespace(localId)); return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 export function recordLocalMeasurement(localId: string, context: Pick<LocalMeasurement,"placement"|"language"|"device">, day: string, event: "visit"|"start"|"complete"|"abandon"|"delayed"|"yes"|"later") {
   if (typeof window === "undefined") return;
@@ -18,7 +24,7 @@ export function recordLocalMeasurement(localId: string, context: Pick<LocalMeasu
   if (event === "abandon") next.abandoned++;
   if (event === "delayed") next.delayedRevisits++;
   if (event === "yes" || event === "later") next.desire[event]++;
-  try { localStorage.setItem(prefix+localId, JSON.stringify({...next,...context})); } catch { /* Measurements must never block learning. */ }
+  try { localStorage.setItem(prefix+namespace(localId), JSON.stringify({...next,...context})); } catch { /* Measurements must never block learning. */ }
 }
 export function localReturnWindow(data: LocalMeasurement, dayOffset: 1 | 7 | 30): boolean | null {
   const target = new Date(`${data.firstVisit}T12:00:00`); target.setDate(target.getDate()+dayOffset);
