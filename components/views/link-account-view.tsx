@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, KeyRound, Check, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { placementFor } from "@/lib/learning/placement";
 import { useGameStore } from "@/lib/game-store";
 import { deviceLabel } from "@/lib/sync/client";
 import { sfx } from "@/lib/audio";
@@ -64,6 +65,11 @@ export function LinkAccountView({
         return;
       }
 
+      if (JSON.stringify(placementFor(learner)) !== JSON.stringify(placementFor(data.learner))) {
+        setError("This code is for a different learning level. Ask your grown-up to check the profile before linking.");
+        return;
+      }
+
       // Mirror the server's decision onto the local profile. `verifiedLevel` is
       // the ONLY thing that raises the rung now — see computeRung. The token is
       // handed back exactly once, so if this write is lost the parent has to
@@ -109,7 +115,7 @@ export function LinkAccountView({
               </h2>
               <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
                 Your progress is saved to your account now, so it&apos;s safe even if this
-                browser is cleared — and Miss Vidya is open.
+                browser is cleared. Your grown-up controls available features.
               </p>
               <Button onClick={() => { sfx.click(); onBack(); }}>Back to school</Button>
             </motion.div>

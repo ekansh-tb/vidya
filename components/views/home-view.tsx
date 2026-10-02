@@ -41,7 +41,7 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
   const hasQuiz = subjects.some((s) => Object.keys(banks[s.id] || {}).length > 0);
   const upcoming = (learner.upcomingExams || []).filter((e) => e.date >= new Date().toLocaleDateString("en-CA"))
     .sort((a, b) => a.date.localeCompare(b.date))[0];
-  const mode = learner.grade <= 2 ? "Little discoveries" : learner.grade <= 5 ? "Your discovery trail" : learner.grade <= 8 ? "Your project studio" : "Your learning workspace";
+  const mode = (learner.grade ?? 1) <= 2 ? "Little discoveries" : (learner.grade ?? 1) <= 5 ? "Your discovery trail" : (learner.grade ?? 1) <= 8 ? "Your project studio" : "Your learning workspace";
   const tile = (label: string, desc: string, Icon: typeof BookOpen, target: ViewName) => (
     <button key={label} onClick={() => onNavigate(target)} className="buddy-tile">
       <Icon aria-hidden="true" className="w-6 h-6" /><span><strong>{label}</strong><small>{desc}</small></span><ArrowRight aria-hidden="true" className="w-4 h-4 ml-auto" />

@@ -1,12 +1,14 @@
+import { placementFor, profilePlacementFields } from "./learning/placement";
 import type { GameState, LearnerProfile, LearnerId } from "./types";
 
 const V1_KEY = "vidya-quest:state:v1";
-const V2_KEY = "vidya-quest:profiles:v2";
+const LEGACY_PROFILES_KEY = "vidya-quest:profiles:v2";
+const V2_KEY = "vidya-quest:profiles:v3";
 /** Previous good write. Recovery path when the primary key is unreadable. */
-const V2_BACKUP_KEY = "vidya-quest:profiles:v2:backup";
+const V2_BACKUP_KEY = "vidya-quest:profiles:v3:backup";
 
 export type ProfilesV2 = {
-  version: 2;
+  version: 2 | 3;
   currentLearnerId: LearnerId;
   learners: Record<LearnerId, LearnerProfile>;
 };
@@ -86,7 +88,8 @@ export const storage = {
         // Structural sanity check — a half-written blob can still parse.
         if (!parsed || typeof parsed !== "object" || !parsed.learners) return null;
         if (Object.keys(parsed.learners).length === 0) return null;
-        return parsed;
+        if (parsed.version !== 2 && parsed.version !== 3) return null;
+        return migrateProfiles(parsed);
       } catch {
         return null;
       }
@@ -95,7 +98,7 @@ export const storage = {
     const primary = readKey(V2_KEY);
     if (primary) return primary;
 
-    const backup = readKey(V2_BACKUP_KEY);
+    const backup = readKey(V2_BACKUP_KEY) ?? readKey(LEGACY_PROFILES_KEY) ?? readKey(`${LEGACY_PROFILES_KEY}:backup`);
     if (backup) {
       console.warn("[storage] primary profile key unreadable; recovered from backup");
       return backup;
@@ -114,7 +117,7 @@ export const storage = {
     if (typeof window === "undefined") return { ok: false, reason: "unavailable" };
     let serialized: string;
     try {
-      serialized = JSON.stringify(p);
+      serialized = JSON.stringify(migrateProfiles(p));
     } catch {
       return { ok: false, reason: "unknown" };
     }
@@ -167,7 +170,7 @@ export const storage = {
   ): ProfilesV2 {
     if (typeof window === "undefined") {
       const fresh = freshPrimary();
-      return { version: 2, currentLearnerId: fresh.id, learners: { [fresh.id]: fresh } };
+      return { version: 3, currentLearnerId: fresh.id, learners: { [fresh.id]: fresh } };
     }
     const v2 = this.loadProfiles();
     if (v2) return v2;
@@ -175,7 +178,7 @@ export const storage = {
     const legacy = this.load<GameState>();
     const primary = legacy ? wrapLegacy(legacy) : freshPrimary();
     const next: ProfilesV2 = {
-      version: 2,
+      version: 3,
       currentLearnerId: primary.id,
       learners: { [primary.id]: primary },
     };
@@ -183,3 +186,9 @@ export const storage = {
     return next;
   },
 };
+
+/** Add placement without changing learner identities, progress or credentials. */
+export function migrateProfiles(profiles: ProfilesV2): ProfilesV2 {
+  for (const learner of Object.values(profiles.learners)) profilePlacementFields.parse(learner);
+  return { ...profiles, version: 3, learners: Object.fromEntries(Object.entries(profiles.learners).map(([id, learner]) => [id, { ...learner, placement: placementFor(learner) ?? learner.placement }])) };
+}

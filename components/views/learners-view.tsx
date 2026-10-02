@@ -1,4 +1,5 @@
 "use client";
+import { placementLabel } from "@/lib/learning/placement";
 
 import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
@@ -88,7 +89,7 @@ export function LearnersView({
                   <div className="flex-1 min-w-0">
                     <div className="font-display font-bold text-lg text-white truncate">{l.name}</div>
                     <div className="text-xs text-white/55 truncate">
-                      Grade {l.grade} · {board}
+                      {placementLabel(l)} · {board}
                     </div>
                     {l.school ? (
                       <div className="text-[10px] text-white/40 mt-0.5 truncate" title={l.school}>{l.school}</div>

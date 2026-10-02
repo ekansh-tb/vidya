@@ -123,7 +123,8 @@ function must(packs: ExamPack[], subjectId: SubjectId, grade: number): ExamPack 
  * genuinely do not know the grade can omit it and receive the first pack for
  * the subject, preserving the legacy subject-only lookup.
  */
-export function packEntryFor(subjectId: SubjectId, grade?: number): PackEntry | undefined {
+export function packEntryFor(subjectId: SubjectId, grade?: number | null): PackEntry | undefined {
+  if (grade === null) return undefined;
   if (grade != null) {
     return PACK_INDEX.find((p) => p.subjectId === subjectId && p.grade === grade);
   }
@@ -131,12 +132,12 @@ export function packEntryFor(subjectId: SubjectId, grade?: number): PackEntry | 
 }
 
 /** Synchronous existence check — the hot path, and the whole point of this file. */
-export function hasPack(subjectId: SubjectId, grade?: number): boolean {
+export function hasPack(subjectId: SubjectId, grade?: number | null): boolean {
   return packEntryFor(subjectId, grade) !== undefined;
 }
 
 /** Loads the pack body on demand. Resolves undefined when none is indexed. */
-export function loadPack(subjectId: SubjectId, grade?: number): Promise<ExamPack | undefined> {
+export function loadPack(subjectId: SubjectId, grade?: number | null): Promise<ExamPack | undefined> {
   const entry = packEntryFor(subjectId, grade);
   return entry ? entry.load() : Promise.resolve(undefined);
 }

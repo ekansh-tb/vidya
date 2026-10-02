@@ -48,7 +48,7 @@ export function SubjectPickerView({
   const totalChosen = picked.size;
   const optionalCount = totalChosen - compulsory.size;
   // Use the shared pathway label when no school has been entered.
-  const boardLabel = boardOption(learner.board).label;
+  const boardLabel = learner.board ? boardOption(learner.board).label : "Early years";
 
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto">

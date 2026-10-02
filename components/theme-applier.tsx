@@ -14,8 +14,8 @@ export function ThemeApplier({ theme }: { theme: ThemeId }) {
 }
 
 /** Default theme suggestion by grade band. Always overridable on the learner profile. */
-export function themeForGrade(grade: number): ThemeId {
-  if (grade <= 5) return "playful";   // Gen Alpha — primary
+export function themeForGrade(grade: number | null): ThemeId {
+  if (grade === null || grade <= 5) return "playful";   // Gen Alpha — primary
   if (grade <= 8) return "vivid";     // Class 6–8 — early teen
   return "vivid";                  // Class 9+ — Gen Z senior
 }

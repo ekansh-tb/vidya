@@ -1,4 +1,5 @@
 "use client";
+import { placementLabel } from "@/lib/learning/placement";
 
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -245,7 +246,7 @@ export function ProfileView({
                 truncating — break-words keeps a long unbroken one in the card. */}
             <div className="font-display text-3xl font-bold mt-3 text-white break-words">{learner.name || state.name}</div>
             <div className="text-white/50 text-sm mt-0.5">
-              Grade {learner.grade} · {describeBoard(learner.board)}
+              {placementLabel(learner)} · {describeBoard(learner.board)}
               {learner.school ? ` · ${learner.school}` : ""}
             </div>
             <div className="mt-5">

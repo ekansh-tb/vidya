@@ -52,6 +52,10 @@ export async function resolveCapabilityServer(
     return { allowed: false, reason: "feature_disabled", identity };
   }
 
+  if (identity.kind === "learner" && identity.learner.placement?.kind === "early-years" && (key.startsWith("ai.") || key.startsWith("byok.") || key === "exam.alertsToParent")) {
+    return { allowed: false, reason: "feature_disabled", identity };
+  }
+
   const rung = rungFor(identity);
   if (rung < policy.minRung) {
     return { allowed: false, reason: "below_min_rung", identity };

@@ -224,6 +224,8 @@ export default function HomePage() {
         onStartRecommendation={startRecommendation}
       />
     );
+  } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)) {
+    content = <div className="buddy-home"><h1>{learner.placement.level.toUpperCase()} learning</h1><p>Your placement is saved. Preschool activities are being prepared.</p><button onClick={() => navigate("learners")}>Switch learner</button></div>;
   } else {
     switch (view.name) {
       case "home":
@@ -337,8 +339,8 @@ export default function HomePage() {
             setState={set}
             onBack={back}
             voiceEnabled={state.settings.voice}
-            grade={learner.grade}
-            board={learner.board}
+            grade={learner.grade ?? undefined}
+            board={learner.board ?? undefined}
             school={learner.school}
           />
         );
@@ -371,9 +373,9 @@ export default function HomePage() {
             onNavigate={navigate}
             subjectId={view.params?.subjectId as SubjectId | undefined}
             availablePackIds={availablePackIds}
-            grade={learner.grade}
+            grade={learner.grade ?? undefined}
             school={learner.school}
-            board={learner.board}
+            board={learner.board ?? undefined}
             uploaded={learner.schoolSyllabus}
           />
         );

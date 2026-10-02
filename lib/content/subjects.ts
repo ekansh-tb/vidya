@@ -863,10 +863,11 @@ export const IGCSE_GROUPS: IgcseGroup[] = [
 
 /** Subjects shown to a learner, given their board + (for IGCSE/ICSE/CBSE) picked subjects. */
 export function subjectsForLearner(
-  board: Board,
+  board: Board | null,
   pickedSubjects?: SubjectId[],
-  grade?: number,
+  grade?: number | null,
 ): Subject[] {
+  if (board === null || grade === null) return [];
   if (board === "cambridge-primary") return SUBJECTS_PRIMARY;
   if (board === "cambridge-lower-secondary") {
     const groups = clsGroupsForGrade(grade);
@@ -898,11 +899,11 @@ export function subjectsForLearner(
 
 /** Returns the picker grouping for a board, if any. */
 export function pickerGroupsForBoard(
-  board: Board,
-  grade?: number,
+  board: Board | null,
+  grade?: number | null,
 ): { id: string; label: string; description: string; subjects: SubjectId[]; compulsoryIds?: SubjectId[] }[] {
   if (board === "cambridge-igcse") return IGCSE_GROUPS;
-  if (board === "cambridge-lower-secondary") return clsGroupsForGrade(grade);
+  if (board === "cambridge-lower-secondary") return clsGroupsForGrade(grade ?? undefined);
   if (board === "icse") return ICSE7_GROUPS;
   if (board === "cbse" && grade != null && grade >= 6) return CBSE_MIDDLE_GROUPS;
   return [];

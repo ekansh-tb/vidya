@@ -35,7 +35,7 @@ export function ClassroomView({
   const [tab, setTab] = useState<Tab>("class");
 
   useEffect(() => {
-    if (state.classRoster.length === 0) {
+    if (learner.grade !== null && state.classRoster.length === 0) {
       const roster = seedClassRoster(learner.grade);
       const notes = seedClassNotes(learner.grade, learner.name.split(" ")[0] || "scholar");
       setState((p) => ({ ...p, classRoster: roster, classNotes: notes }));
@@ -331,7 +331,7 @@ function Noticeboard({
   };
 
   const aiSay = () => {
-    if (state.classRoster.length === 0) return;
+    if (learner.grade !== null && state.classRoster.length === 0) return;
     const speaker = state.classRoster[Math.floor(Math.random() * state.classRoster.length)];
     sfx.click();
     post(randomEncouragement(), speaker.id, speaker.name, speaker.avatarEmoji);

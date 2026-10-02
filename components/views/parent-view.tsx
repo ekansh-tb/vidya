@@ -1,4 +1,5 @@
 "use client";
+import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
@@ -156,7 +157,7 @@ export function ParentView({
 
         <h2 className="font-display text-3xl font-bold mb-1" style={{ color: "var(--text)" }}>Parent Room</h2>
         <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
-          {learner.name} · Grade {learner.grade} · {boardLabel(learner.board)}
+          {learner.name} · {placementLabel(learner)} · {boardLabel(learner.board)}
         </p>
 
         {/* OPINION-ONLY headline ----------------------------------------- */}
@@ -649,7 +650,7 @@ function boardLabel(board: LearnerProfile["board"]): string {
     case "cambridge-igcse": return "Cambridge IGCSE";
     case "icse": return "ICSE / CISCE";
     case "cbse": return "CBSE / NCERT";
-    default: return board;
+    default: return board ?? "Early years";
   }
 }
 
