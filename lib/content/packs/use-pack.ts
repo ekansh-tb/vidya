@@ -27,12 +27,12 @@ export type UsePackResult = {
  */
 export function usePack(
   subjectId: SubjectId | undefined,
-  grade?: number,
+  grade?: number | null,
   /** Learner's school + board, and any scheme of work a parent uploaded for
    *  them. When either source has topics for this subject, the school's own
    *  units replace the pack's generic content ones (skills topics survive).
    *  Omit and the framework-level pack is used as-is. */
-  schoolCtx?: { school?: string; board: Board; uploaded?: LearnerSyllabus },
+  schoolCtx?: { school?: string; board: Board | null; uploaded?: LearnerSyllabus },
 ): UsePackResult {
   const exists = subjectId ? hasPack(subjectId, grade) : false;
   const [pack, setPack] = useState<ExamPack | undefined>(undefined);
@@ -60,7 +60,7 @@ export function usePack(
           setError(true);
           return;
         }
-        setPack(p && board ? applySchoolSyllabus(p, { school, board, grade, uploaded }) : p);
+        setPack(p && board ? applySchoolSyllabus(p, { school, board, grade: grade ?? undefined, uploaded }) : p);
       })
       .catch((e) => {
         if (!cancelled) {

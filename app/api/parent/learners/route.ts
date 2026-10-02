@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { profilePlacementFields } from "@/lib/learning/placement";
 import { requireParent } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
 import { listLearnersForParent, createLearner } from "@/lib/db/queries";
@@ -10,21 +11,13 @@ const RATE = { limit: 60, windowMs: 10 * 60 * 1000 };
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(80),
-  grade: z.number().int().min(1).max(13),
-  board: z.enum([
-    "cambridge-primary",
-    "cambridge-lower-secondary",
-    "cambridge-igcse",
-    "icse",
-    "cbse",
-  ]),
   school: z.string().trim().max(160).optional(),
   city: z.string().trim().max(120).optional(),
   /** Client-side profile id, so a device can reconcile local profiles later. */
   localId: z.string().trim().max(128).optional(),
   pickedSubjects: z.array(z.string().max(64)).max(40).optional(),
   subjectsLocked: z.boolean().optional(),
-});
+}).and(profilePlacementFields);
 
 /** Every learner this parent owns. Scoped by parent_id in SQL, never by id. */
 export async function GET(req: Request) {
@@ -63,12 +56,15 @@ export async function POST(req: Request) {
   const parsed = createSchema.safeParse(raw);
   if (!parsed.success) return Response.json({ error: "Bad request" }, { status: 400 });
 
+  if (parsed.data.placement?.kind === "early-years" && process.env.EARLY_YEARS_ENABLED !== "true") return Response.json({ error: "Preschool enrollment is not yet available" }, { status: 409 });
+
   try {
     const learner = await createLearner({
       parentId: parent.userId,
       name: parsed.data.name,
       grade: parsed.data.grade,
       board: parsed.data.board,
+      placement: parsed.data.placement,
       school: parsed.data.school ?? null,
       city: parsed.data.city ?? null,
       localId: parsed.data.localId ?? null,

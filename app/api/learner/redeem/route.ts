@@ -100,6 +100,9 @@ export async function POST(req: Request) {
           id: result.learner.id,
           verificationLevel: result.learner.verificationLevel,
           name: result.learner.name,
+          board: result.learner.board,
+          grade: result.learner.grade,
+          placement: result.learner.placement,
         },
         // Returned exactly once. The server keeps only its hash, so if the
         // client loses it the parent must issue a fresh code — the correct

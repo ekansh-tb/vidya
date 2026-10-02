@@ -12,12 +12,14 @@
 // to move it — which is the privacy posture the project already commits to.
 
 import { z } from "zod";
+import { profilePlacementFields } from "./learning/placement";
+import { migrateProfiles } from "./storage";
 import type { LearnerProfile } from "./types";
 import type { ProfilesV2 } from "./storage";
 import { dayKeyOf } from "./utils";
 
 export const BACKUP_FORMAT = "vidya.backup" as const;
-export const BACKUP_VERSION = 1 as const;
+export const BACKUP_VERSION = 2 as const;
 
 export type BackupFile = {
   format: typeof BACKUP_FORMAT;
@@ -37,15 +39,14 @@ const learnerSchema = z
   .object({
     id: z.string().min(1).max(128),
     name: z.string().max(120),
-    grade: z.number().int().min(1).max(13),
-    board: z.string().min(1).max(64),
+
     createdAt: z.string().max(64),
     state: gameStateSchema,
   })
-  .loose();
+  .loose().and(profilePlacementFields);
 
 const profilesSchema = z.object({
-  version: z.literal(2),
+  version: z.union([z.literal(2), z.literal(3)]),
   currentLearnerId: z.string().min(1).max(128),
   learners: z.record(z.string().min(1).max(128), learnerSchema),
 });
@@ -130,7 +131,7 @@ function withoutImportedCredentials(profiles: ProfilesV2): ProfilesV2 {
 }
 
 export function buildBackup(profiles: ProfilesV2): BackupFile {
-  const safe = withoutCredentials(profiles);
+  const safe = withoutCredentials(migrateProfiles(profiles));
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -178,7 +179,7 @@ export function parseBackup(text: string): ImportOutcome {
       // just without the envelope, and refusing it would be unhelpful. It is
       // also, by definition, a file someone edited by hand, so it gets the
       // same strip as everything else.
-      const profiles = withoutImportedCredentials(looksLikeRawProfiles.data as ProfilesV2);
+      const profiles = withoutImportedCredentials(migrateProfiles(looksLikeRawProfiles.data as ProfilesV2));
       return { ok: true, profiles, learnerCount: Object.keys(profiles.learners).length };
     }
     return {
@@ -190,7 +191,7 @@ export function parseBackup(text: string): ImportOutcome {
   // Stripped on the way IN, not just on the way out. A backup is JSON a child
   // can open and edit; trusting its credential fields would hand rung 2 to
   // anyone willing to type it.
-  const profiles = withoutImportedCredentials(parsed.data.profiles as ProfilesV2);
+  const profiles = withoutImportedCredentials(migrateProfiles(parsed.data.profiles as ProfilesV2));
   const ids = Object.keys(profiles.learners);
   if (ids.length === 0) {
     return { ok: false, error: "That backup has no learners in it." };

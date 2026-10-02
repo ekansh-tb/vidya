@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { GameState, LearnerProfile, LearnerId, Board } from "./types";
 import { storage, type ProfilesV2, type SaveFailure } from "./storage";
+import { placementFor } from "./learning/placement";
 import { todayKey } from "./utils";
 
 export const DEFAULT_STATE: GameState = {
@@ -134,7 +135,7 @@ type Store = {
 };
 
 const initialProfiles: ProfilesV2 = {
-  version: 2,
+  version: 3,
   currentLearnerId: "learner-primary",
   learners: { "learner-primary": defaultPrimaryLearner() },
 };
@@ -242,6 +243,10 @@ export const useGameStore = create<Store>((set, get) => ({
     const existing = cur.profiles.learners[id];
     if (!existing) return;
     const next: LearnerProfile = { ...existing, ...patch };
+    if (("board" in patch || "grade" in patch) && !("placement" in patch)) {
+      next.placement = placementFor({ ...next, placement: undefined }) ?? undefined;
+    }
+    if (!placementFor(next)) return;
     const profiles: ProfilesV2 = {
       ...cur.profiles,
       learners: { ...cur.profiles.learners, [id]: next },

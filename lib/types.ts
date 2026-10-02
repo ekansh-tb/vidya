@@ -1,3 +1,4 @@
+import type { LearningPlacement } from "./learning/placement";
 import type { LucideIcon } from "lucide-react";
 
 export type SubjectId =
@@ -87,8 +88,10 @@ export type FamilyNote = {
 export type LearnerProfile = {
   id: LearnerId;
   name: string;
-  grade: number;
-  board: Board;
+  grade: number | null;
+  board: Board | null;
+  placement?: LearningPlacement;
+  learningLanguage?: "en" | "hi";
   /** School + city — purely descriptive but threaded into AI prompts. */
   school?: string;
   city?: string;

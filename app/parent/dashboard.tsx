@@ -1,4 +1,5 @@
 "use client";
+import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
@@ -416,7 +417,7 @@ function SelectedLearnerView({
         <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Profile</div>
         <div className="font-display text-3xl font-bold mt-1">{learner.name || "Unnamed learner"}</div>
         <div className="text-xs text-neutral-500 mt-0.5">
-          Grade {learner.grade} · {boardLabel(learner.board)}
+          {placementLabel(learner)} · {boardLabel(learner.board)}
           {learner.school ? ` · ${learner.school}` : ""}
           {learner.city ? ` · ${learner.city}` : ""}
         </div>
@@ -954,13 +955,13 @@ function StatTile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function boardLabel(board: string): string {
+function boardLabel(board: string | null): string {
   switch (board) {
     case "cambridge-primary": return "Cambridge Primary";
     case "cambridge-lower-secondary": return "Cambridge Lower Secondary";
     case "cambridge-igcse": return "Cambridge IGCSE";
     case "icse": return "ICSE / CISCE";
     case "cbse": return "CBSE / NCERT";
-    default: return board;
+    default: return board ?? "Early years";
   }
 }

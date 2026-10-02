@@ -41,6 +41,7 @@ export function ClaimAccountPanel({
           name: learner.name || "Learner",
           grade: learner.grade,
           board: learner.board,
+          placement: learner.placement,
           school: learner.school,
           city: learner.city,
           localId: learner.id,

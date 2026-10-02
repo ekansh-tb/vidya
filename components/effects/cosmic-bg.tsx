@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 export type CosmicMode = "alpha" | "z" | "parent";
 
 /** Pick a cosmic background mode from a learner grade. Parent contexts pass "parent" explicitly. */
-export function cosmicModeForGrade(grade: number | undefined): CosmicMode {
+export function cosmicModeForGrade(grade: number | null | undefined): CosmicMode {
   if (grade == null) return "alpha";
   return grade <= 5 ? "alpha" : "z";
 }

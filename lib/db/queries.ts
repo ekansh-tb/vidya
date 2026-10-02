@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { getSql, type Row } from "./client";
+import { profilePlacementFields, placementFor, type LearningPlacement } from "../learning/placement";
 import type { GameState, SubjectId } from "../types";
 
 /**
@@ -26,8 +27,9 @@ export type LearnerRow = {
   parentId: string | null;
   clerkUserId: string | null;
   name: string;
-  grade: number;
-  board: string;
+  grade: number | null;
+  board: string | null;
+  placement?: LearningPlacement;
   school: string | null;
   city: string | null;
   verificationLevel: VerificationLevel;
@@ -54,6 +56,7 @@ function toLearner(r: any): LearnerRow {
     name: r.name,
     grade: r.grade,
     board: r.board,
+    placement: r.learning_placement ?? undefined,
     school: r.school ?? null,
     city: r.city ?? null,
     verificationLevel: r.verification_level as VerificationLevel,
@@ -130,23 +133,26 @@ export async function getLearnerForClerkUser(clerkUserId: string): Promise<Learn
 export async function createLearner(input: {
   parentId: string;
   name: string;
-  grade: number;
-  board: string;
+  grade: number | null;
+  board: string | null;
+  placement?: LearningPlacement;
   school?: string | null;
   city?: string | null;
   localId?: string | null;
   pickedSubjects?: SubjectId[] | null;
   subjectsLocked?: boolean;
 }): Promise<LearnerRow> {
+  profilePlacementFields.parse(input);
+  const placement = input.placement ?? placementFor(input as Parameters<typeof placementFor>[0]);
   const sql = getSql();
   const rows = await sql`
     insert into learners
-      (parent_id, name, grade, board, school, city, local_id, picked_subjects, subjects_locked)
+      (parent_id, name, grade, board, school, city, local_id, picked_subjects, subjects_locked, learning_placement)
     values
       (${input.parentId}, ${input.name}, ${input.grade}, ${input.board},
        ${input.school ?? null}, ${input.city ?? null}, ${input.localId ?? null},
        ${JSON.stringify(input.pickedSubjects ?? null)}::jsonb,
-       ${input.subjectsLocked ?? false})
+       ${input.subjectsLocked ?? false}, ${JSON.stringify(placement)}::jsonb)
     returning *
   `;
   await audit({ parentId: input.parentId, learnerId: rows[0].id, event: "created", actor: input.parentId });
@@ -157,16 +163,20 @@ export async function createLearner(input: {
 export async function updateLearnerForParent(
   parentId: string,
   learnerId: string,
-  patch: Partial<Pick<LearnerRow, "name" | "grade" | "board" | "school" | "city" | "subjectsLocked">> & {
+  patch: Partial<Pick<LearnerRow, "name" | "grade" | "board" | "placement" | "school" | "city" | "subjectsLocked">> & {
     pickedSubjects?: SubjectId[] | null;
   },
 ): Promise<LearnerRow | null> {
+  const changesPlacement = patch.placement !== undefined;
+  if (changesPlacement) profilePlacementFields.parse(patch);
+  if (("grade" in patch || "board" in patch) && !changesPlacement) throw new Error("Explicit placement required");
   const sql = getSql();
   const rows = await sql`
     update learners set
+      learning_placement = case when ${changesPlacement} then ${JSON.stringify(patch.placement ?? null)}::jsonb else learning_placement end,
       name            = coalesce(${patch.name ?? null}, name),
-      grade           = coalesce(${patch.grade ?? null}, grade),
-      board           = coalesce(${patch.board ?? null}, board),
+      grade           = case when ${changesPlacement} then ${patch.grade ?? null} else grade end,
+      board           = case when ${changesPlacement} then ${patch.board ?? null} else board end,
       school          = coalesce(${patch.school ?? null}, school),
       city            = coalesce(${patch.city ?? null}, city),
       subjects_locked = coalesce(${patch.subjectsLocked ?? null}, subjects_locked),
@@ -588,13 +598,17 @@ export async function disabledCapabilitiesForTokens(tokens: string[]): Promise<s
   if (hashes.length === 0) return [];
   const sql = getSql();
   const rows = await sql`
-    select l.disabled_capabilities
+    select l.disabled_capabilities, l.learning_placement
     from learner_devices d
     join learners l on l.id = d.learner_id
     where d.token_hash = any(${hashes}) and d.revoked_at is null
   `;
   const out = new Set<string>();
   for (const r of rows) {
+    if (r.learning_placement?.kind === "early-years") {
+      out.add("ai.tutor.full"); out.add("ai.tutor.limited");
+      for (const provider of ["openai", "anthropic", "google", "grok", "openrouter"]) out.add(`byok.${provider}`);
+    }
     if (Array.isArray(r.disabled_capabilities)) {
       for (const k of r.disabled_capabilities) out.add(String(k));
     }
