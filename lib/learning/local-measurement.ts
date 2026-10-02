@@ -7,9 +7,9 @@ export type LocalMeasurement = {
 const prefix = "vidya:local-measurement:v1:";
 // A namespace, not encryption or an anonymity guarantee. Raw profile IDs may contain nicknames.
 function namespace(localId: string): string {
-  let hash = 14695981039346656037n;
-  for (const char of localId) { hash ^= BigInt(char.codePointAt(0)!); hash = BigInt.asUintN(64, hash * 1099511628211n); }
-  return hash.toString(16);
+  let first = 2166136261, second = 2246822507;
+  for (const char of localId) { const code = char.codePointAt(0)!; first = Math.imul(first ^ code, 16777619); second = Math.imul(second ^ code, 3266489909); }
+  return (first >>> 0).toString(16).padStart(8,"0") + (second >>> 0).toString(16).padStart(8,"0");
 }
 export function readLocalMeasurement(localId: string): LocalMeasurement | null {
   try { const raw = localStorage.getItem(prefix+namespace(localId)); return raw ? JSON.parse(raw) : null; } catch { return null; }
