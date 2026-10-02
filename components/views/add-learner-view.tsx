@@ -1,5 +1,7 @@
 "use client";
 
+import { EarlyYearsEnrollment } from "./early-years-enrollment";
+import type { LearningPlacement } from "@/lib/learning/placement";
 import { useId, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
@@ -59,6 +61,7 @@ export function AddLearnerView({
   onSave: (learner: LearnerProfile) => void;
   onBack: () => void;
 }) {
+  const [early, setEarly] = useState(false);
   const [step, setStep] = useState<"template" | "custom">("custom");
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
@@ -98,6 +101,8 @@ export function AddLearnerView({
     }));
   };
 
+  if (early) return <EarlyYearsEnrollment onBack={() => setEarly(false)} onComplete={(data) => { const id = crypto.randomUUID(); onSave({ ...makeLearner({ id, name: data.name, board: null, grade: null, avatarId: data.avatarId, themeId: "playful", placement: data.placement }), learningLanguage: data.learningLanguage }); }}/>;
+
   const selectedBoard = board ? boardOption(board) : null;
 
   return (
@@ -112,7 +117,7 @@ export function AddLearnerView({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-[var(--radius-lg)] mb-3" style={{ background: "var(--accent-soft)", boxShadow: `0 0 30px var(--accent-glow)` }}>
               <Plus className="w-8 h-8" style={{ color: "var(--accent)" }} />
             </div>
-            <h1 className="font-display text-3xl font-bold" style={{ color: "var(--text)" }}>Add a learner</h1>
+            <h1 className="font-display text-3xl font-bold" style={{ color: "var(--text)" }}>Add a learner</h1><button className="buddy-action mt-4" onClick={() => setEarly(true)}>Nursery, LKG or UKG</button>
             <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
               Type the learner&apos;s name. A template can pre-fill the curriculum.
             </p>
@@ -272,15 +277,15 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; 
   );
 }
 
-function makeLearner({
-  id, name, board, grade, school, city, avatarId, themeId,
+export function makeLearner({
+  id, name, board, grade, school, city, avatarId, themeId, placement,
 }: {
-  id: string; name: string; board: Board; grade: number;
+  id: string; name: string; board: Board | null; grade: number | null; placement?: LearningPlacement;
   school?: string; city?: string; avatarId: string;
   themeId: "playful" | "vivid" | "terminal";
 }): LearnerProfile {
   return {
-    id, name, board, grade, school, city, themeId,
+    id, name, board, grade, school, city, themeId, placement,
     pickedSubjects: undefined,
     subjectsLocked: false,
     createdAt: new Date().toISOString(),

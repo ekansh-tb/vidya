@@ -78,6 +78,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
         return;
       }
 
+      if (pulled.profile) useGameStore.getState().updateLearnerMeta(learner.id, pulled.profile);
       revisionRef.current = pulled.revision;
       syncedLearnerRef.current = learner.id;
 

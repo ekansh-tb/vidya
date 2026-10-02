@@ -1,5 +1,6 @@
 "use client";
 
+import { profilePlacementFields } from "../learning/placement";
 import type { GameState, LearnerProfile } from "../types";
 import { mergeGameState } from "./merge";
 
@@ -43,7 +44,7 @@ function authHeaders(learner?: LearnerProfile): Record<string, string> {
 }
 
 type PullResult =
-  | { ok: true; state: GameState | null; revision: number }
+  | { ok: true; state: GameState | null; revision: number; profile?: Pick<LearnerProfile,"board"|"grade"|"placement"> }
   | { ok: false; reason: "unauthorized" | "unavailable" | "network" };
 
 export async function pullState(learner?: LearnerProfile, signal?: AbortSignal): Promise<PullResult> {
@@ -53,7 +54,8 @@ export async function pullState(learner?: LearnerProfile, signal?: AbortSignal):
     if (res.status === 503) return { ok: false, reason: "unavailable" };
     if (!res.ok) return { ok: false, reason: "network" };
     const data = await res.json();
-    return { ok: true, state: (data?.state ?? null) as GameState | null, revision: Number(data?.revision ?? 0) };
+    const profile = profilePlacementFields.safeParse(data?.profile);
+    return { ok: true, ...(profile.success ? { profile:profile.data } : {}), state: (data?.state ?? null) as GameState | null, revision: Number(data?.revision ?? 0) };
   } catch {
     return { ok: false, reason: "network" };
   }

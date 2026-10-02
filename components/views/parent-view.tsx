@@ -1,4 +1,6 @@
 "use client";
+import { ActivityEvidence } from "@/components/learning/activity-evidence";
+import { PlacementEditor } from "@/components/parent/placement-editor";
 import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState } from "react";
@@ -160,6 +162,7 @@ export function ParentView({
           {learner.name} · {placementLabel(learner)} · {boardLabel(learner.board)}
         </p>
 
+        <ActivityEvidence state={state}/><PlacementEditor learner={learner} onChange={onUpdateLearner}/>
         {/* OPINION-ONLY headline ----------------------------------------- */}
         <OpinionFrame
           windowText={questionStatsAvailable
@@ -305,7 +308,7 @@ export function ParentView({
         </div>
 
         {/* Subject mastery — learner's curriculum only ------------------ */}
-        <h3 className="font-display text-xl font-bold mb-3" style={{ color: "var(--text)" }}>Subject mastery</h3>
+        <h3 className="font-display text-xl font-bold mb-3" style={{ color: "var(--text)" }}>Observed subject practice</h3>
         <div className="space-y-2 mb-6">
           {subjectStats.length === 0 && (
             <div className="glass-card p-4 text-xs" style={{ color: "var(--text-muted)" }}>

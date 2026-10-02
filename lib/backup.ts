@@ -12,7 +12,7 @@
 // to move it — which is the privacy posture the project already commits to.
 
 import { z } from "zod";
-import { profilePlacementFields } from "./learning/placement";
+import { storedProfilePlacementFields } from "./learning/placement";
 import { migrateProfiles } from "./storage";
 import type { LearnerProfile } from "./types";
 import type { ProfilesV2 } from "./storage";
@@ -43,7 +43,7 @@ const learnerSchema = z
     createdAt: z.string().max(64),
     state: gameStateSchema,
   })
-  .loose().and(profilePlacementFields);
+  .loose().and(storedProfilePlacementFields);
 
 const profilesSchema = z.object({
   version: z.union([z.literal(2), z.literal(3)]),

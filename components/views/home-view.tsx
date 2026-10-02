@@ -3,6 +3,9 @@
 import { createPortal } from "react-dom";
 import { useId, useMemo, useState } from "react";
 import { BookOpen, Compass, Home, Palette, Footprints, Settings, Users, ArrowRight, Music, Globe, NotebookPen, Wind, Trophy, GraduationCap } from "lucide-react";
+import { LearningCompanion } from "@/components/ui/learning-companion";
+import { companionUnlocks } from "@/lib/learning/activity";
+import { todayKey } from "@/lib/utils";
 import { Mascot } from "@/components/ui/mascot";
 import { NextBestQuestCard } from "@/components/learning/next-best-quest-card";
 import { subjectsForLearner } from "@/lib/content/subjects";
@@ -39,7 +42,7 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
   const name = state.name.split(" ")[0] || "friend";
   const last = subjects.find((s) => s.id === state.lastSubjectId);
   const hasQuiz = subjects.some((s) => Object.keys(banks[s.id] || {}).length > 0);
-  const upcoming = (learner.upcomingExams || []).filter((e) => e.date >= new Date().toLocaleDateString("en-CA"))
+  const upcoming = (learner.upcomingExams || []).filter((e) => e.date >= todayKey())
     .sort((a, b) => a.date.localeCompare(b.date))[0];
   const mode = (learner.grade ?? 1) <= 2 ? "Little discoveries" : (learner.grade ?? 1) <= 5 ? "Your discovery trail" : (learner.grade ?? 1) <= 8 ? "Your project studio" : "Your learning workspace";
   const tile = (label: string, desc: string, Icon: typeof BookOpen, target: ViewName) => (
@@ -62,8 +65,9 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
     <p className="text-[var(--text-muted)] mb-6">{mode}. Choose something that makes you curious.</p>
     {tab === "today" && <div className="space-y-5">
       {learner.familyNote && !learner.familyNote.seenAt && <aside className="buddy-panel"><h2 className="font-bold">A note from home</h2><p className="my-2 whitespace-pre-wrap">{learner.familyNote.body}</p><button className="buddy-action" onClick={() => update(learner.id, { familyNote: { ...learner.familyNote!, seenAt: new Date().toISOString() } })}>Got it</button></aside>}
-      <section className="buddy-panel buddy-trail"><span aria-hidden="true" className="text-4xl">🪔</span><h2 className="font-display text-xl font-bold mt-3">A little curiosity goes a long way</h2><p className="mt-2 text-[var(--text-muted)]">Welcome back. We can explore, practise, or make something together. You choose.</p></section>
-      {recommendation.kind !== "unavailable" ? <NextBestQuestCard recommendation={recommendation} onStart={start} /> : <section className="buddy-panel"><h2 className="font-display text-xl font-bold">Find your next discovery</h2><p className="my-3 text-[var(--text-muted)]">Curriculum practice for this grade is not ready yet. Available books and exploration are clearly marked in Explore.</p><button className="buddy-action" onClick={() => onNavigate("home", { tab: "explore" })}>Explore what is available <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></section>}
+      <LearningCompanion compact={(learner.grade ?? 1) >= 6} decorations={companionUnlocks(state.activities ?? { completions: [] })} line={state.activities?.draft ? "I kept your activity ready. We can continue where you left off." : "Welcome back. We can explore, practise, or make something together. You choose."}/>
+      {recommendation.kind !== "unavailable" ? <NextBestQuestCard recommendation={recommendation} onStart={start} /> : <section className="buddy-panel"><h2 className="font-display text-xl font-bold">Find your next discovery</h2><p className="my-3 text-[var(--text-muted)]">Curriculum practice for this grade is not ready yet. Available books and exploration are clearly marked in Explore.</p><button className="buddy-action" onClick={() => onNavigate("activities")}>Explore what is available <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></section>}
+      {state.activities?.draft && <button className="buddy-action" onClick={() => onNavigate("activities")}>Resume your saved activity</button>}
       {last && <button className="buddy-tile w-full" onClick={() => onNavigate("subject", { subjectId: last.id })}><BookOpen aria-hidden="true" className="w-6 h-6" /><span><strong>Continue {last.name}</strong><small>Return to your last classroom</small></span><ArrowRight aria-hidden="true" className="w-4 h-4 ml-auto" /></button>}
       <div className="grid sm:grid-cols-2 gap-3">{tile("Make something", "Draw ideas, write, or try a melody", Palette, "music")}{tile("Take a break", "A calm moment or a little movement", Wind, "wellness")}</div>
       {upcoming && <aside className="buddy-panel"><h2 className="font-bold">Your upcoming plan</h2><p>{upcoming.title} · {upcoming.date}</p><button className="buddy-action mt-3" onClick={() => onNavigate(upcoming.subjectId ? "exam-prep" : "settings", upcoming.subjectId ? { subjectId: upcoming.subjectId } : undefined)}>Open your plan</button></aside>}
@@ -74,9 +78,9 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
         const attempts = Object.values(state.progress[s.id] || {}).reduce((sum, p) => sum + p.attempts, 0);
         return <button key={s.id} className="buddy-tile" onClick={() => onNavigate("subject", { subjectId: s.id })} aria-label={`Open ${s.name}`}><s.icon aria-hidden="true" className="w-6 h-6" /><span><strong>{s.name}</strong><small>{supported ? `${attempts} recorded practice attempts` : "Curriculum content not ready yet"}</small></span></button>;
       })}</div></section>
-      <section><h2 className="font-display text-xl font-bold mb-3">Beyond the classroom</h2><p className="text-sm text-[var(--text-muted)] mb-3">General exploration. These activities do not establish curriculum coverage.</p><div className="grid sm:grid-cols-2 gap-3">{tile("Library", "Read or discover a book", BookOpen, "library")}{tile("Field trips", "Explore places and ideas", Globe, "field-trip")}{tile("Assembly", "A thought to start your day", GraduationCap, "assembly")}{hasQuiz && tile("Practice challenge", "Questions from your current grade", Compass, "daily")}</div></section>
+      <section><h2 className="font-display text-xl font-bold mb-3">Beyond the classroom</h2><p className="text-sm text-[var(--text-muted)] mb-3">General exploration. These activities do not establish curriculum coverage.</p><div className="grid sm:grid-cols-2 gap-3">{tile("Learning adventures", "Reviewed general exploration for your grade", Compass, "activities")}{tile("Library", "Read or discover a book", BookOpen, "library")}{tile("Field trips", "Explore places and ideas", Globe, "field-trip")}{tile("Assembly", "A thought to start your day", GraduationCap, "assembly")}{hasQuiz && tile("Practice challenge", "Questions from your current grade", Compass, "daily")}</div></section>
     </div>}
-    {tab === "create" && <div className="grid sm:grid-cols-2 gap-3">{tile("Music", "Play, record, and save a melody", Music, "music")}{tile("Notebook", "Keep your questions and ideas", NotebookPen, "notebook")}{tile("Wellness", "Make room for a calm break", Wind, "wellness")}</div>}
+    {tab === "create" && <div className="grid sm:grid-cols-2 gap-3">{tile("Make a creation", "A picture, a design, or a project", Palette, "activities")}{tile("Music", "Play, record, and save a melody", Music, "music")}{tile("Notebook", "Keep your questions and ideas", NotebookPen, "notebook")}{tile("Wellness", "Make room for a calm break", Wind, "wellness")}</div>}
     {tab === "journey" && <div className="space-y-5"><Reflection state={state} /><section className="buddy-panel"><h2 className="font-display text-xl font-bold">Every visit adds to your story</h2><p className="mt-2 text-[var(--text-muted)]">Your progress stays here when you take a break. Practice counts describe what you tried, not everything you understand.</p><dl className="grid grid-cols-3 gap-3 mt-5"><div><dt>Practice answers</dt><dd className="text-2xl font-bold">{state.stats.totalAnswered}</dd></div><div><dt>Books marked read</dt><dd className="text-2xl font-bold">{state.readBooks.length}</dd></div><div><dt>Places explored</dt><dd className="text-2xl font-bold">{state.passportStamps.length}</dd></div></dl></section><div className="grid sm:grid-cols-2 gap-3">{tile("Your profile", "Appearance, interests, and saved progress", Users, "profile")}{tile("Your collection", "Badges from your learning journey", Trophy, "profile")}{tile("Saved questions", "Return to earlier practice", BookOpen, "review")}{tile("Classroom", "Clearly labeled simulated classmates", GraduationCap, "friends")}</div></div>}
     <LearningNavigation tab={tab} onNavigate={onNavigate} />
   </div>;
@@ -85,7 +89,7 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
 function Reflection({ state }: { state: GameState }) {
   const id = useId(); const [draft, setDraft] = useState(""); const [privateNote, setPrivate] = useState(false);
   const set = useGameStore((s) => s.set);
-  const date = new Date().toLocaleDateString("en-CA");
+  const date = todayKey();
   const saved = state.dailyReflections?.find((r) => r.date === date);
   return <section className="buddy-panel"><h2 className="font-display text-xl font-bold">A thought to keep</h2>{saved ? <p role="status" className="mt-3">Your reflection is saved for today.</p> : <><label className="block mt-3" htmlFor={id}>What did you learn today?</label><textarea id={id} aria-describedby={`${id}-privacy`} maxLength={200} value={draft} onChange={(e) => setDraft(e.target.value)} className="w-full mt-2 p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border)]" /><label className="flex gap-2 min-h-11 items-center"><input type="checkbox" checked={privateNote} onChange={(e) => setPrivate(e.target.checked)} />Keep this reflection private</label><p id={`${id}-privacy`} className="text-sm text-[var(--text-muted)]">{privateNote ? "This reflection will be excluded from parent reports." : "A linked parent can read this reflection in their report."}</p><button className="buddy-action mt-3" disabled={!draft.trim()} onClick={() => set((current) => current.dailyReflections.some((r) => r.date === date) ? current : ({ ...current, dailyReflections: [...current.dailyReflections, { date, body: draft.trim(), savedAt: new Date().toISOString(), private: privateNote || undefined }] }))}>Save reflection</button></>}</section>;
 }

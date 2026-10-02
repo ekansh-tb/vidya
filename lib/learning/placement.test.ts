@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { placementFor, profilePlacementFields } from "./placement";
+import { placementFor, profilePlacementFields, storedProfilePlacementFields } from "./placement";
 import { migrateProfiles } from "../storage";
 import { serializeBackup, parseBackup } from "../backup";
 import type { LearnerProfile } from "../types";
@@ -17,6 +17,11 @@ describe("placement compatibility", () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.profiles.learners.early.placement).toEqual(learner.placement);
     expect(placementFor(learner)).toEqual(learner.placement);
+  });
+  it("allows an unfinished local enrollment but never accepts it as an API placement", () => {
+    const pending={board:"cambridge-primary",grade:0,state:{onboarded:false}};
+    expect(storedProfilePlacementFields.safeParse(pending).success).toBe(true);
+    expect(profilePlacementFields.safeParse(pending).success).toBe(false);
   });
   it("rejects forged or conflicting placement and missing preschool level", () => {
     for (const placement of [{ version: 1, kind: "early-years", level: "ukg" }, { version: 1, kind: "school", board: "cbse", grade: 7 }]) {

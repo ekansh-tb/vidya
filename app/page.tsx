@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { OnboardingView } from "@/components/views/onboarding-view";
+import { EnrollmentEntry } from "@/components/views/enrollment-entry";
+import { LearningHub } from "@/components/views/learning-hub";
 import { HomeView, type HomeTab } from "@/components/views/home-view";
 import { SubjectView } from "@/components/views/subject-view";
 import { QuizView } from "@/components/views/quiz-view";
@@ -104,13 +105,14 @@ export default function HomePage() {
     return (
       <>
         <ThemeApplier theme={themeId} />
-        <OnboardingView
+        <EnrollmentEntry
           defaultName={learner.name || ""}
-          onComplete={async ({ name, avatarId, interests, board, grade }) => {
+          onComplete={async (data) => {
+            const { name, avatarId, interests, board, grade } = data;
             // Curriculum first, then flip `onboarded`. By the time this render
             // path falls through to the picker gate / home, the learner's board
             // and grade are the ones they actually chose.
-            updateLearnerMeta(learner.id, { name, interests, board, grade });
+            updateLearnerMeta(learner.id, { name, interests, board, grade, ...("placement" in data ? { placement: data.placement, learningLanguage: data.learningLanguage, themeId: "playful" as const } : {}) });
             set((prev) => ({ ...prev, name, avatarId, onboarded: true }));
           }}
         />
@@ -225,9 +227,12 @@ export default function HomePage() {
       />
     );
   } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)) {
-    content = <div className="buddy-home"><h1>{learner.placement.level.toUpperCase()} learning</h1><p>Your placement is saved. Preschool activities are being prepared.</p><button onClick={() => navigate("learners")}>Switch learner</button></div>;
+    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
   } else {
     switch (view.name) {
+      case "activities":
+        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
+        break;
       case "home":
         content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
         break;

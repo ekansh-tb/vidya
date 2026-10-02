@@ -1,4 +1,8 @@
 "use client";
+import { AddLearnerView, makeLearner } from "@/components/views/add-learner-view";
+import { PlacementEditor } from "@/components/parent/placement-editor";
+import { profilePlacementFields } from "@/lib/learning/placement";
+import { ActivityEvidence } from "@/components/learning/activity-evidence";
 import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState, useEffect } from "react";
@@ -51,7 +55,13 @@ import {
  */
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
+  const { profiles, hydrated, hydrate, updateLearnerMeta, upsertLearner } = useGameStore();
+  const [adding, add] = useState(false);
+  const [ownedRoster, roster] = useState<{parentId:string|null; learners:LearnerProfile[]}>({parentId:null,learners:[]});
+  const updateProfile = (id:string, patch:Partial<LearnerProfile>) => {
+    if (useGameStore.getState().profiles.learners[id]) updateLearnerMeta(id,patch);
+    else roster(current => ({...current,learners:current.learners.map(l => l.id === id ? {...l,...patch} : l)}));
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [aiPolicyRevision, setAiPolicyRevision] = useState(0);
   const [remoteReportCache, setRemoteReportCache] = useState<{
@@ -62,7 +72,30 @@ export function ParentDashboard() {
   useEffect(() => { hydrate(); }, [hydrate]);
 
   const activeParentId = isSignedIn ? user?.id ?? null : null;
-  const localLearners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
+  const localLearners = useMemo(() => {
+    const local = Object.values(profiles.learners).filter(l => l.state.onboarded);
+    const remote = ownedRoster.parentId === activeParentId ? ownedRoster.learners : [];
+    return [...local, ...remote.filter(r => !local.some(l => l.remoteId === r.remoteId))];
+  }, [profiles.learners, ownedRoster, activeParentId]);
+  useEffect(() => {
+    if (!activeParentId) { roster({parentId:null,learners:[]}); return; }
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch("/api/parent/learners", {signal:controller.signal,cache:"no-store"});
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.learners) || controller.signal.aborted) return;
+        const entries: LearnerProfile[] = [];
+        for (const row of data.learners) {
+          const context = profilePlacementFields.safeParse(row);
+          if (!context.success || typeof row.id !== "string" || typeof row.name !== "string") continue;
+          entries.push({...makeLearner({id:`remote:${row.id}`,name:row.name,...context.data,avatarId:"peacock",themeId:row.grade===null || row.grade<=2 ? "playful" : "vivid"}),remoteId:row.id,createdAt:row.createdAt});
+        }
+        roster({parentId:activeParentId,learners:entries});
+      } catch { /* Local owned profiles and reporting fallback remain available. */ }
+    })();
+    return () => controller.abort();
+  }, [activeParentId]);
   const activeReports = useMemo(
     () => remoteReportCache.parentId === activeParentId ? remoteReportCache.reports : {},
     [activeParentId, remoteReportCache],
@@ -210,7 +243,7 @@ export function ParentDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <Link
-              href="/"
+              href="https://vidyagyan.study"
               className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
             >
               Kid app →
@@ -286,7 +319,7 @@ export function ParentDashboard() {
               Once they do, this dashboard fills up with their signals automatically.
             </p>
             <Link
-              href="/"
+              href="https://vidyagyan.study"
               className="inline-block rounded-md bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 transition"
             >
               Open the kid app →
@@ -320,14 +353,16 @@ export function ParentDashboard() {
                     color: active ? "rgb(196, 181, 253)" : "rgba(255,255,255,0.65)",
                   }}
                 >
-                  {l.name || "Unnamed"} · Gr {l.grade}
+                  {l.name || "Unnamed"} · {placementLabel(l)}
                 </button>
               );
             })}
           </div>
         )}
 
-        {selected && (
+        <button className="buddy-action my-4" onClick={() => add(true)}>Add a learner</button>
+        {adding && <AddLearnerView existingIds={localLearners.map(l => l.id)} onBack={() => add(false)} onSave={l => { upsertLearner(l); setSelectedId(l.id); add(false); }}/>} 
+        {selected && !adding && (
           <>
             {/* Above everything, including the setup panels, and it renders
                 nothing when there is nothing to say. If a child has disclosed
@@ -352,16 +387,16 @@ export function ParentDashboard() {
             {/* A count, not analytics — see the note in the component on why
                 this one deliberately has no "this might mean". */}
             <UsagePanel key={`usage-${selected.id}`} learner={selected} />
-            <SyllabusPanel
+            {selected.board && <SyllabusPanel
               key={`syllabus-${selected.id}`}
               learner={selected}
               onSave={(patch) => updateLearnerMeta(selected.id, patch)}
-            />
+            />}
             <SelectedLearnerView
               key={selected.id}
               learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
               reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
-              onUpdateLearner={(patch) => updateLearnerMeta(selected.id, patch)}
+              onUpdateLearner={(patch) => updateProfile(selected.id, patch)}
             />
           </>
         )}
@@ -439,6 +474,7 @@ function SelectedLearnerView({
         )}
       </div>
 
+      <div className="md:col-span-3"><ActivityEvidence state={state}/><PlacementEditor learner={learner} onChange={onUpdateLearner}/></div>
       {/* Setup status — what the parent has and hasn't configured */}
       <div className="md:col-span-3">
         <SetupStatus learner={learner} />
@@ -657,9 +693,9 @@ function buildMarkdownReport(
     ? subjectStats
         .filter((s) => s.mastery != null && s.attempts > 0)
         .sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0))
-        .map((s) => `- **${s.name}**: ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
+        .map((s) => `- **${s.name}**: ${s.mastery}% recorded practice score, ${s.attempts} attempts (${s.correct} correct)`)
         .join("\n") || "_No subject attempts yet._"
-    : `_Grade ${learner.grade} lesson mastery is unavailable until grade-matched content is ready._`;
+    : `_Grade ${learner.grade} practice scoring is unavailable until grade-matched content is ready._`;
 
   // PRIVACY: reflections the kid marked "Just for me" must never appear here.
   // The kid is shown a lock and told their parent cannot read it; the on-screen
@@ -719,7 +755,7 @@ _Generated ${today}. ${sourceNote}_
   ? `${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try`
   : "Unavailable for current curriculum"}
 
-## Subject mastery
+## Observed subject practice
 ${subjectLines}
 
 ## Recent reflections (kid's own words)
