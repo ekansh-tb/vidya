@@ -6,7 +6,7 @@ import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Board, LearnerProfile } from "@/lib/types";
-import { BOARDS, boardOption } from "@/lib/content/boards";
+import { BOARDS, boardOption, gradesForBoard } from "@/lib/content/boards";
 import { todayKey } from "@/lib/utils";
 import { themeForGrade } from "@/components/theme-applier";
 import { sfx } from "@/lib/audio";
@@ -63,8 +63,8 @@ export function AddLearnerView({
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
   const [city, setCity] = useState("");
-  const [board, setBoard] = useState<Board>("cambridge-primary");
-  const [grade, setGrade] = useState<number>(5);
+  const [board, setBoard] = useState<Board | null>(null);
+  const [grade, setGrade] = useState<number | null>(null);
   const [avatar, setAvatar] = useState<string>("peacock");
   const reduced = useReducedMotion();
 
@@ -85,7 +85,7 @@ export function AddLearnerView({
   };
 
   const onCreate = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !board || grade === null) return;
     sfx.click();
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24) || "learner";
     let id = slug;
@@ -98,7 +98,7 @@ export function AddLearnerView({
     }));
   };
 
-  const selectedBoard = boardOption(board);
+  const selectedBoard = board ? boardOption(board) : null;
 
   return (
     <ReducedMotionProvider>
@@ -191,7 +191,7 @@ export function AddLearnerView({
                     const active = board === b.id;
                     return (
                       <button key={b.id}
-                        onClick={() => { sfx.click(); setBoard(b.id); setGrade(b.defaultGrade); }}
+                        onClick={() => { sfx.click(); setBoard(b.id); setGrade(null); }}
                         // Selection shows only as a tinted background and border.
                         aria-pressed={active}
                         className="rounded-[var(--radius-md)] p-3 text-left transition"
@@ -207,15 +207,11 @@ export function AddLearnerView({
                 </div>
               </Field>
 
-              <Field label={`Grade · ${grade}`} htmlFor="learner-grade">
-                <input type="range" id="learner-grade"
-                  min={selectedBoard.gradeRange[0]} max={selectedBoard.gradeRange[1]} step={1}
-                  value={grade} onChange={(e) => setGrade(parseInt(e.target.value, 10))}
-                  className="w-full accent-[color:var(--accent)]" />
-                <div className="flex justify-between text-[10px] mt-1" style={{ color: "var(--text-faint)" }}>
-                  <span>{selectedBoard.gradeRange[0]}</span>
-                  <span>{selectedBoard.gradeRange[1]}</span>
-                </div>
+              <Field label="Grade" htmlFor="learner-grade">
+                <select id="learner-grade" disabled={!selectedBoard} value={grade ?? ""} onChange={(e) => setGrade(e.target.value ? Number(e.target.value) : null)} className="w-full min-h-11 rounded-xl p-3" style={{ background: "var(--surface)", color: "var(--text)" }}>
+                  <option value="">Choose your grade</option>
+                  {board && gradesForBoard(board).map((g) => <option key={g} value={g}>Grade {g}</option>)}
+                </select>
               </Field>
 
               <Field label="Avatar">
@@ -237,10 +233,10 @@ export function AddLearnerView({
               </Field>
 
               <div className="text-[11px] mt-2 px-1" style={{ color: "var(--text-faint)" }}>
-                Theme auto-set to <strong style={{ color: "var(--accent)" }}>{themeForGrade(grade)}</strong> based on grade. (Playful ≤ 5 · Vivid 6–8 · Terminal 9+)
+                Theme auto-set to <strong style={{ color: "var(--accent)" }}>{grade === null ? "Choose a grade first" : themeForGrade(grade)}</strong> based on grade. You can change appearance in your profile.
               </div>
 
-              <Button size="lg" className="w-full" onClick={onCreate} disabled={!name.trim()}>
+              <Button size="lg" className="w-full" onClick={onCreate} disabled={!name.trim() || !board || grade === null}>
                 Create learner →
               </Button>
             </div>

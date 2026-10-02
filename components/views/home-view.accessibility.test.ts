@@ -80,60 +80,24 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-describe("Home accessibility", () => {
-  it("names header navigation without changing its destinations", () => {
+describe("Learning navigation", () => {
+  it("provides named header controls and one active navigation destination", () => {
     const { onNavigate, html } = render();
-    for (const [label, destination] of [
-      ["Settings", "settings"], ["Switch learner", "learners"],
-      ["Open profile for Sample", "profile"], ["View 3-day streak and profile", "profile"],
-    ]) {
+    for (const [label, destination] of [["Settings", "settings"], ["Switch learner", "learners"], ["Open profile for Sample", "profile"]]) {
       const button = controls.find((p) => p["aria-label"] === label);
-      expect(button, label).toBeDefined();
-      button!.onClick!();
+      expect(button, label).toBeDefined(); button!.onClick!();
       expect(onNavigate).toHaveBeenLastCalledWith(destination);
     }
-    expect(html).toContain("button:focus-visible");
-    for (const label of ["Settings", "Switch learner"]) {
-      expect(controls.find((p) => p["aria-label"] === label)?.className).toContain("w-11 h-11 shrink-0");
-    }
+    expect(html).toContain('aria-label="Learning navigation"');
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toContain("Curriculum practice for this grade is not ready yet");
+    expect(html).not.toContain("% mastered");
+    expect(html).not.toContain("Power-ups");
   });
-
-  it("associates reflection prompt and privacy description with the textarea", () => {
-    const { html } = render();
-    const id = html.match(/<textarea[^>]* id="([^"]+)"/)?.[1];
-    const description = html.match(/<textarea[^>]*aria-describedby="([^"]+)"/)?.[1];
-    expect(id).toBeTruthy();
-    expect(html).toContain(`for="${id}"`);
-    expect(html).toContain(`id="${description}"`);
-    expect(html).toContain("What did you learn today?");
-    const privacy = controls.find((p) => p["aria-label"] === "Keep reflection private");
-    expect(privacy?.["aria-pressed"]).toBe(false);
-    expect(privacy?.className).toContain("min-h-11");
-    expect(html).toContain("focus-visible:outline-cyan-200");
-  });
-
-  it.each(["cambridge-primary", "cambridge-igcse"] as const)("removes local transforms and looping motion when reduced: %s", (board) => {
-    reduced = true;
-    render(board);
-    expect(motions.length).toBeGreaterThan(10);
-    for (const props of motions) {
-      expect(props.whileTap).toBeUndefined();
-      if (props.initial && typeof props.initial === "object") {
-        expect(props.initial).not.toHaveProperty("y");
-        expect(props.initial).not.toHaveProperty("scale");
-        expect(props.initial).not.toHaveProperty("width");
-      }
-      expect(props.animate ?? {}).not.toHaveProperty("backgroundPosition");
-    }
-    for (const props of controls) {
-      const classes = String(props.className).split(" ");
-      expect(classes.some((c) => c.startsWith("active:scale"))).toBe(false);
-    }
-  });
-
-  it("retains motion when no reduction is requested", () => {
-    render();
-    expect(motions.some((p) => p.whileTap !== undefined)).toBe(true);
-    expect(motions.some((p) => p.animate && typeof p.animate === "object" && "backgroundPosition" in p.animate)).toBe(true);
+  it("moves to the selected section without selecting another curriculum", () => {
+    const { onNavigate } = render();
+    const explore = controls.find((p) => p.children && Array.isArray(p.children) && JSON.stringify(p.children).includes("Explore"));
+    expect(explore).toBeDefined(); explore!.onClick!();
+    expect(onNavigate).toHaveBeenLastCalledWith("home", { tab: "explore" });
   });
 });

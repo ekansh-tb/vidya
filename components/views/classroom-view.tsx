@@ -189,6 +189,7 @@ function ClassTab({
 
   return (
     <div className="space-y-5 mt-2">
+      <p className="text-sm text-white/70 mb-3">These classmates and their scores are simulated on this device. They are not other children online.</p>
       <Leaderboard rows={leaderboard} buddyId={state.buddyId} />
       <Roster
         peers={peerRows.filter((r) => !r.isMe)}

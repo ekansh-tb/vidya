@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { GameState, LearnerProfile, LearnerId, Board } from "./types";
 import { storage, type ProfilesV2, type SaveFailure } from "./storage";
-import { todayKey, daysBetween } from "./utils";
+import { todayKey } from "./utils";
 
 export const DEFAULT_STATE: GameState = {
   name: "",
@@ -52,16 +52,6 @@ export const DEFAULT_STATE: GameState = {
 
 function applyDailyRollovers(s: GameState): GameState {
   const today = todayKey();
-  if (s.lastPlayedDate && s.lastPlayedDate !== today) {
-    const diff = daysBetween(s.lastPlayedDate, today);
-    if (diff > 1) {
-      if (s.inventory.freeze > 0 && diff === 2) {
-        s.inventory.freeze -= 1;
-      } else {
-        s.streak = 0;
-      }
-    }
-  }
   if (!s.dailyQuest || s.dailyQuest.date !== today) {
     s.dailyQuest = { date: today, completed: false };
   }

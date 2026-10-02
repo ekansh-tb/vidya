@@ -1,829 +1,96 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import {
-  Coins, Target, ArrowRight, Trophy, Gem, Settings, Check, Users,
-  MessageCircle, Globe, BookOpen, Clock, Mic, NotebookPen, Music, Wind,
-  Cpu, GraduationCap, Repeat, Heart,
-} from "lucide-react";
-import { useGameStore } from "@/lib/game-store";
+import { createPortal } from "react-dom";
+import { useId, useMemo, useState } from "react";
+import { BookOpen, Compass, Home, Palette, Footprints, Settings, Users, ArrowRight, Music, Globe, NotebookPen, Wind, Trophy, GraduationCap } from "lucide-react";
 import { Mascot } from "@/components/ui/mascot";
-import { XPBar } from "@/components/ui/xp-bar";
-import { StreakFlame, StatPill, ProgressRing } from "@/components/ui/indicators";
-import { TiltCard } from "@/components/effects/tilt-card";
-import { DiyaCompanion } from "@/components/effects/diya";
 import { NextBestQuestCard } from "@/components/learning/next-best-quest-card";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { questionsForLearner } from "@/lib/content/questions/availability";
-import { recommendNextQuest } from "@/lib/adaptive/recommendation";
 import { hasPack } from "@/lib/content/packs/pack-index";
-import { useCapability } from "@/lib/capabilities/use-capability";
-import { xpToLevel } from "@/lib/economy";
-import { todayKey } from "@/lib/utils";
-import { currentPeriod, nextPeriod, periodProgress } from "@/lib/school-day";
+import { recommendNextQuest } from "@/lib/adaptive/recommendation";
+import { useGameStore } from "@/lib/game-store";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
-import { sfx } from "@/lib/audio";
 
-/** Whole days from local midnight today to an ISO `YYYY-MM-DD` exam date. */
-function daysUntil(isoDate: string): number {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const dayMs = 1000 * 60 * 60 * 24;
-  return Math.round((new Date(isoDate + "T00:00:00").getTime() - today.getTime()) / dayMs);
-}
+export const HOME_TABS = ["today", "explore", "create", "journey"] as const;
+export type HomeTab = typeof HOME_TABS[number];
+const tabs = [
+  { id: "today", label: "Today", icon: Home },
+  { id: "explore", label: "Explore", icon: Compass },
+  { id: "create", label: "Create", icon: Palette },
+  { id: "journey", label: "My Journey", icon: Footprints },
+] as const;
 
-/** "Exam today" / "Exam tomorrow" / "Exam in 5 days" — one phrasing, every banner. */
-function examCountdownLabel(daysAway: number): string {
-  if (daysAway === 0) return "Exam today";
-  if (daysAway === 1) return "Exam tomorrow";
-  return `Exam in ${daysAway} days`;
-}
-
-export function HomeView({
-  state, learner, onNavigate,
-}: {
-  state: GameState;
-  learner: LearnerProfile;
+export function HomeView({ state, learner, onNavigate, tab = "today" }: {
+  state: GameState; learner: LearnerProfile; tab?: HomeTab;
   onNavigate: (v: ViewName, params?: Record<string, unknown>) => void;
 }) {
-  const { level, xpInLevel, xpNeeded } = xpToLevel(state.xp);
-  const todayQuestDone = state.dailyQuest?.completed && state.dailyQuest?.date === todayKey();
-  const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
-  const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
-
-  // Unacknowledged note from parent — sits at the very top until kid taps "Got it".
-  const unseenNote = learner.familyNote && !learner.familyNote.seenAt ? learner.familyNote : null;
-  const ackNote = () => {
-    if (!learner.familyNote) return;
-    sfx.coin();
-    updateLearnerMeta(learner.id, {
-      familyNote: { ...learner.familyNote, seenAt: new Date().toISOString() },
-    });
+  const update = useGameStore((s) => s.updateLearnerMeta);
+  const subjects = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
+  const banks = questionsForLearner(learner);
+  const recommendation = useMemo(() => recommendNextQuest({ learner, progress: state.progress,
+    missedQuestions: state.missedQuestions, rotationIndex: state.stats.quizzesCompleted, now: Date.now() }),
+    [learner, state.progress, state.missedQuestions, state.stats.quizzesCompleted]);
+  const start = () => {
+    if (recommendation.kind === "due-review") onNavigate("review");
+    if (recommendation.kind === "study-pack") onNavigate("exam-prep", { subjectId: recommendation.subjectId });
+    if (recommendation.kind === "topic") onNavigate("quiz", { subjectId: recommendation.subjectId, topicId: recommendation.topicId });
   };
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(t);
-  }, []);
-
-  const period = currentPeriod(now);
-  const nextP = nextPeriod(now);
-  const progress = periodProgress(now);
-
-  const isIgcse = learner.board === "cambridge-igcse";
-  const visibleSubjects = useMemo(
-    () => subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade),
-    [learner.board, learner.pickedSubjects, learner.grade],
+  const name = state.name.split(" ")[0] || "friend";
+  const last = subjects.find((s) => s.id === state.lastSubjectId);
+  const hasQuiz = subjects.some((s) => Object.keys(banks[s.id] || {}).length > 0);
+  const upcoming = (learner.upcomingExams || []).filter((e) => e.date >= new Date().toLocaleDateString("en-CA"))
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const mode = learner.grade <= 2 ? "Little discoveries" : learner.grade <= 5 ? "Your discovery trail" : learner.grade <= 8 ? "Your project studio" : "Your learning workspace";
+  const tile = (label: string, desc: string, Icon: typeof BookOpen, target: ViewName) => (
+    <button key={label} onClick={() => onNavigate(target)} className="buddy-tile">
+      <Icon aria-hidden="true" className="w-6 h-6" /><span><strong>{label}</strong><small>{desc}</small></span><ArrowRight aria-hidden="true" className="w-4 h-4 ml-auto" />
+    </button>
   );
-  const questionBanks = questionsForLearner(learner);
-  const nextBestQuest = useMemo(() => recommendNextQuest({
-    learner,
-    progress: state.progress,
-    missedQuestions: state.missedQuestions,
-    rotationIndex: state.stats.quizzesCompleted,
-    now: now.getTime(),
-  }), [learner, now, state.missedQuestions, state.progress, state.stats.quizzesCompleted]);
-
-  const startNextBestQuest = () => {
-    if (nextBestQuest.kind === "unavailable") return;
-    sfx.click();
-    if (nextBestQuest.kind === "due-review") {
-      onNavigate("review");
-      return;
-    }
-    if (nextBestQuest.kind === "study-pack") {
-      onNavigate("exam-prep", { subjectId: nextBestQuest.subjectId });
-      return;
-    }
-    onNavigate("quiz", {
-      subjectId: nextBestQuest.subjectId,
-      topicId: nextBestQuest.topicId,
-    });
-  };
-
-  // The Daily Quest pool is drawn from this learner's own subjects. Only the
-  // six Cambridge Primary Stage 5 subjects have question banks today, so for
-  // every other board the tile would open an empty quiz. Hide it rather than
-  // offering a quest that cannot be built.
-  const hasDailyQuest = useMemo(
-    () => visibleSubjects.some((s) => Object.keys(questionBanks[s.id] || {}).length > 0),
-    [questionBanks, visibleSubjects],
-  );
-
-  const subjectMastery = useMemo(() => {
-    return visibleSubjects.map((s) => {
-      const topics = Object.keys(questionBanks[s.id] || {});
-      if (topics.length === 0) return { ...s, mastery: null };
-      let total = 0;
-      topics.forEach((t) => { total += state.progress?.[s.id]?.[t]?.mastery || 0; });
-      return { ...s, mastery: Math.round(total / topics.length) };
-    });
-  }, [questionBanks, state.progress, visibleSubjects]);
-
-  const takingCS = !!learner.pickedSubjects?.includes("igcse-cs");
-  const packSubjects = useMemo(
-    () => visibleSubjects.filter((s) => hasPack(s.id, learner.grade)),
-    [visibleSubjects, learner.grade],
-  );
-  const firstPack = packSubjects[0];
-  const isExamReady = packSubjects.length > 0 && !(isIgcse && takingCS); // CS banner already handles IGCSE-CS
-
-  const greeting = useMemo(() => {
-    const h = now.getHours();
-    if (h < 6) return "Still dreaming?";
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    if (h < 21) return "Good evening";
-    return "Goodnight soon";
-  }, [now]);
-
-  const recommendedSubject = period.subjectId
-    ? subjectMastery.find((s) => s.id === period.subjectId)
-    : null;
-
-  // Every logged exam, still to come, nearest first — one date calculation for
-  // both the countdown banner and the IGCSE Computer Science banner.
-  const examsAhead = useMemo(() => {
-    return (learner.upcomingExams || [])
-      .map((e) => ({ ...e, daysAway: daysUntil(e.date) }))
-      .filter((e) => e.daysAway >= 0)
-      .sort((a, b) => a.daysAway - b.daysAway);
-  }, [learner.upcomingExams]);
-
-  // Nearest upcoming exam within 7 days — drives the countdown banner.
-  const upcomingExam = useMemo(() => examsAhead.filter((e) => e.daysAway <= 7)[0], [examsAhead]);
-
-  // The CS banner used to read "Exam Tomorrow" as static copy, asserting an
-  // urgency that was permanently false. Say what the learner's own schedule says.
-  const csExam = useMemo(() => examsAhead.find((e) => e.subjectId === "igcse-cs"), [examsAhead]);
-
-  const reduced = useReducedMotion();
-
-  // The home banners are each independently conditional, so a fixed per-card
-  // delay would leave gaps on the days a card is absent. Slots are handed out
-  // in JSX order instead — only the banners actually on screen consume one, so
-  // the cascade stays even whatever combination the day produces. Recomputed
-  // from zero on every render, so there is no state to fall out of sync.
-  let bannerSlot = 0;
-  const rise = () => {
-    const delay = 0.05 + bannerSlot++ * 0.07;
-    return reduced
-      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.15 } }
-      : {
-          initial: { opacity: 0, y: 12 },
-          animate: { opacity: 1, y: 0 },
-          transition: { delay, type: "spring" as const, stiffness: 320, damping: 26 },
-        };
-  };
-
-  return (
-    <div className="min-h-screen pb-28 max-w-2xl mx-auto [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-cyan-200">
-      <h1 className="sr-only">Vidya home for {state.name.split(" ")[0] || "learner"}</h1>
-      {/* Header */}
-      <div className="px-5 pt-6 pb-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <button onClick={() => { sfx.click(); onNavigate("profile"); }} aria-label={`Open profile for ${state.name.split(" ")[0] || "learner"}`} className="flex min-h-11 items-center gap-3 motion-safe:active:scale-95 transition">
-            <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="sm" />
-            <div className="text-left">
-              <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{greeting}</div>
-              <div className="font-display text-xl font-bold text-white">{state.name.split(" ")[0] || "friend"}</div>
-            </div>
-          </button>
-          <div className="flex items-center gap-2">
-            <StatPill icon={Coins} value={state.coins} accent="#FBBF24" />
-            <button onClick={() => { sfx.click(); onNavigate("profile"); }} aria-label={`View ${state.streak}-day streak and profile`} className="glass rounded-full min-w-11 min-h-11 px-3 py-1.5 motion-safe:active:scale-95">
-              <StreakFlame streak={state.streak} large shields={state.inventory?.freeze || 0} />
-            </button>
-            <button onClick={() => { sfx.click(); onNavigate("learners"); }} className="glass rounded-full w-11 h-11 shrink-0 flex items-center justify-center motion-safe:active:scale-95" aria-label="Switch learner">
-              <Repeat aria-hidden="true" className="w-4 h-4 text-white/70" />
-            </button>
-            <button onClick={() => { sfx.click(); onNavigate("settings"); }} aria-label="Settings" className="glass rounded-full w-11 h-11 shrink-0 flex items-center justify-center motion-safe:active:scale-95">
-              <Settings aria-hidden="true" className="w-4 h-4 text-white/70" />
-            </button>
-          </div>
-        </div>
-
-        <div className="glass-card p-4 mb-5">
-          <XPBar level={level} xpInLevel={xpInLevel} xpNeeded={xpNeeded} />
-        </div>
-
-        {/* Pick up where you left off — shows the last subject the kid opened */}
-        {state.lastSubjectId && (() => {
-          const lastSub = visibleSubjects.find((s) => s.id === state.lastSubjectId);
-          if (!lastSub) return null;
-          const Icon = lastSub.icon;
-          return (
-            <motion.button
-              initial={reduced ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={() => { sfx.click(); onNavigate("subject", { subjectId: lastSub.id }); }}
-              className="w-full p-3 mb-3 rounded-2xl flex items-center gap-3 text-left motion-safe:active:scale-[0.99]"
-              style={{
-                background: "linear-gradient(90deg, var(--surface) 0%, color-mix(in oklab, var(--accent) 12%, transparent) 100%)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <div
-                className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0"
-                style={{ background: lastSub.soft, boxShadow: `0 0 16px ${lastSub.glow}` }}
-              >
-                <Icon className="w-5 h-5" style={{ color: lastSub.accent }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-faint)" }}>
-                  Pick up where you left off
-                </div>
-                <div className={`font-display font-bold text-base ${lastSub.isDeva ? "font-deva" : ""}`} style={{ color: "var(--text)" }}>
-                  {lastSub.name}
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: lastSub.accent }} />
-            </motion.button>
-          );
-        })()}
-
-        {/* Family note from parent — top-of-fold until acknowledged */}
-        {unseenNote && (
-          <motion.div
-            initial={reduced ? false : { opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl p-5 mb-5 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(244,114,182,0.20) 0%, rgba(251,191,36,0.14) 100%)",
-              border: "1.5px solid rgba(244,114,182,0.42)",
-              boxShadow: "0 0 32px rgba(244,114,182,0.22)",
-            }}
-          >
-            <div className="flex items-center gap-1.5 mb-2">
-              <Heart className="w-3.5 h-3.5" style={{ color: "#F472B6" }} />
-              <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#F472B6" }}>
-                A note for you
-              </span>
-            </div>
-            <div className="text-base font-medium leading-relaxed mb-3 whitespace-pre-wrap" style={{ color: "rgba(255,255,255,0.95)" }}>
-              {unseenNote.body}
-            </div>
-            <button
-              onClick={ackNote}
-              className="rounded-full min-h-11 px-4 py-1.5 text-xs font-bold uppercase tracking-widest motion-safe:active:scale-95"
-              style={{ background: "rgba(244,114,182,0.28)", color: "rgba(255,255,255,0.95)" }}
-            >
-              <Check className="w-3 h-3 inline -mt-0.5 mr-1" /> Got it
-            </button>
-          </motion.div>
-        )}
-
-        <motion.div {...rise()} className="mb-5">
-          <NextBestQuestCard
-            recommendation={nextBestQuest}
-            onStart={nextBestQuest.kind === "unavailable" ? undefined : startNextBestQuest}
-          />
-        </motion.div>
-
-        {/* School Day banner */}
-        <motion.div
-          {...rise()}
-          className="rounded-3xl p-5 mb-5 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(167, 139, 250, 0.18) 0%, rgba(34, 211, 238, 0.18) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <DiyaCompanion state={state} size="md" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Clock className="w-3.5 h-3.5 text-white/60" />
-                <span className="text-[10px] uppercase tracking-widest font-bold text-white/60">
-                  {period.id === "weekend" ? "Weekend" : "Now in school"}
-                </span>
-              </div>
-              <div className="font-display text-2xl font-bold text-white leading-tight flex items-center gap-2">
-                <span>{period.emoji}</span>
-                <span className="truncate">{period.name}</span>
-              </div>
-              {period.cta && (
-                <div className="text-sm text-white/70 mt-0.5">{period.cta}</div>
-              )}
-              {period.id !== "weekend" && (
-                <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full"
-                    initial={reduced ? false : { width: 0 }}
-                    animate={{ width: `${Math.round(progress * 100)}%` }}
-                    transition={{ duration: reduced ? 0 : 0.6 }}
-                    style={{ background: "linear-gradient(90deg, #A78BFA, #22D3EE)" }}
-                  />
-                </div>
-              )}
-              {nextP && (
-                <div className="mt-1.5 text-[11px] text-white/50">
-                  Up next · {nextP.emoji} {nextP.name}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {recommendedSubject && (
-            <motion.button
-              whileTap={reduced ? undefined : { scale: 0.99 }}
-              onClick={() => { sfx.click(); onNavigate("subject", { subjectId: recommendedSubject.id }); }}
-              className="mt-4 w-full rounded-2xl px-4 py-3 flex items-center justify-between text-left motion-safe:active:scale-[0.99] transition"
-              style={{ background: recommendedSubject.soft, color: recommendedSubject.accent, boxShadow: `0 0 24px ${recommendedSubject.glow}` }}
-            >
-              <div>
-                <div className="text-[10px] uppercase tracking-widest font-bold opacity-80">Walk into</div>
-                <div className={`font-display text-lg font-bold ${recommendedSubject.isDeva ? "font-deva" : ""}`}>
-                  {recommendedSubject.name} class
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5" />
-            </motion.button>
-          )}
-        </motion.div>
-
-        {/* Generic Exam Prep banner — surfaces when any exam pack is available for this learner. */}
-        {isExamReady && firstPack && (
-          <motion.button
-            {...rise()}
-            whileTap={reduced ? undefined : { scale: 0.99 }}
-            onClick={() => { sfx.click(); onNavigate("exam-prep", { subjectId: firstPack.id }); }}
-            className="w-full p-4 text-left mb-5 relative overflow-hidden"
-            style={{
-              borderRadius: "var(--radius-lg)",
-              background: "linear-gradient(135deg, var(--accent-soft) 0%, var(--surface) 100%)",
-              border: "1.5px solid var(--border-strong)",
-              boxShadow: "0 0 30px var(--accent-glow)",
-            }}
-          >
-            <div className="relative flex items-center gap-3">
-              <div className="w-14 h-14 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0" style={{ background: "var(--accent-soft)", boxShadow: "0 0 20px var(--accent-glow)" }}>
-                <Cpu className="w-7 h-7" style={{ color: "var(--accent)" }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <GraduationCap className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-                  <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
-                    {packSubjects.length} {packSubjects.length === 1 ? "subject" : "subjects"} ready · Exam prep
-                  </span>
-                </div>
-                <div className="font-display text-xl font-bold leading-tight" style={{ color: "var(--text)" }}>
-                  Test session — start with {firstPack.name}
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Syllabus · flashcards · practice · cheat sheet
-                </div>
-              </div>
-              <ArrowRight className="w-6 h-6 flex-shrink-0" style={{ color: "var(--accent)" }} />
-            </div>
-          </motion.button>
-        )}
-
-        {/* IGCSE Computer Science Exam Prep — top of fold for IGCSE-CS learners */}
-        {isIgcse && takingCS && (
-          <motion.button
-            {...rise()}
-            whileTap={reduced ? undefined : { scale: 0.99 }}
-            onClick={() => { sfx.click(); onNavigate("exam-prep"); }}
-            className="w-full rounded-3xl p-4 text-left mb-5 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(167,139,250,0.25) 0%, rgba(34,211,238,0.18) 100%)",
-              border: "1.5px solid rgba(167,139,250,0.5)",
-              boxShadow: "0 0 40px rgba(167,139,250,0.3)",
-            }}
-          >
-            <motion.div
-              className="absolute inset-0 aurora-bg opacity-15"
-              animate={reduced ? undefined : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-              transition={{ duration: 12, repeat: Infinity }}
-            />
-            <div className="relative flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(167,139,250,0.25)", boxShadow: "0 0 20px rgba(167,139,250,0.4)" }}>
-                <Cpu className="w-7 h-7 text-violet-200" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <GraduationCap className="w-3.5 h-3.5 text-violet-300" />
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
-                    IGCSE 0478 {csExam ? `· ${examCountdownLabel(csExam.daysAway)}` : "· Computer Science"}
-                  </span>
-                </div>
-                <div className="font-display text-xl font-bold text-white leading-tight">
-                  {/* "Final Prep" is only true when there's a paper coming. */}
-                  Computer Science — {csExam ? "Final Prep" : "Exam prep"}
-                </div>
-                <div className="text-xs text-white/70 mt-0.5">
-                  Syllabus · flashcards · 25 questions · pseudocode · cheat sheet
-                </div>
-              </div>
-              <ArrowRight className="w-6 h-6 text-violet-200 flex-shrink-0" />
-            </div>
-          </motion.button>
-        )}
-
-        {/* Exam countdown — surfaces when the parent has logged an exam within 7 days */}
-        {upcomingExam && (
-          <motion.button
-            {...rise()}
-            whileTap={reduced ? undefined : { scale: 0.99 }}
-            onClick={() => {
-              sfx.click();
-              if (upcomingExam.subjectId) onNavigate("exam-prep", { subjectId: upcomingExam.subjectId });
-              else onNavigate("exam-prep");
-            }}
-            className="w-full p-4 text-left mb-5 relative overflow-hidden rounded-3xl"
-            style={{
-              background: upcomingExam.daysAway <= 1
-                ? "linear-gradient(135deg, rgba(244,114,182,0.25) 0%, rgba(251,113,133,0.18) 100%)"
-                : "linear-gradient(135deg, rgba(251,191,36,0.22) 0%, rgba(167,139,250,0.18) 100%)",
-              border: `1.5px solid ${upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.45)" : "rgba(251,191,36,0.4)"}`,
-              boxShadow: `0 0 32px ${upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.28)" : "rgba(251,191,36,0.2)"}`,
-            }}
-          >
-            <div className="relative flex items-center gap-3">
-              <div
-                className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center flex-shrink-0"
-                style={{
-                  background: upcomingExam.daysAway <= 1 ? "rgba(244,114,182,0.3)" : "rgba(251,191,36,0.25)",
-                  color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24",
-                }}
-              >
-                <div className="font-display text-xl font-bold leading-none">{upcomingExam.daysAway}</div>
-                <div className="text-[9px] uppercase tracking-widest font-bold leading-none mt-0.5">
-                  {upcomingExam.daysAway === 0 ? "today" : upcomingExam.daysAway === 1 ? "day" : "days"}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <GraduationCap className="w-3.5 h-3.5" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }} />
-                  <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }}>
-                    {examCountdownLabel(upcomingExam.daysAway)}
-                  </span>
-                </div>
-                <div className="font-display text-xl font-bold leading-tight" style={{ color: "var(--text)" }}>
-                  {upcomingExam.title}
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  Tap for syllabus · flashcards · practice
-                </div>
-              </div>
-              <ArrowRight className="w-6 h-6 flex-shrink-0" style={{ color: upcomingExam.daysAway <= 1 ? "#F472B6" : "#FBBF24" }} />
-            </div>
-          </motion.button>
-        )}
-
-        {/* Daily Quest — only when this learner's subjects actually have questions */}
-        {hasDailyQuest && (
-        <motion.button
-          {...rise()}
-          whileTap={reduced ? undefined : { scale: 0.99 }}
-          onClick={() => {
-            sfx.click();
-            if (!todayQuestDone) onNavigate("daily");
-          }}
-          disabled={todayQuestDone}
-          className={`w-full rounded-3xl p-4 text-left relative overflow-hidden ${
-            todayQuestDone ? "glass border-emerald-400/30" : "border-2 border-white/10"
-          }`}
-          style={
-            !todayQuestDone
-              ? { background: "linear-gradient(135deg, rgba(167, 139, 250, 0.22) 0%, rgba(244, 114, 182, 0.18) 50%, rgba(251, 191, 36, 0.18) 100%)", boxShadow: "0 0 32px rgba(244, 114, 182, 0.22)" }
-              : {}
-          }
-        >
-          {!todayQuestDone && (
-            <motion.div
-              className="absolute inset-0 aurora-bg opacity-10"
-              animate={reduced ? undefined : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-              transition={{ duration: 12, repeat: Infinity }}
-            />
-          )}
-          <div className="relative flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-4 h-4 text-white/80" />
-                <span className="text-[10px] uppercase tracking-widest font-bold text-white/60">Daily Quest</span>
-              </div>
-              <div className="font-display text-xl font-bold text-white">
-                {todayQuestDone ? "Quest complete" : "Today's challenge"}
-              </div>
-              <div className="text-xs mt-0.5 text-white/70">
-                {todayQuestDone ? "Come back tomorrow" : "6 questions · 50 XP + 25 coins"}
-              </div>
-            </div>
-            <div className="text-white text-3xl">
-              {todayQuestDone ? <Check className="w-8 h-8 text-emerald-400" /> : <ArrowRight className="w-8 h-8" />}
-            </div>
-          </div>
-        </motion.button>
-        )}
+  return <div className="buddy-home min-h-screen max-w-3xl mx-auto px-5 pt-6 pb-28">
+    <header className="flex items-center justify-between gap-3 mb-7">
+      <button aria-label={`Open profile for ${name}`} onClick={() => onNavigate("profile")} className="flex items-center gap-3 min-h-11 text-left">
+        <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="sm" />
+        <span><small className="block text-[var(--text-muted)]">Your place to learn and make</small><strong className="font-display text-xl">Hello, {name}</strong></span>
+      </button>
+      <div className="flex gap-2">
+        <button className="buddy-icon" aria-label="Switch learner" onClick={() => onNavigate("learners")}><Users aria-hidden="true" className="w-5 h-5" /></button>
+        <button className="buddy-icon" aria-label="Settings" onClick={() => onNavigate("settings")}><Settings aria-hidden="true" className="w-5 h-5" /></button>
       </div>
-
-      {/* Hallway: experiences */}
-      <div className="px-5">
-        {/* Daily reflection — kid-authored, end-of-day prompt */}
-        <DailyReflectionCard state={state} />
-
-        {/* Single fluid grid — auto-balances to 4 wide × 2 rows whether AI is
-            gated (7 tiles) or open (8 tiles). No layout holes either way. */}
-        <div className="grid grid-cols-4 gap-2 mb-5">
-          <RoomTile
-            icon={<Mic className="w-5 h-5 text-fuchsia-300" />}
-            label="Assembly"
-            accent="rgba(244, 114, 182, 0.15)"
-            onClick={() => { sfx.click(); onNavigate("assembly"); }}
-            badge={state.lastAssemblyDate === todayKey() ? undefined : "Today"}
-          />
-          {aiTutorAllowed && (
-            <RoomTile
-              icon={<MessageCircle className="w-5 h-5 text-violet-300" />}
-              label="Miss Vidya"
-              accent="rgba(167, 139, 250, 0.15)"
-              onClick={() => { sfx.click(); onNavigate("tutor"); }}
-              badge="AI"
-            />
-          )}
-          <RoomTile
-            icon={<Globe className="w-5 h-5 text-cyan-300" />}
-            label="Field Trip"
-            accent="rgba(34, 211, 238, 0.15)"
-            onClick={() => { sfx.click(); onNavigate("field-trip"); }}
-          />
-          <RoomTile
-            icon={<BookOpen className="w-5 h-5 text-amber-300" />}
-            label="Library"
-            accent="rgba(251, 191, 36, 0.15)"
-            onClick={() => { sfx.click(); onNavigate("library"); }}
-          />
-          <RoomTile
-            icon={<NotebookPen className="w-5 h-5 text-rose-300" />}
-            label="Notebook"
-            accent="rgba(244, 114, 182, 0.12)"
-            onClick={() => { sfx.click(); onNavigate("notebook"); }}
-          />
-          <RoomTile
-            icon={<Music className="w-5 h-5 text-violet-300" />}
-            label="Music"
-            accent="rgba(167, 139, 250, 0.12)"
-            onClick={() => { sfx.click(); onNavigate("music"); }}
-          />
-          <RoomTile
-            icon={<Wind className="w-5 h-5 text-emerald-300" />}
-            label="Wellness"
-            accent="rgba(52, 211, 153, 0.12)"
-            onClick={() => { sfx.click(); onNavigate("wellness"); }}
-          />
-          <RoomTile
-            icon={<Users className="w-5 h-5 text-amber-300" />}
-            label="Classroom"
-            accent="rgba(251, 191, 36, 0.12)"
-            onClick={() => { sfx.click(); onNavigate("friends"); }}
-          />
-        </div>
-
-        {/* Classroom doors */}
-        <h2 className="font-display text-2xl font-bold text-white mb-3 flex items-center gap-2">
-          Classrooms
-          <span className="text-xs font-body font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">{visibleSubjects.length}</span>
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          {subjectMastery.map((s, i) => {
-            const Icon = s.icon;
-            const isNow = period.subjectId === s.id;
-            const packReady = hasPack(s.id, learner.grade);
-            return (
-              <motion.div
-                key={s.id}
-                initial={reduced ? false : { opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: reduced ? 0 : i * 0.05 }}
-              >
-                {/* Tilt gives each classroom door physical presence — it reads
-                    as an object you reach into rather than a flat rectangle.
-                    Disabled entirely under prefers-reduced-motion. */}
-                <TiltCard
-                  onClick={() => { sfx.click(); onNavigate("subject", { subjectId: s.id }); }}
-                  className="glass-card p-4 text-left relative overflow-hidden group w-full"
-                  style={isNow ? { boxShadow: `0 0 30px ${s.glow}, 0 0 0 1.5px ${s.accent}` } : {}}
-                  glow={s.glow}
-                  ariaLabel={`Open ${s.name}`}
-                >
-                <div
-                  className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-30 group-hover:opacity-50 transition-opacity blur-2xl"
-                  style={{ background: s.accent }}
-                />
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-3">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                      style={{ background: s.soft, boxShadow: `0 0 20px ${s.glow}` }}
-                    >
-                      <Icon className="w-6 h-6" style={{ color: s.accent }} />
-                    </div>
-                    {s.mastery == null ? (
-                      <div
-                        className="rounded-full px-2 py-1 text-[9px] uppercase tracking-widest font-bold"
-                        style={{ background: s.soft, color: s.accent }}
-                      >
-                        {packReady ? "Study pack" : "Soon"}
-                      </div>
-                    ) : (
-                      <ProgressRing percent={s.mastery} size={42} stroke={4} color={s.accent} />
-                    )}
-                  </div>
-                  <div className={`font-display text-xl font-bold mb-0.5 text-white ${s.isDeva ? "font-deva" : ""}`}>
-                    {s.name}
-                  </div>
-                  <div className={`text-xs text-white/50 ${s.id === "marathi" ? "font-deva" : ""}`}>{s.tagline}</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="text-[10px] uppercase tracking-widest font-bold text-white/40">
-                      {s.mastery == null
-                        ? packReady ? "Study pack ready" : "Lessons coming soon"
-                        : `${s.mastery}% mastered`}
-                    </div>
-                    {isNow && (
-                      <div
-                        className="text-[10px] uppercase tracking-widest font-bold rounded-full px-2 py-0.5"
-                        style={{ background: s.soft, color: s.accent }}
-                      >
-                        in session
-                      </div>
-                    )}
-                  </div>
-                </div>
-                </TiltCard>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Bottom strip — kid-facing only.
-            The "Parent" tile used to sit here, which put an adult surface on
-            the child's home screen and, worse, was the entry to the PIN room
-            that a child could set the PIN for. Grown-up controls now live on
-            their own screen, reached from Settings or vidyagyan.study/parent. */}
-        <div className="mt-6 grid grid-cols-2 gap-2">
-          <button onClick={() => { sfx.click(); onNavigate("profile"); }} className="glass rounded-2xl p-3 text-center motion-safe:active:scale-95">
-            <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-300" />
-            <div className="text-xs font-semibold text-white/80">Badges</div>
-          </button>
-          <button onClick={() => { sfx.click(); onNavigate("shop"); }} className="glass rounded-2xl p-3 text-center motion-safe:active:scale-95">
-            <Gem className="w-5 h-5 mx-auto mb-1 text-violet-300" />
-            <div className="text-xs font-semibold text-white/80">Power-ups</div>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    </header>
+    <h1 className="font-display text-3xl font-bold mb-2">{tabs.find((t) => t.id === tab)?.label}</h1>
+    <p className="text-[var(--text-muted)] mb-6">{mode}. Choose something that makes you curious.</p>
+    {tab === "today" && <div className="space-y-5">
+      {learner.familyNote && !learner.familyNote.seenAt && <aside className="buddy-panel"><h2 className="font-bold">A note from home</h2><p className="my-2 whitespace-pre-wrap">{learner.familyNote.body}</p><button className="buddy-action" onClick={() => update(learner.id, { familyNote: { ...learner.familyNote!, seenAt: new Date().toISOString() } })}>Got it</button></aside>}
+      <section className="buddy-panel buddy-trail"><span aria-hidden="true" className="text-4xl">🪔</span><h2 className="font-display text-xl font-bold mt-3">A little curiosity goes a long way</h2><p className="mt-2 text-[var(--text-muted)]">Welcome back. We can explore, practise, or make something together. You choose.</p></section>
+      {recommendation.kind !== "unavailable" ? <NextBestQuestCard recommendation={recommendation} onStart={start} /> : <section className="buddy-panel"><h2 className="font-display text-xl font-bold">Find your next discovery</h2><p className="my-3 text-[var(--text-muted)]">Curriculum practice for this grade is not ready yet. Available books and exploration are clearly marked in Explore.</p><button className="buddy-action" onClick={() => onNavigate("home", { tab: "explore" })}>Explore what is available <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></section>}
+      {last && <button className="buddy-tile w-full" onClick={() => onNavigate("subject", { subjectId: last.id })}><BookOpen aria-hidden="true" className="w-6 h-6" /><span><strong>Continue {last.name}</strong><small>Return to your last classroom</small></span><ArrowRight aria-hidden="true" className="w-4 h-4 ml-auto" /></button>}
+      <div className="grid sm:grid-cols-2 gap-3">{tile("Make something", "Draw ideas, write, or try a melody", Palette, "music")}{tile("Take a break", "A calm moment or a little movement", Wind, "wellness")}</div>
+      {upcoming && <aside className="buddy-panel"><h2 className="font-bold">Your upcoming plan</h2><p>{upcoming.title} · {upcoming.date}</p><button className="buddy-action mt-3" onClick={() => onNavigate(upcoming.subjectId ? "exam-prep" : "settings", upcoming.subjectId ? { subjectId: upcoming.subjectId } : undefined)}>Open your plan</button></aside>}
+    </div>}
+    {tab === "explore" && <div className="space-y-5">
+      <section><h2 className="font-display text-xl font-bold mb-3">Your classrooms</h2><div className="grid sm:grid-cols-2 gap-3">{subjects.map((s) => {
+        const supported = hasPack(s.id, learner.grade) || Object.keys(banks[s.id] || {}).length > 0;
+        const attempts = Object.values(state.progress[s.id] || {}).reduce((sum, p) => sum + p.attempts, 0);
+        return <button key={s.id} className="buddy-tile" onClick={() => onNavigate("subject", { subjectId: s.id })} aria-label={`Open ${s.name}`}><s.icon aria-hidden="true" className="w-6 h-6" /><span><strong>{s.name}</strong><small>{supported ? `${attempts} recorded practice attempts` : "Curriculum content not ready yet"}</small></span></button>;
+      })}</div></section>
+      <section><h2 className="font-display text-xl font-bold mb-3">Beyond the classroom</h2><p className="text-sm text-[var(--text-muted)] mb-3">General exploration. These activities do not establish curriculum coverage.</p><div className="grid sm:grid-cols-2 gap-3">{tile("Library", "Read or discover a book", BookOpen, "library")}{tile("Field trips", "Explore places and ideas", Globe, "field-trip")}{tile("Assembly", "A thought to start your day", GraduationCap, "assembly")}{hasQuiz && tile("Practice challenge", "Questions from your current grade", Compass, "daily")}</div></section>
+    </div>}
+    {tab === "create" && <div className="grid sm:grid-cols-2 gap-3">{tile("Music", "Play, record, and save a melody", Music, "music")}{tile("Notebook", "Keep your questions and ideas", NotebookPen, "notebook")}{tile("Wellness", "Make room for a calm break", Wind, "wellness")}</div>}
+    {tab === "journey" && <div className="space-y-5"><Reflection state={state} /><section className="buddy-panel"><h2 className="font-display text-xl font-bold">Every visit adds to your story</h2><p className="mt-2 text-[var(--text-muted)]">Your progress stays here when you take a break. Practice counts describe what you tried, not everything you understand.</p><dl className="grid grid-cols-3 gap-3 mt-5"><div><dt>Practice answers</dt><dd className="text-2xl font-bold">{state.stats.totalAnswered}</dd></div><div><dt>Books marked read</dt><dd className="text-2xl font-bold">{state.readBooks.length}</dd></div><div><dt>Places explored</dt><dd className="text-2xl font-bold">{state.passportStamps.length}</dd></div></dl></section><div className="grid sm:grid-cols-2 gap-3">{tile("Your profile", "Appearance, interests, and saved progress", Users, "profile")}{tile("Your collection", "Badges from your learning journey", Trophy, "profile")}{tile("Saved questions", "Return to earlier practice", BookOpen, "review")}{tile("Classroom", "Clearly labeled simulated classmates", GraduationCap, "friends")}</div></div>}
+    <LearningNavigation tab={tab} onNavigate={onNavigate} />
+  </div>;
 }
 
-function RoomTile({
-  icon, label, accent, onClick, badge,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  accent: string;
-  onClick: () => void;
-  badge?: string;
-}) {
-  const reduced = useReducedMotion();
-  return (
-    <motion.button
-      whileTap={reduced ? undefined : { scale: 0.97 }}
-      onClick={onClick}
-      className="relative rounded-2xl glass p-3 flex flex-col items-center justify-center gap-1 text-center motion-safe:active:scale-95 transition"
-      style={{ background: accent }}
-    >
-      {icon}
-      <div className="text-xs font-semibold text-white/85 leading-tight">{label}</div>
-      {badge && (
-        <div className="absolute top-1 right-1 text-[9px] font-bold uppercase tracking-widest rounded-full px-1.5 py-0.5 bg-gradient-to-br from-fuchsia-500 to-amber-500 text-slate-950 shadow-sm">
-          {badge}
-        </div>
-      )}
-    </motion.button>
-  );
+function Reflection({ state }: { state: GameState }) {
+  const id = useId(); const [draft, setDraft] = useState(""); const [privateNote, setPrivate] = useState(false);
+  const set = useGameStore((s) => s.set);
+  const date = new Date().toLocaleDateString("en-CA");
+  const saved = state.dailyReflections?.find((r) => r.date === date);
+  return <section className="buddy-panel"><h2 className="font-display text-xl font-bold">A thought to keep</h2>{saved ? <p role="status" className="mt-3">Your reflection is saved for today.</p> : <><label className="block mt-3" htmlFor={id}>What did you learn today?</label><textarea id={id} aria-describedby={`${id}-privacy`} maxLength={200} value={draft} onChange={(e) => setDraft(e.target.value)} className="w-full mt-2 p-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border)]" /><label className="flex gap-2 min-h-11 items-center"><input type="checkbox" checked={privateNote} onChange={(e) => setPrivate(e.target.checked)} />Keep this reflection private</label><p id={`${id}-privacy`} className="text-sm text-[var(--text-muted)]">{privateNote ? "This reflection will be excluded from parent reports." : "A linked parent can read this reflection in their report."}</p><button className="buddy-action mt-3" disabled={!draft.trim()} onClick={() => set((current) => current.dailyReflections.some((r) => r.date === date) ? current : ({ ...current, dailyReflections: [...current.dailyReflections, { date, body: draft.trim(), savedAt: new Date().toISOString(), private: privateNote || undefined }] }))}>Save reflection</button></>}</section>;
 }
 
-/**
- * DailyReflectionCard — small kid-authored prompt.
- *
- * Shown only after 4 PM local time AND if today has no reflection saved.
- * The kid types 1-2 sentences ("What did you learn today?") and saves.
- * Stored under `state.dailyReflections` for parent visibility — labelled
- * explicitly so the kid knows the parent can read them. Transparency
- * over surveillance.
- */
-function DailyReflectionCard({ state }: { state: GameState }) {
-  const reduced = useReducedMotion();
-  const reflectionId = useId();
-  const privacyId = useId();
-  const setGameState = useGameStore((s) => s.set);
-  const [draft, setDraft] = useState("");
-  const [justSaved, setJustSaved] = useState(false);
-  const [keepPrivate, setKeepPrivate] = useState(false);
-
-  const dateKey = todayKey();
-  const today = new Date();
-  const hour = today.getHours();
-  const todayDone = (state.dailyReflections || []).some((r) => r.date === dateKey);
-
-  // Saving writes today's reflection into state, which flips `todayDone` true on
-  // the very next render — so the "saved · +5 XP" confirmation below could never
-  // appear and the card just vanished under the kid's finger. Hold the card open
-  // while `justSaved` is set so the acknowledgement is actually seen.
-  useEffect(() => {
-    if (!justSaved) return;
-    const t = setTimeout(() => setJustSaved(false), 1800);
-    return () => clearTimeout(t);
-  }, [justSaved]);
-
-  // Only show after 4 PM local — natural reflection time, end of school day.
-  // Once today's is saved the card retires until tomorrow.
-  if (todayDone && !justSaved) return null;
-  if (hour < 16) return null;
-
-  const save = () => {
-    const body = draft.trim();
-    if (!body) return;
-    sfx.coin();
-    setGameState((s) => ({
-      ...s,
-      xp: s.xp + 5,
-      dailyReflections: [
-        ...(s.dailyReflections || []),
-        { date: dateKey, body, savedAt: new Date().toISOString(), private: keepPrivate || undefined },
-      ],
-    }));
-    setDraft("");
-    setKeepPrivate(false);
-    setJustSaved(true); // the effect above clears it, and cleans up on unmount
-  };
-
-  return (
-    <motion.div
-      initial={reduced ? false : { opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl p-4 mb-3 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(135deg, rgba(167,139,250,0.16) 0%, rgba(52,211,153,0.12) 100%)",
-        border: "1px solid rgba(167,139,250,0.3)",
-      }}
-    >
-      {justSaved ? (
-        <div role="status" className="flex items-center gap-2 py-2">
-          <Check className="w-5 h-5 text-emerald-300" />
-          <div>
-            <div className="text-sm font-bold text-white">Reflection saved · +5 XP</div>
-            <div className="text-[11px] text-white/60">See you tomorrow.</div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-1.5 mb-2">
-            <NotebookPen className="w-3.5 h-3.5 text-violet-300" />
-            <span className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
-              Today&apos;s reflection
-            </span>
-          </div>
-          <label htmlFor={reflectionId} className="block text-sm font-medium text-white/95 mb-2 leading-snug">
-            What did you learn today?
-          </label>
-          <textarea
-            id={reflectionId}
-            aria-describedby={privacyId}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, 200))}
-            placeholder="One sentence is enough."
-            rows={2}
-            className="w-full px-3 py-2 rounded-xl text-sm resize-none text-white/95 placeholder:text-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-          />
-          <div className="flex items-center justify-between mt-2 gap-2">
-            <button
-              type="button"
-              aria-label="Keep reflection private"
-              aria-pressed={keepPrivate}
-              onClick={() => { sfx.click(); setKeepPrivate((v) => !v); }}
-              className="min-h-11 text-[10px] italic flex items-center gap-1.5 motion-safe:active:scale-95"
-              style={{ color: keepPrivate ? "rgba(244,114,182,0.95)" : "rgba(255,255,255,0.75)" }}
-            >
-              <span aria-hidden="true" className="text-sm leading-none">{keepPrivate ? "🔒" : "🔓"}</span>
-              <span id={privacyId}>{keepPrivate ? "Just for me" : "Your parent can read this"} · {draft.length}/200</span>
-            </button>
-            <button
-              onClick={save}
-              disabled={!draft.trim()}
-              className="rounded-full px-4 min-h-[44px] text-xs font-bold uppercase tracking-widest motion-safe:active:scale-95 disabled:opacity-40"
-              style={{ background: "rgba(167,139,250,0.3)", color: "white" }}
-            >
-              Save · +5 XP
-            </button>
-          </div>
-        </>
-      )}
-    </motion.div>
-  );
+function LearningNavigation({ tab, onNavigate }: { tab: HomeTab; onNavigate: (v: ViewName, params?: Record<string, unknown>) => void }) {
+  const navigation = <nav aria-label="Learning navigation" className="buddy-nav">{tabs.map((t) => <button key={t.id} aria-current={tab === t.id ? "page" : undefined} onClick={() => onNavigate("home", { tab: t.id })}><t.icon aria-hidden="true" className="w-5 h-5" /><span>{t.label}</span></button>)}</nav>;
+  return typeof document === "undefined" ? navigation : createPortal(navigation, document.body);
 }
