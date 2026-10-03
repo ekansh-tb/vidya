@@ -524,7 +524,7 @@ function SelectedLearnerView({
         {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
         <OpinionCard
           tone="warm"
-          window={questionStatsAvailable ? "Over the whole profile" : `Grade ${learner.grade} curriculum availability`}
+          window={questionStatsAvailable ? "Over the whole profile" : `${placementLabel(learner)} curriculum availability`}
           observation={questionStatsAvailable
             ? `${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`
             : "No grade-matched quiz bank is available yet, so Vidya is not showing quiz totals."}
@@ -812,7 +812,7 @@ function SetupStatus({ learner }: { learner: LearnerProfile }) {
       hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
     },
     {
-      label: "Device linked (this is what opens the AI tutor)",
+      label: "Device linked for progress synchronization",
       done: (learner.verifiedLevel ?? 0) >= 2,
       hint: (learner.verifiedLevel ?? 0) >= 2
         ? "linked"

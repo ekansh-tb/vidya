@@ -73,26 +73,25 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
 
       {alreadyLinked ? (
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          This learner is linked to an account. Their progress is saved to the server and the
-          AI tutor is available to them.
+          This learner is linked to an account for progress synchronization. School AI tutoring
+          still requires parent-enabled access. Preschool guidance stays scripted.
         </p>
       ) : !remoteId ? (
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-          This profile only exists in this browser, so there is nothing to link to yet. Once
-          learner accounts are switched on for your family, you&apos;ll be able to create a code
-          here and unlock the AI tutor for them.
+          This profile only exists in this browser. Add it to your account above, then create
+          a code to connect a learner device and synchronize progress.
         </p>
       ) : (
         <>
           <p className="text-sm mb-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
             Create a code and show it to {learner.name || "your child"}. They type it into Vidya on
-            their own device. It works once, expires in two hours, and is the only way to open the
-            AI tutor for them.
+            their own device. It works once and expires in two hours. This connects progress;
+            it does not by itself permit AI tutoring or behavioural analytics.
           </p>
           {/* Said plainly because it changes how a parent should handle it: the
               code is the credential, so anyone who reads it can use it. */}
           <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--text-faint)" }}>
-            Treat it like a door key — whoever types it first gets in. Read it out or hand the
+            Treat it like a door key: whoever types it first gets in. Read it out or hand the
             device over; don&apos;t post it anywhere.
           </p>
 
