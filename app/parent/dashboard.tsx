@@ -409,7 +409,7 @@ export function ParentDashboard() {
 
             {/* A count, not analytics — see the note in the component on why
                 this one deliberately has no "this might mean". */}
-            <UsagePanel key={`usage-${selected.id}`} learner={selected} />
+            {selected.placement?.kind !== "early-years" && <UsagePanel key={`usage-${selected.id}`} learner={selected} />}
             {selected.board && <SyllabusPanel
               key={`syllabus-${selected.id}`}
               learner={selected}
@@ -530,7 +530,7 @@ function SelectedLearnerView({
         {localEditable && learner.placement?.kind !== "early-years" && <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />}
 
         {/* Headline snapshot card */}
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+        {learner.placement?.kind !== "early-years" && <><div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
           <div className="grid grid-cols-2 gap-3">
             <StatTile label="Accuracy" value={!questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%`} />
@@ -557,7 +557,7 @@ function SelectedLearnerView({
               ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
               : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
           }
-        />
+        /></>}
       </div>
     </div>
   );
