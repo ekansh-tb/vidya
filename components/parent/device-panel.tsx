@@ -100,9 +100,9 @@ export function DevicePanel({ learner }: { learner: LearnerProfile }) {
       </div>
 
       <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
-        Each device where {learner.name || "this learner"} typed a code. Unlinking one stops
-        it syncing and closes the AI tutor there. Their progress on that device stays put —
-        nothing is deleted.
+        Each device where {learner.name || "this learner"} typed a code. Unlinking blocks
+        synchronization and learning access at the next online account check.
+        Saved progress remains available when you reconnect with a fresh code.
       </p>
 
       {loading && devices === null ? (

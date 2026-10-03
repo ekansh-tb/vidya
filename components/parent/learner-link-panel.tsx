@@ -71,12 +71,13 @@ export function LearnerLinkPanel({ learner }: { learner: LearnerProfile }) {
         </span>
       </div>
 
-      {alreadyLinked ? (
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+      {alreadyLinked && (
+        <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
           This learner is linked to an account for progress synchronization. School AI tutoring
           still requires parent-enabled access. Preschool guidance stays scripted.
         </p>
-      ) : !remoteId ? (
+      )}
+      {!remoteId ? (
         <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
           This profile only exists in this browser. Add it to your account above, then create
           a code to connect a learner device and synchronize progress.
