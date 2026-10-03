@@ -33,6 +33,7 @@
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^2.5.4",
+    "three": "^0.186.1",
     "tone": "^15.0.4",
     "zod": "^4.4.3",
     "zustand": "^5.0.1"
@@ -44,16 +45,17 @@
     "@types/pg": "^8.21.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
     "autoprefixer": "^10.4.20",
     "brace-expansion": "^1.1.18",
+    "braces": "file:./vendor/braces",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.5.27",
     "pg": "^8.23.0",
     "postcss": "^8.5.26",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
-    "vitest": "^4.1.11",
-    "braces": "file:./vendor/braces"
+    "vitest": "^4.1.11"
   },
   "overrides": {
     "next": {

@@ -37,8 +37,10 @@ import { recommendNextQuest } from "@/lib/adaptive/recommendation";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
-import { startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
+import { startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
 import { useSync } from "@/lib/sync/use-sync";
+import { canSync } from "@/lib/sync/client";
+import { AccountEntry } from "@/components/views/account-entry";
 
 export default function HomePage() {
   const {
@@ -60,15 +62,16 @@ export default function HomePage() {
 
   // Mirrors the active learner's progress to the server once they are linked.
   // No-op for anonymous device-local profiles, and never blocks play.
-  useSync();
+  const sync = useSync();
 
   useEffect(() => {
     if (!hydrated) return;
+    setSfxEnabled(state.settings.sound);
     setMusicVolume(state.settings.musicVolume);
     setSfxVolume(state.settings.sfxVolume);
     if (state.settings.music && state.onboarded) startMusic();
     else stopMusic();
-  }, [hydrated, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
+  }, [hydrated, state.settings.sound, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
 
   useEffect(() => {
     setQuizResult(null);
@@ -99,6 +102,9 @@ export default function HomePage() {
       </div>
     );
   }
+
+  // Account-backed enrollment is mandatory for new and legacy local profiles.
+  if (!canSync(learner) || showAddLearner) return <><ThemeApplier theme="playful"/><AccountEntry onCancel={canSync(learner) ? () => setShowAddLearner(false) : undefined}/></>;
 
   // First-time onboarding (only when the active learner has never been named)
   if (!state.onboarded) {
@@ -388,7 +394,7 @@ export default function HomePage() {
       case "learners":
         content = (
           <LearnersView
-            learners={Object.values(profiles.learners)}
+            learners={Object.values(profiles.learners).filter((l,i,all) => canSync(l) && all.findIndex(other=>other.remoteId===l.remoteId && canSync(other))===i)}
             currentId={learner.id}
             onSwitch={(id) => { switchLearner(id); }}
             onBack={back}
@@ -418,6 +424,7 @@ export default function HomePage() {
   return (
     <>
       <ThemeApplier theme={themeId} />
+      <div className="account-save-status" role="status">{learner.learningLanguage === "hi" ? ({idle:"खाता जोड़ें",syncing:"खाते में सहेज रहे हैं…",synced:"खाते में सहेजा",offline:"ऑफ़लाइन: इस डिवाइस पर सहेजा, इंटरनेट पर सिंक होगा",error:"खाते में नहीं सहेजा: फिर जोड़ें या इंटरनेट जाँचें"})[sync.status] : ({idle:"Connect an account",syncing:"Saving to your account…",synced:"Saved to your account",offline:"Offline: saved on this device, waiting to sync",error:"Account save unavailable. Check connection or reconnect"})[sync.status]}</div>
       <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
       {/* Each view change reads as stepping into a different room, which is the
           metaphor the whole product is built on (see VISION.md). `door` marks

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { getSql, type Row } from "./client";
+import { databaseTimestamp } from "./timestamp";
 import { profilePlacementFields, placementFor, type LearningPlacement } from "../learning/placement";
 import type { GameState, SubjectId } from "../types";
 
@@ -64,8 +65,8 @@ function toLearner(r: any): LearnerRow {
     subjectsLocked: Boolean(r.subjects_locked),
     disabledCapabilities: Array.isArray(r.disabled_capabilities) ? r.disabled_capabilities : null,
     localId: r.local_id ?? null,
-    createdAt: String(r.created_at),
-    updatedAt: String(r.updated_at),
+    createdAt: databaseTimestamp(r.created_at),
+    updatedAt: databaseTimestamp(r.updated_at),
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -153,6 +154,8 @@ export async function createLearner(input: {
        ${input.school ?? null}, ${input.city ?? null}, ${input.localId ?? null},
        ${JSON.stringify(input.pickedSubjects ?? null)}::jsonb,
        ${input.subjectsLocked ?? false}, ${JSON.stringify(placement)}::jsonb)
+    on conflict (parent_id, local_id) where local_id is not null
+    do update set local_id = excluded.local_id
     returning *
   `;
   await audit({ parentId: input.parentId, learnerId: rows[0].id, event: "created", actor: input.parentId });
@@ -242,7 +245,7 @@ export async function getLearnerState(learnerId: string): Promise<StateEnvelope 
   return {
     state: rows[0].state as GameState,
     revision: Number(rows[0].revision),
-    updatedAt: String(rows[0].updated_at),
+    updatedAt: databaseTimestamp(rows[0].updated_at),
     deviceLabel: rows[0].device_label ?? null,
   };
 }
@@ -280,7 +283,7 @@ export async function getLearnerStateForParent(
   return {
     state: rows[0].state,
     revision: Number(rows[0].revision),
-    updatedAt: String(rows[0].updated_at),
+    updatedAt: databaseTimestamp(rows[0].updated_at),
   };
 }
 

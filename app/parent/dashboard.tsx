@@ -55,8 +55,11 @@ import {
  */
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { profiles, hydrated, hydrate, updateLearnerMeta, upsertLearner } = useGameStore();
+  const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [adding, add] = useState(false);
+  const [savingLearner, saving] = useState(false);
+  const [enrollmentError, enrollmentErrorSet] = useState("");
+  const [pendingEnrollment, pendingEnrollmentSet] = useState<LearnerProfile | null>(null);
   const [ownedRoster, roster] = useState<{parentId:string|null; learners:LearnerProfile[]}>({parentId:null,learners:[]});
   const updateProfile = (id:string, patch:Partial<LearnerProfile>) => {
     if (useGameStore.getState().profiles.learners[id]) updateLearnerMeta(id,patch);
@@ -73,9 +76,8 @@ export function ParentDashboard() {
 
   const activeParentId = isSignedIn ? user?.id ?? null : null;
   const localLearners = useMemo(() => {
-    const local = Object.values(profiles.learners).filter(l => l.state.onboarded);
     const remote = ownedRoster.parentId === activeParentId ? ownedRoster.learners : [];
-    return [...local, ...remote.filter(r => !local.some(l => l.remoteId === r.remoteId))];
+    return remote.map(r => Object.values(profiles.learners).find(l => l.remoteId === r.remoteId && l.deviceToken) ?? r);
   }, [profiles.learners, ownedRoster, activeParentId]);
   useEffect(() => {
     if (!activeParentId) { roster({parentId:null,learners:[]}); return; }
@@ -207,6 +209,22 @@ export function ParentDashboard() {
     "Parent";
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
 
+  const saveEnrollment = async (candidate: LearnerProfile) => {
+    if (savingLearner) return;
+    const l = {...candidate,id:pendingEnrollment?.id ?? candidate.id};
+    pendingEnrollmentSet(l); saving(true); enrollmentErrorSet("");
+    try {
+      const response = await fetch("/api/parent/learners", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({name:l.name,board:l.board,grade:l.grade,placement:l.placement,localId:l.id,school:l.school,city:l.city,pickedSubjects:l.pickedSubjects,subjectsLocked:l.subjectsLocked}) });
+      const data = await response.json();
+      if (!response.ok || !data?.learner?.id) throw new Error(response.status === 401 ? "Your session expired. Sign in again." : data?.error ?? "Could not save. Please try again.");
+      const context = profilePlacementFields.parse(data.learner);
+      const saved = {...l,...context,name:data.learner.name,id:`remote:${data.learner.id}`,remoteId:data.learner.id};
+      roster(current => ({parentId:activeParentId,learners:[...current.learners.filter(r=>r.remoteId!==saved.remoteId),saved]}));
+      setSelectedId(saved.id); pendingEnrollmentSet(null); add(false);
+    } catch (error) { enrollmentErrorSet(error instanceof Error ? error.message : "Check your connection and try again."); }
+    finally { saving(false); }
+  };
+
   // Loading guard
   if (!isLoaded || !hydrated) {
     return (
@@ -269,10 +287,11 @@ export function ParentDashboard() {
             {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
           </div>
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            {learners.length} learner{learners.length === 1 ? "" : "s"} on this device
+            {learners.length} learner{learners.length === 1 ? "" : "s"} in your account
           </div>
         </div>
 
+        <details className="rounded-xl border border-neutral-700 p-4"><summary className="min-h-11 font-semibold cursor-pointer">Family settings and optional AI</summary>
         <AiConnectionsPanel
           key={`ai-connections-${activeParentId}`}
           onConnectionsChanged={() => setAiPolicyRevision((revision) => revision + 1)}
@@ -286,11 +305,12 @@ export function ParentDashboard() {
           key={`family-ai-pause-${activeParentId}`}
           onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
         />
-        {selected?.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool companion</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. Device linking preserves progress; it does not unlock AI tutoring.</p></div> : <LearnerAiTutorAccessPanel
+        </details>
+        {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool companion</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. Device linking preserves progress; it does not unlock AI tutoring.</p></div> : <LearnerAiTutorAccessPanel
           key={`learner-ai-access-${activeParentId}`}
           learner={selected}
           refreshToken={aiPolicyRevision}
-        />}
+        />)}
 
         {/* Empty state — no learners yet */}
         {learners.length === 0 && pendingLinkedLearners > 0 && (
@@ -313,10 +333,9 @@ export function ParentDashboard() {
 
         {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners === 0 && (
           <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">No learner profiles yet on this browser</h2>
+            <h2 className="font-display text-xl font-bold mb-2">Create your first learner</h2>
             <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
-              The kid creates their profile from the lobby — name, avatar, what they love.
-              Once they do, this dashboard fills up with their signals automatically.
+              Choose their learning level here, then connect their device with a single-use code. Their activities will be saved to your account.
             </p>
             <Link
               href="https://vidyagyan.study"
@@ -360,8 +379,12 @@ export function ParentDashboard() {
           </div>
         )}
 
-        <button className="buddy-action my-4" onClick={() => add(true)}>Add a learner</button>
-        {adding && <AddLearnerView existingIds={localLearners.map(l => l.id)} onBack={() => add(false)} onSave={l => { upsertLearner(l); setSelectedId(l.id); add(false); }}/>} 
+        <button className="buddy-action my-4" onClick={() => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); }}>Add a learner</button>
+        {adding && <div aria-busy={savingLearner}>
+          {enrollmentError && <p role="alert">{enrollmentError} Your details are still here. Try saving again.</p>}
+          {savingLearner && <p role="status">Saving to your account…</p>}
+          <fieldset disabled={savingLearner}><AddLearnerView existingIds={localLearners.map(l => l.id)} onBack={() => { add(false); pendingEnrollmentSet(null); }} onSave={l => void saveEnrollment(l)}/></fieldset>
+        </div>}
         {selected && !adding && (
           <>
             {/* Above everything, including the setup panels, and it renders

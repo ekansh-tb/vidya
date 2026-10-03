@@ -59,3 +59,19 @@ The refreshed dependency audit identified GHSA-vfj7-8cjw-p6xm in braces 3.0.3 wi
 5. Parent-controlled time budgets across devices, reading-comfort preferences and large-text testing. Existing parent AI/capability controls remain enforced; do not present a soft reminder as an enforceable limit.
 6. Establish an actual research baseline before retention or learning improvement claims. Server measurement remains disabled until jurisdiction-specific purpose/consent review.
 7. Weekly prioritization from production failures, content gaps, parent/teacher feedback and consented child research. Release and verify changes individually.
+
+## Account transition and motion release, 4 October 2026
+
+Implemented locally: database-owned roster, parent enrollment saves directly to the account, parent/local enrollment retries share a parent-scoped identity, and child enrollment uses a single-use device code without repeating name or grade. Legacy unlinked browser profiles cannot open learning automatically; archives remain recoverable but are not enrolled identities. No child, parent, Clerk account, book or content row was deleted. This follows the owner's fresh-start authorization while avoiding an unnecessary destructive purge.
+
+The public service-worker compatibility release refreshes older tabs through the existing acknowledgement protocol only after the new public shell is fetched. APIs, parent pages and authentication responses remain uncached. Linked sessions retain their offline cache and resume synchronization on reconnection. Save status distinguishes account save, pending/offline cache and failure. Pending requests from a switched learner cannot apply their response to the new active learner.
+
+Production driver evidence: the synthetic UKG report stored one creation at revision 2; Neon returned `updated_at` as a Date. `String(Date)` failed the report's ISO contract. Query mapping now normalizes timestamps to ISO. Parent roster comes from the ownership-scoped database list; duplicate local representations of the same remote learner no longer become extra parent learner entries.
+
+Original 3D Tara asset (Three.js, dynamically loaded) draws on demand and stops after brief interactions. Authored illustration survives failed model loading or unavailable WebGL. Framer Motion hover/tap/scroll reveals honor OS reduced motion and the learner's animation toggle. Music remains opt-in; sound can be muted; optional 12ms haptics default off and gracefully skip unsupported devices. HyperFrames generated a silent three-second single-play celebration, with documented render checks. Nursery/LKG/UKG creation grids are 4x4/5x5/6x6 for new drafts; old 8x8 drafts remain viewable.
+
+Shared perspectives: children get one code entry and no password; parents own enrollment and revocation; teachers get observed-practice evidence rather than mastery claims; accessibility preserves instructions without sound, motion or 3D. Reliability keeps recoverable cache and uses database ownership. Conflicting tradeoff: requiring parent enrollment removes immediate guest play and needs connectivity for first use. Owner explicitly requested account-backed sessions. This release does not establish age/guardianship verification, human educator review, retention gains, push notifications or complete cross-device offline acceptance.
+
+Private sponsor dashboard built outside the repository and public app. Official programs researched on 4 October; Outlook Vidya conversation searched, Clerk follow-up read. Three sent emails, three recorded form receipts and zero confirmed awards remain distinct. No new outreach was sent. Sponsor source pages and eligibility uncertainty are recorded in the dashboard.
+
+Verification and deployment status for this increment must be filled from final CI and browser results before production merge.

@@ -7,10 +7,10 @@ import { mergeGameState } from "./merge";
 /**
  * Client half of state sync.
  *
- * LOCAL-FIRST, DELIBERATELY. localStorage remains the source of truth for the
- * running session: every write lands there first and the UI never waits on the
- * network. The server is a durable mirror, so clearing site data or moving
- * device stops being permanent data loss.
+ * Database ownership establishes the learner identity. The running session
+ * caches edits locally for interruption and offline recovery, then reconciles
+ * them with the durable account using revision checks. Unsynced edits still
+ * require this cache; the UI must not imply that clearing it is always safe.
  *
  * Consequences of that choice, all intentional:
  *   - Sync failures are never surfaced as errors that block play. A child on a
@@ -26,7 +26,7 @@ import { mergeGameState } from "./merge";
 export type SyncState = "idle" | "syncing" | "synced" | "offline" | "error";
 
 export function canSync(learner: LearnerProfile): boolean {
-  return Boolean(learner.remoteId) && (learner.verifiedLevel ?? 0) >= 2;
+  return Boolean(learner.remoteId && learner.deviceToken) && (learner.verifiedLevel ?? 0) >= 2;
 }
 
 /**

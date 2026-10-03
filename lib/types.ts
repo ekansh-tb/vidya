@@ -253,6 +253,8 @@ export type GameState = {
   lastSubjectAt?: string;
   settings: {
     sound: boolean;
+    motion?: boolean;
+    haptics?: boolean;
     music: boolean;
     voice: boolean;
     musicVolume: number;
