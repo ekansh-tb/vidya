@@ -48,6 +48,8 @@ On 4 October, browser control recovered. A full Nursery matching activity was co
 
 Saved artwork now has a Make gallery showing the latest picture per activity/day, up to eight recent pictures. Preschool no longer displays a fake Custom board in the learner picker. Parent-only roster reports explicitly disable ephemeral note/local-setting editing, and preschool setup explains scripted guidance rather than AI unlocks. Legacy school surfaces are still not fully bilingual or reviewed by interaction demands. These remain outstanding work.
 
+The refreshed dependency audit identified GHSA-vfj7-8cjw-p6xm in braces 3.0.3 with no upstream patched release. A private MIT-preserving fork bounds parser and AST walker depth; its installed entry points have malicious-pattern/direct-AST and ordinary-glob regressions. `vendor/braces/VIDYA-PATCH.md` records the actual mitigation and removal condition. The clean install audit reports no known vulnerabilities without ignored advisories or a lower severity threshold. Other dependency versions are preserved. Browser and full CI gates still apply.
+
 ### Ranked follow-up backlog
 
 1. Independent educator, developmental and Hindi literacy review of each starter; consented usability sessions by level, language and access need.
