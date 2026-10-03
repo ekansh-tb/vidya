@@ -51,6 +51,7 @@ new Function("require", "exports", compiled)((id: string) => {
     nextPeriod: () => null, periodProgress: () => 0.5,
   };
   if (id === "@/lib/economy") return { xpToLevel: () => ({ level: 1, xpInLevel: 0, xpNeeded: 100 }) };
+  if (id === "@/lib/learning/activity") return { companionUnlocks: () => [] };
   if (id === "@/lib/utils") return { todayKey: () => "2026-10-01" };
   if (id.startsWith("@/components/")) return new Proxy({}, { get: () => () => null });
   return require(id);
@@ -98,6 +99,6 @@ describe("Learning navigation", () => {
     const { onNavigate } = render();
     const explore = controls.find((p) => p.children && Array.isArray(p.children) && JSON.stringify(p.children).includes("Explore"));
     expect(explore).toBeDefined(); explore!.onClick!();
-    expect(onNavigate).toHaveBeenLastCalledWith("home", { tab: "explore" });
+    expect(onNavigate).toHaveBeenLastCalledWith("activities");
   });
 });

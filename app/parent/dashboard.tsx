@@ -1,4 +1,8 @@
 "use client";
+import { AddLearnerView, makeLearner } from "@/components/views/add-learner-view";
+import { PlacementEditor } from "@/components/parent/placement-editor";
+import { profilePlacementFields } from "@/lib/learning/placement";
+import { ActivityEvidence } from "@/components/learning/activity-evidence";
 import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState, useEffect } from "react";
@@ -52,6 +56,15 @@ import {
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
+  const [adding, add] = useState(false);
+  const [savingLearner, saving] = useState(false);
+  const [enrollmentError, enrollmentErrorSet] = useState("");
+  const [pendingEnrollment, pendingEnrollmentSet] = useState<LearnerProfile | null>(null);
+  const [ownedRoster, roster] = useState<{parentId:string|null; learners:LearnerProfile[]}>({parentId:null,learners:[]});
+  const updateProfile = (id:string, patch:Partial<LearnerProfile>) => {
+    if (useGameStore.getState().profiles.learners[id]) updateLearnerMeta(id,patch);
+    else roster(current => ({...current,learners:current.learners.map(l => l.id === id ? {...l,...patch} : l)}));
+  };
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [aiPolicyRevision, setAiPolicyRevision] = useState(0);
   const [remoteReportCache, setRemoteReportCache] = useState<{
@@ -62,7 +75,29 @@ export function ParentDashboard() {
   useEffect(() => { hydrate(); }, [hydrate]);
 
   const activeParentId = isSignedIn ? user?.id ?? null : null;
-  const localLearners = useMemo(() => Object.values(profiles.learners), [profiles.learners]);
+  const localLearners = useMemo(() => {
+    const remote = ownedRoster.parentId === activeParentId ? ownedRoster.learners : [];
+    return remote.map(r => Object.values(profiles.learners).find(l => l.remoteId === r.remoteId && l.deviceToken) ?? r);
+  }, [profiles.learners, ownedRoster, activeParentId]);
+  useEffect(() => {
+    if (!activeParentId) { roster({parentId:null,learners:[]}); return; }
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch("/api/parent/learners", {signal:controller.signal,cache:"no-store"});
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.learners) || controller.signal.aborted) return;
+        const entries: LearnerProfile[] = [];
+        for (const row of data.learners) {
+          const context = profilePlacementFields.safeParse(row);
+          if (!context.success || typeof row.id !== "string" || typeof row.name !== "string") continue;
+          entries.push({...makeLearner({id:`remote:${row.id}`,name:row.name,...context.data,avatarId:"peacock",themeId:row.grade===null || row.grade<=2 ? "playful" : "vivid"}),remoteId:row.id,createdAt:row.createdAt});
+        }
+        roster({parentId:activeParentId,learners:entries});
+      } catch { /* Local owned profiles and reporting fallback remain available. */ }
+    })();
+    return () => controller.abort();
+  }, [activeParentId]);
   const activeReports = useMemo(
     () => remoteReportCache.parentId === activeParentId ? remoteReportCache.reports : {},
     [activeParentId, remoteReportCache],
@@ -174,6 +209,22 @@ export function ParentDashboard() {
     "Parent";
   const email = user?.emailAddresses?.[0]?.emailAddress ?? "";
 
+  const saveEnrollment = async (candidate: LearnerProfile) => {
+    if (savingLearner) return;
+    const l = {...candidate,id:pendingEnrollment?.id ?? candidate.id};
+    pendingEnrollmentSet(l); saving(true); enrollmentErrorSet("");
+    try {
+      const response = await fetch("/api/parent/learners", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({name:l.name,board:l.board,grade:l.grade,placement:l.placement,localId:l.id,school:l.school,city:l.city,pickedSubjects:l.pickedSubjects,subjectsLocked:l.subjectsLocked}) });
+      const data = await response.json();
+      if (!response.ok || !data?.learner?.id) throw new Error(response.status === 401 ? "Your session expired. Sign in again." : data?.error ?? "Could not save. Please try again.");
+      const context = profilePlacementFields.parse(data.learner);
+      const saved = {...l,...context,name:data.learner.name,id:`remote:${data.learner.id}`,remoteId:data.learner.id};
+      roster(current => ({parentId:activeParentId,learners:[...current.learners.filter(r=>r.remoteId!==saved.remoteId),saved]}));
+      setSelectedId(saved.id); pendingEnrollmentSet(null); add(false);
+    } catch (error) { enrollmentErrorSet(error instanceof Error ? error.message : "Check your connection and try again."); }
+    finally { saving(false); }
+  };
+
   // Loading guard
   if (!isLoaded || !hydrated) {
     return (
@@ -236,10 +287,11 @@ export function ParentDashboard() {
             {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
           </div>
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            {learners.length} learner{learners.length === 1 ? "" : "s"} on this device
+            {learners.length} learner{learners.length === 1 ? "" : "s"} in your account
           </div>
         </div>
 
+        <details className="rounded-xl border border-neutral-700 p-4"><summary className="min-h-11 font-semibold cursor-pointer">Family settings and optional AI</summary>
         <AiConnectionsPanel
           key={`ai-connections-${activeParentId}`}
           onConnectionsChanged={() => setAiPolicyRevision((revision) => revision + 1)}
@@ -253,11 +305,12 @@ export function ParentDashboard() {
           key={`family-ai-pause-${activeParentId}`}
           onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
         />
-        <LearnerAiTutorAccessPanel
+        </details>
+        {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool companion</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. Device linking preserves progress; it does not unlock AI tutoring.</p></div> : <LearnerAiTutorAccessPanel
           key={`learner-ai-access-${activeParentId}`}
           learner={selected}
           refreshToken={aiPolicyRevision}
-        />
+        />)}
 
         {/* Empty state — no learners yet */}
         {learners.length === 0 && pendingLinkedLearners > 0 && (
@@ -280,10 +333,9 @@ export function ParentDashboard() {
 
         {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners === 0 && (
           <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">No learner profiles yet on this browser</h2>
+            <h2 className="font-display text-xl font-bold mb-2">Create your first learner</h2>
             <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
-              The kid creates their profile from the lobby — name, avatar, what they love.
-              Once they do, this dashboard fills up with their signals automatically.
+              Choose their learning level here, then connect their device with a single-use code. Their activities will be saved to your account.
             </p>
             <Link
               href="https://vidyagyan.study"
@@ -320,14 +372,20 @@ export function ParentDashboard() {
                     color: active ? "rgb(196, 181, 253)" : "rgba(255,255,255,0.65)",
                   }}
                 >
-                  {l.name || "Unnamed"} · Gr {l.grade}
+                  {l.name || "Unnamed"} · {placementLabel(l)}
                 </button>
               );
             })}
           </div>
         )}
 
-        {selected && (
+        <button className="buddy-action my-4" onClick={() => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); }}>Add a learner</button>
+        {adding && <div aria-busy={savingLearner}>
+          {enrollmentError && <p role="alert">{enrollmentError} Your details are still here. Try saving again.</p>}
+          {savingLearner && <p role="status">Saving to your account…</p>}
+          <fieldset disabled={savingLearner}><AddLearnerView existingIds={localLearners.map(l => l.id)} onBack={() => { add(false); pendingEnrollmentSet(null); }} onSave={l => void saveEnrollment(l)}/></fieldset>
+        </div>}
+        {selected && !adding && (
           <>
             {/* Above everything, including the setup panels, and it renders
                 nothing when there is nothing to say. If a child has disclosed
@@ -351,26 +409,26 @@ export function ParentDashboard() {
 
             {/* A count, not analytics — see the note in the component on why
                 this one deliberately has no "this might mean". */}
-            <UsagePanel key={`usage-${selected.id}`} learner={selected} />
-            <SyllabusPanel
+            {selected.placement?.kind !== "early-years" && <UsagePanel key={`usage-${selected.id}`} learner={selected} />}
+            {selected.board && <SyllabusPanel
               key={`syllabus-${selected.id}`}
               learner={selected}
               onSave={(patch) => updateLearnerMeta(selected.id, patch)}
-            />
+            />}
             <SelectedLearnerView
               key={selected.id}
               learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
               reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
-              onUpdateLearner={(patch) => updateLearnerMeta(selected.id, patch)}
+              onUpdateLearner={(patch) => updateProfile(selected.id, patch)}
+              localEditable={!!profiles.learners[selected.id]}
             />
           </>
         )}
 
         <footer className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6 mt-8">
-          VIDYA is built so that AI and humans can take care of each other.
-          You teach the AI how to teach your kid; the AI helps your kid
-          flourish; we both observe quietly. Nothing here is ever a claim —
-          only an opinion you can verify, override, or discard.
+          Reports describe observed practice, with its evidence window and limits.
+          Completing an activity does not prove understanding. Preschool guidance
+          is scripted; optional school AI remains under your controls.
         </footer>
       </section>
     </main>
@@ -378,11 +436,12 @@ export function ParentDashboard() {
 }
 
 function SelectedLearnerView({
-  learner, reportSource, onUpdateLearner,
+  learner, reportSource, onUpdateLearner, localEditable,
 }: {
   learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
   reportSource: ParentReportDecision;
   onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
+  localEditable: boolean;
 }) {
   const state = learner.state;
   const questionBanks = questionsForLearner(learner);
@@ -439,6 +498,7 @@ function SelectedLearnerView({
         )}
       </div>
 
+      <div className="md:col-span-3"><ActivityEvidence state={state}/><PlacementEditor learner={learner} onChange={onUpdateLearner}/></div>
       {/* Setup status — what the parent has and hasn't configured */}
       <div className="md:col-span-3">
         <SetupStatus learner={learner} />
@@ -446,16 +506,16 @@ function SelectedLearnerView({
 
       {/* Two-column body: communications + insights */}
       <div className="md:col-span-2 space-y-4">
-        <FamilyNoteComposer
+        {localEditable ? <><FamilyNoteComposer
           name={learner.name || "your learner"}
           note={learner.familyNote}
           onChange={(next) => onUpdateLearner({ familyNote: next })}
         />
-        <CareNoteComposer
+        {learner.placement?.kind !== "early-years" && <CareNoteComposer
           name={learner.name || "your learner"}
           note={learner.careNote}
           onChange={(next) => onUpdateLearner({ careNote: next })}
-        />
+        />}</> : <div className="rounded-lg border border-neutral-800 p-5"><h2>Notes on this device</h2><p className="text-sm text-neutral-400">Notes and local settings can be edited on the browser where this learner enrolled. This linked report does not save note edits across devices.</p></div>}
         <RecentReflections state={state} name={learner.name || "your learner"} />
         <WellnessSignals
           state={state}
@@ -467,10 +527,10 @@ function SelectedLearnerView({
       </div>
 
       <div className="space-y-4">
-        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+        {localEditable && learner.placement?.kind !== "early-years" && <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />}
 
         {/* Headline snapshot card */}
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
+        {learner.placement?.kind !== "early-years" && <><div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
           <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
           <div className="grid grid-cols-2 gap-3">
             <StatTile label="Accuracy" value={!questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%`} />
@@ -486,7 +546,7 @@ function SelectedLearnerView({
         {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
         <OpinionCard
           tone="warm"
-          window={questionStatsAvailable ? "Over the whole profile" : `Grade ${learner.grade} curriculum availability`}
+          window={questionStatsAvailable ? "Over the whole profile" : `${placementLabel(learner)} curriculum availability`}
           observation={questionStatsAvailable
             ? `${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`
             : "No grade-matched quiz bank is available yet, so Vidya is not showing quiz totals."}
@@ -497,7 +557,7 @@ function SelectedLearnerView({
               ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
               : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
           }
-        />
+        /></>}
       </div>
     </div>
   );
@@ -657,9 +717,9 @@ function buildMarkdownReport(
     ? subjectStats
         .filter((s) => s.mastery != null && s.attempts > 0)
         .sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0))
-        .map((s) => `- **${s.name}**: ${s.mastery}% mastery, ${s.attempts} attempts (${s.correct} correct)`)
+        .map((s) => `- **${s.name}**: ${s.mastery}% recorded practice score, ${s.attempts} attempts (${s.correct} correct)`)
         .join("\n") || "_No subject attempts yet._"
-    : `_Grade ${learner.grade} lesson mastery is unavailable until grade-matched content is ready._`;
+    : `_Grade ${learner.grade} practice scoring is unavailable until grade-matched content is ready._`;
 
   // PRIVACY: reflections the kid marked "Just for me" must never appear here.
   // The kid is shown a lock and told their parent cannot read it; the on-screen
@@ -719,7 +779,7 @@ _Generated ${today}. ${sourceNote}_
   ? `${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try`
   : "Unavailable for current curriculum"}
 
-## Subject mastery
+## Observed subject practice
 ${subjectLines}
 
 ## Recent reflections (kid's own words)
@@ -740,7 +800,13 @@ _All findings are observations, not verdicts. Read together with the kid, never 
 // -----------------------------------------------------------------------------
 
 function SetupStatus({ learner }: { learner: LearnerProfile }) {
-  const items = [
+  const early = learner.placement?.kind === "early-years";
+  const items = early ? [
+    { label:"Name and early-years level", done:!!learner.name?.trim(), hint:placementLabel(learner) },
+    { label:"Learning language", done:!!learner.learningLanguage, hint:learner.learningLanguage === "hi" ? "Hindi" : "English" },
+    { label:"Owned learning profile", done:!!learner.remoteId, hint:learner.remoteId ? "Claimed by this account" : "Claim the profile above to enable device linking." },
+    { label:"Companion guidance", done:true, hint:"Scripted activities; AI tutoring stays unavailable." },
+  ] : [
     {
       label: "Name + grade + board",
       done: !!learner.name?.trim(),
@@ -768,7 +834,7 @@ function SetupStatus({ learner }: { learner: LearnerProfile }) {
       hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
     },
     {
-      label: "Device linked (this is what opens the AI tutor)",
+      label: "Device linked for progress synchronization",
       done: (learner.verifiedLevel ?? 0) >= 2,
       hint: (learner.verifiedLevel ?? 0) >= 2
         ? "linked"

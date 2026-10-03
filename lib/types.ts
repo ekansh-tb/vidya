@@ -1,3 +1,4 @@
+import type { LearningActivityState } from "./learning/activity";
 import type { LearningPlacement } from "./learning/placement";
 import type { LucideIcon } from "lucide-react";
 
@@ -200,6 +201,7 @@ export type ReadingProgress = {
 };
 
 export type GameState = {
+  activities?: LearningActivityState;
   name: string;
   avatarId: string;
   customAvatar: string | null;
@@ -251,6 +253,8 @@ export type GameState = {
   lastSubjectAt?: string;
   settings: {
     sound: boolean;
+    motion?: boolean;
+    haptics?: boolean;
     music: boolean;
     voice: boolean;
     musicVolume: number;
@@ -307,6 +311,7 @@ export type FriendStreak = {
 
 export type ViewName =
   | "home"
+  | "activities"
   | "subject"
   | "quiz"
   | "match"

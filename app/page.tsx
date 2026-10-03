@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { OnboardingView } from "@/components/views/onboarding-view";
+import { EnrollmentEntry } from "@/components/views/enrollment-entry";
+import { LearningHub } from "@/components/views/learning-hub";
 import { HomeView, type HomeTab } from "@/components/views/home-view";
 import { SubjectView } from "@/components/views/subject-view";
 import { QuizView } from "@/components/views/quiz-view";
@@ -36,8 +37,10 @@ import { recommendNextQuest } from "@/lib/adaptive/recommendation";
 import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
-import { startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/lib/audio";
+import { startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
 import { useSync } from "@/lib/sync/use-sync";
+import { canSync } from "@/lib/sync/client";
+import { AccountEntry } from "@/components/views/account-entry";
 
 export default function HomePage() {
   const {
@@ -59,15 +62,16 @@ export default function HomePage() {
 
   // Mirrors the active learner's progress to the server once they are linked.
   // No-op for anonymous device-local profiles, and never blocks play.
-  useSync();
+  const sync = useSync();
 
   useEffect(() => {
     if (!hydrated) return;
+    setSfxEnabled(state.settings.sound);
     setMusicVolume(state.settings.musicVolume);
     setSfxVolume(state.settings.sfxVolume);
     if (state.settings.music && state.onboarded) startMusic();
     else stopMusic();
-  }, [hydrated, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
+  }, [hydrated, state.settings.sound, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
 
   useEffect(() => {
     setQuizResult(null);
@@ -99,18 +103,22 @@ export default function HomePage() {
     );
   }
 
+  // Account-backed enrollment is mandatory for new and legacy local profiles.
+  if (!canSync(learner) || showAddLearner) return <><ThemeApplier theme="playful"/><AccountEntry onCancel={canSync(learner) ? () => setShowAddLearner(false) : undefined}/></>;
+
   // First-time onboarding (only when the active learner has never been named)
   if (!state.onboarded) {
     return (
       <>
         <ThemeApplier theme={themeId} />
-        <OnboardingView
+        <EnrollmentEntry
           defaultName={learner.name || ""}
-          onComplete={async ({ name, avatarId, interests, board, grade }) => {
+          onComplete={async (data) => {
+            const { name, avatarId, interests, board, grade } = data;
             // Curriculum first, then flip `onboarded`. By the time this render
             // path falls through to the picker gate / home, the learner's board
             // and grade are the ones they actually chose.
-            updateLearnerMeta(learner.id, { name, interests, board, grade });
+            updateLearnerMeta(learner.id, { name, interests, board, grade, ...("placement" in data ? { placement: data.placement, learningLanguage: data.learningLanguage, themeId: "playful" as const } : {}) });
             set((prev) => ({ ...prev, name, avatarId, onboarded: true }));
           }}
         />
@@ -225,9 +233,12 @@ export default function HomePage() {
       />
     );
   } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)) {
-    content = <div className="buddy-home"><h1>{learner.placement.level.toUpperCase()} learning</h1><p>Your placement is saved. Preschool activities are being prepared.</p><button onClick={() => navigate("learners")}>Switch learner</button></div>;
+    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
   } else {
     switch (view.name) {
+      case "activities":
+        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
+        break;
       case "home":
         content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
         break;
@@ -383,7 +394,7 @@ export default function HomePage() {
       case "learners":
         content = (
           <LearnersView
-            learners={Object.values(profiles.learners)}
+            learners={Object.values(profiles.learners).filter((l,i,all) => canSync(l) && all.findIndex(other=>other.remoteId===l.remoteId && canSync(other))===i)}
             currentId={learner.id}
             onSwitch={(id) => { switchLearner(id); }}
             onBack={back}
@@ -413,6 +424,7 @@ export default function HomePage() {
   return (
     <>
       <ThemeApplier theme={themeId} />
+      <div className="account-save-status" role="status">{learner.learningLanguage === "hi" ? ({idle:"खाता जोड़ें",syncing:"खाते में सहेज रहे हैं…",synced:"खाते में सहेजा",offline:"ऑफ़लाइन: इस डिवाइस पर सहेजा, इंटरनेट पर सिंक होगा",error:"खाते में नहीं सहेजा: फिर जोड़ें या इंटरनेट जाँचें"})[sync.status] : ({idle:"Connect an account",syncing:"Saving to your account…",synced:"Saved to your account",offline:"Offline: saved on this device, waiting to sync",error:"Account save unavailable. Check connection or reconnect"})[sync.status]}</div>
       <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
       {/* Each view change reads as stepping into a different room, which is the
           metaphor the whole product is built on (see VISION.md). `door` marks

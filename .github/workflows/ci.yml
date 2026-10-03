@@ -55,6 +55,9 @@ jobs:
       - name: Dependency security audit
         run: npm run security:audit
 
+      - name: Dependency mitigation regressions
+        run: node --test test/security/*.test.mjs
+
       - name: Typecheck
         run: npm run typecheck
 

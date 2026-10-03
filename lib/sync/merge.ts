@@ -1,3 +1,4 @@
+import { mergeActivityState } from "../learning/activity";
 import type { GameState, MissedQuestion, ReadingProgress } from "../types";
 import { mergeCard, capNotebook } from "../spaced-repetition";
 import { readTopicConfidenceEntries, type TopicConfidence, type TopicConfidenceEntry } from "../content/school-syllabus";
@@ -264,6 +265,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
 
   return {
     ...local,
+    activities: mergeActivityState(local.activities, remote.activities),
 
     // ---- accumulated: combine, never lose ----
     xp: Math.max(num(local.xp), num(r.xp)),

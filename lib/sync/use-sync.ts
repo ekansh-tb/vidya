@@ -17,8 +17,8 @@ const DEBOUNCE_MS = 4000;
  * anonymous device-local profile has no owner, and uploading a child's
  * progress before an adult has claimed them would be the wrong default.
  *
- * Never blocks or interrupts play: every failure path leaves localStorage as
- * the source of truth and simply reports a status the UI may choose to show.
+ * Account ownership gates play. During connectivity failures the device cache
+ * preserves pending work and the UI reports whether it has reached the account.
  */
 export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
   const learner = useGameStore((s) => s.learner);
@@ -43,6 +43,14 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
     if (!learner.deviceToken && (learner.verifiedLevel ?? 0) === 0) return;
     updateLearnerMeta(learner.id, { deviceToken: undefined, verifiedLevel: 0 });
   };
+
+  const [reconnect, reconnectSet] = useState(0);
+  useEffect(() => {
+    const online = () => reconnectSet(n => n + 1);
+    const offline = () => setStatus("offline");
+    window.addEventListener("online", online); window.addEventListener("offline", offline);
+    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
+  }, []);
 
   const [status, setStatus] = useState<SyncState>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
@@ -78,6 +86,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
         return;
       }
 
+      if (pulled.profile) useGameStore.getState().updateLearnerMeta(learner.id, pulled.profile);
       revisionRef.current = pulled.revision;
       syncedLearnerRef.current = learner.id;
 
@@ -93,7 +102,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
     return () => { cancelled = true; controller.abort(); };
     // Re-run when the learner changes or linking status flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, learner.id, learner.remoteId, learner.verifiedLevel]);
+  }, [enabled, learner.id, learner.remoteId, learner.verifiedLevel, learner.deviceToken, reconnect]);
 
   // ---- debounced push on change -------------------------------------------
   useEffect(() => {
@@ -108,6 +117,9 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
       (async () => {
         try {
           const result = await pushWithMerge(state, revisionRef.current, deviceLabel(), learner);
+          // A response from the previous child must never modify the active child.
+          const active = useGameStore.getState().learner;
+          if (active.id !== learner.id || active.deviceToken !== learner.deviceToken) return;
           if (result.unauthorized) standDown();
           revisionRef.current = result.revision;
           // A conflict merge produces a state this device must adopt, or the
@@ -129,7 +141,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
 
   // ---- best-effort flush when the tab goes away ----------------------------
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || syncedLearnerRef.current !== learner.id) return;
     const flush = () => {
       if (document.visibilityState !== "hidden") return;
       // keepalive lets the request outlive the page. Fire-and-forget: there is
@@ -158,7 +170,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
     };
     document.addEventListener("visibilitychange", flush);
     return () => document.removeEventListener("visibilitychange", flush);
-  }, [enabled, state, learner.deviceToken]);
+  }, [enabled, state, learner.id, learner.deviceToken]);
 
   return { status, lastSyncedAt };
 }

@@ -33,8 +33,9 @@ export async function GET(req: Request) {
   if (!me) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const envelope = await getLearnerState(me.learner.id);
-  if (!envelope) return Response.json({ state: null, revision: 0 });
-  return Response.json(envelope);
+  const profile = { grade:me.learner.grade, board:me.learner.board, placement:me.learner.placement };
+  if (!envelope) return Response.json({ state: null, revision: 0, profile });
+  return Response.json({ ...envelope, profile });
 }
 
 /**

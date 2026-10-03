@@ -1,15 +1,16 @@
 "use client";
 
+import { profilePlacementFields } from "../learning/placement";
 import type { GameState, LearnerProfile } from "../types";
 import { mergeGameState } from "./merge";
 
 /**
  * Client half of state sync.
  *
- * LOCAL-FIRST, DELIBERATELY. localStorage remains the source of truth for the
- * running session: every write lands there first and the UI never waits on the
- * network. The server is a durable mirror, so clearing site data or moving
- * device stops being permanent data loss.
+ * Database ownership establishes the learner identity. The running session
+ * caches edits locally for interruption and offline recovery, then reconciles
+ * them with the durable account using revision checks. Unsynced edits still
+ * require this cache; the UI must not imply that clearing it is always safe.
  *
  * Consequences of that choice, all intentional:
  *   - Sync failures are never surfaced as errors that block play. A child on a
@@ -25,7 +26,7 @@ import { mergeGameState } from "./merge";
 export type SyncState = "idle" | "syncing" | "synced" | "offline" | "error";
 
 export function canSync(learner: LearnerProfile): boolean {
-  return Boolean(learner.remoteId) && (learner.verifiedLevel ?? 0) >= 2;
+  return Boolean(learner.remoteId && learner.deviceToken) && (learner.verifiedLevel ?? 0) >= 2;
 }
 
 /**
@@ -43,7 +44,7 @@ function authHeaders(learner?: LearnerProfile): Record<string, string> {
 }
 
 type PullResult =
-  | { ok: true; state: GameState | null; revision: number }
+  | { ok: true; state: GameState | null; revision: number; profile?: Pick<LearnerProfile,"board"|"grade"|"placement"> }
   | { ok: false; reason: "unauthorized" | "unavailable" | "network" };
 
 export async function pullState(learner?: LearnerProfile, signal?: AbortSignal): Promise<PullResult> {
@@ -53,7 +54,8 @@ export async function pullState(learner?: LearnerProfile, signal?: AbortSignal):
     if (res.status === 503) return { ok: false, reason: "unavailable" };
     if (!res.ok) return { ok: false, reason: "network" };
     const data = await res.json();
-    return { ok: true, state: (data?.state ?? null) as GameState | null, revision: Number(data?.revision ?? 0) };
+    const profile = profilePlacementFields.safeParse(data?.profile);
+    return { ok: true, ...(profile.success ? { profile:profile.data } : {}), state: (data?.state ?? null) as GameState | null, revision: Number(data?.revision ?? 0) };
   } catch {
     return { ok: false, reason: "network" };
   }

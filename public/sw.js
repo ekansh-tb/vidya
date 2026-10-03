@@ -7,7 +7,9 @@
  */
 
 const CACHE_PREFIX = "vidya-public";
-const CACHE_VERSION = "2026-08-16-2";
+const CACHE_VERSION = "2026-10-04-account-1";
+// Only this compatibility release forces old browser sessions onto account enrollment.
+const REQUIRED_ACCOUNT_UPDATE_VERSION = "2026-10-04-account-1";
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
 const LEARNING_CACHE = `${CACHE_PREFIX}-learning-${CACHE_VERSION}`;
 const UPDATE_CACHE = `${CACHE_PREFIX}-update-${CACHE_VERSION}`;
@@ -35,7 +37,7 @@ const PRIVATE_ROUTE_PREFIXES = [
   "/sign-up",
 ];
 
-const PUBLIC_LEARNING_PREFIXES = ["/books/", "/field-trips/"];
+const PUBLIC_LEARNING_PREFIXES = ["/books/", "/field-trips/", "/learning/"];
 
 const UPDATE_MESSAGES = Object.freeze({
   activate: "VIDYA_ACTIVATE_UPDATE",
@@ -306,6 +308,7 @@ self.addEventListener("install", (event) => {
     // page remain available when this credential-free refresh cannot complete.
     try {
       await refreshRootShell();
+      if (CACHE_VERSION === REQUIRED_ACCOUNT_UPDATE_VERSION) await requestUpdateActivation(`required-${CACHE_VERSION}`);
     } catch {
       // Keep installation successful after the required fallback is complete.
     }

@@ -27,12 +27,14 @@
     "ai": "^6.0.184",
     "clsx": "^2.1.1",
     "framer-motion": "^11.11.17",
+    "gsap": "3.15.0",
     "lucide-react": "^0.456.0",
     "next": "^15.5.27",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^2.5.4",
+    "three": "^0.186.1",
     "tone": "^15.0.4",
     "zod": "^4.4.3",
     "zustand": "^5.0.1"
@@ -44,8 +46,10 @@
     "@types/pg": "^8.21.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
     "autoprefixer": "^10.4.20",
     "brace-expansion": "^1.1.18",
+    "braces": "file:./vendor/braces",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.5.27",
     "pg": "^8.23.0",
@@ -59,6 +63,7 @@
       "postcss": "8.5.26"
     },
     "sharp": "0.35.5",
-    "nanoid@<3.3.18": "3.3.18"
+    "nanoid@<3.3.18": "3.3.18",
+    "braces": "$braces"
   }
 }

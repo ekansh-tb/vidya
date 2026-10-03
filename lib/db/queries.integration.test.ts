@@ -60,6 +60,14 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
     })).id;
   }, DB_TIMEOUT_MS);
 
+  it("reuses the parent-scoped enrollment identity on retries", async () => {
+    const retried = await createLearner({parentId:PARENT_A,name:"Retry should not overwrite",grade:6,board:"cambridge-lower-secondary",localId:`${RUN}-a`});
+    expect(retried.id).toBe(learnerA);
+    expect(retried.name).toBe("Kid A");
+    expect(retried.createdAt).toMatch(/Z$/);
+    expect((await listLearnersForParent(PARENT_A)).filter(l=>l.localId===`${RUN}-a`)).toHaveLength(1);
+  });
+
   afterAll(async () => {
     if (!hasDb) return;
     const sql = getSql();

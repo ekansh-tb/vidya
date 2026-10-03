@@ -148,3 +148,10 @@ describe("resolveCapabilityServer", () => {
     expect(r.reason).toBe("feature_disabled");
   });
 });
+
+ it("denies preschool AI even when parent-linked at the highest verification level", async () => {
+   for (const key of ["ai.tutor.full", "ai.tutor.limited", "byok.openai", "exam.alertsToParent"] as const) {
+     const result = await resolveCapabilityServer(key, asLearner({ grade:null, board:null, placement:{ version:1,kind:"early-years",level:"ukg" }, verificationLevel:3 }));
+     expect(result.allowed).toBe(false);
+   }
+ });

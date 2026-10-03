@@ -9,7 +9,15 @@ const topicProgressSchema = z.object({
   mastery: z.number().finite().nonnegative(),
 });
 
+const activityCompletionsSchema = z.array(z.object({
+  key: z.string().max(240), activityId: z.string().max(160), revision: z.number().int().positive(),
+  placement: z.string().max(40), language: z.enum(["en", "hi"]), day: z.iso.date(), source: z.enum(["app", "caregiver"]),
+  attempts: z.number().int().nonnegative(), independentResponses: z.number().int().nonnegative(), hints: z.number().int().nonnegative(), retries: z.number().int().nonnegative(), creation: z.boolean(), delayedReview: z.boolean(),
+})).max(50000);
+const activityEvidenceSchema = z.object({ completions: activityCompletionsSchema }).optional();
+
 const syncedStateSchema = z.object({
+  activities: activityEvidenceSchema,
   progress: z.record(
     z.string().min(1).max(128),
     z.record(z.string().min(1).max(160), topicProgressSchema),
@@ -56,6 +64,7 @@ const parentReportReflectionSchema = z.discriminatedUnion("private", [
 ]);
 
 const parentReportStateSchema = z.object({
+  activities: activityEvidenceSchema,
   progress: syncedStateSchema.shape.progress,
   stats: syncedStateSchema.shape.stats,
   streak: syncedStateSchema.shape.streak,
@@ -107,6 +116,7 @@ export function minimizeParentReportState(value: unknown): ParentReportState | n
   if (!parsed.success) return null;
 
   return {
+    ...(parsed.data.activities ? { activities: { completions: parsed.data.activities.completions } } : {}),
     progress: parsed.data.progress,
     stats: parsed.data.stats,
     streak: parsed.data.streak,
@@ -193,6 +203,7 @@ function applyRemoteReport(localState: GameState, remoteState: ParentReportState
 
   return {
     ...localState,
+    ...(remoteState.activities ? { activities: { ...localState.activities, completions:remoteState.activities.completions } } : {}),
     progress: remoteState.progress,
     stats: { ...localState.stats, ...remoteState.stats },
     streak: remoteState.streak,
