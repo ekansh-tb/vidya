@@ -463,6 +463,7 @@
 .account-save-status { position:relative; z-index:2; padding:8px 16px; text-align:center; font-size:.75rem; background:var(--surface); color:var(--text-muted); }
 .tara-scene { position:relative; flex-shrink:0; width:170px; aspect-ratio:1; }
 .tara-model { position:absolute; inset:0; }
+.tara-model canvas { display:block; width:100%; height:100%; }
 .tara-scene > svg { width:100%; height:100%; }
 .tara-scene-ready > svg { visibility:hidden; }
 .tara-hello { position:absolute; bottom:0; right:0; border:2px solid #248781; border-radius:50%; min-width:44px; min-height:44px; background:#fff9e8; color:#145955; }
