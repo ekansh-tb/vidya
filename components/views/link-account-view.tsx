@@ -34,6 +34,8 @@ export function LinkAccountView({
   learner: LearnerProfile;
   onBack: () => void;
 }) {
+  const hi = learner.learningLanguage === "hi";
+  const early = learner.placement?.kind === "early-years";
   const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -41,9 +43,10 @@ export function LinkAccountView({
   const [linked, setLinked] = useState(learner.verifiedLevel != null && learner.verifiedLevel >= 2);
 
   const submit = async () => {
+    if (busy) return;
     const trimmed = code.trim().toUpperCase();
     if (trimmed.length < 4) {
-      setError("Type the whole code from your grown-up.");
+      setError(hi ? "बड़े से मिला पूरा कोड लिखो।" : "Type the whole code from your grown-up.");
       return;
     }
     setBusy(true);
@@ -57,16 +60,16 @@ export function LinkAccountView({
       const data = await res.json().catch(() => null);
 
       if (res.status === 503) {
-        setError("Linking isn't switched on yet. You can keep learning without it.");
+        setError(hi ? "अभी खाते से जोड़ना उपलब्ध नहीं है। बिना जोड़े भी सीख सकते हो।" : "Linking isn't switched on yet. You can keep learning without it.");
         return;
       }
       if (!res.ok || !data?.learner) {
-        setError(data?.error || "That didn't work. Check the code and try again.");
+        setError(hi ? "कोड नहीं जुड़ा। बड़े के साथ कोड जाँचो और फिर कोशिश करो।" : data?.error || "That didn't work. Check the code and try again.");
         return;
       }
 
       if (!samePlacement(placementFor(learner), placementFor(data.learner))) {
-        setError("This code is for a different learning level. Ask your grown-up to check the profile before linking.");
+        setError(hi ? "यह कोड दूसरे सीखने के स्तर का है। बड़े से प्रोफ़ाइल जाँचने को कहो।" : "This code is for a different learning level. Ask your grown-up to check the profile before linking.");
         return;
       }
 
@@ -82,7 +85,7 @@ export function LinkAccountView({
       sfx.badge();
       setLinked(true);
     } catch {
-      setError("Couldn't reach Vidya. Check the internet and try again.");
+      setError(hi ? "विद्या से जुड़ नहीं पाए। इंटरनेट जाँचो और फिर कोशिश करो।" : "Couldn't reach Vidya. Check the internet and try again.");
     } finally {
       setBusy(false);
     }
@@ -97,7 +100,7 @@ export function LinkAccountView({
             className="flex items-center gap-1 font-medium mb-4 active:scale-95"
             style={{ color: "var(--text-muted)" }}
           >
-            <ChevronLeft className="w-5 h-5" /> Home
+            <ChevronLeft className="w-5 h-5" /> {hi ? "वापस" : "Home"}
           </button>
 
           {linked ? (
@@ -111,13 +114,12 @@ export function LinkAccountView({
                 <ShieldCheck className="w-7 h-7" style={{ color: "var(--accent)" }} />
               </div>
               <h2 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>
-                This device is linked
+                {hi ? "यह डिवाइस जुड़ गया है" : "This device is linked"}
               </h2>
               <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
-                Your progress is saved to your account now, so it&apos;s safe even if this
-                browser is cleared. Your grown-up controls available features.
+                {hi ? "इंटरनेट मिलने पर विद्या प्रगति खाते में सहेज सकती है। स्क्रीन पर सहेजने की स्थिति देखें। तुम्हारे बड़े उपलब्ध सुविधाएँ तय करते हैं।" : "With an internet connection, Vidya can synchronize progress to your account. Check the save status before clearing this browser. Your grown-up controls available features."}
               </p>
-              <Button onClick={() => { sfx.click(); onBack(); }}>Back to school</Button>
+              <Button onClick={() => { sfx.click(); onBack(); }}>{hi ? "मेरी गतिविधियाँ" : early ? "Back to my activities" : "Back to school"}</Button>
             </motion.div>
           ) : (
             <>
@@ -125,22 +127,20 @@ export function LinkAccountView({
                 <KeyRound className="w-4 h-4" style={{ color: "var(--accent)" }} />
                 <span className="text-[10px] uppercase tracking-widest font-bold"
                       style={{ color: "var(--accent)" }}>
-                  Connect your account
+                  {hi ? "खाते से जोड़ो" : "Connect your account"}
                 </span>
               </div>
               <h2 className="font-display text-3xl font-bold mb-2" style={{ color: "var(--text)" }}>
-                Got a code?
+                {hi ? "कोड मिला?" : "Got a code?"}
               </h2>
               <p className="text-sm mb-6 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                A grown-up can make a code for you in the Parent room. Typing it here saves
-                your progress to your account, so it&apos;s safe if this browser gets cleared —
-                and it opens Miss Vidya, your AI tutor.
+                {hi ? "बड़े Parent Portal में कोड बना सकते हैं। यहाँ लिखकर इस डिवाइस की प्रगति खाते से जोड़ो। शुरुआती स्तर पर साथी की बातें पहले से लिखी होती हैं; AI ट्यूटर नहीं खुलता।" : "A grown-up can create a code in the Parent Portal. Enter it here to connect progress on this device with your account. Preschool guidance stays scripted; linking does not by itself unlock AI tutoring."}
               </p>
 
               <div className="glass-card p-5">
                 <label htmlFor="claim-code" className="block text-xs font-semibold mb-2"
                        style={{ color: "var(--text-muted)" }}>
-                  Your code
+                  {hi ? "तुम्हारा कोड" : "Your code"}
                 </label>
                 <input
                   id="claim-code"
@@ -172,12 +172,12 @@ export function LinkAccountView({
                 )}
 
                 <Button className="mt-4 w-full" onClick={() => void submit()} disabled={busy}>
-                  {busy ? "Checking…" : <><Check className="w-4 h-4 inline -mt-0.5" /> Link this device</>}
+                  {busy ? (hi ? "जाँच रहे हैं…" : "Checking…") : <><Check className="w-4 h-4 inline -mt-0.5" /> {hi ? "यह डिवाइस जोड़ो" : "Link this device"}</>}
                 </Button>
               </div>
 
               <p className="text-xs mt-4 leading-relaxed" style={{ color: "var(--text-faint)" }}>
-                No code? That&apos;s fine — everything else in Vidya works without one.
+                {hi ? "कोड नहीं है? बिना खाते जोड़े भी अपनी उपलब्ध गतिविधियाँ कर सकते हो।" : "No code? You can still use your available learning activities without linking."}
               </p>
             </>
           )}
