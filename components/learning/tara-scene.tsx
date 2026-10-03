@@ -30,7 +30,8 @@ export function TaraScene({ children }: {children:React.ReactNode}) {
         const model=new THREE.ObjectLoader().parse(await response.json());
         if(cancelled){renderer.dispose();return;}
         model.rotation.y=-0.16;scene.add(model);
-        const canvas=renderer.domElement;canvas.setAttribute("aria-hidden","true");host.current!.append(canvas);
+        const canvas=renderer.domElement;canvas.setAttribute("aria-hidden","true");
+        const lost=()=>readySet(false);canvas.addEventListener("webglcontextlost",lost);host.current!.append(canvas);
         const draw=()=>renderer!.render(scene,camera);
         const resize=()=>{const width=host.current?.clientWidth??180;renderer!.setSize(width,width,false);draw();};
         const observer=new ResizeObserver(resize);observer.observe(host.current!);resize();readySet(true);
@@ -38,7 +39,7 @@ export function TaraScene({ children }: {children:React.ReactNode}) {
         const stop=()=>{cancelAnimationFrame(frame);model.rotation.y=-0.16;model.position.y=0;draw();};
         animate.current=()=>{stop();if(calm)return;const start=performance.now();const tick=(now:number)=>{if(document.hidden){stop();return;}const t=Math.min(1,(now-start)/700);model.rotation.y=-0.16+Math.sin(t*Math.PI*2)*0.15;model.position.y=Math.sin(t*Math.PI)*0.12;draw();if(t<1)frame=requestAnimationFrame(tick);};frame=requestAnimationFrame(tick);};
         document.addEventListener("visibilitychange",stop);
-        cleanup=()=>{animate.current=()=>{};cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener("visibilitychange",stop);scene.traverse(o=>{const mesh=o as Mesh;if(mesh.geometry)mesh.geometry.dispose();if(mesh.material){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose();}});renderer!.dispose();canvas.remove();};
+        cleanup=()=>{animate.current=()=>{};cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener("visibilitychange",stop);scene.traverse(o=>{const mesh=o as Mesh;if(mesh.geometry)mesh.geometry.dispose();if(mesh.material){for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])m.dispose();}});canvas.removeEventListener("webglcontextlost",lost);renderer!.dispose();canvas.remove();};
       } catch { renderer?.dispose(); /* Authored SVG remains visible. */ }
     })();
     return ()=>{cancelled=true;cleanup();};

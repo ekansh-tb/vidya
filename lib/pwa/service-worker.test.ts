@@ -72,7 +72,7 @@ function client(id: string, acknowledge = true): FakeClient {
   };
 }
 
-function workerHarness(windowClients: FakeClient[] = []) {
+function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()) {
   const listeners = new Map<string, (event: Record<string, unknown>) => void>();
   const caches = new MemoryCaches();
   const claim = vi.fn(async () => undefined);
@@ -93,8 +93,12 @@ function workerHarness(windowClients: FakeClient[] = []) {
   vm.runInNewContext(workerSource, {
     self,
     caches,
-    fetch: vi.fn(),
-    Request,
+    fetch: fetchResource,
+    Request: class extends Request {
+      constructor(input: string | Request, init?: RequestInit) {
+        super(typeof input === "string" ? new URL(input, ORIGIN).href : input, init);
+      }
+    },
     Response,
     URL,
     MessageChannel,
@@ -125,6 +129,38 @@ function workerHarness(windowClients: FakeClient[] = []) {
     },
   };
 }
+
+describe("required account compatibility update", () => {
+  beforeEach(() => {
+    vi.spyOn(MemoryCache.prototype, "addAll").mockResolvedValue(undefined);
+  });
+
+  it("activates only after the anonymous current shell and dependencies are cacheable", async () => {
+    const fetchResource = vi.fn(async (request: Request) => {
+      expect(request.credentials).toBe("omit");
+      const response = new Response(request.url.endsWith("/") ? '<script src="/_next/static/current.js"></script>' : "current JS");
+      Object.defineProperty(response, "type", { value: "basic" });
+      return response;
+    });
+    const { listeners, caches, policy, skipWaiting } = workerHarness([], fetchResource);
+    let work: Promise<void> | undefined;
+    listeners.get("install")!({ waitUntil: (promise: Promise<void>) => { work = promise; } });
+    await work;
+    expect(fetchResource).toHaveBeenCalledTimes(2);
+    expect(await (await caches.open(policy.STATIC_CACHE)).match("/")).toBeDefined();
+    expect(skipWaiting).toHaveBeenCalledOnce();
+    expect((await policy.readUpdateMarker())?.updateId).toBe("required-2026-10-04-account-1");
+  });
+
+  it("keeps the old client when authentication or missing assets prevent a complete shell", async () => {
+    const { listeners, skipWaiting, policy } = workerHarness([], vi.fn(async () => new Response("Private", { status: 302 })));
+    let work: Promise<void> | undefined;
+    listeners.get("install")!({ waitUntil: (promise: Promise<void>) => { work = promise; } });
+    await work;
+    expect(skipWaiting).not.toHaveBeenCalled();
+    expect(await policy.readUpdateMarker()).toBeNull();
+  });
+});
 
 describe("service worker route privacy", () => {
   it("never intercepts parent, authentication, API, mutation, or cross-origin requests", () => {

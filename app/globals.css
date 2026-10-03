@@ -475,3 +475,5 @@
 @media (max-width:500px) { .tara-scene {width:120px;} .learning-companion {gap:12px;} .learning-companion p {font-size:.94rem;} }
 @media (prefers-reduced-motion:reduce) { .learning-hub *, .activity-shell * { scroll-behavior:auto!important; } }
 .companion-celebration { display:block; width:min(100%,240px); border-radius:24px; margin:0 auto 16px; }
+.tara-message { min-width:0; overflow-wrap:anywhere; }
+.tara-decorations { display:inline-flex; gap:4px; margin-left:8px; }

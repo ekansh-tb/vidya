@@ -16,6 +16,6 @@ export function LearningCompanion({ line, decorations = [], compact = false }: {
       {decorations.includes("leaf") && <path d="M72 34 Q47 8 70 14 Q88 22 72 34" fill="#b9d86f" />}
       {decorations.includes("star") && <text x="105" y="30" fontSize="25">✦</text>}
     </svg></TaraScene>
-    <div><strong>Tara</strong><p aria-live="polite">{line}</p></div>
+    <div className="tara-message"><strong>Tara</strong><span className="tara-decorations">{decorations.map(d=><span key={d} role="img" aria-label={`Tara decoration: ${d}`}>{({leaf:"🍃",scarf:"🧣",star:"⭐"})[d]}</span>)}</span><p aria-live="polite">{line}</p></div>
   </div>;
 }

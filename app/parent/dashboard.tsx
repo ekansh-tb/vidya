@@ -426,10 +426,9 @@ export function ParentDashboard() {
         )}
 
         <footer className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6 mt-8">
-          VIDYA is built so that AI and humans can take care of each other.
-          You teach the AI how to teach your kid; the AI helps your kid
-          flourish; we both observe quietly. Nothing here is ever a claim —
-          only an opinion you can verify, override, or discard.
+          Reports describe observed practice, with its evidence window and limits.
+          Completing an activity does not prove understanding. Preschool guidance
+          is scripted; optional school AI remains under your controls.
         </footer>
       </section>
     </main>
