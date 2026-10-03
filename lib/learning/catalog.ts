@@ -6987,7 +6987,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "ukg-numeracy-1",
-    "revision": 2,
+    "revision": 3,
     "placements": [
       "ukg"
     ],
@@ -6997,8 +6997,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       "hi": "सेब गिनो"
     },
     "objective": {
-      "en": "Count a set of 7 objects, touching each once.",
-      "hi": "7 चीज़ों के समूह में हर चीज़ को एक बार छूकर गिनना।"
+      "en": "Count a group and explore one fewer object.",
+      "hi": "समूह की चीज़ें गिनना और एक कम होने पर फिर गिनना।"
     },
     "interaction": "counting",
     "steps": [
@@ -7187,14 +7187,22 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       },
       {
         "instruction": {
-          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
-          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
+          "en": "One object is away. Count this new group. How many remain?",
+          "hi": "एक चीज़ हट गई। इस नए समूह को गिनो। अब कितनी बचीं?"
         },
         "hint": {
-          "en": "Touch each object once. You can show your idea by pointing.",
-          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
+          "en": "Touch each remaining object once. The new group has one fewer.",
+          "hi": "बची हुई हर चीज़ को एक बार छूकर गिनो। नए समूह में एक चीज़ कम है।"
         },
         "items": [
+          {
+            "id": "5",
+            "picture": "5",
+            "label": {
+              "en": "5",
+              "hi": "5"
+            }
+          },
           {
             "id": "6",
             "picture": "6",
@@ -7210,19 +7218,11 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
               "en": "7",
               "hi": "7"
             }
-          },
-          {
-            "id": "8",
-            "picture": "8",
-            "label": {
-              "en": "8",
-              "hi": "8"
-            }
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 6 remaining objects. We can notice how a group changes.",
+          "hi": "तुमने बची हुई 6 चीज़ें गिनीं। हम देख सकते हैं कि समूह कैसे बदलता है।"
         },
         "countingObjects": [
           {
@@ -7266,15 +7266,9 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
               "en": "Apple",
               "hi": "सेब"
             }
-          },
-          {
-            "picture": "🍎",
-            "label": {
-              "en": "Apple",
-              "hi": "सेब"
-            }
           }
-        ]
+        ],
+        "answer": "6"
       }
     ],
     "offline": {
@@ -7305,7 +7299,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "ukg-numeracy-2",
-    "revision": 2,
+    "revision": 3,
     "placements": [
       "ukg"
     ],
@@ -7315,8 +7309,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       "hi": "फूल गिनो"
     },
     "objective": {
-      "en": "Count a set of 10 objects, touching each once.",
-      "hi": "10 चीज़ों के समूह में हर चीज़ को एक बार छूकर गिनना।"
+      "en": "Count a group and explore one fewer object.",
+      "hi": "समूह की चीज़ें गिनना और एक कम होने पर फिर गिनना।"
     },
     "interaction": "counting",
     "steps": [
@@ -7547,14 +7541,22 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       },
       {
         "instruction": {
-          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
-          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
+          "en": "One object is away. Count this new group. How many remain?",
+          "hi": "एक चीज़ हट गई। इस नए समूह को गिनो। अब कितनी बचीं?"
         },
         "hint": {
-          "en": "Touch each object once. You can show your idea by pointing.",
-          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
+          "en": "Touch each remaining object once. The new group has one fewer.",
+          "hi": "बची हुई हर चीज़ को एक बार छूकर गिनो। नए समूह में एक चीज़ कम है।"
         },
         "items": [
+          {
+            "id": "8",
+            "picture": "8",
+            "label": {
+              "en": "8",
+              "hi": "8"
+            }
+          },
           {
             "id": "9",
             "picture": "9",
@@ -7570,19 +7572,11 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
               "en": "10",
               "hi": "10"
             }
-          },
-          {
-            "id": "11",
-            "picture": "11",
-            "label": {
-              "en": "11",
-              "hi": "11"
-            }
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 9 remaining objects. We can notice how a group changes.",
+          "hi": "तुमने बची हुई 9 चीज़ें गिनीं। हम देख सकते हैं कि समूह कैसे बदलता है।"
         },
         "countingObjects": [
           {
@@ -7647,15 +7641,9 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
               "en": "Flower",
               "hi": "फूल"
             }
-          },
-          {
-            "picture": "🌼",
-            "label": {
-              "en": "Flower",
-              "hi": "फूल"
-            }
           }
-        ]
+        ],
+        "answer": "9"
       }
     ],
     "offline": {

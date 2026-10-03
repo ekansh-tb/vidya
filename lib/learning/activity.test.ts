@@ -39,6 +39,17 @@ describe("reviewed activity coverage", () => {
       expect(available.every(a => a.placements.length === 1 && a.placements[0] === `school:${grade}` && a.alignment === "general-exploration")).toBe(true);
     }
   });
+  it("UKG final counting explores one fewer instead of duplicating the previous step", () => {
+    for (const id of ["ukg-numeracy-1", "ukg-numeracy-2"]) {
+      const activity = ACTIVITY_CATALOG.find(a => a.id === id)!;
+      const final = activity.steps.at(-1)!;
+      expect(activity.revision).toBe(3);
+      expect(Number(final.answer)).toBe(Number(activity.steps[0].answer) - 1);
+      expect(final.countingObjects).toHaveLength(Number(final.answer));
+      expect(final.instruction.en).not.toBe(activity.steps[1].instruction.en);
+      expect(final.instruction.hi).not.toBe(activity.steps[1].instruction.hi);
+    }
+  });
 });
 describe("participation and rewards", () => {
   it("deduplicates reload, replay and sync retries", () => {

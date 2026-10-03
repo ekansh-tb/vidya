@@ -5,6 +5,7 @@ import { useGameStore } from "@/lib/game-store";
 import { profilePlacementFields } from "@/lib/learning/placement";
 import { makeLearner } from "./add-learner-view";
 import { deviceLabel } from "@/lib/sync/client";
+import { recoverableAccountCache } from "@/lib/sync/account-cache";
 import { LearningCompanion } from "@/components/ui/learning-companion";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
 
@@ -26,7 +27,7 @@ export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
       if (!response.ok) throw new Error(data?.error ?? "Please ask your grown-up for a fresh code.");
       if (!placement.success || typeof data.learner.id !== "string" || typeof data.learner.name !== "string" || typeof data.deviceToken !== "string") throw new Error("We could not connect. Ask for a new code.");
       const store = useGameStore.getState();
-      const existing = Object.values(store.profiles.learners).find(l=>l.remoteId===data.learner.id && l.deviceToken);
+      const existing = recoverableAccountCache(Object.values(store.profiles.learners), data.learner.id);
       const profile = {...(existing ?? makeLearner({id:`linked:${data.learner.id}`,name:data.learner.name,...placement.data,avatarId:"peacock",themeId:placement.data.grade===null || placement.data.grade<=2 ? "playful" : "vivid"})),...placement.data,remoteId:data.learner.id,deviceToken:data.deviceToken,verifiedLevel:data.learner.verificationLevel ?? 2,learningLanguage:existing?.learningLanguage ?? (hi ? "hi" as const : "en" as const)};
       store.upsertLearner(profile); store.switchLearner(profile.id); onCancel?.();
     } catch (error) { errorSet(hi ? "जोड़ नहीं पाए। इंटरनेट और कोड बड़े के साथ जाँचो। नया कोड माँग सकते हो।" : error instanceof Error ? error.message : "Check your connection and try again."); }
