@@ -89,7 +89,7 @@ export function LearnersView({
                   <div className="flex-1 min-w-0">
                     <div className="font-display font-bold text-lg text-white truncate">{l.name}</div>
                     <div className="text-xs text-white/55 truncate">
-                      {placementLabel(l)} · {board}
+                      {placementLabel(l)}{l.board ? ` · ${board}` : ""}
                     </div>
                     {l.school ? (
                       <div className="text-[10px] text-white/40 mt-0.5 truncate" title={l.school}>{l.school}</div>
@@ -126,7 +126,7 @@ export function LearnersView({
                   {hasAny ? "Add another learner" : "Add a learner"}
                 </div>
                 <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Type the learner&apos;s name. Pick a school template to fill in the curriculum.
+                  Choose an early-years level or a school board and grade.
                 </div>
               </div>
             </motion.button>

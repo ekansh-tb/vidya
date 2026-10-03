@@ -23,6 +23,15 @@ describe("reviewed activity coverage", () => {
       for (const answer of step.answer?.split("|") ?? []) expect(step.items.some(i => i.id === answer)).toBe(true);
     }
   });
+  it("matches each counting answer to a concrete, named group", () => {
+    for (const a of ACTIVITY_CATALOG.filter(a => a.interaction === "counting")) {
+      const first = a.steps[0];
+      expect(first.countingObjects?.length).toBe(Number(first.answer));
+      expect(first.countingObjects?.every(o => o.picture && o.label.en && o.label.hi)).toBe(true);
+    }
+    expect(ACTIVITY_CATALOG.find(a => a.id === "grade-1-explore-1")!.steps[0].answer).toBe("3");
+    expect(ACTIVITY_CATALOG.find(a => a.id === "grade-2-explore-1")!.steps[0].answer).toBe("6");
+  });
   it("never selects another placement to conceal a gap", () => {
     for (let grade=1; grade<=13; grade++) {
       const available = eligibleActivities(ACTIVITY_CATALOG, {version:1,kind:"school",board:"cbse",grade}, "hi");

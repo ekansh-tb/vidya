@@ -504,7 +504,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "nursery-numeracy-1",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "nursery"
     ],
@@ -521,8 +521,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🍎 🍎. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🍎 🍎। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -555,10 +555,26 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 2 objects. You can count them again together.",
+          "hi": "तुमने 2 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "2"
+        "answer": "2",
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -575,7 +591,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -589,7 +605,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "nursery-numeracy-2",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "nursery"
     ],
@@ -606,8 +622,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🌼 🌼 🌼. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🌼 🌼 🌼। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -640,10 +656,33 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 3 objects. You can count them again together.",
+          "hi": "तुमने 3 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "3"
+        "answer": "3",
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -660,7 +699,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -3299,7 +3338,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "lkg-numeracy-1",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "lkg"
     ],
@@ -3316,8 +3355,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🍎 🍎 🍎 🍎. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🍎 🍎 🍎 🍎। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -3350,19 +3389,49 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 4 objects. You can count them again together.",
+          "hi": "तुमने 4 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "4"
+        "answer": "4",
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose a picture again. Tell or show your grown-up one thing you notice.",
-          "hi": "फिर एक चित्र चुनो। बड़े को एक बात बताओ या इशारे से दिखाओ जो तुमने देखी।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -3393,7 +3462,37 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -3410,7 +3509,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -3424,7 +3523,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "lkg-numeracy-2",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "lkg"
     ],
@@ -3441,8 +3540,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🌼 🌼 🌼 🌼 🌼 🌼. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🌼 🌼 🌼 🌼 🌼 🌼। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -3475,19 +3574,63 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 6 objects. You can count them again together.",
+          "hi": "तुमने 6 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "6"
+        "answer": "6",
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose a picture again. Tell or show your grown-up one thing you notice.",
-          "hi": "फिर एक चित्र चुनो। बड़े को एक बात बताओ या इशारे से दिखाओ जो तुमने देखी।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -3518,7 +3661,51 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -3535,7 +3722,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -6800,7 +6987,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "ukg-numeracy-1",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "ukg"
     ],
@@ -6817,8 +7004,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🍎 🍎 🍎 🍎 🍎 🍎 🍎. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🍎 🍎 🍎 🍎 🍎 🍎 🍎। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -6851,19 +7038,70 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 7 objects. You can count them again together.",
+          "hi": "तुमने 7 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "7"
+        "answer": "7",
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose a picture. Tell your grown-up why you chose it, using words or gestures.",
-          "hi": "एक चित्र चुनो। शब्द या इशारे से बड़े को बताओ कि उसे क्यों चुना।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -6894,16 +7132,67 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose another picture to compare. What is the same or different? There can be more than one idea.",
-          "hi": "तुलना के लिए दूसरा चित्र चुनो। क्या एक जैसा या अलग है? एक से अधिक विचार हो सकते हैं।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -6934,7 +7223,58 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          },
+          {
+            "picture": "🍎",
+            "label": {
+              "en": "Apple",
+              "hi": "सेब"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -6951,7 +7291,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -6965,7 +7305,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "ukg-numeracy-2",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "ukg"
     ],
@@ -6982,8 +7322,8 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "steps": [
       {
         "instruction": {
-          "en": "Touch each picture as you count: 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼. How many?",
-          "hi": "हर चित्र छूकर गिनो: 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼 🌼। कितने हैं?"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Point to one object for each number you say.",
@@ -7016,19 +7356,91 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 10 objects. You can count them again together.",
+          "hi": "तुमने 10 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "10"
+        "answer": "10",
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose a picture. Tell your grown-up why you chose it, using words or gestures.",
-          "hi": "एक चित्र चुनो। शब्द या इशारे से बड़े को बताओ कि उसे क्यों चुना।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -7059,16 +7471,88 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       },
       {
         "instruction": {
-          "en": "Choose another picture to compare. What is the same or different? There can be more than one idea.",
-          "hi": "तुलना के लिए दूसरा चित्र चुनो। क्या एक जैसा या अलग है? एक से अधिक विचार हो सकते हैं।"
+          "en": "Count again. Choose a number and tell or show your grown-up what you notice about this group.",
+          "hi": "फिर गिनो। एक संख्या चुनो और बड़े को बताओ या दिखाओ कि इस समूह में तुमने क्या देखा।"
         },
         "hint": {
-          "en": "Look closely. Ask your grown-up to name each picture with you.",
-          "hi": "ध्यान से देखो। अपने बड़े के साथ हर चित्र का नाम बोलो।"
+          "en": "Touch each object once. You can show your idea by pointing.",
+          "hi": "हर चीज़ को एक बार छुओ। इशारे से अपना विचार दिखा सकते हो।"
         },
         "items": [
           {
@@ -7099,7 +7583,79 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         "feedback": {
           "en": "You noticed a connection. Let us explore the next one.",
           "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
-        }
+        },
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -7116,7 +7672,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -10013,7 +10569,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "grade-1-explore-1",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "school:1"
     ],
@@ -10023,15 +10579,15 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       "hi": "कक्षा 1: संख्या का बगीचा"
     },
     "objective": {
-      "en": "Count the flowers, then build a pattern.",
-      "hi": "फूल गिनो और पैटर्न बनाओ।"
+      "en": "Count a group of 3 flowers, using one touch for each object.",
+      "hi": "3 फूलों के समूह में हर फूल को एक बार छूकर गिनो।"
     },
     "interaction": "counting",
     "steps": [
       {
         "instruction": {
-          "en": "How many flowers? 🌼 🌼 🌼",
-          "hi": "कितने फूल हैं? 🌼 🌼 🌼"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Look closely. Ask your grown-up to name each picture with you.",
@@ -10064,10 +10620,33 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 3 objects. You can count them again together.",
+          "hi": "तुमने 3 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "3"
+        "answer": "3",
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -10084,7 +10663,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",
@@ -10267,7 +10846,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
   },
   {
     "id": "grade-2-explore-1",
-    "revision": 1,
+    "revision": 2,
     "placements": [
       "school:2"
     ],
@@ -10277,15 +10856,15 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
       "hi": "कक्षा 2: संख्या का बगीचा"
     },
     "objective": {
-      "en": "Count the flowers, then build a pattern.",
-      "hi": "फूल गिनो और पैटर्न बनाओ।"
+      "en": "Count a group of 6 flowers, using one touch for each object.",
+      "hi": "6 फूलों के समूह में हर फूल को एक बार छूकर गिनो।"
     },
     "interaction": "counting",
     "steps": [
       {
         "instruction": {
-          "en": "How many flowers? 🌼 🌼 🌼",
-          "hi": "कितने फूल हैं? 🌼 🌼 🌼"
+          "en": "Tap each object once as you count. How many are there?",
+          "hi": "हर चीज़ को एक बार छूकर गिनो। कितनी हैं?"
         },
         "hint": {
           "en": "Look closely. Ask your grown-up to name each picture with you.",
@@ -10293,35 +10872,79 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
         },
         "items": [
           {
-            "id": "2",
-            "picture": "2",
+            "id": "5",
+            "picture": "5",
             "label": {
-              "en": "Two",
-              "hi": "दो"
+              "en": "5",
+              "hi": "5"
             }
           },
           {
-            "id": "3",
-            "picture": "3",
+            "id": "6",
+            "picture": "6",
             "label": {
-              "en": "Three",
-              "hi": "तीन"
+              "en": "6",
+              "hi": "6"
             }
           },
           {
-            "id": "4",
-            "picture": "4",
+            "id": "7",
+            "picture": "7",
             "label": {
-              "en": "Four",
-              "hi": "चार"
+              "en": "7",
+              "hi": "7"
             }
           }
         ],
         "feedback": {
-          "en": "You noticed a connection. Let us explore the next one.",
-          "hi": "तुमने एक संबंध देखा। अब अगला देखें।"
+          "en": "You counted 6 objects. You can count them again together.",
+          "hi": "तुमने 6 चीज़ें गिनीं। साथ में फिर गिन सकते हो।"
         },
-        "answer": "3"
+        "answer": "6",
+        "countingObjects": [
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          },
+          {
+            "picture": "🌼",
+            "label": {
+              "en": "Flower",
+              "hi": "फूल"
+            }
+          }
+        ]
       }
     ],
     "offline": {
@@ -10338,7 +10961,7 @@ export const ACTIVITY_CATALOG: LearningActivity[] = [
     "review": {
       "status": "reviewed",
       "method": "source-grounded-editorial",
-      "date": "2026-10-03",
+      "date": "2026-10-04",
       "checks": [
         "factual: observable everyday objects or explicitly open-ended creation",
         "developmental: one action, no timer, caregiver scaffolding, short session",

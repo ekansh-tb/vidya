@@ -3,7 +3,7 @@ export type LearningLanguage = "en" | "hi";
 export type Bilingual = Record<LearningLanguage, string>;
 export type ActivityDomain = "language" | "numeracy" | "discovery" | "creative" | "social" | "real-world";
 export type ActivityItem = { id: string; picture: string; pictureHi?: string; label: Bilingual };
-export type ActivityStep = { instruction: Bilingual; hint: Bilingual; items: ActivityItem[]; answer?: string; feedback: Bilingual };
+export type ActivityStep = { instruction: Bilingual; hint: Bilingual; items: ActivityItem[]; answer?: string; feedback: Bilingual; countingObjects?: { picture: string; label: Bilingual }[] };
 export type LearningActivity = {
   id: string; revision: number; placements: string[]; domain: ActivityDomain;
   title: Bilingual; objective: Bilingual;
@@ -17,7 +17,7 @@ export type LearningActivity = {
 export type ActivityDraft = {
   activityId: string; revision: number; step: number; picks: string[]; marks: string[];
   attempts: number; independentResponses: number; hints: number; retries: number;
-  hinted: boolean; responseStatus?: "correct" | "retry"; stepRetries?: number; paused?: boolean; updatedAt: string; startedDay: string;
+  hinted: boolean; counted?: number[]; responseStatus?: "correct" | "retry"; stepRetries?: number; paused?: boolean; updatedAt: string; startedDay: string;
 };
 export type ActivityCompletion = {
   key: string; activityId: string; revision: number; placement: string; language: LearningLanguage;

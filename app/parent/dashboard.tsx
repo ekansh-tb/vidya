@@ -286,11 +286,11 @@ export function ParentDashboard() {
           key={`family-ai-pause-${activeParentId}`}
           onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
         />
-        <LearnerAiTutorAccessPanel
+        {selected?.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool companion</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. Device linking preserves progress; it does not unlock AI tutoring.</p></div> : <LearnerAiTutorAccessPanel
           key={`learner-ai-access-${activeParentId}`}
           learner={selected}
           refreshToken={aiPolicyRevision}
-        />
+        />}
 
         {/* Empty state — no learners yet */}
         {learners.length === 0 && pendingLinkedLearners > 0 && (
@@ -397,6 +397,7 @@ export function ParentDashboard() {
               learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
               reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
               onUpdateLearner={(patch) => updateProfile(selected.id, patch)}
+              localEditable={!!profiles.learners[selected.id]}
             />
           </>
         )}
@@ -413,11 +414,12 @@ export function ParentDashboard() {
 }
 
 function SelectedLearnerView({
-  learner, reportSource, onUpdateLearner,
+  learner, reportSource, onUpdateLearner, localEditable,
 }: {
   learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
   reportSource: ParentReportDecision;
   onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
+  localEditable: boolean;
 }) {
   const state = learner.state;
   const questionBanks = questionsForLearner(learner);
@@ -482,16 +484,16 @@ function SelectedLearnerView({
 
       {/* Two-column body: communications + insights */}
       <div className="md:col-span-2 space-y-4">
-        <FamilyNoteComposer
+        {localEditable ? <><FamilyNoteComposer
           name={learner.name || "your learner"}
           note={learner.familyNote}
           onChange={(next) => onUpdateLearner({ familyNote: next })}
         />
-        <CareNoteComposer
+        {learner.placement?.kind !== "early-years" && <CareNoteComposer
           name={learner.name || "your learner"}
           note={learner.careNote}
           onChange={(next) => onUpdateLearner({ careNote: next })}
-        />
+        />}</> : <div className="rounded-lg border border-neutral-800 p-5"><h2>Notes on this device</h2><p className="text-sm text-neutral-400">Notes and local settings can be edited on the browser where this learner enrolled. This linked report does not save note edits across devices.</p></div>}
         <RecentReflections state={state} name={learner.name || "your learner"} />
         <WellnessSignals
           state={state}
@@ -503,7 +505,7 @@ function SelectedLearnerView({
       </div>
 
       <div className="space-y-4">
-        <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />
+        {localEditable && learner.placement?.kind !== "early-years" && <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />}
 
         {/* Headline snapshot card */}
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
@@ -776,7 +778,13 @@ _All findings are observations, not verdicts. Read together with the kid, never 
 // -----------------------------------------------------------------------------
 
 function SetupStatus({ learner }: { learner: LearnerProfile }) {
-  const items = [
+  const early = learner.placement?.kind === "early-years";
+  const items = early ? [
+    { label:"Name and early-years level", done:!!learner.name?.trim(), hint:placementLabel(learner) },
+    { label:"Learning language", done:!!learner.learningLanguage, hint:learner.learningLanguage === "hi" ? "Hindi" : "English" },
+    { label:"Owned learning profile", done:!!learner.remoteId, hint:learner.remoteId ? "Claimed by this account" : "Claim the profile above to enable device linking." },
+    { label:"Companion guidance", done:true, hint:"Scripted activities; AI tutoring stays unavailable." },
+  ] : [
     {
       label: "Name + grade + board",
       done: !!learner.name?.trim(),
