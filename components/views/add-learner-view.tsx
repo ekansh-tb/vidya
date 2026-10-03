@@ -55,7 +55,7 @@ const SCHOOL_TEMPLATES: SchoolTemplate[] = [
 ];
 
 export function AddLearnerView({
-  existingIds, onSave, onBack,
+  onSave, onBack,
 }: {
   existingIds: string[];
   onSave: (learner: LearnerProfile) => void;
@@ -90,10 +90,9 @@ export function AddLearnerView({
   const onCreate = () => {
     if (!name.trim() || !board || grade === null) return;
     sfx.click();
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24) || "learner";
-    let id = slug;
-    let n = 1;
-    while (existingIds.includes(id)) { id = `${slug}-${++n}`; }
+    // Names are not identities. Parent-scoped retry handling retains this UUID
+    // after an interrupted save without merging different children by nickname.
+    const id = crypto.randomUUID();
     onSave(makeLearner({
       id, name: name.trim(), board, grade,
       school: school.trim() || undefined, city: city.trim() || undefined,
