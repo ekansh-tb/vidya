@@ -803,7 +803,7 @@ function SetupStatus({ learner }: { learner: LearnerProfile }) {
   const early = learner.placement?.kind === "early-years";
   const items = early ? [
     { label:"Name and early-years level", done:!!learner.name?.trim(), hint:placementLabel(learner) },
-    { label:"Learning language", done:!!learner.learningLanguage, hint:learner.learningLanguage === "hi" ? "Hindi" : "English" },
+    { label:"Language choices", done:true, hint:"English by default; Hindi can be selected on each learner device" },
     { label:"Owned learning profile", done:!!learner.remoteId, hint:learner.remoteId ? "Claimed by this account" : "Claim the profile above to enable device linking." },
     { label:"Companion guidance", done:true, hint:"Scripted activities; AI tutoring stays unavailable." },
   ] : [
