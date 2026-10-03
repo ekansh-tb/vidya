@@ -1,6 +1,8 @@
 "use client";
+import { canRegisterLearningWorker } from "@/lib/pwa/registration-scope";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   APPLIED_UPDATE_KEY,
   PENDING_UPDATE_KEY,
@@ -34,6 +36,7 @@ function createUpdateId(): string {
 }
 
 export function ServiceWorkerRegistration() {
+  const pathname = usePathname();
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   const [updateInProgress, setUpdateInProgress] = useState(false);
@@ -41,7 +44,8 @@ export function ServiceWorkerRegistration() {
   const pendingUpdateRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator)) {
+    if (process.env.NODE_ENV !== "production" || !("serviceWorker" in navigator) ||
+      !canRegisterLearningWorker(window.location.hostname, pathname ?? window.location.pathname)) {
       return;
     }
 
@@ -153,9 +157,9 @@ export function ServiceWorkerRegistration() {
       window.removeEventListener("online", handleOnline);
       if (updateInterval) clearInterval(updateInterval);
     };
-  }, []);
+  }, [pathname]);
 
-  if (!waitingWorker || noticeDismissed) return null;
+  if (pathname !== "/" || !waitingWorker || noticeDismissed) return null;
 
   return (
     <section
