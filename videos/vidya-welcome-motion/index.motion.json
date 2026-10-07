@@ -1,0 +1,48 @@
+{
+  "duration": 6,
+  "maxStaticSec": 2.5,
+  "assertions": [
+    {
+      "kind": "appearsBy",
+      "selector": "#welcome-book",
+      "bySec": 0.7
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#welcome-investigate",
+      "bySec": 2.35
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#welcome-create",
+      "bySec": 3.9
+    },
+    {
+      "kind": "before",
+      "a": "#welcome-book",
+      "b": "#welcome-investigate"
+    },
+    {
+      "kind": "before",
+      "a": "#welcome-investigate",
+      "b": "#welcome-create"
+    },
+    {
+      "kind": "staysInFrame",
+      "selector": "#welcome-book"
+    },
+    {
+      "kind": "staysInFrame",
+      "selector": "#welcome-investigate"
+    },
+    {
+      "kind": "staysInFrame",
+      "selector": "#welcome-create"
+    },
+    {
+      "kind": "keepsMoving",
+      "withinSelector": "#welcome-graphic",
+      "maxStaticSec": 2.5
+    }
+  ]
+}

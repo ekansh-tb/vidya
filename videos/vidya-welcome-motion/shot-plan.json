@@ -1,0 +1,194 @@
+{
+  "category": "diagram",
+  "status": "final",
+  "duration_s": 6,
+  "fps": 30,
+  "canvas": {
+    "w": 720,
+    "h": 360,
+    "aspect": "2:1"
+  },
+  "style": "Balanced editorial learning diagram. A connected journey joins an original book, investigation lens and geometric creation. Fine navy strokes on paper with restrained violet and mint. No mascot, confetti, text, simulated UI or external assets.",
+  "palette": [
+    "#F7F8FC",
+    "#202C46",
+    "#6254B4",
+    "#DCEEE5",
+    "#FFFFFF",
+    "#5E6B80"
+  ],
+  "beats": [
+    0.25,
+    1.75,
+    3.25
+  ],
+  "export": "mp4",
+  "asset_needs": [],
+  "shot_brief": "An open book appears first, a connected investigation lens joins next, then three geometric construction shapes arrive. The connectors are the single dominant motion idea: reading becomes investigation, then something the learner makes. The complete authored SVG matches public/learning/vidya-welcome.svg exactly, including its three balanced cards, fixed positions and horizontal path. No baked English or Hindi, font, logo, mascot or learning outcome claims. All geometry holds still for the last 2.15 seconds.",
+  "content": {
+    "block": "flowchart",
+    "customize": {
+      "canvas": "Adapt fixed donor canvas to 720x360.",
+      "palette": "Use the exact palette array. Background paper, dark navy icon strokes, violet connecting route, pale mint fills and white object surfaces.",
+      "nodes": "Reuse the exact original source geometry in public/learning/vidya-welcome.svg. Group book card/object, investigation card/object and geometric creation card/object; do not draw a pencil or leaf absent from that poster.",
+      "remove": "Remove all donor headings, cursor interaction, typing correction and user-interface chrome. No text rendered anywhere.",
+      "connectors": "Reuse flowchart measured SVG dash reveal on the exact anchored horizontal poster path M170 180h380, including static dashed end state and original connector dots. No pseudo-random drawing or perpetual animation.",
+      "timing": "Use a finite 6-second seek-safe paused timeline. Book reveal0.10-0.65; first connector1.2-1.8; lens reveal1.75-2.30; second connector2.8-3.4; creation reveal3.25-3.85. All geometry is completely still from3.85 to6.",
+      "accessibility": "Stable positions. Small opacity and maximum 8px entrance only; no camera movement, large translation, flashing, spinning, bounce, sound or loop. App provides native playback controls and reduced-motion static fallback.",
+      "provenance": "Original learning SVG artwork authored in source, catalog flowchart reused for connector and reveal composition. No external rights required."
+    },
+    "layout": {
+      "safe_margin_px": 48,
+      "poster_source": "../../public/learning/vidya-welcome.svg",
+      "cards": [
+        {
+          "id": "book",
+          "rect": [
+            76,
+            100,
+            160,
+            160
+          ],
+          "center": [
+            156,
+            180
+          ]
+        },
+        {
+          "id": "investigate",
+          "rect": [
+            280,
+            100,
+            160,
+            160
+          ],
+          "center": [
+            360,
+            180
+          ]
+        },
+        {
+          "id": "create",
+          "rect": [
+            484,
+            100,
+            160,
+            160
+          ],
+          "center": [
+            564,
+            180
+          ]
+        }
+      ],
+      "connector": "Exact poster horizontal connector, behind cards; draw exposed connector segments between cards using measured path lengths. All nodes remain visible as next node arrives.",
+      "objects": [
+        {
+          "id": "book",
+          "center": [
+            156,
+            180
+          ],
+          "max_extent": [
+            160,
+            160
+          ]
+        },
+        {
+          "id": "investigate",
+          "center": [
+            360,
+            180
+          ],
+          "max_extent": [
+            160,
+            160
+          ]
+        },
+        {
+          "id": "create",
+          "center": [
+            564,
+            180
+          ],
+          "max_extent": [
+            160,
+            160
+          ]
+        }
+      ]
+    },
+    "scenes": [
+      {
+        "id": "read",
+        "start": 0,
+        "end": 1.6,
+        "text": "",
+        "emphasis_words": [],
+        "emotion": "welcoming curiosity",
+        "motion": "book object arrives with short fade",
+        "beats": [
+          0.25
+        ]
+      },
+      {
+        "id": "wonder",
+        "start": 1.6,
+        "end": 3.1,
+        "text": "",
+        "emphasis_words": [],
+        "emotion": "curiosity",
+        "motion": "connector draws to lens object; lens fades in",
+        "beats": [
+          1.75
+        ]
+      },
+      {
+        "id": "create",
+        "start": 3.1,
+        "end": 3.85,
+        "text": "",
+        "emphasis_words": [],
+        "emotion": "agency",
+        "motion": "second connector draws to the three geometric creation shapes",
+        "beats": [
+          3.25
+        ]
+      },
+      {
+        "id": "resolve",
+        "start": 3.85,
+        "end": 6,
+        "text": "",
+        "emphasis_words": [],
+        "emotion": "settled invitation",
+        "motion": "all geometry holds absolutely still",
+        "beats": []
+      }
+    ],
+    "proof_times": [
+      0.6,
+      2.25,
+      3.8,
+      5.5
+    ],
+    "final_frame": "Pixel-consistent pose with public/learning/vidya-welcome.svg: book, magnifying glass and geometric construction in three160px cards at x76,280,484/y100 on720x360; no text or font."
+  },
+  "schema_extension": "The catalog-map explicitly supports diagram/flowchart, while the category enum in shot-plan-ir omits diagram. This plan uses that diagram category directly to avoid fabricated chart data or typography in a locale-neutral visual.",
+  "block": "flowchart",
+  "customize": {
+    "canvas": "Adapt fixed donor canvas to 720x360.",
+    "palette": "Use the exact palette array. Background paper, dark navy icon strokes, violet connecting route, pale mint fills and white object surfaces.",
+    "nodes": "Reuse the exact original source geometry in public/learning/vidya-welcome.svg. Group book card/object, investigation card/object and geometric creation card/object; do not draw a pencil or leaf absent from that poster.",
+    "remove": "Remove all donor headings, cursor interaction, typing correction and user-interface chrome. No text rendered anywhere.",
+    "connectors": "Reuse flowchart measured SVG dash reveal on the exact anchored horizontal poster path M170 180h380, including static dashed end state and original connector dots. No pseudo-random drawing or perpetual animation.",
+    "timing": "Use a finite 6-second seek-safe paused timeline. Book reveal0.10-0.65; first connector1.2-1.8; lens reveal1.75-2.30; second connector2.8-3.4; creation reveal3.25-3.85. All geometry is completely still from3.85 to6.",
+    "accessibility": "Stable positions. Small opacity and maximum 8px entrance only; no camera movement, large translation, flashing, spinning, bounce, sound or loop. App provides native playback controls and reduced-motion static fallback.",
+    "provenance": "Original learning SVG artwork authored in source, catalog flowchart reused for connector and reveal composition. No external rights required."
+  },
+  "motion_review": {
+    "maxStaticSec": 2.5,
+    "intentional_final_hold_s": 2.15,
+    "reason": "The optional finite app introduction resolves to its static fallback pose. Do not add ambient motion to satisfy a motion metric."
+  }
+}

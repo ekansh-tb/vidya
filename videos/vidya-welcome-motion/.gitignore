@@ -1,0 +1,7 @@
+renders/
+snapshots/
+.hyperframes/
+.thumbnails/
+.hf-tmp/
+node_modules/
+check-result.json

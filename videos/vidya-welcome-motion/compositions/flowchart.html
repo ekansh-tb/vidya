@@ -1,0 +1,82 @@
+<!DOCTYPE html><!-- hyperframes-registry-item: flowchart -->
+<!-- Modified from the HyperFrames flowchart block: SVG objects, layout and timing were replaced for Vidya's original locale-neutral welcome diagram. Catalog connector stroke reveals are retained. -->
+
+<html><head><meta charset="UTF-8"></head><body><template>
+<style>
+#vidya-welcome { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; --paper: #F7F8FC; --ink: #202C46; --accent: #6254B4; --mint: #DCEEE5; --white: #FFFFFF; --muted: #5E6B80; }
+#vidya-welcome svg { display: block; width: 100%; height: 100%; }
+.paper { fill: var(--paper); }
+.white { fill: var(--white); }
+.mint { fill: var(--mint); }
+.accent { fill: var(--accent); }
+.card { stroke: var(--mint); stroke-width: 2; }
+.ink { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.accent-stroke { stroke: var(--accent); }
+.rule { stroke: var(--mint); stroke-width: 2; }
+.reveal-node, .connector-dot { opacity: 0; }
+</style>
+<div data-hf-id="hf-nxms" id="vidya-welcome" data-composition-id="vidya-welcome" data-start="0" data-duration="6" data-fps="30" data-width="720" data-height="360">
+<svg data-hf-id="hf-uag0" id="welcome-graphic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" fill="none">
+<defs data-hf-id="hf-mh0t">
+  <mask data-hf-id="hf-r9of" id="welcome-route-mask" maskUnits="userSpaceOnUse" x="160" y="170" width="400" height="20">
+    <path data-hf-id="hf-olx9" id="route-read" d="M170 180h190" stroke="white" stroke-width="12" />
+    <path data-hf-id="hf-hvsu" id="route-create" d="M360 180h190" stroke="white" stroke-width="12" />
+  </mask>
+</defs>
+<rect data-hf-id="hf-1kth" width="720" height="360" rx="24" class="paper" />
+<path data-hf-id="hf-pyle" d="M48 64h624M48 296h624" class="rule" />
+<path data-hf-id="hf-58qy" d="M170 180h380" class="accent-stroke" stroke-width="3" stroke-dasharray="6 8" opacity=".55" mask="url(#welcome-route-mask)" />
+<g data-hf-id="hf-qghm" id="welcome-book" class="reveal-node">
+  <rect data-hf-id="hf-8prl" x="76" y="100" width="160" height="160" rx="24" class="white card" />
+  <g data-hf-id="hf-x4pe" class="ink">
+    <path data-hf-id="hf-4szq" d="M112 150c20-8 30-6 44 2v65c-14-8-24-10-44-2z" class="mint" />
+    <path data-hf-id="hf-ts14" d="M156 152c14-8 24-10 44-2v65c-20-8-30-6-44 2z" class="paper" />
+    <path data-hf-id="hf-fjta" d="M124 170h19m-19 12h19m27-12h18m-18 12h18" class="accent-stroke" stroke-width="3" />
+  </g>
+</g>
+<g data-hf-id="hf-2vtu" id="welcome-investigate" class="reveal-node">
+  <rect data-hf-id="hf-pbkq" x="280" y="100" width="160" height="160" rx="24" class="white card" />
+  <g data-hf-id="hf-9s2e" class="ink">
+    <circle data-hf-id="hf-qd38" cx="351" cy="168" r="29" class="mint" />
+    <path data-hf-id="hf-r8tz" d="m372 190 28 28" stroke-width="8" />
+    <path data-hf-id="hf-i89u" d="m345 168 7-10 7 10-7 10z" class="accent accent-stroke" stroke-width="2" />
+  </g>
+</g>
+<g data-hf-id="hf-8abd" id="welcome-create" class="reveal-node">
+  <rect data-hf-id="hf-pslo" x="484" y="100" width="160" height="160" rx="24" class="white card" />
+  <g data-hf-id="hf-a6df" class="ink">
+    <rect data-hf-id="hf-qlzu" x="525" y="176" width="32" height="32" rx="4" class="mint" />
+    <path data-hf-id="hf-wa8o" d="m565 177 17-31 18 31z" class="accent accent-stroke" />
+    <circle data-hf-id="hf-4twt" cx="583" cy="199" r="16" class="paper" />
+  </g>
+</g>
+<circle data-hf-id="hf-4us6" id="welcome-dot-read" cx="246" cy="180" r="6" class="accent connector-dot" />
+<circle data-hf-id="hf-g9q3" id="welcome-dot-create" cx="450" cy="180" r="6" class="accent connector-dot" />
+<path data-hf-id="hf-g5np" d="m658 74 5-8 5 8-5 8z" class="accent" />
+<circle data-hf-id="hf-5wd8" cx="59" cy="281" r="4" class="accent" />
+</svg>
+</div>
+<script>
+(() => {
+  const tl = gsap.timeline({ paused: true });
+  // The catalog flowchart's stroke reveal is applied to masks, preserving the poster's dashed path.
+  const routes = [document.querySelector('#route-read'), document.querySelector('#route-create')];
+  routes.forEach((route, index) => {
+    const length = route.getTotalLength();
+    tl.fromTo(route, { strokeDasharray: length, strokeDashoffset: length },
+      { strokeDasharray: length, strokeDashoffset: 0, duration: .6, ease: 'none' }, index === 0 ? 1.2 : 2.8);
+  });
+  tl.addLabel('read', .1);
+  tl.fromTo('#welcome-book', { opacity: 0 }, { opacity: 1, duration: .55, ease: 'power2.out' }, 'read');
+  tl.fromTo('#welcome-dot-read', { opacity: 0 }, { opacity: 1, duration: .2, ease: 'power1.out' }, 1.4);
+  tl.addLabel('investigate', 1.75);
+  tl.fromTo('#welcome-investigate', { opacity: 0 }, { opacity: 1, duration: .55, ease: 'power3.out' }, 'investigate');
+  tl.fromTo('#welcome-dot-create', { opacity: 0 }, { opacity: 1, duration: .2, ease: 'power1.out' }, 3);
+  tl.addLabel('create', 3.25);
+  tl.fromTo('#welcome-create', { opacity: 0 }, { opacity: 1, duration: .6, ease: 'sine.out' }, 'create');
+  tl.addLabel('settled', 3.85);
+  window.__timelines['vidya-welcome'] = tl;
+  tl.seek(0);
+})();
+</script>
+</template></body></html>

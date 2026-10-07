@@ -706,3 +706,9 @@
   .parent-dashboard>section { padding:24px 16px; }
   .parent-dashboard>section>div:first-child { flex-wrap:wrap; gap:12px; overflow-wrap:anywhere; }
 }
+@media(max-width:480px) {
+  .kids-adventure { gap:12px; }
+  .kids-adventure p { max-width:100%; }
+  .kids-adventure-art { min-width:0; width:100%; max-width:104px; }
+  .kids-adventure-art .activity-art { min-width:0; }
+}
