@@ -19,6 +19,7 @@ class MemoryCache {
   }
 
   async put(value: string | Request, response: Response) {
+    if (response.status === 206) throw new TypeError("Cache Storage cannot store partial responses");
     this.entries.set(cacheKey(value), response.clone());
   }
 
@@ -119,10 +120,11 @@ function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()
     skipWaiting,
     policy: self.__VIDYA_SW_TEST__ as {
       STATIC_CACHE: string;
+      LEARNING_CACHE: string;
       UPDATE_CACHE: string;
       UPDATE_MARKER_URL: string;
       UPDATE_MESSAGES: Record<string, string>;
-      strategyForRequest: (request: { method: string; mode: string; url: string }) => string;
+      strategyForRequest: (request: { method: string; mode: string; url: string; headers: Headers }) => string;
       trimCache: (cache: MemoryCache, limit: number, protectedPaths?: Set<string>) => Promise<void>;
       navigationWithFallback: (network: Promise<Response>, root: boolean) => Promise<Response>;
       nextStaticDependencies: (html: string) => string[];
@@ -180,7 +182,7 @@ describe("required account compatibility update", () => {
 describe("service worker route privacy", () => {
   it("never intercepts parent, authentication, API, mutation, or cross-origin requests", () => {
     const { policy } = workerHarness();
-    const strategy = (url: string, mode = "navigate", method = "GET") => policy.strategyForRequest({ url, mode, method });
+    const strategy = (url: string, mode = "navigate", method = "GET") => policy.strategyForRequest({ url, mode, method, headers: new Headers() });
 
     expect(strategy(`${ORIGIN}/parent`)).toBe("bypass");
     expect(strategy(`${ORIGIN}/parent/reports`)).toBe("bypass");
@@ -193,7 +195,7 @@ describe("service worker route privacy", () => {
 
   it("allows only the public shell, static assets, and public learning resources", () => {
     const { policy } = workerHarness();
-    const strategy = (path: string, mode: string) => policy.strategyForRequest({ url: `${ORIGIN}${path}`, mode, method: "GET" });
+    const strategy = (path: string, mode: string) => policy.strategyForRequest({ url: `${ORIGIN}${path}`, mode, method: "GET", headers: new Headers() });
 
     expect(strategy("/", "navigate")).toBe("root-navigation");
     expect(strategy("/?learner=secret", "navigate")).toBe("navigation");
@@ -311,4 +313,58 @@ describe("cross-tab update protocol", () => {
     expect(responsive.navigate).not.toHaveBeenCalled();
     expect(sleeping.navigate).toHaveBeenCalledWith(`${ORIGIN}/`);
   });
+});
+
+
+describe("public resource delivery", () => {
+  it("leaves browser video byte-range requests on the network path", () => {
+    const { policy, listeners } = workerHarness();
+    const request = new Request(`${ORIGIN}/learning/vidya-welcome.webm`, { headers: { Range: "bytes=0-1023" } });
+    expect(policy.strategyForRequest(request)).toBe("bypass");
+    const respondWith = vi.fn();
+    listeners.get("fetch")!({ request, respondWith });
+    expect(respondWith).not.toHaveBeenCalled();
+  });
+
+  it("returns a successful partial response without trying to cache it", async () => {
+    const response = new Response("video bytes", { status: 206, headers: { "content-range": "bytes 0-10/20" } });
+    Object.defineProperty(response, "type", { value: "basic" });
+    const fetchResource = vi.fn(async () => response);
+    const { listeners, caches } = workerHarness([], fetchResource);
+    const put = vi.spyOn(MemoryCache.prototype, "put");
+    let delivery: Promise<Response> | undefined;
+    listeners.get("fetch")!({ request: new Request(`${ORIGIN}/learning/vidya-welcome.webm`), respondWith: (value: Promise<Response>) => { delivery = value; } });
+    expect((await delivery)?.status).toBe(206);
+    expect(await (await delivery)!.text()).toBe("video bytes");
+    expect(put).not.toHaveBeenCalled();
+    expect([...caches.stores.values()].every(cache => cache.entries.size === 0)).toBe(true);
+    put.mockRestore();
+  });
+
+  it.each(["/learning/vidya-welcome.svg", "/_next/static/app.js"])("keeps %s usable when cache writes fail", async (path) => {
+    const response = new Response("available online");
+    Object.defineProperty(response, "type", { value: "basic" });
+    const { listeners } = workerHarness([], vi.fn(async () => response));
+    const put = vi.spyOn(MemoryCache.prototype, "put").mockRejectedValue(new Error("Storage quota exceeded"));
+    let delivery: Promise<Response> | undefined;
+    listeners.get("fetch")!({ request: new Request(`${ORIGIN}${path}`), respondWith: (value: Promise<Response>) => { delivery = value; } });
+    expect(await (await delivery)!.text()).toBe("available online");
+    put.mockRestore();
+  });
+});
+
+
+it("retains the previous offline copy when a learning cache replacement fails", async () => {
+  const response = new Response("new online copy");
+  Object.defineProperty(response, "type", { value: "basic" });
+  const { listeners, caches, policy } = workerHarness([], vi.fn(async () => response));
+  const cache = await caches.open(policy.LEARNING_CACHE);
+  const request = new Request(`${ORIGIN}/books/story.json`);
+  await cache.put(request, new Response("previous offline copy"));
+  const put = vi.spyOn(MemoryCache.prototype, "put").mockRejectedValue(new Error("Storage quota exceeded"));
+  let delivery: Promise<Response> | undefined;
+  listeners.get("fetch")!({ request, respondWith: (value: Promise<Response>) => { delivery = value; } });
+  expect(await (await delivery)!.text()).toBe("new online copy");
+  expect(await (await cache.match(request))!.text()).toBe("previous offline copy");
+  put.mockRestore();
 });

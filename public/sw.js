@@ -7,7 +7,7 @@
  */
 
 const CACHE_PREFIX = "vidya-public";
-const CACHE_VERSION = "2026-10-07-interface-2";
+const CACHE_VERSION = "2026-10-08-media-1";
 // Only this compatibility release forces old browser sessions onto account enrollment.
 const REQUIRED_ACCOUNT_UPDATE_VERSION = "2026-10-07-sync-1";
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
@@ -75,6 +75,8 @@ function strategyForRequest(request) {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || isPrivateRoute(url.pathname)) return "bypass";
+  // The browser manages byte ranges. Cache Storage cannot store HTTP 206.
+  if (request.headers.has("range")) return "bypass";
   if (request.mode === "navigate") return isExactRootUrl(url) ? "root-navigation" : "navigation";
   if (isStaticAsset(url.pathname)) return "static";
   if (isPublicLearningAsset(url.pathname)) return "learning";
@@ -82,7 +84,7 @@ function strategyForRequest(request) {
 }
 
 function canStore(response) {
-  if (!response || !response.ok || response.type !== "basic") return false;
+  if (!response || !response.ok || response.status === 206 || response.type !== "basic") return false;
 
   const cacheControl = response.headers.get("cache-control") ?? "";
   const hasPrivateDirective = /(?:^|,)\s*(?:private|no-store)(?:\s*=|\s|,|$)/i.test(cacheControl);
@@ -109,7 +111,6 @@ async function trimCache(cache, maxEntries, protectedPaths = new Set()) {
 
 async function putBounded(cacheName, request, response, maxEntries, protectedPaths = new Set()) {
   const cache = await caches.open(cacheName);
-  await cache.delete(request);
   await cache.put(request, response);
   await trimCache(cache, maxEntries, protectedPaths);
 }
@@ -121,7 +122,11 @@ async function cacheFirst(request) {
 
   const response = await fetch(request);
   if (canStore(response)) {
-    await putBounded(STATIC_CACHE, request, response.clone(), STATIC_CACHE_MAX_ENTRIES, PROTECTED_STATIC_PATHS);
+    try {
+      await putBounded(STATIC_CACHE, request, response.clone(), STATIC_CACHE_MAX_ENTRIES, PROTECTED_STATIC_PATHS);
+    } catch {
+      // Full caches or unavailable storage must not break a successful fetch.
+    }
   }
   return response;
 }
@@ -132,7 +137,11 @@ async function networkFirst(request) {
   try {
     const response = await fetch(request);
     if (canStore(response)) {
-      await putBounded(LEARNING_CACHE, request, response.clone(), LEARNING_CACHE_MAX_ENTRIES);
+      try {
+        await putBounded(LEARNING_CACHE, request, response.clone(), LEARNING_CACHE_MAX_ENTRIES);
+      } catch {
+        // Online resources remain usable when offline storage cannot be written.
+      }
     }
     return response;
   } catch (error) {
