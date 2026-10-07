@@ -251,7 +251,7 @@ export function ParentDashboard() {
   }
 
   return (
-    <main className="min-h-screen text-neutral-100 relative">
+    <main className="parent-dashboard min-h-screen text-neutral-100 relative">
       <CosmicBg mode="parent" intensity={0.6} />
       <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
@@ -364,6 +364,7 @@ export function ParentDashboard() {
                   // profile, and the next kid to open Vidya landed inside their
                   // sibling's account. Reading must never rewrite whose app it
                   // is.
+                  aria-pressed={active}
                   onClick={() => setSelectedId(l.id)}
                   className="rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition"
                   style={{

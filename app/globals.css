@@ -596,3 +596,113 @@
 .parent-auth-home { display:block; width:fit-content; margin:auto; min-height:44px; padding:10px 8px; color:#6554c0; text-decoration:underline; text-underline-offset:4px; font-size:.85rem; }
 .parent-auth-shell :is(a,button,input):focus-visible { outline:3px solid #6554c0; outline-offset:3px; }
 @media(max-width:480px) { .parent-auth-shell { padding:24px 16px; }.parent-auth-brand { margin-bottom:24px; }.parent-auth-card { padding:24px 20px; }.parent-auth-intro h1 { font-size:1.8rem; } }
+
+/* Balanced welcome and learning workspace. Shared child colors stay local. */
+.kids-surface, .kids-world, .kids-player, .kids-nav {
+  --kid-ink:#202c46; --kid-muted:#5e6b80; --kid-purple:#6254b4;
+  --kid-paper:#f7f8fc; --kid-mint:#dceee5;
+}
+.kids-brand-mark { border-radius:10px; }
+.kids-level { background:#fff; border-radius:6px; }
+.kids-world .kids-heading h1 { font-size:clamp(1.8rem,3.5vw,2.4rem); font-weight:600; }
+.kids-adventure { background:#fff; border:1px solid #dce1eb; border-left:5px solid var(--kid-purple); border-radius:16px; padding:28px 32px; }
+.kids-adventure .kids-tag { background:#eeeafa; color:var(--kid-purple); border-radius:6px; }
+.kids-adventure-art { background:var(--art-bg); border-radius:50%; padding:12px; max-width:190px; justify-self:end; }
+.kids-adventure h2 { font-weight:600; }
+.learning-hub button.kids-activity-card { flex-direction:row; align-items:center; border-radius:12px; box-shadow:none; min-height:142px; }
+.kids-activity-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.kids-card-picture { width:112px; min-width:112px; min-height:110px; margin:12px 0 12px 12px; padding:12px; border-radius:10px; font-size:1.6rem; flex-wrap:wrap; gap:4px; }
+.kids-card-picture .activity-art { width:94px; height:85px; }
+.kids-card-copy { min-width:0; padding:14px; }
+.kids-card-copy>strong { font-size:1.1rem; margin:4px 0 10px; }
+.kids-card-copy>small, .kids-card-meta { font-size:.75rem; }
+.kids-card-meta { align-items:start; }
+.kids-nav { border-radius:14px; }
+.kids-nav button { border-radius:9px; }
+.buddy-home .buddy-tile, .buddy-home .buddy-panel { border-radius:14px; box-shadow:none; }
+.next-quest-card[data-appearance=light] { background:#fff!important; border:1px solid #dce1eb!important; border-left:5px solid var(--kid-purple)!important; }
+.account-entry { max-width:1180px; padding:28px 40px 32px; }
+.account-entry .kids-header { margin-bottom:60px; }
+.welcome-navigation { display:flex; align-items:center; gap:24px; font-size:.85rem; font-weight:650; }
+.welcome-navigation a { min-height:44px; display:flex; align-items:center; }
+.welcome-layout { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(320px,.9fr); gap:64px; align-items:start; }
+.account-entry .welcome-story h1 { font-size:clamp(2.3rem,4.6vw,3.7rem); line-height:1.12; font-weight:600; letter-spacing:-.035em; }
+.welcome-story h1 span { color:var(--kid-purple); }
+.account-entry .welcome-description { font-size:1rem; line-height:1.85; max-width:49ch; margin:24px 0 14px; }
+.welcome-mission, .vidya-about a { display:inline-flex; align-items:center; gap:10px; color:var(--kid-purple); font-weight:650; font-size:.85rem; min-height:44px; text-decoration:underline; text-underline-offset:5px; }
+.account-entry .welcome-code { margin:0; padding:30px; border-radius:16px; border-color:#dce1eb; box-shadow:0 8px 24px #202c4608; }
+.welcome-step { display:block; font-weight:650; font-size:.75rem; color:var(--kid-purple); margin-bottom:12px; }
+.account-entry .welcome-code h2 { font-size:1.65rem; margin:0; }
+.account-entry .welcome-code>.learning-caption { line-height:1.7; }
+.welcome-code label { display:block; font-size:.85rem; font-weight:650; margin-top:24px; }
+.account-entry .welcome-code input { min-height:56px; border-radius:8px; border:1px solid #9da8bb; margin:8px 0; padding:12px 14px; font-size:1.3rem; }
+.account-entry .welcome-code .learning-primary { width:100%; margin-top:14px; justify-content:space-between; border-radius:8px; }
+.account-entry .account-grown-up { display:block; padding:24px 8px 8px; }
+.account-grown-up h2 { font-size:1rem; }
+.account-grown-up p { line-height:1.7; }
+.account-entry .account-help { margin-top:12px; padding:12px 8px 0; font-size:.75rem; }
+.welcome-error { color:#9b263a; font-size:.85rem; }
+.account-entry .welcome-back { margin-top:12px; }
+.vidya-intro-visual { position:relative; min-width:0; }
+.vidya-intro-visual :is(img,video) { width:100%; height:auto; aspect-ratio:2/1; object-fit:contain; display:block; border-radius:12px; }
+.welcome-story .vidya-intro-visual { margin:22px 0 0; max-width:480px; }
+.learning-hub button.vidya-intro-play, .kids-world button.vidya-intro-play { display:flex; align-items:center; gap:8px; padding:6px 10px; min-height:44px; font-size:.75rem; background:transparent; border:0; color:var(--kid-muted); }
+.welcome-paths { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:40px; border-top:1px solid #dce1eb; padding:28px 0; margin-top:48px; }
+.welcome-paths svg { color:var(--kid-purple); width:24px; height:24px; margin-bottom:14px; }
+.account-entry .welcome-paths h2 { font-size:1.1rem; margin:0; }
+.welcome-paths p { font-size:.85rem; color:var(--kid-muted); }
+.welcome-footer { display:flex; align-items:center; justify-content:space-between; gap:20px; border-top:1px solid #dce1eb; padding-top:20px; color:var(--kid-muted); font-size:.75rem; }
+.welcome-footer a { min-height:44px; display:flex; align-items:center; }
+.vidya-about { margin-top:32px; border-top:1px solid #dce1eb; font-size:.85rem; }
+.vidya-about summary { min-height:48px; padding:12px 0; cursor:pointer; color:var(--kid-muted); }
+.vidya-about-content { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; gap:24px; padding:8px 0 20px; }
+.vidya-about-content h2 { font-size:1.3rem; }.vidya-about-content p { color:var(--kid-muted); }
+/* Parent report panels must not inherit the light child activity surface. */
+.parent-dashboard {
+  --text:#f1f5fc; --text-muted:#b6c2d5; --bg-base:#111a2c; --surface:#182238;
+  --border:#45536c; --accent:#c7b8ff; --accent-soft:#302b50; color:var(--text); color-scheme:dark;
+}
+.parent-dashboard .learning-panel { background:var(--surface); border-color:var(--border); color:var(--text); border-radius:16px; }
+.parent-dashboard .learning-panel h2 { font-weight:650; font-size:1.1rem; margin-bottom:8px; }
+.parent-dashboard :is(.text-neutral-500,.text-neutral-600) { color:var(--text-muted); }
+.parent-dashboard :is(.buddy-panel,.buddy-action) { color:var(--text); }
+.parent-dashboard .buddy-panel p { color:var(--text-muted); margin:8px 0; }
+.parent-dashboard .buddy-action { border-radius:10px; }
+.parent-dashboard .buddy-panel select { color:var(--text); border:1px solid var(--border); border-radius:8px; min-height:48px; }
+.parent-dashboard .buddy-panel button:not(.buddy-action) { min-height:44px; padding:8px 12px; border:1px solid var(--border); border-radius:8px; }
+.parent-dashboard .buddy-panel button[aria-pressed=true] { background:var(--accent-soft); border-color:var(--accent); }
+.parent-dashboard :is(button,a,input,select,summary):focus-visible { outline:3px solid #c7b8ff; outline-offset:3px; }
+/* Enrollment has its own light surface and readable native form controls. */
+.parent-dashboard .learning-hub { color-scheme:light; }
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+  .kids-activity-card:hover, .buddy-home .buddy-tile:hover { transform:translateY(-2px); box-shadow:0 4px 12px #202c460d; }
+}
+@media(max-width:950px) {
+  .welcome-layout { gap:32px; grid-template-columns:minmax(0,1fr) minmax(300px,.9fr); }
+  .account-entry { padding:24px; }.account-entry .kids-header { margin-bottom:40px; }
+}
+@media(max-width:700px) {
+  .welcome-layout { grid-template-columns:1fr; gap:28px; }
+  .account-entry .welcome-story h1 { font-size:2.6rem; }.account-entry .welcome-description { margin-top:18px; }
+  .welcome-story .vidya-intro-visual { max-width:400px; }.account-entry .welcome-code { padding:24px; }
+  .account-entry .kids-header { margin-bottom:28px; }.welcome-paths { gap:24px; margin-top:32px; }
+  .kids-activity-grid { grid-template-columns:1fr; }.learning-hub button.kids-activity-card { min-height:124px; }
+  .kids-card-picture { min-height:98px; }.kids-card-copy>strong { font-size:1.2rem; }
+  .kids-card-copy>small, .kids-card-meta { font-size:.8rem; }.vidya-about-content { grid-template-columns:1fr; }
+}
+@media(max-width:480px) {
+  .account-entry { padding:20px 20px 32px; }.welcome-navigation { gap:12px; font-size:.75rem; }
+  .account-entry .welcome-story h1 { font-size:2.15rem; }.account-entry .welcome-description { font-size:.9rem; }
+  .welcome-paths { grid-template-columns:1fr; gap:24px; }.welcome-paths>div { display:grid; grid-template-columns:30px 1fr; column-gap:16px; }.welcome-paths svg { grid-row:span 2; }.welcome-paths p { margin:4px 0; }
+  .welcome-footer { align-items:start; }.kids-adventure { padding:22px 18px; border-radius:12px; grid-template-columns:minmax(0,1fr) 27%; }
+  .kids-adventure-art { padding:4px; align-self:center; }.kids-adventure-copy { margin-right:0; }.kids-adventure h2 { font-size:1.45rem; }
+  .kids-nav { border-radius:14px 14px 0 0; }.kids-card-picture { width:96px; min-width:96px; }.kids-card-copy { padding:12px; }
+}
+.welcome-start { display:flex; align-items:center; gap:10px; width:fit-content; font-size:.85rem; min-height:48px; margin-top:8px; color:var(--kid-ink); font-weight:650; }
+.account-entry #device-code { scroll-margin-top:100px; }
+.parent-dashboard button.rounded-full { min-height:44px; }
+@media(max-width:480px) {
+  .parent-dashboard>header>div { padding:16px; gap:12px; flex-wrap:wrap; }
+  .parent-dashboard>section { padding:24px 16px; }
+  .parent-dashboard>section>div:first-child { flex-wrap:wrap; gap:12px; overflow-wrap:anywhere; }
+}

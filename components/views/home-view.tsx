@@ -3,6 +3,7 @@
 import { createPortal } from "react-dom";
 import { useId, useMemo, useState, useRef } from "react";
 import { BookOpen, Compass, Home, Palette, Footprints, Settings, Users, ArrowRight, Music, Globe, NotebookPen, Wind, Trophy, GraduationCap } from "lucide-react";
+import { VidyaIntroduction } from "@/components/learning/vidya-introduction";
 import { LearningCompanion } from "@/components/ui/learning-companion";
 import { hubActivities } from "@/lib/learning/hub-selection";
 import { companionUnlocks } from "@/lib/learning/activity";
@@ -87,6 +88,7 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
     </div>}
     {tab === "create" && <div className="grid sm:grid-cols-2 gap-3">{tile("Make a creation", activities.some(activity => activity.interaction === "creation") ? "A picture, a design, or a project" : "Creation activities are being prepared for this grade", Palette, "activities", { tab: "make" })}{tile("Music", "Play, record, and save a melody", Music, "music")}{tile("Notebook", "Keep your questions and ideas", NotebookPen, "notebook")}{tile("Wellness", "Make room for a calm break", Wind, "wellness")}</div>}
     {tab === "journey" && <div className="space-y-5"><LearningCompanion compact decorations={companionUnlocks(state.activities ?? { completions: [] })} line="Your discoveries stay here. Taking a break loses nothing."/><Reflection state={state} /><section className="buddy-panel"><h2 className="font-display text-xl font-bold">Every visit adds to your story</h2><p className="mt-2 text-[var(--text-muted)]">Your progress stays here when you take a break. Practice counts describe what you tried, not everything you understand.</p><dl className="grid grid-cols-3 gap-3 mt-5"><div><dt>Practice answers</dt><dd className="text-2xl font-bold">{state.stats.totalAnswered}</dd></div><div><dt>Books marked read</dt><dd className="text-2xl font-bold">{state.readBooks.length}</dd></div><div><dt>Places explored</dt><dd className="text-2xl font-bold">{state.passportStamps.length}</dd></div></dl></section><div className="grid sm:grid-cols-2 gap-3">{tile("Your profile", "Appearance, interests, and saved progress", Users, "profile")}{tile("Your collection", "Badges from your learning journey", Trophy, "profile")}{tile("Saved questions", "Return to earlier practice", BookOpen, "review")}{tile("Classroom", "Clearly labeled simulated classmates", GraduationCap, "friends")}</div></div>}
+    <VidyaIntroduction language={learner.learningLanguage ?? "en"} />
     <LearningNavigation tab={tab} onNavigate={onNavigate} calm={calm} />
   </div>;
 }
