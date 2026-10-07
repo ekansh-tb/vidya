@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The River Archive",
+  "titleHindi": "नदी की यादों का संग्रह",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "river-archive",
+      "title": "The River Archive",
+      "paragraphs": [
+        "A school club began collecting memories of the river beside its town. They asked people if they would like to share a story. Some agreed, and some chose not to participate.",
+        "One neighbour remembered a very wide river. Another remembered being able to see across it easily. The students wondered which person was right, until they noticed the memories came from different years and seasons.",
+        "They added dates when people knew them, and ‘date uncertain’ when they did not. A memory could matter without becoming a precise measurement. The club kept photographs separate from spoken recollections.",
+        "Before putting a story on the wall, they showed the words to its contributor. One person removed a name. Another asked for the whole story to stay private. The students respected both choices.",
+        "The exhibition included questions as well as stories. How had the river changed? What records could help? Their teacher helped them look for suitable published sources instead of guessing answers.",
+        "Visitors found an archive with many voices and clear limits. It did not settle every disagreement. It made the next conversation more careful."
+      ],
+      "illustration": "/books/vidya/river-archive.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "नदी की यादों का संग्रह",
+      "chapters": [
+        {
+          "id": "river-archive",
+          "title": "नदी की यादों का संग्रह",
+          "paragraphs": [
+            "विद्यालय समूह ने नगर की नदी से जुड़ी यादें जुटाईं। लोगों से पूछा कि क्या वे कहानी साझा करना चाहते हैं। कुछ तैयार हुए, कुछ ने भाग नहीं लेना चुना।",
+            "एक पड़ोसी को नदी बहुत चौड़ी याद थी। दूसरे को सामने का किनारा आसानी से दिखता था। छात्रों ने देखा कि यादें अलग वर्षों और मौसमों की थीं।",
+            "जहाँ तारीख पता थी, उन्होंने लिखी। बाकी में ‘तारीख अनिश्चित’ लिखा। याद महत्वपूर्ण हो सकती थी, बिना सटीक माप बने। तस्वीरें और मौखिक यादें अलग रखीं।",
+            "दीवार पर लगाने से पहले कहानी उसके योगदानकर्ता को दिखाई। किसी ने एक नाम हटाया। किसी ने पूरी कहानी निजी रखने को कहा। छात्रों ने दोनों पसंद मानी।",
+            "प्रदर्शनी में सवाल भी थे। नदी कैसे बदली? कौन-से अभिलेख मदद करेंगे? शिक्षक ने जवाब अनुमान से बनाने के बजाय उपयुक्त प्रकाशित स्रोत खोजने में मदद की।",
+            "आगंतुकों को कई आवाज़ों और साफ सीमाओं का संग्रह मिला। हर मतभेद हल नहीं हुआ। अगली बातचीत अधिक ध्यान से हो सकती थी।"
+          ],
+          "illustration": "/books/vidya/river-archive.svg"
+        }
+      ]
+    }
+  }
+}

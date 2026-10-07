@@ -23,12 +23,7 @@ export function Mascot({
   const avatar = AVATAR_MAP[avatarId] || AVATAR_MAP.peacock;
   const reduced = useReducedMotion();
   return (
-    // The mascot bobs forever, and at xl it is a 192px block. An infinite
-    // animation is the clearest case for stopping outright rather than
-    // shortening — the mascot reads fine standing still.
     <motion.div
-      animate={reduced ? { y: 0 } : { y: [0, -6, 0] }}
-      transition={reduced ? { duration: 0 } : { duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       className={cn(
         "relative inline-flex items-center justify-center rounded-full glass-strong overflow-hidden",
         glow && "shadow-2xl shadow-fuchsia-500/20",

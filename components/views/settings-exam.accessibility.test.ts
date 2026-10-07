@@ -16,7 +16,8 @@ let controls: Props[] = [];
 let motions: Props[] = [];
 let reduced = false;
 let openTopic: string | null | undefined;
-const audio = { startMusic: vi.fn(), stopMusic: vi.fn(), sfx: { click: vi.fn() } };
+let storeState = DEFAULT_STATE;
+const audio = { enableAudioFromGesture: vi.fn().mockResolvedValue(undefined), startMusic: vi.fn(), stopMusic: vi.fn(), sfx: { click: vi.fn() } };
 const speech = { stopSpeaking: vi.fn() };
 
 function load(file: string, syllabus = false) {
@@ -46,6 +47,7 @@ function load(file: string, syllabus = false) {
     if (id === "@/lib/audio") return audio;
     if (id === "@/lib/speech") return speech;
     if (id === "@/lib/content/school-syllabus") return schoolSyllabus;
+    if (id === "@/lib/game-store") return { useGameStore: (select: (store: { state: GameState }) => unknown) => select({ state: storeState }) };
     if (id.startsWith("@/")) return {};
     if (id === "next/link") return { default: (props: Props) => React.createElement("a", props) };
     return require(id);
@@ -62,6 +64,7 @@ const pack = { subjectId: "maths", topics: [
 function renderSyllabus(state = DEFAULT_STATE, setState: (update: (s: GameState) => GameState) => void = vi.fn()) {
   controls = [];
   motions = [];
+  storeState = state;
   return renderToStaticMarkup(React.createElement(Syllabus, { pack, state, setState }));
 }
 
@@ -70,6 +73,7 @@ beforeEach(() => {
   motions = [];
   reduced = false;
   openTopic = undefined;
+  storeState = DEFAULT_STATE;
   vi.clearAllMocks();
 });
 
@@ -77,7 +81,7 @@ it.each([
   ["Background music", "music"],
   ["Sound effects", "sound"],
   ["Spoken guidance", "voice"],
-] as const)("keeps %s named, keyboard-native and at least 44px while toggling", (label, setting) => {
+] as const)("keeps %s named, keyboard-native and at least 44px while toggling", async (label, setting) => {
   let state: GameState = { ...DEFAULT_STATE, settings: { ...DEFAULT_STATE.settings, [setting]: false } };
   const render = () => {
     controls = [];
@@ -95,6 +99,7 @@ it.each([
     expect(button.className).toContain("focus-visible:outline");
     expect(html).toContain('aria-hidden="true" class="relative block w-12 h-7');
     button.onClick!();
+    await Promise.resolve();
     expect(state.settings[setting]).toBe(!checked);
   }
   if (setting === "music") {
@@ -126,11 +131,11 @@ it("keeps aria-expanded synchronized when closing, opening and switching topics"
 });
 
 it("announces the selected confidence after saving and keeps rating controls tappable", () => {
-  let state = { ...DEFAULT_STATE, notebook: {} };
+  let state: GameState = { ...DEFAULT_STATE, notebook: {} };
   const render = () => renderSyllabus(state, (update) => { state = update(state); });
   render();
-  for (const rating of ["weak", "strong"]) {
-    const button = controls.find((p) => p["aria-label"] === `${rating} confidence for First topic`)!;
+  for (const [rating, label] of [["weak", "Want help"], ["strong", "Feel ready"]] as const) {
+    const button = controls.find((p) => p["aria-label"] === `${label} for First topic`)!;
     expect(button.type).toBe("button");
     expect(button.className).toContain("min-h-11 min-w-11");
     expect(button.className).toContain("focus-visible:outline");
@@ -138,7 +143,10 @@ it("announces the selected confidence after saving and keeps rating controls tap
     render();
     const selected = controls.filter((p) => p["aria-pressed"] === true);
     expect(selected).toHaveLength(1);
-    expect(selected[0]["aria-label"]).toBe(`${rating} confidence for First topic`);
+    expect(selected[0]["aria-label"]).toBe(`${label} for First topic`);
+    const identity = schoolSyllabus.topicConfidenceIdentity(pack as Parameters<typeof schoolSyllabus.topicConfidenceIdentity>[0], pack.topics[0] as Parameters<typeof schoolSyllabus.topicConfidenceIdentity>[1], {});
+    const key = schoolSyllabus.confidenceStorageKey(pack as Parameters<typeof schoolSyllabus.confidenceStorageKey>[0]);
+    expect(schoolSyllabus.readTopicConfidence(state.notebook[key])[identity]).toBe(rating);
   }
 });
 
@@ -159,4 +167,14 @@ it.each([false, true])("respects reduced motion (%s) for topic expansion", (pref
     expect(button.className).toContain("motion-safe:active:scale-[0.99]");
     expect(String(button.className).split(" ")).not.toContain("active:scale-[0.99]");
   }
+});
+
+// The app preference must also work when the operating system allows motion.
+it("keeps topic expansion still when app motion is disabled", () => {
+  reduced = false;
+  renderSyllabus({ ...DEFAULT_STATE, settings: { ...DEFAULT_STATE.settings, motion: false } });
+  const panel = motions.find((p) => p.className === "overflow-hidden")!;
+  expect(panel.initial).toBe(false);
+  expect(panel.animate).toEqual({ opacity: 1 });
+  expect(panel.exit).toEqual({ opacity: 0 });
 });

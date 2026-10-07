@@ -3,15 +3,15 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Vidya: Your Personal School",
+    name: "Vidya: Explore, Create, Grow",
     short_name: "Vidya",
     description:
       "A welcoming digital school with curriculum learning, books, field trips, revision, and wellbeing activities.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#06080F",
-    theme_color: "#7C3AED",
+    background_color: "#f4f8fc",
+    theme_color: "#0e716b",
     orientation: "any",
     lang: "en",
     categories: ["education", "kids"],

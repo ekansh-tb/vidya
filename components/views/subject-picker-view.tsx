@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
+import { placementLabel } from "@/lib/learning/placement";
 import { motion } from "framer-motion";
 import { Check, ChevronRight, GraduationCap, Lock, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,13 +53,13 @@ export function SubjectPickerView({
   const boardLabel = learner.board ? boardOption(learner.board).label : "Early years";
 
   return (
-    <div className="min-h-screen pb-32 max-w-2xl mx-auto">
+    <ReducedMotionProvider><div className="min-h-screen pb-32 max-w-2xl mx-auto">
       <div className="px-5 pt-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl mb-3" style={{ background: "rgba(167,139,250,0.18)", boxShadow: "0 0 30px rgba(167,139,250,0.4)" }}>
-            <GraduationCap className="w-8 h-8 text-violet-300" />
+            <GraduationCap className="w-8 h-8 text-[var(--accent-2)]" />
           </div>
-          <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>{learner.school || boardLabel} · Grade {learner.grade}</div>
+          <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>{learner.school || boardLabel} · {placementLabel(learner)}</div>
           <h1 className="font-display text-3xl font-bold mt-1" style={{ color: "var(--text)" }}>Pick your subjects</h1>
           <p className="text-sm mt-2 px-4" style={{ color: "var(--text-muted)" }}>
             Welcome {learner.name.split(" ")[0]}. Choose the subjects you study or want to explore.
@@ -66,11 +68,11 @@ export function SubjectPickerView({
         </motion.div>
 
         <div className="mb-3 flex items-center justify-between text-xs">
-          <div className="text-white/60">
-            <span className="text-white font-bold">{totalChosen}</span> chosen
-            <span className="text-white/40"> · {optionalCount} optional</span>
+          <div className="text-[var(--text-muted)]">
+            <span className="text-[var(--text)] font-bold">{totalChosen}</span> chosen
+            <span className="text-[var(--text-muted)]"> · {optionalCount} optional</span>
           </div>
-          <div className="text-white/40">{compulsory.size > 0 ? `${compulsory.size} pathway core` : "Choose at least one to start"}</div>
+          <div className="text-[var(--text-muted)]">{compulsory.size > 0 ? `${compulsory.size} pathway core` : "Choose at least one to start"}</div>
         </div>
 
         {groups.map((g, gi) => (
@@ -82,8 +84,8 @@ export function SubjectPickerView({
             className="mb-5"
           >
             <div className="mb-2">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-white/40">{g.label}</div>
-              <div className="text-[11px] text-white/50">{g.description}</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">{g.label}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">{g.description}</div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {g.subjects.map((sid) => {
@@ -101,7 +103,7 @@ export function SubjectPickerView({
                     className={`relative rounded-2xl p-3 text-left border transition-all ${
                       isPicked
                         ? "border-violet-400/60 bg-violet-500/15 shadow-[0_0_24px_rgba(167,139,250,0.3)]"
-                        : "border-white/10 glass hover:bg-white/[0.06]"
+                        : "border-[var(--border)] glass hover:bg-[var(--surface-strong)]"
                     } ${isCompulsory ? "cursor-default" : "active:scale-[0.98]"}`}
                   >
                     <div className="flex items-start gap-2">
@@ -109,23 +111,23 @@ export function SubjectPickerView({
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: s.soft }}
                       >
-                        <Icon className="w-5 h-5" style={{ color: s.accent }} />
+                        <Icon className="w-5 h-5" style={{ color: "var(--accent)" }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className={`font-display font-bold text-sm leading-tight text-white ${s.isDeva ? "font-deva" : ""}`}>
+                        <div className={`font-display font-bold text-sm leading-tight text-[var(--text)] ${s.isDeva ? "font-deva" : ""}`}>
                           {s.name}
                         </div>
-                        <div className="text-[10px] text-white/50 mt-0.5 truncate">{s.tagline}</div>
+                        <div className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate">{s.tagline}</div>
                       </div>
                     </div>
                     {isCompulsory && (
-                      <div className="absolute top-1.5 right-1.5 text-[9px] font-bold uppercase tracking-widest text-amber-300 flex items-center gap-1">
+                      <div className="absolute top-1.5 right-1.5 text-[9px] font-bold uppercase tracking-widest text-[var(--warning)] flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" /> required
                       </div>
                     )}
                     {isPicked && !isCompulsory && (
                       <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-violet-500/30 ring-1 ring-violet-300 flex items-center justify-center">
-                        <Check className="w-3 h-3 text-violet-200" />
+                        <Check className="w-3 h-3 text-[var(--accent-2)]" />
                       </div>
                     )}
                   </button>
@@ -135,8 +137,8 @@ export function SubjectPickerView({
           </motion.div>
         ))}
 
-        <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-white/60">
-          <Info className="w-4 h-4 flex-shrink-0 text-cyan-300 mt-0.5" />
+        <div className="glass-card p-3 mt-3 flex items-start gap-2 text-[11px] text-[var(--text-muted)]">
+          <Info className="w-4 h-4 flex-shrink-0 text-[var(--accent)] mt-0.5" />
           <div>
             This is Vidya&apos;s available subject catalog, not a complete curriculum or an exam registration check.
             School and local requirements are not inferred from your pathway or school name.
@@ -163,6 +165,6 @@ export function SubjectPickerView({
           </Button>
         </div>
       </div>
-    </div>
+    </div></ReducedMotionProvider>
   );
 }

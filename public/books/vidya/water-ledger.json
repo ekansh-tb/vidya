@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Water Ledger",
+  "titleHindi": "पानी की छोटी बही",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "water-ledger",
+      "title": "The Water Ledger",
+      "paragraphs": [
+        "The youth club wanted to find out how much water its garden used. Aanya suggested keeping a ledger of watering cans. Imran asked whether every can held the same amount.",
+        "They checked the containers with an adult. Two were different sizes, so counting cans alone would mislead them. They labelled each size and recorded which one they used.",
+        "After one week, the ledger showed fewer cans on rainy days. One member announced that the club had solved water waste. Aanya pointed to the page: it covered only their garden and only one week.",
+        "They also noticed an empty entry on Tuesday. Nobody could remember the amount. Instead of writing zero, they wrote ‘not recorded.’ An absent measurement was not the same as no water.",
+        "The club shared its ledger with the gardener, who suggested checking the soil before deciding when to water. They planned another week, leaving the decision with the experienced adult.",
+        "Their poster did not announce a miracle. It said what they had counted, what was missing and what they hoped to learn next. That made it easier for neighbours to help."
+      ],
+      "illustration": "/books/vidya/water-ledger.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "पानी की छोटी बही",
+      "chapters": [
+        {
+          "id": "water-ledger",
+          "title": "पानी की छोटी बही",
+          "paragraphs": [
+            "युवा समूह जानना चाहता था कि बगीचे में कितना पानी लगता है। आन्या ने पानी के डिब्बों की बही बनाने को कहा। इमरान ने पूछा, क्या हर डिब्बे में बराबर पानी आता है?",
+            "एक बड़े के साथ बर्तन जाँचे। दो आकार अलग थे। केवल डिब्बे गिनना भ्रामक होता। उन्होंने हर आकार का नाम लिखा और दर्ज किया कि कौन-सा इस्तेमाल हुआ।",
+            "एक हफ़्ते बाद बारिश वाले दिनों में कम डिब्बे दर्ज थे। किसी ने कहा कि पानी की बर्बादी हल हो गई। आन्या ने बताया कि बही सिर्फ उनके बगीचे के एक हफ़्ते की थी।",
+            "मंगलवार की जगह खाली भी थी। मात्रा किसी को याद नहीं थी। शून्य लिखने के बजाय उन्होंने ‘दर्ज नहीं हुआ’ लिखा। जानकारी न होना, पानी न लगने के बराबर नहीं था।",
+            "समूह ने माली को बही दिखाई। माली ने पानी का समय तय करने से पहले मिट्टी देखने को कहा। अगले हफ़्ते की योजना बनी; निर्णय अनुभवी बड़े के साथ रहा।",
+            "पोस्टर ने चमत्कार का दावा नहीं किया। उसमें गिनती, छूटी जानकारी और अगला सवाल था। इससे पड़ोसियों को मदद करना आसान लगा।"
+          ],
+          "illustration": "/books/vidya/water-ledger.svg"
+        }
+      ]
+    }
+  }
+}

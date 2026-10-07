@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "A Bridge for Paper People",
+  "titleHindi": "कागज़ के लोगों का पुल",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "paper-bridge",
+      "title": "A Bridge for Paper People",
+      "paragraphs": [
+        "Arun and Zoya made two paper towns on their classroom table. Between them was a blue sheet they called a river. Their paper people needed a bridge.",
+        "Arun wanted a wide, flat bridge. Zoya folded her paper into ridges. Both thought their own design would work best. Their teacher suggested testing with the same small block.",
+        "The flat paper sagged. The folded paper held the block, but it was too narrow for their paper bus. Zoya looked at the bus instead of celebrating.",
+        "They folded a wider sheet and added flat paths at either end. The block stayed up, and the paper bus crossed. Their first ideas had each helped them notice a different problem.",
+        "Arun wrote ‘holds a block’ beside their drawing. Zoya added ‘fits our bus.’ They did not write ‘best bridge in the world.’ They had tested one model on one table.",
+        "The towns held a tiny opening ceremony. A paper person carried a sign: A bridge is a way to get somewhere together."
+      ],
+      "illustration": "/books/vidya/paper-bridge.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "कागज़ के लोगों का पुल",
+      "chapters": [
+        {
+          "id": "paper-bridge",
+          "title": "कागज़ के लोगों का पुल",
+          "paragraphs": [
+            "अरुण और ज़ोया ने कक्षा की मेज़ पर कागज़ के दो नगर बनाए। बीच में नीला कागज़ नदी था। कागज़ के लोगों को पुल चाहिए था।",
+            "अरुण चौड़ा, सपाट पुल चाहता था। ज़ोया ने कागज़ में तहें बनाई थीं। दोनों को अपना विचार अच्छा लगा। शिक्षक ने एक ही छोटे गुटके से जाँचने को कहा।",
+            "सपाट कागज़ झुक गया। तहों वाला कागज़ गुटका सँभाल पाया, पर बस के लिए सँकरा था। ज़ोया ने खुश होने से पहले बस को देखा।",
+            "उन्होंने चौड़े कागज़ में तहें बनाई और दोनों ओर सपाट रास्ते जोड़े। गुटका टिका रहा और बस पार गई। दोनों विचारों ने अलग समस्या समझने में मदद की।",
+            "अरुण ने चित्र के पास लिखा, ‘गुटका सँभालता है।’ ज़ोया ने जोड़ा, ‘हमारी बस आ सकती है।’ उन्होंने दुनिया का सबसे अच्छा पुल नहीं लिखा। यह एक मेज़ पर एक नमूने की जाँच थी।",
+            "नगरों में छोटा उद्घाटन हुआ। कागज़ का एक व्यक्ति तख्ती लेकर आया: पुल हमें साथ कहीं पहुँचने का रास्ता देता है।"
+          ],
+          "illustration": "/books/vidya/paper-bridge.svg"
+        }
+      ]
+    }
+  }
+}

@@ -166,12 +166,12 @@ function TutorRoom({
   return (
     <div className="min-h-screen pb-32 max-w-2xl mx-auto flex flex-col">
       <div className="px-5 pt-6 pb-4 flex items-center justify-between">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium active:scale-95">
+        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium active:scale-95">
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-fuchsia-300" />
-          <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">Miss Vidya AI</span>
+          <Sparkles className="w-4 h-4 text-[var(--accent-2)]" />
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent-2)]">Miss Vidya AI</span>
         </div>
       </div>
 
@@ -189,10 +189,10 @@ function TutorRoom({
           <div className="flex items-center gap-3">
             <Mascot avatarId="owl" size="md" />
             <div className="flex-1">
-              <div className={`font-display text-2xl font-bold text-white ${subject.isDeva ? "font-deva" : ""}`}>
+              <div className={`font-display text-2xl font-bold text-[var(--text)] ${subject.isDeva ? "font-deva" : ""}`}>
                 Miss Vidya · {subject.name}
               </div>
-              <div className="text-sm text-white/70">
+              <div className="text-sm text-[var(--text-muted)]">
                 Ask anything. I&apos;ll explain at your pace.
               </div>
             </div>
@@ -241,15 +241,15 @@ function TutorRoom({
               className="glass-card p-4 mb-3"
             >
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="w-4 h-4 text-amber-300" />
-                <div className="text-[11px] uppercase tracking-widest font-bold text-white/50">Quick starts</div>
+                <BookOpen className="w-4 h-4 text-[var(--warning)]" />
+                <div className="text-[11px] uppercase tracking-widest font-bold text-[var(--text-muted)]">Quick starts</div>
               </div>
               <div className="space-y-2">
                 {(SUGGESTED[subjectId] || [`Tell me about ${subject.name} for my next test`, `Give me one practice question on ${subject.name}`, `Quick summary of today's ${subject.name} topic`]).map((s) => (
                   <button
                     key={s}
                     onClick={() => submit(s)}
-                    className={`w-full text-left rounded-2xl border border-white/5 px-3.5 py-2.5 text-sm text-white/85 hover:bg-white/[0.06] active:scale-[0.99] transition ${subject.isDeva ? "font-deva" : ""}`}
+                    className={`w-full text-left rounded-2xl border border-[var(--border)] px-3.5 py-2.5 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-strong)] active:scale-[0.99] transition ${subject.isDeva ? "font-deva" : ""}`}
                   >
                     {s}
                   </button>
@@ -278,8 +278,8 @@ function TutorRoom({
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${
                     isUser
-                      ? "text-white"
-                      : "glass text-white/90"
+                      ? "text-[var(--text)]"
+                      : "glass text-[var(--text-muted)]"
                   } ${subject.isDeva ? "font-deva" : ""}`}
                   style={
                     isUser
@@ -309,7 +309,7 @@ function TutorRoom({
         </div>
 
         {error && (
-          <div role="alert" className="mt-3 rounded-2xl bg-rose-500/10 border border-rose-400/30 px-4 py-3 text-sm text-rose-200">
+          <div role="alert" className="mt-3 rounded-2xl bg-rose-500/10 border border-rose-400/30 px-4 py-3 text-sm text-[var(--error)]">
             Something went wrong. {error.message ? `(${error.message})` : "Try again in a moment."}
           </div>
         )}
@@ -319,7 +319,7 @@ function TutorRoom({
       <div className="fixed bottom-0 inset-x-0 z-40">
         {/* The composer is fixed to the bottom edge, so on iOS it sits under the
             home indicator without an inset. */}
-        <div className="max-w-2xl mx-auto px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))]" style={{ background: "linear-gradient(180deg, transparent 0%, rgba(10,4,32,0.9) 30%, rgba(10,4,32,1) 100%)" }}>
+        <div className="max-w-2xl mx-auto px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom))]" style={{ background: "var(--bg-base)" }}>
           <form
             onSubmit={(e) => { e.preventDefault(); submit(input); }}
             className="flex items-end gap-2 rounded-3xl glass-strong p-2 pr-1"
@@ -337,20 +337,20 @@ function TutorRoom({
               placeholder={`Ask Miss Vidya about ${subject.name}…`}
               // A placeholder disappears as soon as typing starts and is not a label.
               aria-label={`Ask Miss Vidya about ${subject.name}`}
-              className={`flex-1 bg-transparent outline-none px-3 py-2 text-white placeholder-white/30 resize-none max-h-32 ${subject.isDeva ? "font-deva" : ""}`}
+              className={`flex-1 bg-transparent outline-none px-3 py-2 text-[var(--text)] placeholder-[var(--text-faint)] resize-none max-h-32 ${subject.isDeva ? "font-deva" : ""}`}
             />
             <button
               type="submit"
               disabled={!input.trim() || status === "streaming" || status === "submitted"}
-              className="w-11 h-11 rounded-2xl flex items-center justify-center text-white disabled:opacity-40 active:scale-95 transition"
+              className="w-11 h-11 rounded-2xl flex items-center justify-center text-[var(--text)] disabled:opacity-40 active:scale-95 transition"
               style={{ background: "linear-gradient(135deg, #A78BFA 0%, #F472B6 100%)" }}
               aria-label="Send"
             >
               <Send className="w-4 h-4" />
             </button>
           </form>
-          <div className="mt-2 text-center text-[10px] text-white/30">
-            Miss Vidya is AI. She tries her best but can make mistakes — always double-check important answers.
+          <div className="mt-2 text-center text-[10px] text-[var(--text-muted)]">
+            Miss Vidya is AI and can make mistakes. Check important answers with a person you trust. If a message suggests immediate danger, a safety excerpt may be shared with your linked parent. Routine conversations are not parent reports.
           </div>
         </div>
       </div>

@@ -8,6 +8,8 @@ export type LibraryFilters = {
   query: string;
   difficulty: LibraryDifficultyFilter;
   availability: LibraryAvailabilityFilter;
+  readingLevel?: "all" | 1 | 2 | 3 | 4;
+  language?: "all" | "en" | "hi";
 };
 
 export type ReaderTheme = "paper" | "night" | "mist";
@@ -15,12 +17,14 @@ export type ReaderTheme = "paper" | "night" | "mist";
 export type ReaderPreferences = {
   theme: ReaderTheme;
   fontSize: number;
+  mode?: "pages" | "scroll";
 };
 
 export type ReaderChapter = {
   id: string;
   title: string;
   paragraphs: string[];
+  illustration?: string;
 };
 
 export type GutenbergLicense = {
@@ -37,7 +41,12 @@ export type ReaderBookContent = {
   sourceLabel: string;
   sourceUrl: string;
   rights: string;
-  gutenbergLicense: GutenbergLicense;
+  gutenbergLicense?: GutenbergLicense;
+  sourceKind?: "gutenberg" | "vidya-original";
+  titleHindi?: string;
+  publicationStatus?: "draft" | "published";
+  review?: Record<string, string>;
+  translations?: { hi: { title: string; chapters: ReaderChapter[] } };
   chapters: ReaderChapter[];
 };
 
@@ -75,11 +84,14 @@ export function filterLibrary(books: readonly Book[], filters: LibraryFilters): 
   const query = searchableText(filters.query);
 
   return books.filter((book) => {
+    if (book.publicationStatus === "draft") return false;
+    if (filters.readingLevel && filters.readingLevel !== "all" && book.readingLevel !== filters.readingLevel) return false;
+    if (filters.language && filters.language !== "all" && !(book.languages ?? [book.region === "hindi" ? "hi" : "en"]).includes(filters.language)) return false;
     if (filters.difficulty !== "all" && book.difficulty !== filters.difficulty) return false;
     if (filters.availability !== "all" && bookAvailability(book) !== filters.availability) return false;
     if (!query) return true;
 
-    return searchableText(`${book.title} ${book.author} ${book.blurb}`).includes(query);
+    return searchableText(`${book.title} ${book.titleHindi ?? ""} ${book.author} ${book.blurb}`).includes(query);
   });
 }
 
@@ -99,7 +111,7 @@ export function parseReaderPreferences(raw: string | null): ReaderPreferences {
       ? clampFontSize(value.fontSize)
       : DEFAULT_READER_PREFERENCES.fontSize;
 
-    return { theme, fontSize };
+    return { theme, fontSize, ...(value.mode === "pages" || value.mode === "scroll" ? { mode: value.mode } : {}) };
   } catch {
     return DEFAULT_READER_PREFERENCES;
   }
@@ -134,41 +146,28 @@ function isGutenbergHttpsUrl(value: unknown): value is string {
 export function isValidReaderBook(value: unknown): value is ReaderBookContent {
   if (!value || typeof value !== "object") return false;
   const book = value as Partial<ReaderBookContent>;
-  const license = book.gutenbergLicense as Partial<GutenbergLicense> | undefined;
   const chapters = book.chapters;
-  if (
-    typeof book.title !== "string" || !book.title.trim() ||
-    typeof book.author !== "string" || !book.author.trim() ||
-    typeof book.language !== "string" || !book.language.trim() ||
-    typeof book.sourceLabel !== "string" || !book.sourceLabel.includes("Project Gutenberg") ||
-    !isGutenbergHttpsUrl(book.sourceUrl) ||
-    typeof book.rights !== "string" || !book.rights.trim() ||
-    !license ||
-    license.requiredNotice !== GUTENBERG_REQUIRED_NOTICE ||
-    license.licenseUrl !== GUTENBERG_LICENSE_URL ||
-    !isGutenbergHttpsUrl(license.originalFormatUrl) ||
-    typeof license.fullText !== "string" ||
-    !license.fullText.startsWith("START: FULL LICENSE") ||
-    !license.fullText.includes("THE FULL PROJECT GUTENBERG") ||
-    !Array.isArray(chapters) || chapters.length === 0
-  ) {
-    return false;
-  }
-
-  const chapterIds = new Set<string>();
-  return chapters.every((chapter) => {
-    if (
-      !chapter ||
-      typeof chapter.id !== "string" || !chapter.id || chapterIds.has(chapter.id) ||
-      typeof chapter.title !== "string" || !chapter.title.trim() ||
-      !Array.isArray(chapter.paragraphs) || chapter.paragraphs.length === 0 ||
-      !chapter.paragraphs.every((paragraph) => typeof paragraph === "string" && paragraph.trim().length > 0)
-    ) {
-      return false;
-    }
-    chapterIds.add(chapter.id);
-    return true;
+  if (![book.title, book.author, book.language, book.sourceLabel, book.rights].every(text => typeof text === "string" && text.trim()) || !Array.isArray(chapters) || !chapters.length) return false;
+  const ids = new Set<string>();
+  const validChapters = (items: ReaderChapter[]) => items.every(chapter => {
+    if (!chapter || typeof chapter.id !== "string" || !chapter.id || ids.has(chapter.id) || typeof chapter.title !== "string" || !chapter.title.trim() || !Array.isArray(chapter.paragraphs) || !chapter.paragraphs.length || !chapter.paragraphs.every(text => typeof text === "string" && text.trim())) return false;
+    if (chapter.illustration && !/^\/books\/vidya\/[a-z0-9-]+\.svg$/.test(chapter.illustration)) return false;
+    ids.add(chapter.id); return true;
   });
+  if (!validChapters(chapters)) return false;
+  if (book.sourceKind === "vidya-original") {
+    if (book.sourceUrl !== "https://vidyagyan.study/mission" || !book.review || !["draft", "published"].includes(book.publicationStatus ?? "") ||
+      !["authorship", "factual", "developmental", "language", "accessibility", "rights", "limitations"].every(key => typeof book.review?.[key] === "string" && book.review[key].trim())) return false;
+    const hindi = book.translations?.hi;
+    if (!hindi || typeof hindi.title !== "string" || !hindi.title.trim() || !Array.isArray(hindi.chapters) || hindi.chapters.length !== chapters.length) return false;
+    ids.clear();
+    return validChapters(hindi.chapters) && hindi.chapters.every((chapter, index) => chapter.id === chapters[index].id && chapter.paragraphs.length === chapters[index].paragraphs.length);
+  }
+  const license = book.gutenbergLicense;
+  return !!(book.sourceLabel!.includes("Project Gutenberg") && isGutenbergHttpsUrl(book.sourceUrl) && license &&
+    license.requiredNotice === GUTENBERG_REQUIRED_NOTICE && license.licenseUrl === GUTENBERG_LICENSE_URL &&
+    isGutenbergHttpsUrl(license.originalFormatUrl) && typeof license.fullText === "string" &&
+    license.fullText.startsWith("START: FULL LICENSE") && license.fullText.includes("THE FULL PROJECT GUTENBERG"));
 }
 
 export function speechLanguageTag(language: string): string {
@@ -211,4 +210,13 @@ export function speechChunks(texts: readonly string[], maxLength = 260): string[
   });
 
   return chunks;
+}
+
+/** Stable paragraph anchors survive font size, language and layout changes. */
+export function safeParagraphPosition(progress: unknown, paragraphCount: number) {
+  const value = progress && typeof progress === "object" ? progress as Record<string, unknown> : {};
+  const count = Math.max(1, Math.floor(paragraphCount));
+  const legacy = typeof value.scrollProgress === "number" && Number.isFinite(value.scrollProgress) ? Math.min(1, Math.max(0, value.scrollProgress)) : 0;
+  const raw = Number.isInteger(value.paragraphIndex) ? value.paragraphIndex as number : Math.floor(legacy * Math.max(0, count - 1));
+  return { paragraphIndex: Math.min(count - 1, Math.max(0, raw)), paragraphOffset: typeof value.paragraphOffset === "number" && Number.isFinite(value.paragraphOffset) ? Math.min(1, Math.max(0, value.paragraphOffset)) : 0 };
 }

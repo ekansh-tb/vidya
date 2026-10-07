@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "A Letter for Mango Tree",
+  "titleHindi": "आम के पेड़ को चिट्ठी",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "mango-letter",
+      "title": "A Letter for Mango Tree",
+      "paragraphs": [
+        "Leela sat near the mango tree with a notebook. She wanted to ask why its branches looked like arms. Trees did not write letters back.",
+        "She wrote a letter anyway. ‘Dear tree, I like the shade you make. What do you see from up there?’ She drew a bird beside the words.",
+        "Grandma read the letter only when Leela offered it. ‘I cannot answer for the tree,’ she said. ‘What answer would you imagine?’",
+        "Leela imagined clouds, rooftops and her own yellow hat. She kept the letter in her notebook. A question could be a story too."
+      ],
+      "illustration": "/books/vidya/mango-letter.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "आम के पेड़ को चिट्ठी",
+      "chapters": [
+        {
+          "id": "mango-letter",
+          "title": "आम के पेड़ को चिट्ठी",
+          "paragraphs": [
+            "लीला आम के पेड़ के पास अपनी कॉपी लेकर बैठी। उसे पूछना था कि डालियाँ बाँहों जैसी क्यों लगती हैं। पेड़ चिट्ठी का जवाब नहीं लिखते।",
+            "फिर भी उसने लिखा, ‘प्यारे पेड़, तुम्हारी छाया अच्छी लगती है। ऊपर से क्या दिखता है?’ शब्दों के पास एक पक्षी भी बनाया।",
+            "लीला ने चिट्ठी दिखाई, तभी दादी ने पढ़ी। ‘मैं पेड़ की ओर से जवाब नहीं दे सकती,’ दादी बोलीं। ‘तुम क्या जवाब सोचती हो?’",
+            "लीला ने बादल, छतें और अपनी पीली टोपी सोची। उसने चिट्ठी कॉपी में रख दी। सवाल भी कहानी बन सकता था।"
+          ],
+          "illustration": "/books/vidya/mango-letter.svg"
+        }
+      ]
+    }
+  }
+}

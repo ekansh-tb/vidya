@@ -1,8 +1,10 @@
+import { VIDYA_ORIGINAL_BOOKS } from "./vidya-original-books";
+
 export type Book = {
   id: string;
   title: string;
   author: string;
-  region: "indian" | "world" | "magazine" | "comic" | "marathi" | "hindi";
+  region: "original" | "indian" | "world" | "magazine" | "comic" | "marathi" | "hindi";
   blurb: string;
   readMinutes: number;
   cover: string;        // emoji or color
@@ -11,9 +13,16 @@ export type Book = {
   /** Local, chaptered public-domain text loaded only when the reader opens. */
   readerPath?: string;
   chapterCount?: number;
+  titleHindi?: string;
+  coverImage?: string;
+  readingLevel?: 1 | 2 | 3 | 4;
+  languages?: ("en" | "hi")[];
+  earlyYearsEligible?: boolean;
+  publicationStatus?: "draft" | "published";
 };
 
 export const LIBRARY: Book[] = [
+  ...VIDYA_ORIGINAL_BOOKS.filter(book => book.publicationStatus === "published"),
   // Indian classics
   {
     id: "panchatantra",
@@ -210,6 +219,7 @@ export const LIBRARY: Book[] = [
 ];
 
 export const LIBRARY_REGIONS: { id: Book["region"]; label: string; color: string }[] = [
+  { id: "original", label: "Vidya stories", color: "#0e716b" },
   { id: "indian",   label: "Indian classics",         color: "#F59E0B" },
   { id: "marathi",  label: "मराठी",                   color: "#EA580C" },
   { id: "hindi",    label: "हिंदी",                   color: "#A78BFA" },

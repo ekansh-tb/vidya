@@ -1,0 +1,4 @@
+.parent-family .notification-field { display: grid; gap: 8px; margin: 14px 0; color: var(--text); font-size: .9rem; font-weight: 600; min-width: 0; }
+.parent-family .notification-field > span { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.parent-family .notification-field small { color: var(--text-muted); font-weight: 400; line-height: 1.5; }
+.parent-family .notification-field :is(input:not([type=checkbox]),select) { width: 100%; }

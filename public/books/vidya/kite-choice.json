@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Kite That Stayed",
+  "titleHindi": "जो पतंग ठहर गई",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "kite-choice",
+      "title": "The Kite That Stayed",
+      "paragraphs": [
+        "Uma made a paper kite with her uncle. She drew a blue bird on it. They planned to take it to the open field.",
+        "In the field, the kite would not rise. There was very little wind. Uma felt cross with the quiet sky.",
+        "Her uncle offered to try another day. Uma looked at her blue bird and had a different idea. ‘May we hang it in my room?’",
+        "The kite stayed above her desk. Uma added paper clouds beside it. She would try flying again, but today she had made a sky."
+      ],
+      "illustration": "/books/vidya/kite-choice.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "जो पतंग ठहर गई",
+      "chapters": [
+        {
+          "id": "kite-choice",
+          "title": "जो पतंग ठहर गई",
+          "paragraphs": [
+            "उमा ने अपने चाचा के साथ कागज़ की पतंग बनाई। उस पर नीला पक्षी बनाया। दोनों उसे खुले मैदान में ले गए।",
+            "मैदान में पतंग ऊपर नहीं उठी। हवा बहुत कम थी। उमा को शांत आसमान पर गुस्सा आया।",
+            "चाचा ने दूसरे दिन कोशिश करने को कहा। उमा ने अपना नीला पक्षी देखा। ‘क्या इसे मेरे कमरे में टाँग सकते हैं?’ उसने पूछा।",
+            "पतंग उसकी मेज़ के ऊपर रही। उमा ने पास में कागज़ के बादल लगाए। वह फिर उड़ाएगी, लेकिन आज उसने अपना आसमान बनाया था।"
+          ],
+          "illustration": "/books/vidya/kite-choice.svg"
+        }
+      ]
+    }
+  }
+}

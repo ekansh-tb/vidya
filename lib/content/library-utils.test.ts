@@ -123,9 +123,9 @@ describe("reader source integrity", () => {
     const book = JSON.parse(readFileSync(resolve(process.cwd(), "public", "books", fileName), "utf8")) as unknown;
     expect(isValidReaderBook(book)).toBe(true);
     if (!isValidReaderBook(book)) return;
-    expect(book.gutenbergLicense.requiredNotice).toBe(GUTENBERG_REQUIRED_NOTICE);
-    expect(book.gutenbergLicense.fullText.length).toBeGreaterThan(10_000);
-    expect(book.gutenbergLicense.originalFormatUrl).toMatch(/^https:\/\/www\.gutenberg\.org\/cache\/epub\//);
+    expect(book.gutenbergLicense!.requiredNotice).toBe(GUTENBERG_REQUIRED_NOTICE);
+    expect(book.gutenbergLicense!.fullText.length).toBeGreaterThan(10_000);
+    expect(book.gutenbergLicense!.originalFormatUrl).toMatch(/^https:\/\/www\.gutenberg\.org\/cache\/epub\//);
   });
 
   it("rejects a payload that detaches the required license information", () => {
@@ -165,5 +165,44 @@ describe("reader speech helpers", () => {
     expect(speechErrorMessage("canceled")).toBe("Read aloud stopped");
     expect(speechErrorMessage("interrupted")).toBe("Read aloud stopped");
     expect(speechErrorMessage("audio-busy")).toBe("Read aloud could not continue on this device");
+  });
+});
+
+describe("original starter collection and reader anchors", () => {
+  it("keeps original drafts out of learner discovery", () => {
+    const draft = { ...books[0], publicationStatus: "draft" as const };
+    expect(filterLibrary([draft], { query: "", difficulty: "all", availability: "all" })).toEqual([]);
+  });
+  it("filters explicit reading level and Hindi availability without inferring age", () => {
+    const bilingual = { ...books[0], titleHindi: "बगीचे की कहानियाँ", readingLevel: 1 as const, languages: ["en", "hi"] as ("en" | "hi")[] };
+    expect(filterLibrary([bilingual], { query: "बगीचे", difficulty: "all", availability: "all", readingLevel: 1, language: "hi" })).toEqual([bilingual]);
+    expect(filterLibrary([bilingual], { query: "", difficulty: "all", availability: "all", readingLevel: 4 })).toEqual([]);
+  });
+  it("preserves explicit anchors, clamps stale anchors and recovers old scroll-only records", async () => {
+    const { safeParagraphPosition } = await import("./library-utils");
+    expect(safeParagraphPosition({ paragraphIndex: 3, paragraphOffset: .4, scrollProgress: .9 }, 8)).toEqual({ paragraphIndex: 3, paragraphOffset: .4 });
+    expect(safeParagraphPosition({ paragraphIndex: 99, paragraphOffset: -1 }, 8)).toEqual({ paragraphIndex: 7, paragraphOffset: 0 });
+    expect(safeParagraphPosition({ scrollProgress: .5 }, 9)).toEqual({ paragraphIndex: 4, paragraphOffset: 0 });
+  });
+  it("validates 24 distinct bilingual original titles, six per reading level", async () => {
+    const { VIDYA_ORIGINAL_BOOKS } = await import("./vidya-original-books");
+    expect(VIDYA_ORIGINAL_BOOKS).toHaveLength(24);
+    expect(new Set(VIDYA_ORIGINAL_BOOKS.map(book => book.id)).size).toBe(24);
+    for (const level of [1, 2, 3, 4]) expect(VIDYA_ORIGINAL_BOOKS.filter(book => book.readingLevel === level)).toHaveLength(6);
+    for (const book of VIDYA_ORIGINAL_BOOKS) {
+      const content = JSON.parse(readFileSync(resolve(process.cwd(), "public", book.readerPath!.slice(1)), "utf8"));
+      expect(isValidReaderBook(content), book.id).toBe(true);
+      expect(content.sourceKind).toBe("vidya-original");
+      expect(content.review.limitations).toContain("No independent");
+      expect(book.languages).toEqual(["en", "hi"]);
+      expect(readFileSync(resolve(process.cwd(), "public", book.coverImage!.slice(1)), "utf8")).not.toContain("<script");
+    }
+  });
+  it("rejects malformed original translation/review or detached legacy license", async () => {
+    const { VIDYA_ORIGINAL_BOOKS } = await import("./vidya-original-books");
+    const content = JSON.parse(readFileSync(resolve(process.cwd(), "public", VIDYA_ORIGINAL_BOOKS[0].readerPath!.slice(1)), "utf8"));
+    expect(isValidReaderBook({ ...content, review: undefined })).toBe(false);
+    expect(isValidReaderBook({ ...content, translations: { hi: { title: "हिंदी", chapters: "invalid" } } })).toBe(false);
+    expect(isValidReaderBook({ ...content, sourceUrl: "https://example.com" })).toBe(false);
   });
 });

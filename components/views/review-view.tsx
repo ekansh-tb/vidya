@@ -41,7 +41,8 @@ export function ReviewView({
   const readyCount = dueCount(learnerMisses);
   const [filterSubject, setFilterSubject] = useState<SubjectId | "all">("all");
   const [revealedId, setRevealedId] = useState<string | null>(null);
-  const reduced = useReducedMotion();
+  const osReduced = useReducedMotion();
+  const reduced = Boolean(osReduced || state.settings.motion === false);
 
   // Subjects present in the miss log (for the filter chip strip)
   const subjectsPresent = useMemo(() => {
@@ -63,21 +64,22 @@ export function ReviewView({
    * remaining reviews in a few seconds each; one they were optimistic about
    * comes back, which is the whole point of a notebook.
    *
-   * The XP is unchanged and still paid every time, because closing the loop on
-   * a miss is the behaviour worth encouraging whether or not it retires the
-   * card. Promotion only counts when the card is actually due, so tapping this
-   * repeatedly cannot rush a card out.
+   * XP is awarded only when a due review advances. Repeated taps cannot
+   * award more XP or rush a card out of its schedule.
    */
-  const markMastered = (id: string) => {
+  const markReviewed = (id: string) => {
     sfx.coin();
     setState((p) => {
       const next: MissedQuestion[] = [];
+      let advanced = false;
       for (const m of p.missedQuestions || []) {
         if (m.id !== id) { next.push(m); continue; }
+        if (!isDue(m)) { next.push(m); continue; }
+        advanced = true;
         const outcome = recordCorrect(m);
         if (outcome.kind === "scheduled") next.push(outcome.card);
       }
-      return { ...p, missedQuestions: next, xp: p.xp + 2 };
+      return { ...p, missedQuestions: next, xp: p.xp + (advanced ? 2 : 0) };
     });
     if (revealedId === id) setRevealedId(null);
   };
@@ -171,7 +173,7 @@ export function ReviewView({
                     miss={m}
                     revealed={revealedId === m.id}
                     onToggle={() => { sfx.click(); setRevealedId(revealedId === m.id ? null : m.id); }}
-                    onMaster={() => markMastered(m.id)}
+                    onMaster={() => markReviewed(m.id)}
                     reduced={!!reduced}
                   />
                 ))}
@@ -211,7 +213,7 @@ function FilterChip({ active, label, accent, isDeva, onClick }: {
       style={{
         background: active ? (accent ? `${accent}25` : "var(--accent-soft)") : "var(--surface)",
         border: `1px solid ${active ? (accent || "var(--accent)") : "var(--border)"}`,
-        color: active ? (accent || "var(--accent)") : "var(--text-muted)",
+        color: active ? "var(--accent)" : "var(--text-muted)",
       }}
     >
       {label}
@@ -251,7 +253,7 @@ function MissCard({ miss, revealed, onToggle, onMaster, reduced }: {
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex-1 min-w-0">
           {subj && (
-            <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${subj.isDeva ? "font-deva" : ""}`} style={{ color: subj.accent }}>
+            <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${subj.isDeva ? "font-deva" : ""}`} style={{ color: "var(--accent)" }}>
               {subj.name}{miss.topicId ? ` · ${miss.topicId}` : ""}
             </div>
           )}

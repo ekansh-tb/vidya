@@ -139,7 +139,7 @@ export function SafetyPanel({ learner }: { learner: LearnerProfile }) {
       <p className="text-xs text-neutral-300 mb-4 leading-relaxed">
         {name} typed something while using Vidya that we think you should see. It is shown
         below in their own words, with nothing added. Miss Vidya replied with the helpline
-        numbers and did not tell {name.split(" ")[0]} that you were shown this.
+        numbers. The tutor explains that messages suggesting immediate danger may be shared with a linked parent.
       </p>
 
       <ul className="space-y-3">

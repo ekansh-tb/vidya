@@ -8,12 +8,12 @@ type Variant = "primary" | "secondary" | "ghost" | "success" | "danger" | "outli
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-500 text-white shadow-lg shadow-fuchsia-500/30",
-  secondary: "bg-white/10 backdrop-blur-xl text-white border border-white/10",
-  ghost: "bg-white/5 text-white hover:bg-white/10",
-  success: "bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg shadow-emerald-500/30",
-  danger: "bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-lg shadow-rose-500/30",
-  outline: "border-2 border-white/20 text-white bg-transparent hover:bg-white/5",
+  primary: "bg-[var(--accent)] text-[var(--bg-base)] shadow-sm",
+  secondary: "bg-[var(--surface-strong)] text-[var(--text)] border border-[var(--border)]",
+  ghost: "bg-transparent text-[var(--text)] hover:bg-[var(--surface-strong)]",
+  success: "bg-[var(--success)] text-[var(--bg-base)]",
+  danger: "bg-[var(--error)] text-[var(--bg-base)]",
+  outline: "border-2 border-[var(--border-strong)] text-[var(--text)] bg-transparent hover:bg-[var(--surface-strong)]",
 };
 
 const sizes: Record<Size, string> = {

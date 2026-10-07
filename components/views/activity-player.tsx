@@ -8,7 +8,7 @@ import { recordLocalMeasurement } from "@/lib/learning/local-measurement";
 import { placementKey } from "@/lib/learning/activity";
 import { placementFor } from "@/lib/learning/placement";
 import { completeActivity, type ActivityDraft, type LearningActivity } from "@/lib/learning/activity";
-import { speak, stopSpeaking } from "@/lib/speech";
+import { speakFromGesture, stopSpeaking } from "@/lib/speech";
 import { todayKey } from "@/lib/utils";
 import { CompanionCelebration } from "@/components/learning/companion-celebration";
 import { LearningCompanion } from "@/components/ui/learning-companion";
@@ -72,7 +72,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
     if (typeof window === "undefined" || !window.speechSynthesis) { narrationSet(hi ? "यहाँ आवाज़ उपलब्ध नहीं है। बड़े निर्देश पढ़ सकते हैं।" : "Narration is unavailable here. A grown-up can read the instruction."); return; }
     const voices = window.speechSynthesis.getVoices();
     if (!voices.some(v => v.lang.toLowerCase().startsWith(lang))) { narrationSet(hi ? "हिंदी आवाज़ नहीं मिली। बड़े दिखाई दे रहे निर्देश पढ़ सकते हैं।" : "An English voice is unavailable. Read the visible instruction together."); return; }
-    narrationSet(""); speak(step.instruction[lang], { lang: hi ? "hi-IN" : "en-IN", rate: 0.85 });
+    narrationSet(""); speakFromGesture(step.instruction[lang], { lang: hi ? "hi-IN" : "en-IN", rate: 0.85 });
   };
   const correctFeedback = feedback === step.feedback[lang];
   const safeExit = () => { if (!done && !existing) save({}); if (!done) measure("abandon"); stopSpeaking(); onExit(); };
@@ -94,7 +94,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
         {simulationInput !== null && <div role="status" className="learning-feedback">{hi ? "इनपुट" : "Input"}: {simulationInput} → {hi ? "मॉडल आउटपुट" : "Model output"}: {simulationInput * 2}<p>{hi ? "यह सरल मॉडल है। इसमें वास्तविक मौसम या ऊर्जा हानि नहीं है।" : "This is a simplified model. Real weather and energy losses are excluded."}</p><button className="learning-primary" onClick={() => finishStep()}>{hi ? "मैंने मॉडल देखा" : "I explored the model"}</button></div>}
         {feedback && <div role="status" className="learning-feedback"><p>{feedback}</p><button className="learning-primary" onClick={() => correctFeedback ? finishStep() : save({ responseStatus:undefined, picks:[] })}>{correctFeedback ? (hi ? "आगे" : "Continue") : (hi ? "फिर कोशिश करो" : "Try again")}</button></div>}
       </>}
-      <button onClick={() => { save({ hints: draft.hints + 1, hinted: true }); narrationSet(step.hint[lang]); speak(step.hint[lang], { lang:hi ? "hi-IN" : "en-IN", rate:0.85 }); }}>{hi ? "मुफ़्त मदद" : "Free hint"}</button>
+      <button onClick={() => { save({ hints: draft.hints + 1, hinted: true }); narrationSet(step.hint[lang]); speakFromGesture(step.hint[lang], { lang:hi ? "hi-IN" : "en-IN", rate:0.85 }); }}>{hi ? "मुफ़्त मदद" : "Free hint"}</button>
       <p className="learning-caption">{activity.objective[lang]}</p>
     </section>}
   </main></MotionConfig>;

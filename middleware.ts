@@ -25,6 +25,7 @@ import { parentReturnPath } from "@/lib/auth/parent-return";
 import { clerkConfigured } from "@/lib/auth/clerk-config";
 
 const isParentArea = createRouteMatcher(["/parent(.*)"]);
+const isAdminArea = createRouteMatcher(["/admin(.*)"]);
 const isAuthArea = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 
 /** Fallback used when Clerk has no keys: kid app open, everything auth-shaped closed. */
@@ -33,6 +34,7 @@ function withoutClerk(req: NextRequest) {
     const url = req.nextUrl.clone(); url.pathname = "/parent-unavailable"; url.search = "";
     return NextResponse.rewrite(url);
   }
+  if (isAdminArea(req)) return new NextResponse("Owner workspace unavailable", { status: 503, headers: { "Cache-Control": "no-store" } });
   if (isParentArea(req) || isAuthArea(req)) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
@@ -46,7 +48,7 @@ const withClerk = clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
   // Parent area requires a signed-in user. Anonymous → /sign-in with return target.
-  if (isParentArea(req) && !userId) {
+  if ((isParentArea(req) || isAdminArea(req)) && !userId) {
     const url = req.nextUrl.clone();
     url.pathname = "/sign-in";
     url.searchParams.set("next", req.nextUrl.pathname);

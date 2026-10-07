@@ -302,7 +302,7 @@ export function makeLearner({
       passportStamps: [], notebook: {}, lastAssemblyDate: null,
       assemblyStreak: 0, readBooks: [], readingProgress: {}, savedMelody: null, savedCompositions: [],
       classRoster: [], classNotes: [], buddyId: null, missedQuestions: [], dailyReflections: [],
-      settings: { sound: true, music: false, voice: true, musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9 },
+      settings: { version: 2, appearance: "light", companion: true, audioMuted: false, sound: true, music: false, voice: true, musicVolume: -24, sfxVolume: -18, voiceVolume: 0.55 },
       onboarded: true,
     },
   };

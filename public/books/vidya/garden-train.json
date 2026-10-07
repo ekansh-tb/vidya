@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Garden Train",
+  "titleHindi": "बगीचे की रेल",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "garden-train",
+      "title": "The Garden Train",
+      "paragraphs": [
+        "The children made a railway from blocks in the community garden. It passed a pretend mountain and a pretend sea. Their first station had a very high step.",
+        "Lina wanted her toy passenger to board without climbing. She made a gently sloping path. Someone said the path took too much space beside the tracks.",
+        "The group paused. They moved the station farther from the mountain and tried the path again. Now passengers could reach the platform in different ways.",
+        "A small child joined with a large toy bus. It did not fit through their tunnel. The builders made the tunnel wider instead of asking the child to leave the bus behind.",
+        "By afternoon, the railway looked different from the first drawing. The group kept both drawings to remember why they had changed the plan.",
+        "Their favourite station was the one with space to wait. The railway was imaginary, but the welcome was real."
+      ],
+      "illustration": "/books/vidya/garden-train.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "बगीचे की रेल",
+      "chapters": [
+        {
+          "id": "garden-train",
+          "title": "बगीचे की रेल",
+          "paragraphs": [
+            "बच्चों ने साझा बगीचे में गुटकों की रेल बनाई। वह काल्पनिक पहाड़ और समुद्र से गुज़रती थी। पहले स्टेशन की सीढ़ी बहुत ऊँची थी।",
+            "लीना चाहती थी कि उसका खिलौना यात्री बिना चढ़े आ सके। उसने ढलान वाला रास्ता बनाया। किसी ने कहा कि रास्ता पटरी के पास बहुत जगह लेता है।",
+            "समूह रुका। उन्होंने स्टेशन को पहाड़ से दूर किया और रास्ता फिर जाँचा। अब यात्री अलग-अलग तरीकों से प्लेटफ़ॉर्म तक पहुँच सकते थे।",
+            "एक छोटा बच्चा बड़ी खिलौना बस लाया। बस सुरंग में नहीं गई। बच्चों ने बस छोड़ने को कहने के बजाय सुरंग चौड़ी की।",
+            "दोपहर तक रेल पहले चित्र से अलग दिखने लगी। समूह ने दोनों चित्र रखे, ताकि बदलाव का कारण याद रहे।",
+            "उनका पसंदीदा स्टेशन इंतज़ार की जगह वाला था। रेल काल्पनिक थी, पर स्वागत सच्चा था।"
+          ],
+          "illustration": "/books/vidya/garden-train.svg"
+        }
+      ]
+    }
+  }
+}

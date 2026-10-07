@@ -23,6 +23,11 @@ import {
   Volume2,
   X,
 } from "lucide-react";
+import Image from "next/image";
+import { authorizeAudioFromGesture, isAudioAuthorized, isAudioMuted, setNarrationActive, subscribeAudio } from "@/lib/audio";
+import { readPersistedAudioSettings } from "@/lib/audio-bootstrap";
+import { SoundControl } from "@/components/audio/sound-control";
+import "./library-experience.css";
 import type { Book } from "@/lib/content/library";
 import {
   DEFAULT_READER_PREFERENCES,
@@ -30,13 +35,14 @@ import {
   isValidReaderBook,
   parseReaderPreferences,
   safeReaderPosition,
+  safeParagraphPosition,
   speechChunks,
   speechErrorMessage,
   speechLanguageTag,
   type ReaderBookContent,
   type ReaderTheme,
 } from "@/lib/content/library-utils";
-import type { ReadingProgress } from "@/lib/types";
+import type { ReadingProgress, GameState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type SpeechState = "idle" | "speaking" | "paused";
@@ -54,6 +60,7 @@ export function BookReader({
   onExit,
   onSaveProgress,
   onComplete,
+  settings, onSettingsChange,
 }: {
   book: Book;
   initialProgress?: ReadingProgress;
@@ -61,6 +68,8 @@ export function BookReader({
   onExit: () => void;
   onSaveProgress: (progress: ReadingProgress) => void;
   onComplete: () => void;
+  settings: GameState["settings"];
+  onSettingsChange: (patch: Partial<GameState["settings"]>) => void;
 }) {
   const initialProgressRef = useRef(initialProgress);
   const initialPositionRef = useRef(safeReaderPosition(initialProgress, book.chapterCount ?? 1));
@@ -77,6 +86,13 @@ export function BookReader({
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [chapterIndex, setChapterIndex] = useState(initialPositionRef.current.chapterIndex);
+  const anchorRef = useRef({ paragraphIndex: 0, paragraphOffset: 0 });
+  const anchoredRef = useRef(Boolean(initialProgress?.paragraphIndex !== undefined || (initialProgress?.scrollProgress ?? 0) > 0));
+  const touchRef = useRef<{x:number;y:number} | null>(null);
+  const [paragraphIndex, setParagraphIndex] = useState(0);
+  const [mode, setMode] = useState<"pages" | "scroll">("scroll");
+  const [language, setLanguage] = useState<"en" | "hi">("en");
+  const [bookmarkMessage, setBookmarkMessage] = useState("");
   const [scrollProgress, setScrollProgress] = useState(initialPositionRef.current.scrollProgress);
   const [theme, setTheme] = useState<ReaderTheme>(DEFAULT_READER_PREFERENCES.theme);
   const [fontSize, setFontSize] = useState(DEFAULT_READER_PREFERENCES.fontSize);
@@ -99,6 +115,7 @@ export function BookReader({
       const preferences = parseReaderPreferences(window.localStorage.getItem(READER_PREFERENCES_STORAGE_KEY));
       setTheme(preferences.theme);
       setFontSize(preferences.fontSize);
+      setMode(preferences.mode ?? "scroll");
     } catch {
       // Private browsing and device policies can make storage unavailable.
     } finally {
@@ -109,11 +126,11 @@ export function BookReader({
   useEffect(() => {
     if (!preferencesLoaded) return;
     try {
-      window.localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify({ theme, fontSize }));
+      window.localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify({ theme, fontSize, mode }));
     } catch {
       // Reading still works when a browser refuses preference storage.
     }
-  }, [fontSize, preferencesLoaded, theme]);
+  }, [fontSize, mode, preferencesLoaded, theme]);
 
   useEffect(() => {
     setSpeechSupported("speechSynthesis" in window && "SpeechSynthesisUtterance" in window);
@@ -122,6 +139,7 @@ export function BookReader({
       speechSessionRef.current += 1;
       readingAloudRef.current = false;
       window.speechSynthesis.cancel();
+      setNarrationActive(false);
     };
   }, []);
 
@@ -156,6 +174,8 @@ export function BookReader({
     setChapterIndex(nextChapter);
     setScrollProgress(nextScroll);
     latestPositionRef.current = { chapterIndex: nextChapter, scrollProgress: nextScroll };
+    anchorRef.current = safeParagraphPosition(initialProgressRef.current, content.chapters[nextChapter].paragraphs.length);
+    setParagraphIndex(anchorRef.current.paragraphIndex);
 
     const frame = requestAnimationFrame(() => {
       const viewport = viewportRef.current;
@@ -179,11 +199,15 @@ export function BookReader({
     readingAloudRef.current = false;
     window.speechSynthesis.cancel();
     setSpeechState("idle");
+    setNarrationActive(false);
     setSpeechMessage("Read aloud stopped");
   }, [chapterIndex]);
 
   useEffect(() => {
     const closePanels = (event: KeyboardEvent) => {
+      if (mode === "pages" && !showContents && !showSettings && (event.key === "ArrowLeft" || event.key === "ArrowRight") && !event.altKey && !event.ctrlKey && !event.metaKey && !(event.target instanceof HTMLElement && (event.target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)))) {
+        event.preventDefault(); goParagraph(event.key === "ArrowRight" ? 1 : -1); return;
+      }
       if (event.key !== "Escape") return;
       if (showContents) setShowContents(false);
       else if (showSettings) setShowSettings(false);
@@ -220,6 +244,41 @@ export function BookReader({
     };
   }, [showContents]);
 
+  const displayedChapters = language === "hi" && content?.translations?.hi ? content.translations.hi.chapters : content?.chapters;
+  useEffect(() => {
+    if (!content) return;
+    const restore = () => {
+      if (!anchoredRef.current) return;
+      const viewport = viewportRef.current;
+      const paragraph = viewport?.querySelector<HTMLElement>(`[data-reader-paragraph="${anchorRef.current.paragraphIndex}"]`);
+      if (!viewport || !paragraph) return;
+      const offset = paragraph.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop;
+      viewport.scrollTop = Math.max(0, offset + paragraph.offsetHeight * anchorRef.current.paragraphOffset);
+    };
+    const frame = requestAnimationFrame(restore);
+    window.addEventListener("resize", restore);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", restore); };
+  }, [content, fontSize, language, mode, theme]);
+
+  useEffect(() => {
+    const reset = () => {
+      if (!readingAloudRef.current) return;
+      const settings = readPersistedAudioSettings();
+      if (!document.hidden && !isAudioMuted() && !settings?.audioMuted && settings?.voice !== false) return;
+      speechSessionRef.current += 1; readingAloudRef.current = false;
+      window.speechSynthesis?.cancel(); setNarrationActive(false); setSpeechState("idle"); setSpeechMessage("Read aloud stopped");
+    };
+    const unsubscribe = subscribeAudio(reset);
+    document.addEventListener("visibilitychange", reset);
+    return () => { unsubscribe(); document.removeEventListener("visibilitychange", reset); };
+  }, []);
+
+  useEffect(() => {
+    if (!readingAloudRef.current || (!settings.audioMuted && settings.voice)) return;
+    speechSessionRef.current += 1; readingAloudRef.current = false;
+    window.speechSynthesis?.cancel(); setNarrationActive(false); setSpeechState("idle"); setSpeechMessage("Read aloud stopped");
+  }, [settings.audioMuted, settings.voice]);
+
   const currentPosition = safeReaderPosition(
     { chapterIndex, scrollProgress },
     content?.chapters.length ?? book.chapterCount ?? 1,
@@ -231,6 +290,7 @@ export function BookReader({
     onSaveProgress({
       chapterIndex: nextChapter,
       scrollProgress: nextScroll,
+      ...anchorRef.current,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -243,13 +303,17 @@ export function BookReader({
       window.speechSynthesis.cancel();
     }
     setSpeechState("idle");
+    setNarrationActive(false);
     if (wasActive) setSpeechMessage("Read aloud stopped");
   };
 
   const startReadAloud = () => {
+    authorizeAudioFromGesture();
     if (!content || !speechSupported || !("speechSynthesis" in window)) return;
-    const speechChapter = content.chapters[currentChapterIndex];
-    const chunks = speechChunks([speechChapter.title, ...speechChapter.paragraphs]);
+    const savedAudio = settings;
+    if (savedAudio?.voice === false || savedAudio?.audioMuted || isAudioMuted() || document.hidden) { setSpeechMessage("Enable narration and unmute sound to read aloud."); return; }
+    const speechChapter = displayedChapters![currentChapterIndex];
+    const chunks = speechChunks(mode === "pages" ? [speechChapter.paragraphs[paragraphIndex]] : [speechChapter.title, ...speechChapter.paragraphs]);
     if (!chunks.length) return;
 
     const synthesis = window.speechSynthesis;
@@ -258,24 +322,29 @@ export function BookReader({
     readingAloudRef.current = true;
     synthesis.cancel();
     setSpeechState("speaking");
-    setSpeechMessage("Reading chapter aloud");
+    setNarrationActive(true);
+    setSpeechMessage("Reading aloud");
 
     const finish = (message = "Chapter read aloud finished") => {
       if (speechSessionRef.current !== session) return;
       readingAloudRef.current = false;
+      setNarrationActive(false);
       setSpeechState("idle");
       setSpeechMessage(message);
     };
 
     const speakChunk = (index: number) => {
       if (speechSessionRef.current !== session) return;
+      const settings = readPersistedAudioSettings();
+      if (!isAudioAuthorized() || settings?.audioMuted || settings?.voice === false || isAudioMuted() || document.hidden) { finish("Read aloud stopped"); return; }
       if (index >= chunks.length) {
         finish();
         return;
       }
 
       const utterance = new SpeechSynthesisUtterance(chunks[index]);
-      utterance.lang = speechLanguageTag(content.language);
+      utterance.lang = speechLanguageTag(language === "hi" ? "Hindi" : content.language);
+      utterance.volume = Math.min(1, Math.max(0, Number.isFinite(savedAudio.voiceVolume) ? savedAudio.voiceVolume : .55));
       utterance.rate = 0.9;
       utterance.onend = () => speakChunk(index + 1);
       utterance.onerror = (event) => {
@@ -294,8 +363,12 @@ export function BookReader({
     } else if (speechState === "speaking") {
       window.speechSynthesis.pause();
       setSpeechState("paused");
+      setNarrationActive(false);
       setSpeechMessage("Read aloud paused");
     } else {
+      const settings = readPersistedAudioSettings();
+      if (!isAudioAuthorized() || settings?.audioMuted || settings?.voice === false || isAudioMuted() || document.hidden) { stopReadAloud(); return; }
+      setNarrationActive(true);
       window.speechSynthesis.resume();
       setSpeechState("speaking");
       setSpeechMessage("Reading chapter aloud");
@@ -312,33 +385,63 @@ export function BookReader({
   const onScroll = () => {
     const viewport = viewportRef.current;
     if (!viewport) return;
+    const top = viewport.getBoundingClientRect().top;
+    const paragraphs = [...viewport.querySelectorAll<HTMLElement>("[data-reader-paragraph]")];
+    const visible = paragraphs.find(paragraph => paragraph.getBoundingClientRect().bottom > top + 1);
+    if (visible && visible.getBoundingClientRect().top <= top + 1) {
+      anchoredRef.current = true;
+      const index = Number(visible.dataset.readerParagraph);
+      anchorRef.current = { paragraphIndex: index, paragraphOffset: Math.min(1, Math.max(0, (top - visible.getBoundingClientRect().top) / Math.max(1, visible.offsetHeight))) };
+      setParagraphIndex(index);
+    }
     const maxScroll = viewport.scrollHeight - viewport.clientHeight;
-    const nextScroll = maxScroll > 0 ? Math.min(Math.max(viewport.scrollTop / maxScroll, 0), 1) : 1;
+    const localProgress = maxScroll > 0 ? Math.min(Math.max(viewport.scrollTop / maxScroll, 0), 1) : 1;
+    const nextScroll = mode === "pages" ? (paragraphIndex + localProgress) / (displayedChapters?.[currentChapterIndex].paragraphs.length ?? 1) : localProgress;
     setScrollProgress(nextScroll);
     latestPositionRef.current = { chapterIndex: currentChapterIndex, scrollProgress: nextScroll };
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => savePosition(currentChapterIndex, nextScroll), 600);
   };
 
-  const openChapter = (nextChapter: number) => {
+  const openChapter = (nextChapter: number, atEnd = false) => {
     if (!content) return;
     stopReadAloud();
     const safeChapter = safeReaderPosition({ chapterIndex: nextChapter, scrollProgress: 0 }, content.chapters.length).chapterIndex;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const paragraph = atEnd ? displayedChapters![safeChapter].paragraphs.length - 1 : 0;
+    const fraction = paragraph / displayedChapters![safeChapter].paragraphs.length;
+    anchoredRef.current = atEnd;
+    anchorRef.current = { paragraphIndex: paragraph, paragraphOffset: 0 };
+    setParagraphIndex(paragraph);
     setChapterIndex(safeChapter);
-    setScrollProgress(0);
-    latestPositionRef.current = { chapterIndex: safeChapter, scrollProgress: 0 };
+    setScrollProgress(fraction);
+    latestPositionRef.current = { chapterIndex: safeChapter, scrollProgress: fraction };
     requestAnimationFrame(() => {
       viewportRef.current?.scrollTo({ top: 0, behavior: "auto" });
       readerHeadingRef.current?.focus({ preventScroll: true });
     });
-    savePosition(safeChapter, 0);
+    savePosition(safeChapter, fraction);
     setShowContents(false);
+  };
+
+  const goParagraph = (direction: -1 | 1) => {
+    if (!content) return;
+    stopReadAloud();
+    const paragraphs = displayedChapters![currentChapterIndex].paragraphs;
+    const next = paragraphIndex + direction;
+    if (next < 0) { if (currentChapterIndex > 0) openChapter(currentChapterIndex - 1, true); return; }
+    if (next >= paragraphs.length) { if (currentChapterIndex < content.chapters.length - 1) openChapter(currentChapterIndex + 1); return; }
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    anchoredRef.current = true;
+    anchorRef.current = { paragraphIndex: next, paragraphOffset: 0 };
+    setParagraphIndex(next); setScrollProgress(next / paragraphs.length);
+    requestAnimationFrame(() => { viewportRef.current?.scrollTo({ top: 0, behavior: "auto" }); });
+    savePosition(currentChapterIndex, next / paragraphs.length);
   };
 
   if (!content) {
     return (
-      <div className="fixed inset-0 z-[90] min-h-[100dvh] bg-[#090b18] text-white flex flex-col">
+      <div className="vidya-reader fixed inset-0 z-[90] min-h-[100dvh] bg-[#090b18] text-white flex flex-col">
         <div className="h-16 px-4 flex items-center border-b border-white/10">
           <button onClick={exitReader} className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300" aria-label="Back to library">
             <ArrowLeft className="w-5 h-5" />
@@ -367,7 +470,7 @@ export function BookReader({
     );
   }
 
-  const chapter = content.chapters[currentChapterIndex];
+  const chapter = displayedChapters![currentChapterIndex];
   const overallProgress = ((currentChapterIndex + currentPosition.scrollProgress) / content.chapters.length) * 100;
   const isLastChapter = currentChapterIndex === content.chapters.length - 1;
   const speechActionLabel = speechState === "idle"
@@ -377,7 +480,7 @@ export function BookReader({
       : "Resume read aloud";
 
   return (
-    <div className="fixed inset-0 z-[90] h-[100dvh] overflow-hidden bg-[#090b18] text-white">
+    <div className="vidya-reader fixed inset-0 z-[90] h-[100dvh] overflow-hidden bg-[#090b18] text-white">
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="absolute -top-28 left-[8%] w-72 h-72 rounded-full bg-violet-600/15 blur-[90px]" />
         <div className="absolute bottom-[-8rem] right-[5%] w-80 h-80 rounded-full bg-cyan-500/10 blur-[100px]" />
@@ -393,6 +496,7 @@ export function BookReader({
           </div>
           <div className="font-display font-bold truncate text-sm sm:text-base">{content.title}</div>
         </div>
+        <div className="reader-sound-wrapper"><SoundControl settings={settings} onChange={onSettingsChange} /></div>
         {speechSupported && (
           <button
             type="button"
@@ -447,6 +551,9 @@ export function BookReader({
                 </button>
               </div>
             </div>
+            <div className="text-sm font-bold mb-2">Reading layout</div><div className="grid grid-cols-2 gap-2 mb-4">{(["pages", "scroll"] as const).map(value => <button key={value} aria-pressed={mode === value} onClick={() => { stopReadAloud(); anchoredRef.current = true; setMode(value); }} className="min-h-11 border rounded-xl px-3">{value === "pages" ? "Pages" : "Scroll"}</button>)}</div>
+            {content.translations?.hi && <div className="grid grid-cols-2 gap-2 mb-4" role="group" aria-label="Story language">{(["en", "hi"] as const).map(value => <button key={value} aria-pressed={language === value} onClick={() => { stopReadAloud(); anchoredRef.current = true; setLanguage(value); }} className="min-h-11 border rounded-xl px-3">{value === "en" ? "English" : "हिंदी"}</button>)}</div>}
+            <button className="min-h-11 border rounded-xl px-3 mb-4" onClick={() => { savePosition(currentChapterIndex, latestPositionRef.current.scrollProgress); setBookmarkMessage("Your reading place is saved."); }}>Bookmark this place</button><p role="status">{bookmarkMessage}</p>
             <div className="text-sm font-bold mb-2">Reading light</div>
             <div className="grid grid-cols-3 gap-2">
               {([
@@ -498,6 +605,8 @@ export function BookReader({
       <main
         ref={viewportRef}
         onScroll={onScroll}
+        onTouchStart={event => { const touch = event.touches[0]; touchRef.current = {x:touch.clientX,y:touch.clientY}; }}
+        onTouchEnd={event => { const touch = event.changedTouches[0]; const start = touchRef.current; touchRef.current = null; if (mode !== "pages" || !start) return; const dx = touch.clientX - start.x; const dy = touch.clientY - start.y; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) goParagraph(dx < 0 ? 1 : -1); }}
         className="relative h-[calc(100dvh-72px)] overflow-y-auto overscroll-contain px-3 sm:px-6 py-5 sm:py-9"
       >
         <article className={cn("relative max-w-3xl mx-auto rounded-[1.75rem] sm:rounded-[2.25rem] shadow-2xl overflow-hidden select-text", themeClasses[theme])}>
@@ -508,15 +617,16 @@ export function BookReader({
             <div className="text-xs uppercase tracking-[0.2em] font-bold opacity-55 mb-3">Chapter {currentChapterIndex + 1}</div>
             <h1 ref={readerHeadingRef} tabIndex={-1} className="font-display text-3xl sm:text-5xl font-bold leading-tight text-balance select-text focus:outline-none">{chapter.title}</h1>
             <div className="mt-4 text-sm opacity-60">{content.author}</div>
+            {content.sourceKind === "vidya-original" ? <details className="mt-5"><summary className="min-h-11 py-2 text-sm cursor-pointer">About this original story</summary><p className="text-xs leading-relaxed">{content.rights}</p><p className="text-xs leading-relaxed">{content.review?.limitations}</p>{content.publicationStatus === "draft" && <p className="font-bold text-sm">Draft preview. Not published to the learner library.</p>}</details> : <>
             <aside aria-labelledby={licenseTitleId} className="mt-7 rounded-2xl border-2 border-current/25 bg-current/[0.06] p-4 text-left font-sans">
               <h2 id={licenseTitleId} className="text-base font-bold select-text">Project Gutenberg access notice</h2>
-              <p className="mt-2 text-xs sm:text-sm leading-relaxed select-text">{content.gutenbergLicense.requiredNotice}</p>
+              <p className="mt-2 text-xs sm:text-sm leading-relaxed select-text">{content.gutenbergLicense!.requiredNotice}</p>
               <p className="mt-3 text-xs leading-relaxed select-text"><strong>Rights:</strong> {content.rights}</p>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-bold">
-                <a href={content.gutenbergLicense.licenseUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                <a href={content.gutenbergLicense!.licenseUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
                   Full license online <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </a>
-                <a href={content.gutenbergLicense.originalFormatUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
+                <a href={content.gutenbergLicense!.originalFormatUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
                   Original plain-text book <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </a>
                 <a href={content.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-md">
@@ -528,15 +638,18 @@ export function BookReader({
                   Read the full license in Vidya
                 </summary>
                 <div tabIndex={0} aria-label="Full Project Gutenberg license text" className="mt-3 max-h-80 overflow-y-auto overscroll-contain rounded-lg border border-current/15 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current">
-                  <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed select-text">{content.gutenbergLicense.fullText}</pre>
+                  <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed select-text">{content.gutenbergLicense!.fullText}</pre>
                 </div>
               </details>
-            </aside>
+            </aside></>}
+
           </div>
 
           <div className="px-6 py-8 sm:px-14 sm:py-12 font-serif leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
+            {chapter.illustration && <Image src={chapter.illustration} alt="" width={220} height={220} className="reader-story-art" />}
+            {mode === "pages" && <p className="reader-page-label">Page {paragraphIndex + 1} of {chapter.paragraphs.length}</p>}
             {chapter.paragraphs.map((paragraph, index) => (
-              <p key={`${chapter.id}-${index}`} className="mb-[1.35em] whitespace-pre-line text-pretty select-text">
+              <p data-reader-paragraph={index} hidden={mode === "pages" && index !== paragraphIndex} lang={language === "hi" ? "hi" : "en"} key={`${chapter.id}-${index}`} className="mb-[1.35em] whitespace-pre-line text-pretty select-text">
                 {paragraph}
               </p>
             ))}
@@ -546,13 +659,13 @@ export function BookReader({
             <div className="h-px bg-current/10 mb-6" />
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
               <button
-                onClick={() => openChapter(currentChapterIndex - 1)}
-                disabled={currentChapterIndex === 0}
+                onClick={() => mode === "pages" ? goParagraph(-1) : openChapter(currentChapterIndex - 1)}
+                disabled={currentChapterIndex === 0 && (mode !== "pages" || paragraphIndex === 0)}
                 className="h-12 px-4 rounded-xl border border-current/20 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold disabled:opacity-30"
               >
                 <ChevronLeft className="w-4 h-4" /> Previous
               </button>
-              {isLastChapter ? (
+              {isLastChapter && (mode !== "pages" || paragraphIndex === chapter.paragraphs.length - 1) ? (
                 <button
                   onClick={onComplete}
                   disabled={read}
@@ -561,8 +674,8 @@ export function BookReader({
                   <Check className="w-4 h-4" /> {read ? "Book finished" : "Finish book and earn 20 XP"}
                 </button>
               ) : (
-                <button onClick={() => openChapter(currentChapterIndex + 1)} className="h-12 px-5 rounded-xl bg-amber-400 text-slate-950 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold">
-                  Next chapter <ChevronRight className="w-4 h-4" />
+                <button onClick={() => mode === "pages" ? goParagraph(1) : openChapter(currentChapterIndex + 1)} className="h-12 px-5 rounded-xl bg-amber-400 text-slate-950 inline-flex items-center justify-center gap-2 font-sans text-sm font-bold">
+                  {mode === "pages" ? "Next page" : "Next chapter"} <ChevronRight className="w-4 h-4" />
                 </button>
               )}
             </div>

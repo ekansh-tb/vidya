@@ -20,6 +20,9 @@ import {
 } from "@/lib/ai/credential-vault";
 import { createParentTutorModel } from "@/lib/ai/parent-tutor-model";
 import { isProviderCredentialError } from "@/lib/ai/provider-errors";
+import { readReviewedTutorEligibility } from "@/lib/ai/tutor-eligibility.server";
+import { evaluateTutorEligibility } from "@/lib/ai/tutor-safeguards";
+import { subjectHelperPrompt } from "@/lib/ai/subject-helper";
 import {
   markAiConnectionUsedForParent,
   setAiConnectionStatusForParent,
@@ -277,6 +280,29 @@ async function tutorResponse(req: Request) {
     return staticReply(curriculum.clarification, { headers: rateHeaders(verdict, RATE.limit) });
   }
 
+  // Parent activation and provider credentials are not evidence of verified
+  // age, processing consent, retention approval or reviewed learning scope.
+  // Never forward an unknown-age personal conversation while those records
+  // are missing. This gate runs before decryption, model creation and billing.
+  let safeguard;
+  try {
+    const review = await readReviewedTutorEligibility(learnerId);
+    safeguard = evaluateTutorEligibility(review, {
+      learnerId, parentId: runtimePolicy.parentId, connectionId: runtimePolicy.connectionId, tutorProfileId: runtimePolicy.tutorProfileId,
+      provider: runtimePolicy.provider, modelId: runtimePolicy.modelId,
+    }, curriculum.scope);
+  } catch {
+    console.error("[api/tutor] eligibility lookup failed");
+    return staticReply("The AI helper is paused. You can keep exploring the authored activities.", {
+      headers: rateHeaders(verdict, RATE.limit),
+    });
+  }
+  if (!safeguard.allowed) {
+    return staticReply("The AI helper is paused while its learning scope and child safeguards are reviewed. You can keep exploring the authored activities.", {
+      headers: rateHeaders(verdict, RATE.limit),
+    });
+  }
+
   let model;
   try {
     const credential = decryptCredential(
@@ -345,7 +371,7 @@ async function tutorResponse(req: Request) {
       model,
       // The crisis hint stays last and retains priority over teaching context.
       system:
-        systemPrompt(curriculum.scope, { topic, interests, aiTone }) +
+        systemPrompt(curriculum.scope, { topic, interests, aiTone }) + "\n\n" + subjectHelperPrompt(safeguard.helper) +
         (despairHint ? `\n\n${despairHint}` : ""),
       messages: modelMessages,
       maxOutputTokens: runtimePolicy.maxOutputTokens,

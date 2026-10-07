@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useGameStore } from "@/lib/game-store";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import {
   ChevronLeft, Cpu, AlertTriangle, BookOpen, Sparkles,
@@ -72,10 +73,10 @@ export function ExamPrepView({
   if (!packExists || !subject) {
     return (
       <div className="min-h-screen pb-24 max-w-2xl mx-auto px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
-        <div className="glass-card p-6 text-center text-white/70">
+        <div className="glass-card p-6 text-center text-[var(--text-muted)]">
           No exam pack found for this subject yet. We&apos;re still writing it.
         </div>
       </div>
@@ -192,10 +193,10 @@ export function ExamPrepView({
             </div>
           ) : !pack ? (
             <div className="glass-card p-6 space-y-3 animate-pulse" aria-busy="true" aria-label="Loading exam pack">
-              <div className="h-3.5 rounded bg-white/10 w-1/2" />
-              <div className="h-2.5 rounded bg-white/[0.07] w-full" />
-              <div className="h-2.5 rounded bg-white/[0.07] w-5/6" />
-              <div className="h-2.5 rounded bg-white/[0.07] w-2/3" />
+              <div className="h-3.5 rounded bg-[var(--surface-strong)] w-1/2" />
+              <div className="h-2.5 rounded bg-[var(--surface-strong)] w-full" />
+              <div className="h-2.5 rounded bg-[var(--surface-strong)] w-5/6" />
+              <div className="h-2.5 rounded bg-[var(--surface-strong)] w-2/3" />
             </div>
           ) : (
           <AnimatePresence mode="wait">
@@ -304,7 +305,9 @@ function Step({ n, title, hint, onClick }: { n: number; title: string; hint: str
 // Syllabus checklist
 // =====================
 function SyllabusSection({ pack, state, setState, board, grade, school }: { pack: ExamPack; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
-  const reduceMotion = useReducedMotion();
+  const osReduced = useReducedMotion();
+  const motionEnabled = useGameStore(store => store.state.settings.motion !== false);
+  const reduceMotion = Boolean(osReduced || !motionEnabled);
   const [openId, setOpenId] = useState<string | null>(pack.topics[0]?.id ?? null);
   const storageKey = confidenceStorageKey(pack);
   const map = useMemo(() => readTopicConfidence(state.notebook?.[storageKey]), [state.notebook, storageKey]);
@@ -320,7 +323,7 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
       <div className="text-[11px] mb-3 px-1" style={{ color: "var(--text-faint)" }}>
-        Tap each topic to tag your confidence for this syllabus version. Earlier ratings are kept separately when a topic or syllabus version changes. If devices disagree, the later recorded edit wins; inaccurate device clocks can affect this. Tied edit times keep the lower rating.
+        These are your own confidence choices, not a measured score. Tap each topic to tag your confidence for this syllabus version. Earlier ratings are kept separately when a topic or syllabus version changes. If devices disagree, the later recorded edit wins; inaccurate device clocks can affect this. Tied edit times keep the lower rating.
       </div>
       {pack.topics.map((t) => {
         const identity = topicConfidenceIdentity(pack, t, { board, grade, school });
@@ -371,8 +374,8 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                           : "var(--surface)";
                       const color =
                         c === opt
-                          ? opt === "weak" ? "#FBA5C9"
-                            : opt === "ok" ? "#FCD34D"
+                          ? opt === "weak" ? "var(--error)"
+                            : opt === "ok" ? "var(--warning)"
                             : "var(--accent)"
                           : "var(--text-faint)";
                       return (
@@ -380,12 +383,12 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                           key={opt}
                           type="button"
                           aria-pressed={c === opt}
-                          aria-label={`${opt} confidence for ${t.title}`}
+                          aria-label={`${opt === "weak" ? "Want help" : opt === "ok" ? "Keep practising" : "Feel ready"} for ${t.title}`}
                           onClick={() => setConf(identity, opt)}
                           className="min-h-11 min-w-11 text-[11px] rounded-[var(--radius-pill)] px-2.5 py-1 font-bold uppercase tracking-wider focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                           style={{ background: bg, color }}
                         >
-                          {opt}
+                          {opt === "weak" ? "Want help" : opt === "ok" ? "Keep practising" : "Feel ready"}
                         </button>
                       );
                     })}
@@ -401,9 +404,9 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
 }
 
 function ConfPill({ conf }: { conf: "unknown" | "weak" | "ok" | "strong" }) {
-  if (conf === "weak") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "rgba(244,114,182,0.15)", color: "#FBA5C9" }}>weak</span>;
-  if (conf === "ok") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "rgba(251,191,36,0.15)", color: "#FCD34D" }}>ok</span>;
-  if (conf === "strong") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>strong</span>;
+  if (conf === "weak") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "rgba(244,114,182,0.15)", color: "var(--error)" }}>want help</span>;
+  if (conf === "ok") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "rgba(251,191,36,0.15)", color: "var(--warning)" }}>keep practising</span>;
+  if (conf === "strong") return <span className="text-[10px] font-bold uppercase tracking-wider rounded-[var(--radius-pill)] px-2 py-0.5" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>feel ready</span>;
   return <ChevronRight className="w-4 h-4" style={{ color: "var(--text-faint)" }} />;
 }
 
@@ -414,7 +417,7 @@ function FlashSection({ pack }: { pack: ExamPack }) {
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const card = pack.flashcards[idx];
-  if (!card) return <div className="text-center text-white/50 py-8">No flashcards yet.</div>;
+  if (!card) return <div className="text-center text-[var(--text-muted)] py-8">No flashcards yet.</div>;
   const next = () => { sfx.click(); setIdx((i) => (i + 1) % pack.flashcards.length); setFlipped(false); };
   const prev = () => { sfx.click(); setIdx((i) => (i - 1 + pack.flashcards.length) % pack.flashcards.length); setFlipped(false); };
 
@@ -466,7 +469,7 @@ function QuizSection({ pack }: { pack: ExamPack }) {
   const [score, setScore] = useState(0);
   const [attempted, setAttempted] = useState(0);
   const q = pack.questions[idx];
-  if (!q) return <div className="text-center text-white/50 py-8">No practice questions yet.</div>;
+  if (!q) return <div className="text-center text-[var(--text-muted)] py-8">No practice questions yet.</div>;
 
   const choose = (opt: string) => {
     if (revealed) return;

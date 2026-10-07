@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hubActivities } from "@/lib/learning/hub-selection";
+import type { LearningActivity } from "@/lib/learning/activity";
 import { placementLabel, experienceMode } from "@/lib/learning/placement";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
@@ -13,6 +14,7 @@ import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 const require = createRequire(import.meta.url);
 type Props = Record<string, unknown> & { children?: React.ReactNode; onClick?: () => void };
 let reduced = false;
+let published: LearningActivity[] | undefined;
 let controls: Props[] = [];
 let motions: Props[] = [];
 const runtime = require("react/jsx-runtime");
@@ -54,6 +56,7 @@ new Function("require", "exports", compiled)((id: string) => {
   };
   if (id === "@/lib/economy") return { xpToLevel: () => ({ level: 1, xpInLevel: 0, xpNeeded: 100 }) };
   if (id === "@/lib/learning/hub-selection") return { hubActivities };
+  if (id === "@/lib/learning/use-published-activities") return { usePublishedActivities: (learner: LearnerProfile, language: "en" | "hi") => ({ activities: published ?? hubActivities(learner, language) }) };
   if (id === "@/lib/learning/placement") return { placementLabel, experienceMode };
   if (id === "@/lib/learning/activity") return { companionUnlocks: () => [] };
   if (id === "@/lib/utils") return { todayKey: () => "2026-10-01" };
@@ -61,11 +64,11 @@ new Function("require", "exports", compiled)((id: string) => {
   return require(id);
 }, exports);
 
-function render(board: LearnerProfile["board"] = "cambridge-primary") {
+function render(board: LearnerProfile["board"] = "cambridge-primary", grade = 5) {
   const onNavigate = vi.fn();
   const state = { ...DEFAULT_STATE, name: "Sample", streak: 3, lastSubjectId: "maths" as const };
   const learner: LearnerProfile = {
-    id: "synthetic", name: "Sample", board, grade: 5,
+    id: "synthetic", name: "Sample", board, grade,
     pickedSubjects: board === "cambridge-igcse" ? ["igcse-cs"] : ["maths"],
     familyNote: { body: "Synthetic encouragement", postedAt: "2026-10-01T00:00:00Z" },
     upcomingExams: [{ id: "synthetic-exam", title: "Practice", date: "2026-10-02", subjectId: "maths" }],
@@ -82,6 +85,7 @@ beforeEach(() => {
   controls = [];
   motions = [];
   reduced = false;
+  published = undefined;
 });
 afterEach(() => vi.useRealTimers());
 
@@ -105,4 +109,11 @@ describe("Learning navigation", () => {
     expect(explore).toBeDefined(); explore!.onClick!();
     expect(onNavigate).toHaveBeenLastCalledWith("home", { tab: "explore" });
   });
+});
+
+it("honours an empty CMS collection instead of offering an archived static activity", () => {
+  published = [];
+  const { html } = render("cbse", 2);
+  expect(html).toContain("Find a book to get lost in");
+  expect(html).not.toContain("Number garden");
 });

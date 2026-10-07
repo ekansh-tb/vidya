@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import "./library-experience.css";
 import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
 import { ChevronLeft, BookOpen, Clock, Check, ExternalLink, Search, X } from "lucide-react";
@@ -13,6 +15,7 @@ import {
   type LibraryDifficultyFilter,
 } from "@/lib/content/library-utils";
 import type { GameState, ReadingProgress } from "@/lib/types";
+import { useGameStore } from "@/lib/game-store";
 import { sfx } from "@/lib/audio";
 
 function formatReadTime(minutes: number) {
@@ -23,17 +26,22 @@ function formatReadTime(minutes: number) {
 }
 
 export function LibraryView({
-  state, setState, onBack,
+  state, setState, onBack, initialBookId,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
+  initialBookId?: string;
 }) {
+  const learner = useGameStore(store => store.learner);
+  const availableBooks = useMemo(() => learner?.placement?.kind === "early-years" ? LIBRARY.filter(book => book.earlyYearsEligible === true) : LIBRARY, [learner?.placement?.kind]);
   const [active, setActive] = useState<Book | null>(null);
-  const [readerBook, setReaderBook] = useState<Book | null>(null);
+  const [readerBook, setReaderBook] = useState<Book | null>(() => availableBooks.find(book => book.id === initialBookId && book.readerPath) ?? null);
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState<LibraryDifficultyFilter>("all");
-  const [availability, setAvailability] = useState<LibraryAvailabilityFilter>("all");
+  const [availability, setAvailability] = useState<LibraryAvailabilityFilter>("in-app");
+  const [readingLevel, setReadingLevel] = useState<"all" | 1 | 2 | 3 | 4>("all");
+  const [languageFilter, setLanguageFilter] = useState<"all" | "en" | "hi">("all");
   const bookButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const pendingBookFocusRef = useRef<string | null>(null);
   const readCount = state.readBooks?.length || 0;
@@ -41,16 +49,17 @@ export function LibraryView({
   const difficultyId = useId();
   const availabilityId = useId();
   const filteredBooks = useMemo(
-    () => filterLibrary(LIBRARY, { query, difficulty, availability }),
-    [availability, difficulty, query],
+    () => filterLibrary(availableBooks, { query, difficulty, availability, readingLevel, language: languageFilter }),
+    [availableBooks, availability, difficulty, query, readingLevel, languageFilter],
   );
-  const hasFilters = query.trim().length > 0 || difficulty !== "all" || availability !== "all";
+  const hasFilters = query.trim().length > 0 || difficulty !== "all" || availability !== "all" || readingLevel !== "all" || languageFilter !== "all";
   const resultLabel = `${filteredBooks.length} ${filteredBooks.length === 1 ? "book" : "books"} found`;
 
   const clearFilters = () => {
     setQuery("");
     setDifficulty("all");
     setAvailability("all");
+    setReadingLevel("all"); setLanguageFilter("all");
   };
 
   useEffect(() => {
@@ -119,11 +128,14 @@ export function LibraryView({
       <ReducedMotionProvider>
         <BookReader
           book={readerBook}
+          settings={state.settings}
+          onSettingsChange={patch => setState(previous => ({ ...previous, settings: { ...previous.settings, ...patch } }))}
           initialProgress={state.readingProgress?.[readerBook.id]}
           read={!!state.readBooks?.includes(readerBook.id)}
           onExit={() => {
             pendingBookFocusRef.current = readerBook.id;
             setReaderBook(null);
+            setState(previous => ({ ...previous, learningResume: { version: 1, room: "none", updatedAt: new Date().toISOString() } }));
           }}
           onSaveProgress={(progress) => saveReadingProgress(readerBook.id, progress)}
           onComplete={() => completeBook(readerBook.id)}
@@ -134,13 +146,13 @@ export function LibraryView({
 
   return (
     <ReducedMotionProvider>
-      <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+      <div className="vidya-library min-h-screen pb-24 max-w-4xl mx-auto">
         <div className="px-5 pt-6">
           <button onClick={() => { sfx.click(); onBack(); }} className="min-h-11 flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 rounded-xl px-2 -ml-2">
             <ChevronLeft className="w-5 h-5" /> Home
           </button>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
             <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#F59E0B" }} />
             <div className="relative flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(251,191,36,0.15)" }}>
@@ -150,7 +162,7 @@ export function LibraryView({
                 <div className="text-[10px] uppercase tracking-widest font-bold text-amber-300">Library</div>
                 <h1 className="font-display text-2xl font-bold text-white">Pick a story</h1>
                 <div className="text-sm text-white/60">
-                  {readCount} of {LIBRARY.length} books read · {readCount * 20} reading XP
+                  {availableBooks.filter(book => book.readerPath).length} books ready in Vidya · {readCount} marked finished
                 </div>
               </div>
             </div>
@@ -224,10 +236,12 @@ export function LibraryView({
               </div>
             </div>
 
+            <div className="library-levels"><label htmlFor={`${difficultyId}-level`}>Text complexity<select id={`${difficultyId}-level`} value={readingLevel} onChange={event => setReadingLevel(event.target.value === "all" ? "all" : Number(event.target.value) as 1 | 2 | 3 | 4)}><option value="all">All reading levels</option><option value="1">Level 1 · First stories</option><option value="2">Level 2 · Growing readers</option><option value="3">Level 3 · Curious readers</option><option value="4">Level 4 · Independent readers</option></select></label><label htmlFor={`${availabilityId}-language`}>Language<select id={`${availabilityId}-language`} value={languageFilter} onChange={event => setLanguageFilter(event.target.value as "all" | "en" | "hi")}><option value="all">All available languages</option><option value="en">English</option><option value="hi">Hindi</option></select></label></div>
             <div className="mt-3 text-sm text-white/60" aria-hidden="true">{resultLabel}</div>
             <div className="sr-only" aria-live="polite" aria-atomic="true">{resultLabel}</div>
           </section>
 
+          <p className="library-published-note">Reading levels describe text complexity, not age or ability. Read together, use read-aloud or choose a different level whenever you like. Details-only entries do not contain a readable book.</p>
           {LIBRARY_REGIONS.map((r) => {
             const books = filteredBooks.filter((b) => b.region === r.id);
             if (!books.length) return null;
@@ -239,7 +253,7 @@ export function LibraryView({
                     {r.label}
                   </h2>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="library-shelves">
                   {books.map((b, i) => {
                     const read = state.readBooks?.includes(b.id);
                     const isDeva = b.region === "marathi" || b.region === "hindi";
@@ -250,12 +264,12 @@ export function LibraryView({
                           if (node) bookButtonRefs.current.set(b.id, node);
                           else bookButtonRefs.current.delete(b.id);
                         }}
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => { sfx.click(); setActive(b); }}
-                        className="glass-card min-h-[220px] p-4 text-left active:scale-[0.98] transition relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                        className="library-book relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                       >
                         {read && (
                           <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-500/20 ring-1 ring-emerald-400 flex items-center justify-center">
@@ -263,9 +277,8 @@ export function LibraryView({
                             <span className="sr-only">Finished</span>
                           </div>
                         )}
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl mb-3" style={{ background: `${r.color}22` }} aria-hidden="true">
-                          {b.cover}
-                        </div>
+                        {b.coverImage ? <Image src={b.coverImage} alt="" width={220} height={220} className="library-cover" /> : <div className="w-full h-28 rounded-xl flex items-center justify-center text-4xl mb-3" style={{ background: `${r.color}22` }} aria-hidden="true">{b.cover}</div>}
+
                         <div className={`font-display font-bold text-white text-sm leading-tight ${isDeva ? "font-deva" : ""}`}>
                           {b.title}
                         </div>
@@ -277,12 +290,12 @@ export function LibraryView({
                             <Clock className="w-3 h-3" /> {formatReadTime(b.readMinutes)}
                           </div>
                           <div className="px-1.5 py-0.5 rounded-full bg-white/[0.06]">
-                            {b.difficulty}
+                            {b.readingLevel ? `Level ${b.readingLevel}` : b.difficulty}
                           </div>
                         </div>
                         {b.readerPath && (
                           <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-300">
-                            <BookOpen className="w-3 h-3" /> {b.chapterCount} chapters · Full book
+                            <BookOpen className="w-3 h-3" /> {b.chapterCount} {b.chapterCount === 1 ? "story" : "chapters"} · Ready to read
                           </div>
                         )}
                         {!b.readerPath && b.link && (
@@ -330,6 +343,7 @@ export function LibraryView({
             onRead={() => {
               setActive(null);
               setReaderBook(active);
+              setState(previous => ({ ...previous, learningResume: { version: 1, room: "library", bookId: active.id, updatedAt: new Date().toISOString() } }));
             }}
           />
         )}
@@ -411,7 +425,7 @@ function BookSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 280, damping: 28 }}
-        className="fixed bottom-0 inset-x-0 z-[81] max-h-[calc(100dvh-1rem)] max-w-2xl mx-auto overflow-y-auto overscroll-contain rounded-t-3xl glass-strong p-6 pb-[calc(2rem+env(safe-area-inset-bottom))]"
+        className="vidya-library fixed bottom-0 inset-x-0 z-[81] max-h-[calc(100dvh-1rem)] max-w-2xl mx-auto overflow-y-auto overscroll-contain rounded-t-3xl glass-strong p-6 pb-[calc(2rem+env(safe-area-inset-bottom))]"
       >
         <button
           ref={closeButtonRef}
@@ -452,9 +466,9 @@ function BookSheet({
             </Button>
           )}
           <div className="flex gap-2">
-            <Button size={book.readerPath ? "md" : "lg"} variant={book.readerPath ? "secondary" : "primary"} className="flex-1" onClick={onToggle}>
-              {read ? "Mark unread" : "Mark as finished · +20 XP"}
-            </Button>
+            {(book.readerPath || book.link) && <Button size={book.readerPath ? "md" : "lg"} variant={book.readerPath ? "secondary" : "primary"} className="flex-1" onClick={onToggle}>
+              {read ? "Mark unread" : "Mark as finished"}
+            </Button>}
             {book.link && (
               <a
                 href={book.link}

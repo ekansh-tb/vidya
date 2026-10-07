@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "Two Maps of One Lane",
+  "titleHindi": "एक गली के दो नक्शे",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "two-maps",
+      "title": "Two Maps of One Lane",
+      "paragraphs": [
+        "Farah drew a map of her lane. She marked the places where neighbours sold vegetables. Her brother drew the same lane, but he marked trees and shaded benches.",
+        "They compared the maps and thought one must be wrong. Grandma asked what each map was for. Farah wanted to plan a shopping walk. Her brother wanted a cool place to sit.",
+        "They walked with Grandma and checked both maps. One vegetable stall had moved. A bench was missing from the second map. Both drawings needed a small correction.",
+        "Back home, they used different colours to put their notes together. The new map was useful for some journeys, but they left room for details they had not checked.",
+        "A neighbour asked where the smoothest path was. Neither child had marked that. They wrote the question beside the map instead of inventing an answer.",
+        "The lane had not become two lanes. The maps had shown two purposes, and a new question had opened a third."
+      ],
+      "illustration": "/books/vidya/two-maps.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "एक गली के दो नक्शे",
+      "chapters": [
+        {
+          "id": "two-maps",
+          "title": "एक गली के दो नक्शे",
+          "paragraphs": [
+            "फ़राह ने अपनी गली का नक्शा बनाया। उसमें सब्ज़ी बेचने की जगहें थीं। उसके भाई ने उसी गली में पेड़ और छायादार बेंच दिखाईं।",
+            "दोनों को लगा कि एक नक्शा गलत होगा। दादी ने पूछा, हर नक्शा किस काम के लिए है? फ़राह खरीदारी की सैर चाहती थी। भाई ठंडी बैठने की जगह खोज रहा था।",
+            "दादी के साथ चलकर दोनों नक्शे जाँचे। एक सब्ज़ी की दुकान दूसरी जगह थी। दूसरे नक्शे में एक बेंच छूट गई थी। दोनों में छोटा सुधार हुआ।",
+            "घर आकर उन्होंने अलग रंगों से बातें जोड़ीं। नया नक्शा कुछ यात्राओं के लिए उपयोगी था। जिन बातों की जाँच नहीं हुई थी, उनके लिए जगह छोड़ी।",
+            "पड़ोसी ने पूछा कि सबसे समतल रास्ता कहाँ है। बच्चों ने यह नहीं लिखा था। जवाब बनाने के बजाय सवाल नक्शे के पास लिख दिया।",
+            "गली दो नहीं हुई थी। नक्शों में दो ज़रूरतें दिखी थीं। नए सवाल ने तीसरी ज़रूरत सामने रख दी।"
+          ],
+          "illustration": "/books/vidya/two-maps.svg"
+        }
+      ]
+    }
+  }
+}

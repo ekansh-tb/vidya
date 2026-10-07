@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Quiet Lunch Table",
+  "titleHindi": "शांत खाने की मेज़",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "quiet-lunch",
+      "title": "The Quiet Lunch Table",
+      "paragraphs": [
+        "A new child sat at the lunch table. Everyone asked questions at once. The child looked down at the lunch box and said nothing.",
+        "Pihu moved her water bottle to make more room. ‘You can sit here,’ she said. Then she went back to eating instead of asking another question.",
+        "After a while, the child pointed to the picture on Pihu's box. ‘I like trains too,’ they said. Pihu showed the little red engine.",
+        "Their talk was small and slow. Tomorrow they might have more to say. Today, there had been a place to sit."
+      ],
+      "illustration": "/books/vidya/quiet-lunch.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "शांत खाने की मेज़",
+      "chapters": [
+        {
+          "id": "quiet-lunch",
+          "title": "शांत खाने की मेज़",
+          "paragraphs": [
+            "खाने की मेज़ पर एक नया बच्चा बैठा। सबने एक साथ सवाल पूछे। बच्चे ने डिब्बे की ओर देखा और कुछ नहीं कहा।",
+            "पीहू ने पानी की बोतल हटाकर जगह बनाई। ‘यहाँ बैठ सकते हो,’ उसने कहा। फिर नया सवाल पूछने के बजाय अपना खाना खाने लगी।",
+            "कुछ देर बाद बच्चे ने पीहू के डिब्बे की तस्वीर की ओर इशारा किया। ‘मुझे भी रेल पसंद है,’ बच्चे ने कहा। पीहू ने लाल इंजन दिखाया।",
+            "बात थोड़ी और धीमी थी। कल शायद और बात होगी। आज बैठने के लिए एक जगह थी।"
+          ],
+          "illustration": "/books/vidya/quiet-lunch.svg"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Lantern Exchange",
+  "titleHindi": "लालटेनों की अदला-बदली",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "lantern-exchange",
+      "title": "The Lantern Exchange",
+      "paragraphs": [
+        "For the library festival, everyone designed a paper lantern. The display committee wanted a single colour. Rohan preferred a patchwork of colours, while Saira wanted her lantern kept apart from the bright lights.",
+        "At first, the committee treated every difference as a delay. Then Saira explained that she wanted a calmer corner. Her request was about comfort, not about refusing to join.",
+        "The group drew three possible layouts. They compared walking space, brightness and the room needed by visitors. An adult checked the practical arrangements and arranged electric lighting without candles.",
+        "Their final layout had a quiet corner and a colourful main display. A small label explained that visitors could choose where to spend time. Nobody had to explain a personal reason for choosing the quieter space.",
+        "Rohan changed his lantern after seeing the plan. Saira kept hers. The committee accepted both decisions and left space for a maker who had not finished yet.",
+        "The festival did not look exactly like the first sketch. It looked like a place made by different people, who had learned that joining in did not require becoming the same."
+      ],
+      "illustration": "/books/vidya/lantern-exchange.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "लालटेनों की अदला-बदली",
+      "chapters": [
+        {
+          "id": "lantern-exchange",
+          "title": "लालटेनों की अदला-बदली",
+          "paragraphs": [
+            "पुस्तकालय उत्सव के लिए सबने कागज़ की लालटेन बनाई। सजावट समूह एक ही रंग चाहता था। रोहन कई रंग चाहता था; साइरा अपनी लालटेन तेज़ रोशनी से अलग रखना चाहती थी।",
+            "पहले समूह को हर अलग पसंद से देर होती लगी। साइरा ने बताया कि उसे शांत कोना चाहिए। वह साथ आने से मना नहीं कर रही थी; उसे आराम चाहिए था।",
+            "समूह ने तीन नक्शे बनाए। चलने की जगह, चमक और आगंतुकों की जगह देखी। एक बड़े ने व्यवस्था जाँची और मोमबत्तियों के बिना बिजली की रोशनी लगवाई।",
+            "अंतिम सजावट में शांत कोना और रंगीन मुख्य हिस्सा था। छोटी तख्ती बताती थी कि लोग अपनी जगह चुन सकते हैं। शांत जगह चुनने का निजी कारण बताना ज़रूरी नहीं था।",
+            "रोहन ने योजना देखकर अपनी लालटेन बदली। साइरा ने अपनी वैसी ही रखी। समूह ने दोनों फैसले माने और अधूरी लालटेन के लिए जगह छोड़ी।",
+            "उत्सव पहले चित्र जैसा नहीं था। वह अलग लोगों की बनाई जगह था, जिन्होंने सीखा कि साथ आने के लिए एक जैसा बनना ज़रूरी नहीं।"
+          ],
+          "illustration": "/books/vidya/lantern-exchange.svg"
+        }
+      ]
+    }
+  }
+}

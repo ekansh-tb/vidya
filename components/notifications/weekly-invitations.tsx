@@ -1,0 +1,38 @@
+"use client";
+import { useEffect,useState } from "react";
+import "./weekly-invitations.css";
+import { DEFAULT_INVITATION_PREFERENCES,type InvitationPreferences } from "@/lib/notifications/contracts";
+const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+type State={preferences:InvitationPreferences;subscriptions:{id:string}[];pushAvailable:boolean;publicKey:string|null};
+export function WeeklyInvitations() {
+ const [state,setState]=useState<State|null>(null),[prefs,setPrefs]=useState(DEFAULT_INVITATION_PREFERENCES),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[supported,setSupported]=useState(false),[permissionReady,setPermissionReady]=useState(false);
+ function updatePreferences(next:InvitationPreferences) {setPrefs(next);setPermissionReady(false);}
+ async function load() { const response=await fetch("/api/parent/notifications",{cache:"no-store"});if(!response.ok)throw new Error("Family invitations are unavailable. Please try again later.");const data=await response.json() as State;setState(data);setPrefs(data.preferences); }
+ useEffect(()=>{let alive=true;setSupported("serviceWorker" in navigator && "PushManager" in window && "Notification" in window && window.isSecureContext);void (async()=>{try{const response=await fetch("/api/parent/notifications",{cache:"no-store"});if(!response.ok)throw new Error("Invitation settings are unavailable.");const data=await response.json() as State;if(alive){setState(data);setPrefs(data.preferences);}}catch{if(alive)setMessage("Invitation settings are unavailable. Learning continues as usual.");}})();return()=>{alive=false;};},[]);
+ async function run(action:()=>Promise<void>) {setBusy(true);setMessage("");try{await action();}catch(error){setMessage(error instanceof Error?error.message:"Please try again.");}finally{setBusy(false);}}
+ async function save() { const response=await fetch("/api/parent/notifications",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(prefs)});if(!response.ok)throw new Error("Could not save. Check the timezone and try again.");await load();setMessage(prefs.enabled?"Weekly invitations saved. Browser notifications are a separate choice below.":"Invitations turned off on all connected browsers. Learning remains available."); }
+ async function enablePush() {
+  if(!state?.publicKey || !prefs.enabled)throw new Error("Turn on weekly invitations first.");
+  if(!permissionReady) {
+   const saved=await fetch("/api/parent/notifications",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(prefs)});
+   if(!saved.ok)throw new Error("Could not save preferences. Browser permission was not requested.");
+   await load();
+   if(Notification.permission!=="granted") {setPermissionReady(true);setMessage("Preferences saved. Choose Allow browser notifications to open your browser’s permission prompt.");return;}
+  }
+  if(await Notification.requestPermission()!=="granted")throw new Error("Notification permission was not granted. You can still visit Overview any time.");
+  const registration=await navigator.serviceWorker.getRegistration("/");if(!registration?.active)throw new Error("The app is still preparing offline support. Refresh once and try again.");
+  const encoded=atob(state.publicKey.replace(/-/g,"+").replace(/_/g,"/"));const key=Uint8Array.from(encoded,c=>c.charCodeAt(0));
+  const existing=await registration.pushManager.getSubscription();const subscription=existing ?? await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
+  const json=subscription.toJSON();const response=await fetch("/api/parent/notifications",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({endpoint:json.endpoint,keys:json.keys})});
+  if(!response.ok){if(!existing)await subscription.unsubscribe();const result=await response.json();throw new Error(result.error ?? "Browser invitations could not be enabled.");}await load();setMessage("Browser invitations enabled. The message contains no child names or learning details.");
+ }
+ return <section className="parent-card"><h2>Weekly family invitations</h2><p>Let your child choose a story, show something they made, or invite you to explore together. Missing a review never blocks learning or removes rewards.</p>
+ {!state?<p role="status">{message||"Loading invitation settings…"}</p>:<><form onSubmit={event=>{event.preventDefault();void run(save);}}><label className="notification-field"><span><input type="checkbox" checked={prefs.enabled} onChange={event=>updatePreferences({...prefs,enabled:event.target.checked})}/> Weekly invitations on</span></label>
+ <div className="parent-form-grid"><label className="notification-field">Preferred day<select value={prefs.weekday} onChange={event=>updatePreferences({...prefs,weekday:Number(event.target.value)})}>{days.map((day,index)=><option key={day} value={index}>{day}</option>)}</select></label><label className="notification-field">Preferred time<input type="time" value={prefs.time} onChange={event=>updatePreferences({...prefs,time:event.target.value})}/></label><label className="notification-field">Timezone<input value={prefs.timezone} onChange={event=>updatePreferences({...prefs,timezone:event.target.value})} placeholder="Asia/Kolkata"/><small>For example Asia/Kolkata or Europe/London.</small></label></div>
+ <p>We check once daily. An invitation can arrive after your preferred time, within the next daily delivery window; it is not an exact-time alarm. Device connectivity and browser permissions may delay or prevent delivery.</p><button className="parent-primary" disabled={busy} type="submit">Save invitations</button></form>
+ <p>Weekly invitations start on by default. Your saved off setting stays off. Browser delivery still needs permission on each browser; it has not been granted automatically.</p>
+ <h3>Browser notifications</h3>{!state.pushAvailable?<p>Browser delivery is not configured yet. Your preferences can be saved, and the family invitation stays available in Overview.</p>:!supported?<p>This browser does not support notifications here. On iPhone or iPad (iOS/iPadOS 16.4 or later), add Vidya to your Home Screen from Safari and open the installed app first. Other browsers may provide an Install option.</p>:<button type="button" className="parent-secondary" disabled={busy||!prefs.enabled} onClick={()=>void run(enablePush)}>{permissionReady?"Allow browser notifications":"Enable browser notifications"}</button>}
+ {state.subscriptions.length>0&&<div><p>{state.subscriptions.length} connected browser{state.subscriptions.length===1?"":"s"}. Disable any browser below; labels do not reveal device identities.</p>{state.subscriptions.map((subscription,index)=><button className="parent-secondary" type="button" disabled={busy} key={subscription.id} onClick={()=>void run(async()=>{const response=await fetch("/api/parent/notifications",{method:"DELETE",headers:{"content-type":"application/json"},body:JSON.stringify({id:subscription.id})});if(!response.ok)throw new Error("Could not disable this browser.");await load();setMessage("Browser invitations disabled.");})}>Disable browser {index+1}</button>)}</div>}{message&&<p role="status">{message}</p>}</>}
+ </section>;
+}
+export function WeeklyFamilyInvitation() {return <section className="parent-card"><h2>A small invitation this week</h2><p>Ask: “What would you like to show me?” Let your child choose a creation, a story, a question, or time away from the screen. A few curious minutes together can be enough.</p><p>This is optional. There is no review deadline, access restriction, or reward penalty.</p></section>;}

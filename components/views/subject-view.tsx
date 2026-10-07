@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { ChevronLeft, ChevronRight, Crown, Shuffle, NotebookPen, MessageCircle, BookOpen, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Shuffle, NotebookPen, MessageCircle, BookOpen, Sparkles } from "lucide-react";
 import { SUBJECT_MAP } from "@/lib/content/subjects";
 import { questionsForLearner } from "@/lib/content/questions/availability";
 import { usePack } from "@/lib/content/packs/use-pack";
@@ -45,7 +45,8 @@ export function SubjectView({
 
   useEffect(() => {
     if (voiceEnabled) {
-      setTimeout(() => vidya.subjectIntro(subject.name), 200);
+      const timer = setTimeout(() => vidya.subjectIntro(subject.name), 200);
+      return () => clearTimeout(timer);
     }
   }, [subjectId, voiceEnabled, subject.name]);
 
@@ -53,7 +54,7 @@ export function SubjectView({
     <ReducedMotionProvider>
       <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <div className="px-5 pt-6">
-          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
             <ChevronLeft className="w-5 h-5" /> Home
           </button>
 
@@ -62,7 +63,7 @@ export function SubjectView({
             animate={{ opacity: 1, y: 0 }}
             className="rounded-[var(--radius-lg)] p-6 mb-4 relative overflow-hidden"
             style={{
-              background: "linear-gradient(180deg, #0f1729 0%, #0a1020 100%)",
+              background: "var(--surface)",
               border: `1px solid ${subject.accent}33`,
               boxShadow: `0 12px 40px ${subject.glow}`,
             }}
@@ -79,23 +80,23 @@ export function SubjectView({
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.06)",
+                  background: "var(--surface-strong)",
                   boxShadow: `0 0 24px ${subject.glow}`,
                 }}
               >
-                <Icon className="w-8 h-8" style={{ color: subject.accent }} />
+                <Icon className="w-8 h-8" style={{ color: "var(--accent)" }} />
               </div>
               {/* min-w-0: a flex item defaults to min-width:auto and refuses to
                   shrink below its content, so a long subject name ("English
                   (First Language)") pushed this header off a small screen. */}
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: subject.accent }}>
+                <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
                   Classroom
                 </div>
-                <div className={`font-display text-3xl font-bold text-white leading-tight break-words ${subject.isDeva ? "font-deva" : ""}`}>
+                <div className={`font-display text-3xl font-bold text-[var(--text)] leading-tight break-words ${subject.isDeva ? "font-deva" : ""}`}>
                   {subject.name}
                 </div>
-                <div className={`text-white/60 text-sm ${subject.isDeva ? "font-deva" : ""}`}>{subject.tagline}</div>
+                <div className={`text-[var(--text-muted)] text-sm ${subject.isDeva ? "font-deva" : ""}`}>{subject.tagline}</div>
               </div>
             </div>
 
@@ -105,7 +106,7 @@ export function SubjectView({
                 <button
                   onClick={() => { sfx.click(); onNavigate("exam-prep", { subjectId }); }}
                   className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-bold active:scale-95"
-                  style={{ background: subject.accent, color: "#0a0e14", boxShadow: `0 0 16px ${subject.glow}` }}
+                  style={{ background: "var(--accent)", color: "var(--bg-base)" }}
                 >
                   <Sparkles className="w-4 h-4" />
                   Exam Prep
@@ -114,7 +115,7 @@ export function SubjectView({
                 <button
                   onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
                   className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
-                  style={{ background: subject.soft, color: subject.accent }}
+                  style={{ background: subject.soft, color: "var(--accent)" }}
                 >
                   <MessageCircle className="w-4 h-4" />
                   Ask Miss Vidya
@@ -123,7 +124,7 @@ export function SubjectView({
                 <button
                   onClick={() => { sfx.click(); onNavigate("notebook", { subjectId }); }}
                   className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
-                  style={{ background: subject.soft, color: subject.accent }}
+                  style={{ background: subject.soft, color: "var(--accent)" }}
                 >
                   <NotebookPen className="w-4 h-4" />
                   Take notes
@@ -131,7 +132,7 @@ export function SubjectView({
               )}
               <button
                 onClick={() => { sfx.click(); onNavigate("notebook", { subjectId }); }}
-                className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-white/85 glass active:scale-95"
+                className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-[var(--text-muted)] glass active:scale-95"
               >
                 <NotebookPen className="w-4 h-4" />
                 Notebook
@@ -142,7 +143,7 @@ export function SubjectView({
                 <button
                   onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
                   className="w-full rounded-[var(--radius-md)] px-3 py-2 flex items-center justify-center gap-2 text-xs font-semibold active:scale-95"
-                  style={{ background: subject.soft, color: subject.accent }}
+                  style={{ background: subject.soft, color: "var(--accent)" }}
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
                   <span className={subject.isDeva ? "font-deva" : ""}>Ask Miss Vidya about {subject.name}</span>
@@ -154,12 +155,10 @@ export function SubjectView({
           {/* Today's lessons — quiz topics OR syllabus topics from the exam pack */}
           {hasQuiz ? (
             <>
-              <h3 className="font-display text-xl font-bold text-white mb-3 mt-5">Today&apos;s lessons</h3>
+              <h3 className="font-display text-xl font-bold text-[var(--text)] mb-3 mt-5">Available practice</h3>
               <div className="space-y-3">
                 {Object.entries(quizTopics).map(([topicId, topic], i) => {
                   const progress = state.progress?.[subjectId]?.[topicId];
-                  const mastery = progress?.mastery || 0;
-                  const isMastered = mastery >= 90;
                   return (
                     <motion.div
                       key={topicId}
@@ -179,30 +178,21 @@ export function SubjectView({
                           {topic.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-display font-bold text-lg text-white truncate ${subject.isDeva ? "font-deva" : ""}`}>
+                          <div className={`font-display font-bold text-lg text-[var(--text)] truncate ${subject.isDeva ? "font-deva" : ""}`}>
                             {topic.title}
                           </div>
-                          <div className="text-xs text-white/50">
-                            {topic.items.length} questions · {progress?.attempts || 0} attempts
+                          <div className="text-xs text-[var(--text-muted)]">
+                            {topic.items.length} available questions · {progress?.attempts || 0} practice sessions
                           </div>
-                          <div className="mt-1.5 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-700"
-                              style={{ width: `${mastery}%`, background: subject.accent, boxShadow: `0 0 6px ${subject.glow}` }}
-                            />
-                          </div>
+
                         </div>
                       </button>
                       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                        {isMastered ? (
-                          <Crown className="w-6 h-6" style={{ color: subject.accent }} fill={subject.accent} />
-                        ) : (
-                          <ChevronRight className="w-5 h-5 text-white/40" />
-                        )}
+                        <ChevronRight className="w-5 h-5 text-[var(--text-muted)]" />
                         <button
                           onClick={() => { sfx.click(); onNavigate("match", { subjectId, topicId }); }}
                           className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold active:scale-95 transition"
-                          style={{ background: subject.soft, color: subject.accent }}
+                          style={{ background: subject.soft, color: "var(--accent)" }}
                           aria-label={`Match game for ${topic.title}`}
                         >
                           <Shuffle className="w-3 h-3" /> Match
@@ -216,9 +206,9 @@ export function SubjectView({
           ) : hasExamPack ? (
             <>
               <div className="flex items-center justify-between mb-3 mt-5">
-                <h3 className="font-display text-xl font-bold text-white">Today&apos;s lessons</h3>
+                <h3 className="font-display text-xl font-bold text-[var(--text)]">Available practice</h3>
                 {pack && (
-                  <span className="text-xs font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">{pack.topics.length} chapters</span>
+                  <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--surface-strong)] px-2 py-0.5 rounded-full">{pack.topics.length} chapters</span>
                 )}
               </div>
               {/* The lazy chunk resolving swaps skeleton rows for real chapters
@@ -229,7 +219,7 @@ export function SubjectView({
               {packError ? (
                 <div className="glass-card p-5 space-y-3" role="status">
                   <p>Chapters could not be loaded. Check your connection and try again.</p>
-                  <button type="button" onClick={retryPack} className="min-h-11 rounded-xl border border-white/20 px-4 py-2 font-semibold focus-visible:outline focus-visible:outline-2">
+                  <button type="button" onClick={retryPack} className="min-h-11 rounded-xl border border-[var(--border)] px-4 py-2 font-semibold focus-visible:outline focus-visible:outline-2">
                     Try again
                   </button>
                 </div>
@@ -241,8 +231,8 @@ export function SubjectView({
                     <div key={i} className="glass-card p-4 flex items-center gap-4 animate-pulse">
                       <div className="w-12 h-12 rounded-2xl flex-shrink-0" style={{ background: subject.soft }} />
                       <div className="flex-1 min-w-0 space-y-2">
-                        <div className="h-3.5 rounded bg-white/10 w-2/3" />
-                        <div className="h-2.5 rounded bg-white/[0.07] w-full" />
+                        <div className="h-3.5 rounded bg-[var(--surface-strong)] w-2/3" />
+                        <div className="h-2.5 rounded bg-[var(--surface-strong)] w-full" />
                       </div>
                     </div>
                   ))}
@@ -260,20 +250,20 @@ export function SubjectView({
                   >
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0"
-                      style={{ background: subject.soft, color: subject.accent, boxShadow: `0 0 16px ${subject.glow}` }}
+                      style={{ background: subject.soft, color: "var(--accent)", boxShadow: `0 0 16px ${subject.glow}` }}
                     >
                       {t.num ?? "•"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`font-display font-bold text-base text-white leading-tight ${subject.isDeva ? "font-deva" : ""}`}>
+                      <div className={`font-display font-bold text-base text-[var(--text)] leading-tight ${subject.isDeva ? "font-deva" : ""}`}>
                         {t.title}
                       </div>
-                      <div className="text-xs text-white/55 mt-0.5 line-clamp-2">{t.blurb}</div>
-                      <div className="text-[10px] uppercase tracking-widest font-bold mt-1.5" style={{ color: subject.accent }}>
+                      <div className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{t.blurb}</div>
+                      <div className="text-[10px] uppercase tracking-widest font-bold mt-1.5" style={{ color: "var(--accent)" }}>
                         {t.syllabus.length} learning points
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-[var(--text-muted)] flex-shrink-0" />
                   </motion.button>
                 ))}
               </div>
@@ -281,10 +271,10 @@ export function SubjectView({
 
               {pack && (
                 <div className="mt-5 glass-card p-4 flex items-center gap-3">
-                  <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: subject.accent }} />
-                  <div className="text-xs text-white/70 leading-relaxed">
+                  <Sparkles className="w-5 h-5 flex-shrink-0" style={{ color: "var(--accent)" }} />
+                  <div className="text-xs text-[var(--text-muted)] leading-relaxed">
                     Quizzes for {subject.name} aren&apos;t in the bank yet — the chapter list is sourced from{" "}
-                    <span className="font-semibold text-white/90">{pack.context}</span>. Tap any chapter to open Exam Prep, or
+                    <span className="font-semibold text-[var(--text-muted)]">{pack.context}</span>. Tap any chapter to open Exam Prep, or
                     ask Miss Vidya for a question on it.
                   </div>
                 </div>
@@ -293,11 +283,11 @@ export function SubjectView({
           ) : (
             // No quiz + no pack — kind empty state
             <div className="mt-5 glass-card p-6 text-center">
-              <BookOpen className="w-8 h-8 mx-auto mb-3" style={{ color: subject.accent }} />
-              <div className="font-display text-lg font-bold text-white mb-1">
+              <BookOpen className="w-8 h-8 mx-auto mb-3" style={{ color: "var(--accent)" }} />
+              <div className="font-display text-lg font-bold text-[var(--text)] mb-1">
                 Grade {learner.grade} lessons are coming soon
               </div>
-              <div className="text-sm text-white/60 mb-4">
+              <div className="text-sm text-[var(--text-muted)] mb-4">
                 This classroom does not have {subject.name} lessons for Grade {learner.grade} yet. You can {aiTutorAllowed
                   ? "ask Miss Vidya about a topic or keep notes here"
                   : "keep notes here while the lessons are being prepared"}.
@@ -307,14 +297,14 @@ export function SubjectView({
                   <button
                     onClick={() => { sfx.click(); onNavigate("tutor", { subjectId }); }}
                     className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold active:scale-95"
-                    style={{ background: subject.soft, color: subject.accent }}
+                    style={{ background: subject.soft, color: "var(--accent)" }}
                   >
                     <MessageCircle className="w-4 h-4" /> Ask Miss Vidya
                   </button>
                 )}
                 <button
                   onClick={() => { sfx.click(); onNavigate("notebook", { subjectId }); }}
-                  className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-white/85 glass active:scale-95"
+                  className="rounded-[var(--radius-md)] px-3 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold text-[var(--text-muted)] glass active:scale-95"
                 >
                   <NotebookPen className="w-4 h-4" /> Open Notebook
                 </button>

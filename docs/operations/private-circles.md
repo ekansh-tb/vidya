@@ -1,0 +1,13 @@
+# Private circles release notes
+
+Implemented: bilateral parent approval using a five-day one-use invitation, six preset pseudonyms, child-selected saved creation cards, posting-parent review, three preset reactions, leave/block/report and explicit child unsharing. No public search, messages, upload endpoint or peer identity is exposed. Linked records remain personal records; pseudonyms do not make them anonymous.
+
+The server reads the actual saved creation from the authenticated learner's database state. Client-supplied artwork is rejected. Only its title and first picture enter a card snapshot. A reviewed snapshot is visible to the peer; a changed title/picture needs a new review. Updating a save timestamp or unrelated story page cannot generate more cards or carry an old approval to revised artwork. Reactions are cleared when the reviewed snapshot changes.
+
+Migration 0014 adds transactional capacity functions. Invitations and acceptances lock learner rows, with the two-learner acceptance lock ordered by UUID. Pending invitations and active circles together occupy at most five slots per learner. Card requests lock the active circle, keep one card per learner/project, and cap five pending reviews and twenty total cards per learner/circle. A child may unshare a card to free a slot. Review and unshare remain restricted to the posting family/child.
+
+Deploy 0013 and 0014 before the new circle routes. Retain additive migrations. An intermediate application inserting cards by save timestamp may conflict with 0014's per-project unique index; compatible rollback choices are the pre-circle application or updated circle code. Existing duplicate snapshots are reduced to the newest recorded card during the migration, with dependent reactions removed by the existing cascade.
+
+Dedicated integration coverage includes owner isolation, same-family rejection, single-use concurrent claims, no unapproved peer visibility, reviewed snapshot boundaries, reaction deduplication, revoked connections, report blocking, child unsharing, concurrent circle/pending limits, timestamp-only changes and revised-card review. Browser acceptance and consented child usability are separate remaining checks. No retention or relationship improvement is claimed.
+
+Child autonomy is expressed through choosing a card, seeing what is shared, unsharing and leaving without losing learning access. Parent trust uses explicit bilateral invitation and artwork review. The tradeoff is that a circle is available only after both parents approve, and shared-card review needs an adult response. These limits do not block independent learning or creation.

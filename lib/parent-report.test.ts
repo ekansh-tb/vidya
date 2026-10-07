@@ -176,3 +176,18 @@ describe("parent report source decisions", () => {
     expect(decision.fallbackReason).toBe(status);
   });
 });
+
+it("shares only saved creations chosen for the family and excludes private drafts", async () => {
+  const { newProject } = await import("./creation/project");
+  const privateDraft = { ...newProject("story", "draft-only", UPDATED_AT), title: "Draft secret" };
+  const privateProject = { ...newProject("drawing", "private-project", UPDATED_AT), title: "Private secret" };
+  const sharedProject = { ...newProject("shapes", "shared-project", UPDATED_AT), title: "Shared shapes", visibility: "parent" as const };
+  const response = buildParentReportResponse({ state: { ...syncedState(), creativeStudio: { version: 1, draft: privateDraft, projects: [privateProject, sharedProject] } }, revision: 3, updatedAt: UPDATED_AT });
+  expect(response.status).toBe("ready");
+  if (response.status !== "ready") return;
+  expect(response.state.sharedCreations?.map(project => project.id)).toEqual(["shared-project"]);
+  expect(JSON.stringify(response)).not.toContain("Draft secret");
+  expect(JSON.stringify(response)).not.toContain("Private secret");
+  const parsed = parseParentReportResponse({ ...response, state: { ...response.state, sharedCreations: [privateProject] } });
+  expect(parsed).toBeNull();
+});

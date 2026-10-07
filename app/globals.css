@@ -2,168 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   THEME TOKENS — three age-banded themes selected via data-theme
-   on <html>. Components read CSS variables so no per-component
-   conditional code is needed.
-
-   - `playful` (default · ages 6–10 · Gen Alpha · primary)
-       Aurora gradients, rounded-3xl, Fraunces display, glassy.
-   - `vivid`    (ages 11–13 · early teen · middle school)
-       Cassette-bright. Deep navy, hot magenta + electric cyan,
-       Outfit display, rounded-2xl, halftone dot texture.
-   - `terminal` (ages 14+ · Gen Z senior · IGCSE / Year 9+)
-       Acid lime on near-black, JetBrains Mono UI, sharp 6px
-       radii, grid-paper background, code-editor vibe.
-   ============================================================ */
-
+/* Appearance is independent of placement and legacy theme preferences. */
 @layer base {
-  :root, [data-theme="playful"] {
-    /* Fonts */
-    --font-display: 'Fraunces', Georgia, serif;
-    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    --font-deva: 'Noto Sans Devanagari', var(--font-body);
-
-    /* Surfaces */
-    --bg-base: #0A0420;
-    --bg-grad-1: rgba(168, 85, 247, 0.25);
-    --bg-grad-2: rgba(34, 211, 238, 0.18);
-    --bg-grad-3: rgba(244, 114, 182, 0.20);
-    --surface: rgba(255, 255, 255, 0.06);
-    --surface-strong: rgba(255, 255, 255, 0.09);
-    --surface-elevated: rgba(255, 255, 255, 0.10);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.12);
-
-    /* Text */
-    --text: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.60);
-    --text-faint: rgba(255, 255, 255, 0.40);
-
-    /* Accent */
-    --accent: #A78BFA;
-    --accent-soft: rgba(167, 139, 250, 0.18);
-    --accent-glow: rgba(167, 139, 250, 0.45);
-    --accent-2: #F472B6;
-    --success: #34D399;
-    --warning: #FBBF24;
-    --error: #F87171;
-
-    /* Shape */
-    --radius-sm: 0.625rem;
-    --radius-md: 1rem;
-    --radius-lg: 1.5rem;
-    --radius-pill: 9999px;
-
-    /* ── Motion vocabulary ──────────────────────────────────────
-       Shared across components/effects/* so every piece of motion
-       in the app speaks with one accent. Durations follow the
-       education-learning timing table: feedback fast, celebration
-       generous, transitions in between.
-
-       These are theme-independent on purpose — a classroom door
-       should open the same way for a 10-year-old and a 15-year-old,
-       even though it is painted differently. */
-    --ease-enter: cubic-bezier(0.16, 0.84, 0.28, 1);  /* arrivals: quick in, long settle */
-    --ease-exit:  cubic-bezier(0.4, 0, 1, 1);         /* departures: get out of the way */
-    --ease-door:  cubic-bezier(0.65, 0, 0.35, 1);     /* heavy things: slow, swing, slow */
-    --ease-pop:   cubic-bezier(0.34, 1.56, 0.64, 1);  /* overshoot for small rewards */
-    --dur-tap: 120ms;        /* touch feedback — must feel instant */
-    --dur-transition: 340ms; /* room to room */
-    --dur-celebrate: 760ms;  /* the full anticipation → release → settle beat */
-
-    /* Effects */
-    --blur-card: 24px;
-    --shadow-card: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4);
-    --shadow-card-strong: inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.5);
-    --bg-pattern: none;
+  :root {
+    --font-display:'Outfit',system-ui,sans-serif;
+    --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+    --font-mono:ui-monospace,Menlo,monospace;
+    --font-deva:'Noto Sans Devanagari',var(--font-body);
+    --bg-base:#f4f8fc; --surface:#ffffff; --surface-strong:#eaf1f8; --surface-elevated:#ffffff;
+    --text:#182c46; --text-muted:#50627a; --text-faint:#62738a;
+    --border:#d5e0ed; --border-strong:#98afc5;
+    --accent:#0e716b; --accent-soft:#dcefeb; --accent-glow:#0e716b20; --accent-2:#6555ad;
+    --success:#176b4b; --warning:#80570a; --error:#b23245;
+    --bg-grad-1:transparent; --bg-grad-2:transparent; --bg-grad-3:transparent; --bg-pattern:none;
+    --radius-sm:.625rem; --radius-md:1rem; --radius-lg:1.25rem; --radius-pill:9999px;
+    --blur-card:0px; --shadow-card:0 3px 16px #182c4608; --shadow-card-strong:0 8px 32px #182c4612;
+    --ease-enter:cubic-bezier(.16,.84,.28,1); --ease-exit:cubic-bezier(.4,0,1,1);
+    --ease-door:cubic-bezier(.65,0,.35,1); --ease-pop:cubic-bezier(.34,1.56,.64,1);
+    --dur-tap:120ms; --dur-transition:240ms; --dur-celebrate:500ms;
+    --kid-ink:var(--text); --kid-muted:var(--text-muted); --kid-purple:var(--accent);
+    --kid-paper:var(--bg-base); --kid-sky:#e2f1ff; --kid-peach:#ffe5d5; --kid-mint:#dcefeb;
+    color-scheme:light;
   }
-
-  /* ─── Vivid Cassette (Class 6–8 · early teen) ─── */
-  [data-theme="vivid"] {
-    --font-display: 'Outfit', system-ui, sans-serif;
-    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-
-    --bg-base: #0B1024;
-    --bg-grad-1: rgba(232, 121, 249, 0.22);   /* magenta */
-    --bg-grad-2: rgba(34, 211, 238, 0.18);    /* cyan */
-    --bg-grad-3: rgba(250, 204, 21, 0.15);    /* sun */
-    --surface: rgba(255, 255, 255, 0.045);
-    --surface-strong: rgba(255, 255, 255, 0.08);
-    --surface-elevated: rgba(255, 255, 255, 0.11);
-    --border: rgba(232, 121, 249, 0.18);
-    --border-strong: rgba(232, 121, 249, 0.32);
-
-    --text: #F5F3FF;
-    --text-muted: rgba(245, 243, 255, 0.62);
-    --text-faint: rgba(245, 243, 255, 0.38);
-
-    --accent: #E879F9;                   /* hot magenta */
-    --accent-soft: rgba(232, 121, 249, 0.18);
-    --accent-glow: rgba(232, 121, 249, 0.45);
-    --accent-2: #22D3EE;                 /* cyan pop */
-    --success: #34D399;
-    --warning: #FACC15;
-    --error: #FB7185;
-
-    --radius-sm: 0.5rem;
-    --radius-md: 0.875rem;
-    --radius-lg: 1.25rem;
-
-    --blur-card: 16px;
-    --shadow-card: inset 0 1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(232, 121, 249, 0.12);
-    --shadow-card-strong: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 60px rgba(232, 121, 249, 0.18);
-
-    /* Halftone dot texture */
-    --bg-pattern:
-      radial-gradient(circle at center, rgba(232, 121, 249, 0.10) 0.8px, transparent 1.2px);
-    --bg-pattern-size: 18px 18px;
-  }
-
-  /* ─── Acid Terminal (Class 9+ · Gen Z senior) ─── */
-  [data-theme="terminal"] {
-    --font-display: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-    --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
-
-    --bg-base: #06080F;
-    --bg-grad-1: transparent;
-    --bg-grad-2: transparent;
-    --bg-grad-3: transparent;
-    --surface: rgba(255, 255, 255, 0.025);
-    --surface-strong: rgba(255, 255, 255, 0.045);
-    --surface-elevated: rgba(255, 255, 255, 0.06);
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(190, 242, 100, 0.22);
-
-    --text: #F1F5F9;
-    --text-muted: rgba(241, 245, 249, 0.62);
-    --text-faint: rgba(241, 245, 249, 0.34);
-
-    --accent: #BEF264;                   /* acid lime — single dominant */
-    --accent-soft: rgba(190, 242, 100, 0.10);
-    --accent-glow: rgba(190, 242, 100, 0.35);
-    --accent-2: #F472B6;                 /* hot pink — used only on negatives */
-    --success: #BEF264;
-    --warning: #FBBF24;
-    --error: #FB7185;
-
-    --radius-sm: 0.25rem;                /* 4px — sharp */
-    --radius-md: 0.375rem;               /* 6px */
-    --radius-lg: 0.625rem;               /* 10px */
-    --radius-pill: 9999px;
-
-    --blur-card: 0px;
-    --shadow-card: 0 0 0 1px rgba(255,255,255,0.05);
-    --shadow-card-strong: 0 0 0 1px rgba(190,242,100,0.18), 0 24px 60px rgba(0,0,0,0.6);
-
-    /* Grid-paper background */
-    --bg-pattern:
-      linear-gradient(to right,  rgba(190, 242, 100, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(190, 242, 100, 0.04) 1px, transparent 1px);
-    --bg-pattern-size: 32px 32px;
+  [data-appearance="dark"] {
+    --bg-base:#101a2b; --surface:#18263b; --surface-strong:#22344d; --surface-elevated:#24354e;
+    --text:#edf4fd; --text-muted:#bdcce0; --text-faint:#aabbd2;
+    --border:#344b66; --border-strong:#7890ac;
+    --accent:#7cd8c6; --accent-soft:#1f423f; --accent-glow:#7cd8c620; --accent-2:#c1b6f4;
+    --success:#95dbb2; --warning:#f2cf83; --error:#ffb1bd;
+    --kid-sky:#243d59; --kid-peach:#483428; --kid-mint:#1f423f;
+    --shadow-card:0 3px 16px #00000012; --shadow-card-strong:0 8px 32px #00000024;
+    color-scheme:dark;
   }
 
   html, body {
@@ -419,14 +288,13 @@
 
 /* Illustrated activity shelf. These tokens are scoped away from parent and study rooms. */
 .kids-surface, .kids-world, .kids-player, .kids-nav {
-  --kid-ink:#252544; --kid-muted:#626278; --kid-purple:#6554c0;
-  --kid-paper:#f7f8fc; --kid-sky:#dcf0ff; --kid-peach:#ffe1cb; --kid-mint:#dff1e5;
+
 }
 .kids-surface { background:var(--kid-paper); color:var(--kid-ink); min-height:100vh; }
 .learning-hub, .activity-shell, .buddy-home.kids-world {
   --learn-ink:var(--kid-ink); --learn-muted:var(--kid-muted); --learn-accent:var(--kid-purple);
   --text:var(--kid-ink); --text-muted:var(--kid-muted); --bg-base:var(--kid-paper);
-  --surface:#fff; --border:#e5e5f0; --accent:var(--kid-purple); --accent-soft:#eeeafa;
+
   max-width:1080px; margin:auto; min-height:100vh; padding:24px 32px 132px;
   color:var(--kid-ink); background:var(--kid-paper); font-family:'Plus Jakarta Sans','Noto Sans Devanagari',sans-serif; line-height:1.6;
 }
@@ -435,20 +303,20 @@
   font-weight:700; letter-spacing:-.025em; line-height:1.2; margin:0;
 }
 .learning-hub h2, .activity-shell h2, .buddy-home.kids-world h2 { font-family:'Outfit','Noto Sans Devanagari',sans-serif; font-size:1.5rem; font-weight:650; line-height:1.3; margin:0 0 12px; }
-.learning-hub button, .activity-shell button { min-height:48px; border-radius:14px; padding:10px 16px; font-weight:650; border:1px solid #dddcea; background:#fff; text-align:left; touch-action:manipulation; }
+.learning-hub button, .activity-shell button { min-height:48px; border-radius:14px; padding:10px 16px; font-weight:650; border:1px solid var(--border); background:var(--surface); text-align:left; touch-action:manipulation; }
 .learning-hub button:hover, .activity-shell button:hover { border-color:var(--kid-purple); }
 .kids-world button, .kids-world a, .kids-player button { touch-action:manipulation; }
 .kids-world :is(button,a,input,select,textarea,summary):focus-visible, .kids-player :is(button,input):focus-visible, .kids-nav button:focus-visible { outline:3px solid #6554c0; outline-offset:4px; }
 .learning-hub button:disabled, .activity-shell button:disabled { opacity:.6; cursor:default; }
 .learning-hub p, .activity-shell p { margin:10px 0; }
-.learning-hub input:not([type=checkbox]), .learning-hub select { min-height:48px; padding:10px; border:1px solid #b9b5d4; border-radius:12px; background:white; color:var(--kid-ink); }
+.learning-hub input:not([type=checkbox]), .learning-hub select { min-height:48px; padding:10px; border:1px solid #b9b5d4; border-radius:12px; background:var(--surface); color:var(--kid-ink); }
 .learning-hub input:not([type=checkbox]) { width:100%; display:block; margin:8px 0 20px; }
 .learning-hub input[type=checkbox], .activity-shell input[type=checkbox] { width:24px; height:24px; accent-color:var(--kid-purple); vertical-align:middle; margin-right:10px; }
 .learning-hub fieldset { margin:20px 0; }.learning-hub legend { font-weight:700; }
 .learning-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; }.learning-topbar>div { display:flex; gap:8px; flex-wrap:wrap; }
 .learning-eyebrow { font-weight:650; font-size:.85rem; color:var(--kid-muted); }
-.learning-panel { border:1px solid #e5e5f0; border-radius:24px; background:#fff; padding:24px; margin:24px 0; }
-.learning-companion { display:flex; align-items:center; gap:16px; background:#eaf4ef; border-radius:22px; padding:16px 20px; margin:20px 0; color:var(--kid-ink,#252544); }
+.learning-panel { border:1px solid var(--border); border-radius:24px; background:var(--surface); padding:24px; margin:24px 0; }
+.learning-companion { display:flex; align-items:center; gap:16px; background:var(--kid-mint); border-radius:22px; padding:16px 20px; margin:20px 0; color:var(--kid-ink,#252544); }
 .learning-companion svg { flex-shrink:0; }.learning-companion strong { font-size:1rem; }.learning-companion p { margin:6px 0; max-width:52ch; }
 .buddy-home .learning-companion { border:1px solid var(--border); }
 .learning-hub button.learning-primary, .activity-shell button.learning-primary, .learning-primary {
@@ -473,30 +341,30 @@
 .kids-brand strong { font-family:'Outfit',sans-serif; font-size:1.85rem; letter-spacing:-.04em; }
 .kids-brand-mark { display:inline-flex; align-items:center; justify-content:center; position:relative; width:38px; height:38px; background:var(--kid-purple); color:white; border-radius:14px 14px 14px 5px; font-family:'Outfit',sans-serif; font-size:30px; font-weight:700; line-height:1; }
 .kids-brand-mark>span { position:absolute; right:6px; top:0; color:#ffe1cb; font-size:19px; }
-.kids-level { font-size:.75rem; font-weight:650; color:var(--kid-muted); padding:4px 10px; border:1px solid #dddcea; border-radius:9px; margin-left:8px; }
+.kids-level { font-size:.75rem; font-weight:650; color:var(--kid-muted); padding:4px 10px; border:1px solid var(--border); border-radius:9px; margin-left:8px; }
 .kids-header-actions { display:flex; align-items:center; gap:8px; }
-.learning-hub button.kids-icon, .kids-world button.kids-icon { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; min-width:48px; padding:0; border:1px solid #e5e5f0; background:white; border-radius:14px; }
+.learning-hub button.kids-icon, .kids-world button.kids-icon { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; min-width:48px; padding:0; border:1px solid var(--border); background:var(--surface); border-radius:14px; }
 .kids-icon svg { width:20px; height:20px; }.learning-hub button.kids-language { border:0; background:transparent; padding:8px; }
 .kids-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 24px; }.kids-heading .learning-eyebrow { margin:0 0 6px; }.kids-subtitle { color:var(--kid-muted); font-size:.9rem; margin:8px 0 0; }
 .domain-language { --art-bg:#e8e3fa; }.domain-numeracy { --art-bg:var(--kid-sky); }.domain-discovery, .domain-real-world { --art-bg:var(--kid-mint); }.domain-creative { --art-bg:var(--kid-peach); }.domain-social { --art-bg:#fae2e8; }
 .kids-adventure { display:grid; grid-template-columns:minmax(0,1fr) 32%; align-items:center; gap:24px; background:var(--art-bg); padding:30px 36px; border-radius:28px; position:relative; overflow:hidden; }
-.kids-adventure-copy { position:relative; z-index:1; }.kids-adventure h2 { font-size:clamp(1.6rem,3vw,2.1rem); margin:12px 0 8px; }.kids-adventure p { color:#494963; max-width:44ch; margin:0 0 22px; font-size:.95rem; }.kids-tag { font-size:.75rem; font-weight:650; display:inline-block; background:#ffffffb3; padding:5px 11px; border-radius:9px; }
+.kids-adventure-copy { position:relative; z-index:1; }.kids-adventure h2 { font-size:clamp(1.6rem,3vw,2.1rem); margin:12px 0 8px; }.kids-adventure p { color:var(--text-muted); max-width:44ch; margin:0 0 22px; font-size:.95rem; }.kids-tag { font-size:.75rem; font-weight:650; display:inline-block; background:#ffffffb3; padding:5px 11px; border-radius:9px; }
 .kids-adventure-art .activity-art { display:block; width:100%; max-height:210px; }.activity-art { width:100%; height:auto; }
 .kids-section-heading { display:flex; justify-content:space-between; align-items:center; margin:30px 0 16px; gap:12px; }.kids-section-heading h2 { margin:0; font-size:1.4rem; }.kids-section-heading>span { font-size:.8rem; color:var(--kid-muted); }
-.learning-domain-picker { display:flex; flex-wrap:nowrap; gap:8px; margin:0 0 16px; padding:6px 4px 10px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; }.learning-hub .learning-domain-picker button { flex-shrink:0; min-height:44px; padding:8px 13px; font-size:.75rem; border:1px solid #e5e5f0; border-radius:12px; display:flex; align-items:center; gap:6px; }.learning-domain-picker button[aria-pressed=true] { background:#6554c0; color:#fff; border-color:#6554c0; }
+.learning-domain-picker { display:flex; flex-wrap:nowrap; gap:8px; margin:0 0 16px; padding:6px 4px 10px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; }.learning-hub .learning-domain-picker button { flex-shrink:0; min-height:44px; padding:8px 13px; font-size:.75rem; border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; gap:6px; }.learning-domain-picker button[aria-pressed=true] { background:#6554c0; color:#fff; border-color:#6554c0; }
 .kids-activity-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
-.learning-hub button.kids-activity-card { display:flex; flex-direction:column; overflow:hidden; min-width:0; padding:0; border:1px solid #e5e5f0; border-radius:20px; background:#fff; box-shadow:0 3px 0 #e5e5f0; }
+.learning-hub button.kids-activity-card { display:flex; flex-direction:column; overflow:hidden; min-width:0; padding:0; border:1px solid var(--border); border-radius:20px; background:var(--surface); box-shadow:0 3px 0 #e5e5f0; }
 .kids-card-picture { display:flex; justify-content:center; align-items:center; gap:12px; width:100%; min-height:125px; padding:15px; background:var(--art-bg); font-size:2.4rem; }.kids-card-picture .activity-art { height:105px; width:150px; }.kids-card-picture>span { filter:drop-shadow(0 4px 0 #ffffff60); }
 .kids-card-copy { display:block; width:100%; padding:16px 18px; }.kids-card-copy>small { font-size:.7rem; font-weight:550; color:var(--kid-muted); }.kids-card-copy>strong { display:block; font-family:'Outfit','Noto Sans Devanagari',sans-serif; font-size:1.2rem; font-weight:650; line-height:1.35; margin:5px 0 12px; }.kids-card-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--kid-muted); font-weight:500; font-size:.7rem; }.kids-card-meta svg { flex-shrink:0; color:var(--kid-purple); }
 .learning-hub button.kids-show-all { display:flex; gap:10px; align-items:center; justify-content:center; margin:22px auto; border:0; background:transparent; color:var(--kid-purple); }
 .learning-hub button.kids-outdoor { display:flex; align-items:center; width:100%; gap:18px; background:var(--kid-mint); border:0; border-radius:22px; padding:12px 20px; margin-top:28px; }.kids-outdoor-art { width:94px; flex-shrink:0; }.kids-outdoor>span:nth-child(2) { flex:1; }.kids-outdoor strong, .kids-outdoor small { display:block; }.kids-outdoor small { color:#326f61; font-size:.75rem; }.kids-outdoor strong { font-family:'Outfit','Noto Sans Devanagari',sans-serif; font-size:1.3rem; margin:3px 0; }.kids-outdoor>span>span { font-size:.8rem; color:var(--kid-muted); }
 .learning-hub .kids-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:28px; font-size:.75rem; color:var(--kid-muted); }.kids-footer .learning-sensory { margin:0; flex:1; }.kids-footer .learning-sensory summary { font-size:.8rem; }
-.kids-nav { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:min(calc(100% - 32px),590px); padding:8px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; background:#fff; border:1px solid #e5e5f0; border-radius:22px; box-shadow:0 8px 30px #25254412; z-index:40; font-family:'Plus Jakarta Sans','Noto Sans Devanagari',sans-serif; color:var(--kid-muted); }
-.kids-nav button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:62px; padding:6px; border-radius:15px; font-size:.75rem; }.kids-nav svg { width:21px; height:21px; }.kids-nav button[aria-current=page] { background:#eeeafa; color:var(--kid-purple); font-weight:750; }
+.kids-nav { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); width:min(calc(100% - 32px),590px); padding:8px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:22px; box-shadow:0 8px 30px #25254412; z-index:40; font-family:'Plus Jakarta Sans','Noto Sans Devanagari',sans-serif; color:var(--kid-muted); }
+.kids-nav button { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:62px; padding:6px; border-radius:15px; font-size:.75rem; }.kids-nav svg { width:21px; height:21px; }.kids-nav button[aria-current=page] { background:var(--accent-soft); color:var(--kid-purple); font-weight:750; }
 .kids-player { max-width:860px; padding-bottom:48px; }.kids-player h1 { margin:0 0 8px; }.kids-player h1:focus { outline:none; }.kids-player .learning-panel { margin-top:24px; padding:28px; }.kids-player .learning-picture-choices button:nth-child(3n+1) { background:#f3f0fc; }.kids-player .learning-picture-choices button:nth-child(3n+2) { background:#eff7fe; }.kids-player .learning-picture-choices button:nth-child(3n+3) { background:#f0f8f3; }
 .kids-step-progress { height:6px; background:#e5e5f0; border-radius:6px; margin:0 0 24px; overflow:hidden; }.kids-step-progress>span { display:block; height:100%; width:var(--step-progress); background:var(--kid-purple); }
 .buddy-home.kids-world .font-display { font-family:'Outfit',sans-serif; }.buddy-home .buddy-panel { box-shadow:none; padding:24px; border-radius:22px; }.buddy-home .buddy-tile { border-radius:20px; box-shadow:0 3px 0 #e5e5f0; }.buddy-home .buddy-tile-art { display:flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:17px; background:#e8e3fa; color:var(--kid-purple); flex-shrink:0; }.buddy-home .tile-music { background:var(--kid-peach); color:#9b4d2e; }.buddy-home .tile-wellness { background:var(--kid-mint); color:#326f61; }.buddy-home .tile-field-trip { background:var(--kid-sky); color:#2d647d; }.buddy-home .buddy-action { background:var(--kid-purple); color:white; border:0; border-radius:15px; }.buddy-home .buddy-tile small { font-size:.8rem; }
-.next-quest-card[data-appearance=light] { background:#e8e3fa!important; border:0!important; box-shadow:none!important; padding:30px!important; color:var(--kid-ink); }.next-quest-card[data-appearance=light] [class*="text-white"]:not(button) { color:var(--kid-ink); }.next-quest-card[data-appearance=light] :is(.text-fuchsia-200,.text-rose-300) { color:var(--kid-purple); }.next-quest-card[data-appearance=light] p { color:#494963; font-size:.9rem; }.next-quest-card[data-appearance=light] h2 { font-size:1.9rem; margin:12px 0; }.next-quest-card[data-appearance=light] button { background:var(--kid-purple); color:white; border:0; max-width:270px; min-height:52px; }
+.next-quest-card[data-appearance=light] { background:#e8e3fa!important; border:0!important; box-shadow:none!important; padding:30px!important; color:var(--kid-ink); }.next-quest-card[data-appearance=light] [class*="text-white"]:not(button) { color:var(--kid-ink); }.next-quest-card[data-appearance=light] :is(.text-fuchsia-200,.text-rose-300) { color:var(--kid-purple); }.next-quest-card[data-appearance=light] p { color:var(--text-muted); font-size:.9rem; }.next-quest-card[data-appearance=light] h2 { font-size:1.9rem; margin:12px 0; }.next-quest-card[data-appearance=light] button { background:var(--kid-purple); color:white; border:0; max-width:270px; min-height:52px; }
 .mode-focused .kids-adventure, .mode-studio .kids-adventure { background:#edf0f8; border-radius:20px; }.mode-focused .kids-adventure-art { max-width:180px; justify-self:end; }.mode-focused .kids-activity-card { border-radius:12px; }
 @media(hover:hover) and (prefers-reduced-motion:no-preference) {
   .kids-activity-card, .buddy-home .buddy-tile, .kids-nav button { transition:transform .16s ease,box-shadow .16s ease; }
@@ -530,7 +398,7 @@
 .account-entry { max-width:680px; padding-bottom:48px; }
 .account-grown-up { display:flex; align-items:center; gap:20px; padding:8px 4px; }.account-grown-up h2 { font-size:1.2rem; margin:0; }.account-grown-up p { font-size:.85rem; color:var(--kid-muted); }.account-grown-up a { flex-shrink:0; display:flex; gap:10px; align-items:center; color:var(--kid-purple); font-weight:650; font-size:.85rem; min-height:48px; }.account-help { margin-top:24px; border-top:1px solid #e5e5f0; padding-top:8px; font-size:.85rem; }
 @media(max-width:480px) { .account-grown-up { display:block; }.account-entry { padding-bottom:32px; } }
-.account-entry input { display:block; width:100%; min-height:56px; margin:12px 0; padding:12px 16px; border:2px solid #b9b5d4; border-radius:16px; background:white; color:var(--kid-ink); font-size:1.35rem; letter-spacing:.14em; }
+.account-entry input { display:block; width:100%; min-height:56px; margin:12px 0; padding:12px 16px; border:2px solid #b9b5d4; border-radius:16px; background:var(--surface); color:var(--kid-ink); font-size:1.35rem; letter-spacing:.14em; }
 .account-entry a.learning-primary { display:inline-flex; align-items:center; text-decoration:none; }
 .kids-surface .account-save-status { background:var(--kid-paper); color:var(--kid-muted); padding:6px 16px; font-size:.7rem; border-bottom:1px solid #e5e5f0; }
 .account-save-status { position:relative; z-index:2; padding:8px 16px; text-align:center; font-size:.75rem; background:var(--surface); color:var(--text-muted); }
@@ -543,8 +411,8 @@
 .learning-sensory { margin:14px 0; color:var(--kid-muted,#626278); }
 .learning-sensory summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:700; }
 .learning-sensory > div { display:flex; flex-wrap:wrap; gap:8px; }
-.learning-sensory button { min-height:44px; padding:8px 14px; border:1px solid #83b5a5; border-radius:14px; background:#fff; }
-.learning-sensory button[aria-checked=true] { background:#eeeafa; border-color:#6554c0; }
+.learning-sensory button { min-height:44px; padding:8px 14px; border:1px solid #83b5a5; border-radius:14px; background:var(--surface); }
+.learning-sensory button[aria-checked=true] { background:var(--accent-soft); border-color:#6554c0; }
 .learning-card { box-shadow:0 5px 0 #dde8df; }
 @media (max-width:500px) { .tara-scene {width:120px;} .learning-companion {gap:12px;} .learning-companion p {font-size:.94rem;} }
 @media (prefers-reduced-motion:reduce) { .learning-hub *, .activity-shell * { scroll-behavior:auto!important; } }
@@ -556,7 +424,7 @@
 .learning-hub.kids-settings { max-width:760px; padding:24px 20px 48px; }
 .kids-settings>div { padding:0; }.kids-settings h1 { margin:10px 0 26px; }
 .kids-settings .font-display { font-family:'Outfit',sans-serif; }
-.kids-settings .glass-card { background:white; border:1px solid #e5e5f0; box-shadow:none; backdrop-filter:none; border-radius:20px; }
+.kids-settings .glass-card { background:var(--surface); border:1px solid var(--border); box-shadow:none; backdrop-filter:none; border-radius:20px; }
 .kids-settings button[role=switch] { padding:0; border:0; background:transparent; }
 .kids-settings button[role=switch]:hover { background:transparent; }
 .kids-settings input[type=range] { accent-color:#6554c0; padding:0; margin:4px 0; border:0; background:transparent; }
@@ -565,8 +433,8 @@
 .learning-hub.kids-switcher { max-width:800px; padding-bottom:48px; }
 .learning-hub .kids-return { display:flex; align-items:center; gap:8px; font-size:.8rem; }
 .kids-learner-list { display:grid; gap:16px; }
-.learning-hub .kids-learner-card { display:flex; align-items:center; gap:16px; padding:20px; border:1px solid #e5e5f0; border-radius:22px; width:100%; }
-.kids-learner-avatar { display:flex; align-items:center; justify-content:center; width:60px; height:60px; border-radius:20px; background:#eeeafa; font-size:2rem; flex-shrink:0; }
+.learning-hub .kids-learner-card { display:flex; align-items:center; gap:16px; padding:20px; border:1px solid var(--border); border-radius:22px; width:100%; }
+.kids-learner-avatar { display:flex; align-items:center; justify-content:center; width:60px; height:60px; border-radius:20px; background:var(--accent-soft); font-size:2rem; flex-shrink:0; }
 .kids-learner-name { flex:1; min-width:0; }.kids-learner-name strong { display:block; font-family:'Outfit',sans-serif; font-size:1.25rem; overflow-wrap:anywhere; }.kids-learner-name small { display:block; font-size:.8rem; color:var(--kid-muted); margin-top:4px; }
 .kids-learner-active { display:flex; align-items:center; gap:4px; padding:5px 8px; color:#326f61; background:var(--kid-mint); border-radius:9px; font-size:.7rem; flex-shrink:0; }
 .learning-hub .kids-learner-add { background:transparent; border:1px dashed #b9b5d4; }
@@ -599,14 +467,13 @@
 
 /* Balanced welcome and learning workspace. Shared child colors stay local. */
 .kids-surface, .kids-world, .kids-player, .kids-nav {
-  --kid-ink:#202c46; --kid-muted:#5e6b80; --kid-purple:#6254b4;
-  --kid-paper:#f7f8fc; --kid-mint:#dceee5;
+
 }
 .kids-brand-mark { border-radius:10px; }
-.kids-level { background:#fff; border-radius:6px; }
+.kids-level { background:var(--surface); border-radius:6px; }
 .kids-world .kids-heading h1 { font-size:clamp(1.8rem,3.5vw,2.4rem); font-weight:600; }
-.kids-adventure { background:#fff; border:1px solid #dce1eb; border-left:5px solid var(--kid-purple); border-radius:16px; padding:28px 32px; }
-.kids-adventure .kids-tag { background:#eeeafa; color:var(--kid-purple); border-radius:6px; }
+.kids-adventure { background:var(--surface); border:1px solid var(--border); border-left:5px solid var(--kid-purple); border-radius:16px; padding:28px 32px; }
+.kids-adventure .kids-tag { background:var(--accent-soft); color:var(--kid-purple); border-radius:6px; }
 .kids-adventure-art { background:var(--art-bg); border-radius:50%; padding:12px; max-width:190px; justify-self:end; }
 .kids-adventure h2 { font-weight:600; }
 .learning-hub button.kids-activity-card { flex-direction:row; align-items:center; border-radius:12px; box-shadow:none; min-height:142px; }
@@ -707,8 +574,25 @@
   .parent-dashboard>section>div:first-child { flex-wrap:wrap; gap:12px; overflow-wrap:anywhere; }
 }
 @media(max-width:480px) {
-  .kids-adventure { gap:12px; }
+  .kids-adventure { gap:12px; grid-template-columns:minmax(0,1fr); }
   .kids-adventure p { max-width:100%; }
-  .kids-adventure-art { min-width:0; width:100%; max-width:104px; }
+  .kids-adventure-art { display:none; }
   .kids-adventure-art .activity-art { min-width:0; }
 }
+
+.learning-utility-bar { max-width:1080px; margin:auto; padding:12px 24px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.learning-utility-bar .account-save-status { position:static; padding:0; font-size:.75rem; color:var(--text-muted); background:transparent; }
+.kids-surface .neo-button { box-shadow:none; min-height:44px; border-radius:12px; }
+.kids-surface .neo-button:active { box-shadow:none; }
+[data-appearance="dark"] .domain-language { --art-bg:#302a4b; }
+[data-appearance="dark"] .domain-social { --art-bg:#432c3e; }
+[data-appearance="dark"] :is(.mode-focused,.mode-studio) .kids-adventure { background:var(--surface); }
+[data-appearance="dark"] .next-quest-card[data-appearance=light] { background:var(--surface)!important; border-color:var(--border)!important; }
+[data-appearance="dark"] .buddy-home .buddy-action, [data-appearance="dark"] .next-quest-card[data-appearance=light] button { color:var(--bg-base); }
+.kids-adventure p { color:var(--text-muted); }
+.kids-settings .glass-card { background:var(--surface); border-color:var(--border); }
+.kids-level { background:var(--surface); }
+.learning-week .participated { color:var(--success); }
+.learning-primary { background:var(--accent); color:var(--bg-base); }
+[data-appearance="dark"] .learning-hub button.learning-primary, [data-appearance="dark"] .activity-shell button.learning-primary { color:#101a2b; }
+@media(max-width:540px) { .kids-header { flex-wrap:wrap; gap:12px; } .learning-utility-bar { padding:10px 16px 0; } .learning-topbar { flex-wrap:wrap; } }

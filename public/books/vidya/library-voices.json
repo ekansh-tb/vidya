@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Library of Many Voices",
+  "titleHindi": "कई आवाज़ों का पुस्तकालय",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "library-voices",
+      "title": "The Library of Many Voices",
+      "paragraphs": [
+        "The library club chose a story about a traveller who stopped at every village. Meher called the traveller brave. Ravi said the traveller seemed lonely.",
+        "Their friend Anya noticed the people who offered food. She thought the story was about welcome. The three looked back at the same page to find the words that had given them these ideas.",
+        "Nobody had to erase an answer. They made a large sheet with three headings: the traveller, the journey, and the people along the way. Each heading had room for more than one note.",
+        "A younger reader joined them and asked about the traveller's dog. The older children had nearly forgotten the dog. They added a fourth heading.",
+        "At the next meeting they read the ending again. Ravi changed one of his notes. ‘I still see loneliness,’ he said, ‘but I see friendship as well.’",
+        "Their sheet did not choose a winning reader. It showed what each reader had noticed and where the story had helped them notice it."
+      ],
+      "illustration": "/books/vidya/library-voices.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "कई आवाज़ों का पुस्तकालय",
+      "chapters": [
+        {
+          "id": "library-voices",
+          "title": "कई आवाज़ों का पुस्तकालय",
+          "paragraphs": [
+            "पुस्तकालय समूह ने हर गाँव में रुकने वाले यात्री की कहानी चुनी। मेहर ने यात्री को बहादुर कहा। रवि को वह अकेला लगा।",
+            "अन्या ने खाना देने वाले लोगों पर ध्यान दिया। उसे कहानी स्वागत की लगी। तीनों ने उसी पन्ने में वे शब्द खोजे जिनसे उनके विचार बने थे।",
+            "किसी को जवाब मिटाना नहीं पड़ा। उन्होंने तीन शीर्षक बनाए: यात्री, यात्रा और रास्ते के लोग। हर शीर्षक में कई टिप्पणियों की जगह थी।",
+            "एक छोटा पाठक आया और यात्री के कुत्ते के बारे में पूछा। बड़े बच्चे कुत्ते को लगभग भूल गए थे। उन्होंने चौथा शीर्षक जोड़ा।",
+            "अगली बैठक में अंत फिर पढ़ा। रवि ने एक टिप्पणी बदली। ‘अकेलापन अभी दिखता है,’ वह बोला, ‘लेकिन दोस्ती भी दिखती है।’",
+            "कागज़ ने विजेता पाठक नहीं चुना। उसने दिखाया कि हर पाठक ने क्या देखा और कहानी के किन शब्दों से वह समझ बनी।"
+          ],
+          "illustration": "/books/vidya/library-voices.svg"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "A Place Beside Me",
+  "titleHindi": "मेरे पास एक जगह",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. Eligible for Nursery/LKG/UKG caregiver-led short picture/story reading. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "kind-bench",
+      "title": "A Place Beside Me",
+      "paragraphs": [
+        "Tara sits on a bench.",
+        "A friend comes to the park.",
+        "Tara moves a little. There is room.",
+        "Two friends sit. Nobody has to talk."
+      ],
+      "illustration": "/books/vidya/kind-bench.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "मेरे पास एक जगह",
+      "chapters": [
+        {
+          "id": "kind-bench",
+          "title": "मेरे पास एक जगह",
+          "paragraphs": [
+            "तारा बेंच पर बैठी है।",
+            "एक दोस्त पार्क में आता है।",
+            "तारा थोड़ा खिसकती है। अब जगह है।",
+            "दो दोस्त बैठते हैं। बात करना ज़रूरी नहीं।"
+          ],
+          "illustration": "/books/vidya/kind-bench.svg"
+        }
+      ]
+    }
+  }
+}

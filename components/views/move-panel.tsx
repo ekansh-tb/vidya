@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
+import { useGameStore } from "@/lib/game-store";
 import { Play, Pause, RotateCcw, ShieldCheck, Timer, ChevronLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CelebrationBurst } from "@/components/effects/celebrate";
@@ -45,25 +47,25 @@ export function MovePanel({
 
   if (screen === "run" && activity) {
     return (
-      <MoveRunner
+      <ReducedMotionProvider><MoveRunner
         activity={activity}
         setState={setState}
         onExit={() => { setScreen("pick"); setActivity(null); }}
-      />
+      /></ReducedMotionProvider>
     );
   }
 
   if (screen === "brief" && activity) {
     return (
-      <MoveBrief
+      <ReducedMotionProvider><MoveBrief
         activity={activity}
         onBack={() => { sfx.click(); setScreen("pick"); setActivity(null); }}
         onStart={() => { sfx.click(); setScreen("run"); }}
-      />
+      /></ReducedMotionProvider>
     );
   }
 
-  return <MovePicker state={state} onPick={open} />;
+  return <ReducedMotionProvider><MovePicker state={state} onPick={open} /></ReducedMotionProvider>;
 }
 
 // ------------------------------------------------------------------ picker
@@ -76,13 +78,13 @@ function MovePicker({ state, onPick }: { state: GameState; onPick: (a: Activity)
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="font-display text-xl font-bold text-white">Pick your move</div>
-          <div className="text-sm text-white/60">Two to four minutes. Guided the whole way.</div>
+          <div className="font-display text-xl font-bold text-[var(--text)]">Pick your move</div>
+          <div className="text-sm text-[var(--text-muted)]">Two to four minutes. Guided the whole way.</div>
         </div>
         {total > 0 && (
           <div className="text-right shrink-0 pl-3">
-            <div className="font-display text-2xl font-bold text-white tabular-nums">{total}</div>
-            <div className="text-[10px] uppercase tracking-widest font-bold text-white/50">done</div>
+            <div className="font-display text-2xl font-bold text-[var(--text)] tabular-nums">{total}</div>
+            <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">done</div>
           </div>
         )}
       </div>
@@ -115,19 +117,19 @@ function MovePicker({ state, onPick }: { state: GameState; onPick: (a: Activity)
                 <div className="flex items-center gap-2">
                   <span
                     className="text-[10px] uppercase tracking-widest font-bold"
-                    style={{ color: a.accent }}
+                    style={{ color: "var(--accent)" }}
                   >
                     {MOVE_KIND_LABEL[a.kind]}
                   </span>
                   {done.has(a.id) && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-300">
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[var(--success)]">
                       <Check className="w-3 h-3" /> done
                     </span>
                   )}
                 </div>
-                <div className="font-display font-bold text-white leading-tight">{a.name}</div>
-                <div className="text-xs text-white/60 mt-0.5">{a.tagline}</div>
-                <div className="text-[11px] text-white/45 mt-1.5 inline-flex items-center gap-1">
+                <div className="font-display font-bold text-[var(--text)] leading-tight">{a.name}</div>
+                <div className="text-xs text-[var(--text-muted)] mt-0.5">{a.tagline}</div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-1.5 inline-flex items-center gap-1">
                   <Timer className="w-3 h-3" /> {activityMinutesLabel(a)} · {a.steps.length} steps
                 </div>
               </div>
@@ -152,7 +154,7 @@ function MoveBrief({
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <button
         onClick={onBack}
-        className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95"
+        className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95"
       >
         <ChevronLeft className="w-5 h-5" /> All moves
       </button>
@@ -173,12 +175,12 @@ function MoveBrief({
           <div>
             <div
               className="text-[10px] uppercase tracking-widest font-bold"
-              style={{ color: activity.accent }}
+              style={{ color: "var(--accent)" }}
             >
               {MOVE_KIND_LABEL[activity.kind]} · {activityMinutesLabel(activity)}
             </div>
-            <div className="font-display text-2xl font-bold text-white leading-tight">{activity.name}</div>
-            <div className="text-sm text-white/60">{activity.tagline}</div>
+            <div className="font-display text-2xl font-bold text-[var(--text)] leading-tight">{activity.name}</div>
+            <div className="text-sm text-[var(--text-muted)]">{activity.tagline}</div>
           </div>
         </div>
       </div>
@@ -186,31 +188,31 @@ function MoveBrief({
       {/* The safety brief is the whole reason this screen exists. */}
       <div className="glass-card p-4 mb-3 border border-amber-400/25">
         <div className="flex items-center gap-2 mb-1.5">
-          <ShieldCheck className="w-4 h-4 text-amber-300" />
-          <span className="text-[10px] uppercase tracking-widest font-bold text-amber-300">
+          <ShieldCheck className="w-4 h-4 text-[var(--warning)]" />
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[var(--warning)]">
             Before you start
           </span>
         </div>
-        <p className="text-sm text-white/80 leading-relaxed">{activity.safety}</p>
+        <p className="text-sm text-[var(--text-muted)] leading-relaxed">{activity.safety}</p>
       </div>
 
       <div className="glass-card p-4 mb-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-1">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-1">
           You need
         </div>
-        <p className="text-sm text-white/80">{activity.needs}</p>
+        <p className="text-sm text-[var(--text-muted)]">{activity.needs}</p>
       </div>
 
       <div className="glass-card p-4 mb-5">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-2">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2">
           The plan
         </div>
         <ol className="space-y-1.5">
           {activity.steps.map((s, i) => (
             <li key={s.label} className="flex items-baseline gap-2 text-sm">
-              <span className="text-white/35 tabular-nums text-xs w-4 shrink-0">{i + 1}</span>
-              <span className="text-white/85 font-medium">{s.label}</span>
-              <span className="text-white/40 text-xs ml-auto tabular-nums shrink-0">{s.secs}s</span>
+              <span className="text-[var(--text-muted)] tabular-nums text-xs w-4 shrink-0">{i + 1}</span>
+              <span className="text-[var(--text-muted)] font-medium">{s.label}</span>
+              <span className="text-[var(--text-muted)] text-xs ml-auto tabular-nums shrink-0">{s.secs}s</span>
             </li>
           ))}
         </ol>
@@ -234,7 +236,9 @@ function MoveRunner({
   setState: (updater: (s: GameState) => GameState) => void;
   onExit: () => void;
 }) {
-  const reduce = useReducedMotion();
+  const osReduced = useReducedMotion();
+  const motionEnabled = useGameStore(store => store.state.settings.motion !== false);
+  const reduce = Boolean(osReduced || !motionEnabled);
   const [stepIdx, setStepIdx] = useState(0);
   const [tick, setTick] = useState(0);
   const [running, setRunning] = useState(true);
@@ -315,7 +319,7 @@ function MoveRunner({
   return (
     <div>
       <CelebrationBurst
-        show={burst}
+        show={burst && !reduce}
         variant={earnedCount > 0 ? "badge" : "correct"}
         label={`${activity.name} complete`}
         onDone={() => setBurst(false)}
@@ -323,13 +327,13 @@ function MoveRunner({
 
       <button
         onClick={() => { sfx.click(); onExit(); }}
-        className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95"
+        className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95"
       >
         <ChevronLeft className="w-5 h-5" /> {done ? "All moves" : "Stop"}
       </button>
 
       {/* Progress through the whole activity */}
-      <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-5">
+      <div className="h-1.5 rounded-full bg-[var(--surface-strong)] overflow-hidden mb-5">
         <motion.div
           className="h-full rounded-full"
           style={{ background: activity.accent }}
@@ -346,8 +350,8 @@ function MoveRunner({
           className="glass-card p-6 text-center border border-emerald-400/30"
         >
           <div className="text-5xl mb-2" aria-hidden>{activity.emoji}</div>
-          <div className="font-display text-2xl font-bold text-white">Move Break done.</div>
-          <div className="text-sm text-white/70 mt-1">
+          <div className="font-display text-2xl font-bold text-[var(--text)]">Move Break done.</div>
+          <div className="text-sm text-[var(--text-muted)] mt-1">
             +{XP_PER_BREAK} XP · +{COINS_PER_BREAK} coins. Your brain works better now — that is not a slogan, it is blood flow.
           </div>
 
@@ -361,7 +365,7 @@ function MoveRunner({
       ) : (
         <>
           <div className="text-center mb-6">
-            <div className="text-[10px] uppercase tracking-widest font-bold text-white/50 mb-1">
+            <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-1">
               Step {stepIdx + 1} of {activity.steps.length}
             </div>
 
@@ -373,8 +377,8 @@ function MoveRunner({
                 exit={{ opacity: 0, y: -14 }}
                 transition={{ duration: reduce ? 0 : 0.28 }}
               >
-                <div className="font-display text-3xl font-bold text-white">{step.label}</div>
-                <div className="text-sm text-white/70 mt-2 max-w-sm mx-auto leading-relaxed">
+                <div className="font-display text-3xl font-bold text-[var(--text)]">{step.label}</div>
+                <div className="text-sm text-[var(--text-muted)] mt-2 max-w-sm mx-auto leading-relaxed">
                   {step.cue}
                 </div>
               </motion.div>
@@ -386,12 +390,12 @@ function MoveRunner({
             <div className="relative w-52 h-52 flex items-center justify-center">
               <motion.div
                 className="absolute inset-0 rounded-full"
-                animate={reduce || !running ? {} : { opacity: [0.25, 0.5, 0.25] }}
-                transition={{ duration: 2.4, repeat: Infinity }}
+                animate={reduce || !running ? { opacity: 0.25 } : { opacity: [0.25, 0.5, 0.25] }}
+                transition={reduce || !running ? { duration: 0 } : { duration: 2.4, repeat: Infinity }}
                 style={{ background: `radial-gradient(circle, ${activity.accent}44 0%, transparent 70%)` }}
               />
               <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100" aria-hidden>
-                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--border)" strokeWidth="5" />
                 <motion.circle
                   cx="50" cy="50" r="45" fill="none"
                   stroke={activity.accent} strokeWidth="5" strokeLinecap="round"
@@ -401,8 +405,8 @@ function MoveRunner({
                 />
               </svg>
               <div className="text-center">
-                <div className="font-display text-6xl font-bold text-white tabular-nums">{remaining}</div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-white/50">seconds</div>
+                <div className="font-display text-6xl font-bold text-[var(--text)] tabular-nums">{remaining}</div>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">seconds</div>
               </div>
             </div>
           </div>
@@ -415,7 +419,7 @@ function MoveRunner({
             </span>
           </Button>
 
-          <p className="text-center text-xs text-white/40 mt-3">
+          <p className="text-center text-xs text-[var(--text-muted)] mt-3">
             Stop any time. Nothing here is a test.
           </p>
         </>

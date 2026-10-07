@@ -6,8 +6,8 @@ import { clerkAppearance } from "@/lib/auth/clerk-appearance";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vidya — your personal school",
-  description: "A digital school for any learner — Cambridge Primary, Cambridge IGCSE, ICSE, CBSE. Curriculum-anchored quests, AI tutor, exam prep.",
+  title: "Vidya: explore, create, grow",
+  description: "A learning and creation space with activities, stories, music and family support. Curriculum practice is available for supported placements.",
   applicationName: "Vidya",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06080F",
+  themeColor: "#f4f8fc",
   width: "device-width",
   initialScale: 1,
   // Zoom is deliberately NOT disabled. `maximumScale: 1` / `userScalable: false`
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="playful" suppressHydrationWarning>
+    <html lang="en" data-theme="playful" data-appearance="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

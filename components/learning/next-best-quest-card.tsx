@@ -27,20 +27,20 @@ export function NextBestQuestCard({
       <section
         aria-labelledby={headingId}
         aria-describedby={descriptionId}
-        className={`rounded-3xl border border-white/10 bg-white/[0.04] text-left ${compact ? "p-4" : "p-5"}`}
+        className={`rounded-3xl border border-[var(--border)] bg-[var(--surface)] text-left ${compact ? "p-4" : "p-5"}`}
       >
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-white/[0.06] flex items-center justify-center flex-shrink-0" aria-hidden="true">
-            <Compass className="w-5 h-5 text-white/50" />
+          <div className="w-11 h-11 rounded-2xl bg-[var(--surface-strong)] flex items-center justify-center flex-shrink-0" aria-hidden="true">
+            <Compass className="w-5 h-5 text-[var(--text-muted)]" />
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-widest font-bold text-white/45">
+            <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">
               Next best quest
             </div>
-            <h2 id={headingId} className="font-display text-lg font-bold text-white mt-0.5">
+            <h2 id={headingId} className="font-display text-lg font-bold text-[var(--text)] mt-0.5">
               Personal quiz suggestions are not ready yet
             </h2>
-            <p id={descriptionId} className="text-xs leading-relaxed text-white/60 mt-1">
+            <p id={descriptionId} className="text-xs leading-relaxed text-[var(--text-muted)] mt-1">
               Quizzes for this curriculum and grade are still being prepared and have not been verified yet. You can still choose any available class, book, or activity.
             </p>
           </div>
@@ -89,29 +89,29 @@ export function NextBestQuestCard({
           aria-hidden="true"
         >
           {isReview || isPack ? (
-            <BookOpenCheck className="w-6 h-6 text-rose-300" />
+            <BookOpenCheck className="w-6 h-6 text-[var(--accent)]" />
           ) : (
             <span className="text-2xl">{recommendation.topicIcon}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold">
-            <span className="inline-flex items-center gap-1 text-fuchsia-200">
+            <span className="inline-flex items-center gap-1 text-[var(--accent-2)]">
               <Sparkles className="w-3 h-3" aria-hidden="true" /> Next best quest
             </span>
             {subject && (
-              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: appearance === "light" ? "#6554c0" : subject.accent }}>
+              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: "var(--accent)" }}>
                 · {subject.name}
               </span>
             )}
           </div>
           <h2
             id={headingId}
-            className={`font-display text-xl font-bold text-white mt-1 ${subject?.isDeva ? "font-deva" : ""}`}
+            className={`font-display text-xl font-bold text-[var(--text)] mt-1 ${subject?.isDeva ? "font-deva" : ""}`}
           >
             {title}
           </h2>
-          <p id={descriptionId} className="text-xs leading-relaxed text-white/70 mt-1">
+          <p id={descriptionId} className="text-xs leading-relaxed text-[var(--text-muted)] mt-1">
             {description} This is a suggestion, and you can choose another activity anytime.
           </p>
         </div>
@@ -120,7 +120,7 @@ export function NextBestQuestCard({
         type="button"
         onClick={onStart}
         aria-label={accessibleActionLabel}
-        className="relative mt-4 w-full min-h-11 rounded-2xl px-4 py-2.5 flex items-center justify-center gap-2 font-bold text-sm text-white bg-white/10 border border-white/15 hover:bg-white/15 active:scale-[0.99] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0b18]"
+        className="relative mt-4 w-full min-h-11 rounded-2xl px-4 py-2.5 flex items-center justify-center gap-2 font-bold text-sm text-[var(--text)] bg-[var(--accent-soft)] border border-[var(--border)] hover:bg-[var(--surface-strong)] active:scale-[0.99] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-base)]"
       >
         {actionLabel}
         <ArrowRight className="w-4 h-4" aria-hidden="true" />

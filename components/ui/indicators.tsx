@@ -8,7 +8,7 @@ export function StreakFlame({ streak, large = false, shields = 0 }: { streak: nu
   const reduced = useReducedMotion();
   if (streak === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-white/40">
+      <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
         <Flame className={large ? "w-6 h-6" : "w-5 h-5"} />
         <span className="font-bold font-mono">0</span>
         {shields > 0 && <ShieldBadge count={shields} dim />}
@@ -56,8 +56,8 @@ export function StatPill({
         <Icon className="w-4 h-4" style={{ color: accent }} />
       </div>
       <div className="leading-tight">
-        <div className="font-bold text-white text-sm">{value}</div>
-        {label && <div className="text-[9px] uppercase tracking-widest text-white/40">{label}</div>}
+        <div className="font-bold text-[var(--text)] text-sm">{value}</div>
+        {label && <div className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">{label}</div>}
       </div>
     </div>
   );

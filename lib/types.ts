@@ -1,3 +1,4 @@
+import type { CreativeStudioState } from "./creation/project";
 import type { LearningActivityState } from "./learning/activity";
 import type { LearningPlacement } from "./learning/placement";
 import type { LucideIcon } from "lucide-react";
@@ -194,6 +195,8 @@ export type TopicProgress = {
 };
 
 export type ReadingProgress = {
+  paragraphIndex?: number;
+  paragraphOffset?: number;
   chapterIndex: number;
   /** Position within the current chapter, from 0 to 1. */
   scrollProgress: number;
@@ -201,6 +204,7 @@ export type ReadingProgress = {
 };
 
 export type GameState = {
+  creativeStudio?: CreativeStudioState;
   activities?: LearningActivityState;
   name: string;
   avatarId: string;
@@ -236,8 +240,10 @@ export type GameState = {
   rewardedBooks?: string[];
   /** Per-book resume positions. The newest timestamp wins during sync. */
   readingProgress?: Record<string, ReadingProgress>;
+  learningResume?: import("./learning/resume").LearningResume;
   savedMelody: number[] | null;
   savedCompositions: Composition[];
+  musicDraft?: { updatedAt?: string; notes: number[]; tempoMs: number; bpm?: number; instrument?: "keyboard" | "marimba" | "synth" | "percussion"; layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion"; steps: number[] }[]; name?: string };
   classRoster: ClassMember[];
   classNotes: ClassNote[];
   buddyId: string | null;
@@ -252,6 +258,10 @@ export type GameState = {
   lastSubjectId?: SubjectId;
   lastSubjectAt?: string;
   settings: {
+    version?: 2;
+    appearance?: "light" | "dark" | "system";
+    companion?: boolean;
+    audioMuted?: boolean;
     sound: boolean;
     motion?: boolean;
     haptics?: boolean;
@@ -288,6 +298,10 @@ export type ClassNote = {
 };
 
 export type Composition = {
+  version?: 2;
+  bpm?: number;
+  instrument?: "keyboard" | "marimba" | "synth" | "percussion";
+  layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion"; steps: number[] }[];
   id: string;
   name: string;
   notes: number[];
@@ -311,6 +325,8 @@ export type FriendStreak = {
 
 export type ViewName =
   | "home"
+  | "creation"
+  | "planning"
   | "activities"
   | "subject"
   | "quiz"

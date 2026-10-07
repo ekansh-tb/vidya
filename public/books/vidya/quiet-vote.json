@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Quiet Vote",
+  "titleHindi": "शांत मतदान",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "quiet-vote",
+      "title": "The Quiet Vote",
+      "paragraphs": [
+        "The makers' club voted to spend its last meeting building a large tower. Most members raised their hands. Neel did not. The organiser almost moved on without asking about other options.",
+        "Neel said he liked building, but did not want to compete for the tallest tower. Another member quietly agreed. A majority had chosen an activity; it had not explained why each person chose differently.",
+        "They kept the tower project and offered a small neighbourhood model beside it. Both projects used the same materials. Members could move between them or work on their own design.",
+        "The organiser asked for comments on paper so nobody had to speak in front of the room. The club did not promise that every suggestion could happen. It did promise to read each one.",
+        "At the end, the tallest tower leaned a little. The neighbourhood model had an accessible station and an imaginary pond. Each group explained what it had tried, including what had not worked.",
+        "Next month the club still used votes. It also made time for reasons, quiet contributions and alternatives. A raised hand was useful information, but it was not the whole person."
+      ],
+      "illustration": "/books/vidya/quiet-vote.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "शांत मतदान",
+      "chapters": [
+        {
+          "id": "quiet-vote",
+          "title": "शांत मतदान",
+          "paragraphs": [
+            "निर्माण समूह ने अंतिम बैठक में ऊँची मीनार बनाने पर मतदान किया। अधिकतर ने हाथ उठाए। नील ने नहीं उठाया। आयोजक लगभग दूसरे विकल्प पूछे बिना आगे बढ़ गया।",
+            "नील को बनाना अच्छा लगता था, लेकिन सबसे ऊँची मीनार की प्रतियोगिता नहीं चाहिए थी। एक और सदस्य सहमत था। बहुमत ने काम चुना था; हर व्यक्ति की अलग पसंद का कारण नहीं बताया था।",
+            "मीनार के साथ छोटा मोहल्ला बनाने का विकल्प रखा गया। सामान एक ही था। सदस्य दोनों में जा सकते थे या अपनी रचना बना सकते थे।",
+            "आयोजक ने कागज़ पर सुझाव माँगे, ताकि सबको सामने बोलना न पड़े। हर सुझाव पूरा करने का वादा नहीं हुआ। हर सुझाव पढ़ने का वादा हुआ।",
+            "अंत में ऊँची मीनार थोड़ी झुक रही थी। मोहल्ले में सुलभ स्टेशन और काल्पनिक तालाब था। समूहों ने कोशिश और काम न करने वाली बात दोनों बताईं।",
+            "अगले महीने मतदान रहा। साथ में कारण, शांत योगदान और विकल्पों का समय भी रहा। उठा हाथ उपयोगी जानकारी था, पूरा व्यक्ति नहीं।"
+          ],
+          "illustration": "/books/vidya/quiet-vote.svg"
+        }
+      ]
+    }
+  }
+}
