@@ -571,3 +571,27 @@
 .kids-learner-active { display:flex; align-items:center; gap:4px; padding:5px 8px; color:#326f61; background:var(--kid-mint); border-radius:9px; font-size:.7rem; flex-shrink:0; }
 .learning-hub .kids-learner-add { background:transparent; border:1px dashed #b9b5d4; }
 @media(max-width:480px) { .learning-hub .kids-learner-card { padding:14px; gap:12px; }.kids-learner-avatar { width:48px; height:48px; border-radius:15px; font-size:1.6rem; }.kids-learner-name strong { font-size:1.1rem; }.kids-learner-active { font-size:.65rem; } }
+
+/* Adult authentication is independent of the active child's appearance. */
+.parent-auth-shell { min-height:100svh; background:#f7f8fc; color:#252544; padding:48px 20px 36px; display:flex; justify-content:center; font-family:'Plus Jakarta Sans',system-ui,sans-serif; color-scheme:light; }
+.parent-auth-content { width:100%; max-width:440px; }
+.parent-auth-brand { display:flex; align-items:center; gap:9px; color:#252544; text-decoration:none; width:fit-content; margin:0 auto 28px; }
+.parent-auth-brand strong { font-family:'Outfit',system-ui,sans-serif; font-size:1.8rem; letter-spacing:-.04em; }
+.parent-auth-label { font-size:.8rem; color:#56566f; border-left:1px solid #d9d8e5; padding-left:12px; margin-left:6px; }
+.parent-auth-intro { text-align:center; margin-bottom:24px; }
+.parent-auth-intro h1 { font-family:'Outfit',system-ui,sans-serif; font-size:2rem; line-height:1.2; font-weight:650; letter-spacing:-.02em; margin:0 0 10px; color:#252544; }
+.parent-auth-intro p { color:#56566f; font-size:.95rem; line-height:1.65; margin:0; }
+.parent-auth-widget, .parent-auth-card-box { width:100%; max-width:100%; }
+.parent-auth-card-box { border:1px solid #dedee9; border-radius:20px; box-shadow:0 8px 28px #2525440a; overflow:hidden; }
+.parent-auth-card { background:#fff; box-shadow:none; border:0; padding:28px; }
+.parent-auth-title { font-family:'Outfit',system-ui,sans-serif; font-size:1.5rem; color:#252544; }
+.parent-auth-subtitle { color:#56566f; line-height:1.6; }
+.parent-auth-primary, .parent-auth-social { min-height:48px; font-size:.95rem; font-weight:600; }
+.parent-auth-primary { background:#6554c0; color:#fff; }
+.parent-auth-social { background:#fff; color:#252544; border:1px solid #d9d8e5; }
+.parent-auth-input { min-height:48px; font-size:16px; color:#252544; background:#fff; border:1px solid #b9b8cb; }
+.parent-auth-footer { background:#f3f2f8; color:#56566f; }
+.parent-auth-help { color:#56566f; text-align:center; font-size:.8rem; line-height:1.65; margin:24px 8px 12px; }
+.parent-auth-home { display:block; width:fit-content; margin:auto; min-height:44px; padding:10px 8px; color:#6554c0; text-decoration:underline; text-underline-offset:4px; font-size:.85rem; }
+.parent-auth-shell :is(a,button,input):focus-visible { outline:3px solid #6554c0; outline-offset:3px; }
+@media(max-width:480px) { .parent-auth-shell { padding:24px 16px; }.parent-auth-brand { margin-bottom:24px; }.parent-auth-card { padding:24px 20px; }.parent-auth-intro h1 { font-size:1.8rem; } }

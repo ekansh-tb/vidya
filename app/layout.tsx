@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
 import { clerkConfigured } from "@/lib/auth/clerk-config";
+import { clerkAppearance } from "@/lib/auth/clerk-appearance";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -57,19 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             kid app needs no auth, so render it plain; middleware.ts closes the
             parent area in the same condition. */}
         {!clerkConfigured ? children : (
-        <ClerkProvider
-          appearance={{
-            variables: {
-              colorPrimary: "#A78BFA",
-              colorBackground: "#06080F",
-              colorText: "#F5F5F7",
-              colorTextSecondary: "rgba(255,255,255,0.6)",
-              colorInputBackground: "rgba(255,255,255,0.05)",
-              colorInputText: "#F5F5F7",
-              borderRadius: "0.75rem",
-            },
-          }}
-        >
+        <ClerkProvider appearance={clerkAppearance}>
           {children}
         </ClerkProvider>
         )}
