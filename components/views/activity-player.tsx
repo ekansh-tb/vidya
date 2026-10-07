@@ -50,6 +50,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   };
   const finishStep = (change: Partial<ActivityDraft> = {}) => {
     if (finished.current) return;
+    stopSpeaking(); narrationSet("");
     const next = { ...draft, ...change, step: draft.step + 1, picks: [], counted: [], hinted: false, responseStatus: undefined, stepRetries: 0, paused: false, updatedAt: new Date().toISOString() };
     if (next.step >= activity.steps.length && placement) {
       finished.current = true;

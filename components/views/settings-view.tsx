@@ -70,20 +70,20 @@ export function SettingsView({
   };
 
   return (
-    <div className="min-h-screen pb-24 max-w-2xl mx-auto">
+    <div className="learning-hub kids-world kids-settings" data-calm={state.settings.motion === false}>
       <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
-          <ChevronLeft className="w-5 h-5" /> Home
+        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--kid-muted)] font-medium mb-4 active:scale-95">
+          <ChevronLeft className="w-5 h-5" /> Back to learning
         </button>
 
-        <h2 className="font-display text-3xl font-bold text-white mb-5">Settings</h2>
+        <h1 className="font-display text-3xl font-bold text-[var(--kid-ink)] mb-5">Settings</h1>
 
         <div className="space-y-3">
           <div className="glass-card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <Music className="w-5 h-5 text-fuchsia-300" />
-                <div className="font-bold text-white">Background Music</div>
+                <Music className="w-5 h-5 text-[var(--kid-purple)]" />
+                <div className="font-bold text-[var(--kid-ink)]">Background music</div>
               </div>
               <button
                 onClick={toggleMusic}
@@ -91,7 +91,7 @@ export function SettingsView({
                 type="button"
                 className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.music ? "gradient-cosmic" : "bg-white/10"}`}>
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.music ? "bg-[#6554c0]" : "bg-[#e5e5f0]"}`}>
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.music ? "translate-x-6" : "translate-x-1"}`} />
                 </span>
               </button>
@@ -110,8 +110,8 @@ export function SettingsView({
           <div className="glass-card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <Volume2 className="w-5 h-5 text-cyan-300" />
-                <div className="font-bold text-white">Sound Effects</div>
+                <Volume2 className="w-5 h-5 text-[var(--kid-purple)]" />
+                <div className="font-bold text-[var(--kid-ink)]">Sound effects</div>
               </div>
               <button
                 onClick={toggleSound}
@@ -119,7 +119,7 @@ export function SettingsView({
                 type="button"
                 className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.sound ? "gradient-cosmic" : "bg-white/10"}`}>
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.sound ? "bg-[#6554c0]" : "bg-[#e5e5f0]"}`}>
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.sound ? "translate-x-6" : "translate-x-1"}`} />
                 </span>
               </button>
@@ -138,10 +138,10 @@ export function SettingsView({
           <div className="glass-card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <Mic className="w-5 h-5 text-amber-300" />
+                <Mic className="w-5 h-5 text-[var(--kid-purple)]" />
                 <div>
-                  <div className="font-bold text-white">Miss Vidya Voice</div>
-                  <div className="text-xs text-white/50">Your in-app teacher</div>
+                  <div className="font-bold text-[var(--kid-ink)]">Spoken guidance</div>
+                  <div className="text-xs text-[var(--kid-muted)]">Instructions read aloud</div>
                 </div>
               </div>
               <button
@@ -150,7 +150,7 @@ export function SettingsView({
                 type="button"
                 className="w-12 min-h-11 shrink-0 flex items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
               >
-                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.voice ? "gradient-cosmic" : "bg-white/10"}`}>
+                <span aria-hidden="true" className={`relative block w-12 h-7 rounded-full transition-colors ${state.settings.voice ? "bg-[#6554c0]" : "bg-[#e5e5f0]"}`}>
                   <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${state.settings.voice ? "translate-x-6" : "translate-x-1"}`} />
                 </span>
               </button>
@@ -164,7 +164,7 @@ export function SettingsView({
                 onChange={onVoiceVol}
                 className="w-full accent-amber-400"
               />
-              <label className="block text-sm text-white/80">
+              <label className="block text-sm text-[var(--kid-muted)]">
                 English guidance voice
                 <select
                   value={state.settings.voiceURI ?? ""}
@@ -173,16 +173,16 @@ export function SettingsView({
                     const voiceURI = event.target.value || undefined;
                     setState((previous) => ({ ...previous, settings: { ...previous.settings, voiceURI } }));
                   }}
-                  className="block w-full mt-2 rounded-xl bg-slate-900 border border-white/30 p-3 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+                  className="block w-full mt-2 rounded-xl bg-white border border-[#dddcea] p-3 text-[var(--kid-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
                 >
                   <option value="">Automatic: prefer a natural voice</option>
                   {voices.map((voice) => <option key={voice.voiceURI} value={voice.voiceURI}>{voice.name} ({voice.lang})</option>)}
                 </select>
               </label>
-              <p className="text-xs text-white/70">Voices come from this device. Natural or enhanced voices sound clearer when available. This changes spoken guidance, not the lesson language.</p>
-              <button type="button" disabled={!voices.length} onClick={() => speak("Hello. I'm Vidya, your learning guide. We can take this one step at a time.")} className="rounded-xl border border-white/30 px-4 py-2 text-sm text-white disabled:opacity-50">Preview voice</button>
-              <button type="button" onClick={stopSpeaking} className="rounded-xl px-4 py-2 text-sm text-white/80">Stop preview</button>
-              {!voices.length && <p role="status" className="text-xs text-white/70">No English device voice is available yet. You can keep learning with text.</p>}
+              <p className="text-xs text-[var(--kid-muted)]">Voices come from this device. Natural or enhanced voices sound clearer when available. This changes spoken guidance, not the lesson language.</p>
+              <button type="button" disabled={!voices.length} onClick={() => speak("Hello. I'm Vidya, your learning guide. We can take this one step at a time.")} className="rounded-xl border border-white/30 px-4 py-2 text-sm text-[var(--kid-ink)] disabled:opacity-50">Preview voice</button>
+              <button type="button" onClick={stopSpeaking} className="rounded-xl px-4 py-2 text-sm text-[var(--kid-muted)]">Stop preview</button>
+              {!voices.length && <p role="status" className="text-xs text-[var(--kid-muted)]">No English device voice is available yet. You can keep learning with text.</p>}
               </div>
             )}
           </div>
@@ -197,24 +197,24 @@ export function SettingsView({
             className="w-full glass-card p-4 mt-6 flex items-center gap-3 text-left active:scale-[0.99] transition"
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 bg-cyan-400/15">
-              <BarChart3 className="w-5 h-5 text-cyan-300" />
+              <BarChart3 className="w-5 h-5 text-[var(--kid-purple)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-display font-bold text-white text-sm">For grown-ups</div>
-              <div className="text-xs text-white/55 mt-0.5">
+              <div className="font-display font-bold text-[var(--kid-ink)] text-sm">For grown-ups</div>
+              <div className="text-xs text-[var(--kid-muted)] mt-0.5">
                 Progress, exam dates, backups and account linking.
               </div>
             </div>
-            <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+            <ChevronRight className="w-5 h-5 text-[var(--kid-muted)] flex-shrink-0" />
           </button>
         )}
 
-        <Link href="/mission" className="mt-6 flex min-h-11 items-center rounded-xl px-4 text-sm text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2">
+        <Link href="/mission" className="mt-6 flex min-h-11 items-center rounded-xl px-4 text-sm text-[var(--kid-ink)] underline underline-offset-4 focus-visible:outline focus-visible:outline-2">
           Our shared learning mission
         </Link>
 
-        <div className="glass-card p-4 mt-6 text-xs text-white/50">
-          <div className="font-bold text-white/70 mb-1">About audio</div>
+        <div className="glass-card p-4 mt-6 text-xs text-[var(--kid-muted)]">
+          <div className="font-bold text-[var(--kid-muted)] mb-1">About audio</div>
           <ul className="space-y-1 list-disc list-inside">
             <li>Music is generated live by your browser, no files needed</li>
             <li>Miss Vidya uses your device&apos;s built-in voice synthesis</li>

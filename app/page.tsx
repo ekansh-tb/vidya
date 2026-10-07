@@ -76,6 +76,7 @@ export default function HomePage() {
   }, [hydrated, state.settings.sound, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     setQuizResult(null);
     setView({ name: "home" });
     setShowAddLearner(false);
@@ -240,11 +241,11 @@ export default function HomePage() {
       />
     );
   } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)) {
-    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab}/>;
+    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined}/>;
   } else {
     switch (view.name) {
       case "activities":
-        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab}/>;
+        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined}/>;
         break;
       case "home":
         content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={homeTab} />;
@@ -428,7 +429,7 @@ export default function HomePage() {
     }
   }
 
-  const learningSurface = !quizResult && (view.name === "home" || view.name === "activities" || (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)));
+  const learningSurface = !quizResult && (["home", "activities", "settings"].includes(view.name) || (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)));
   return (
     <div className={learningSurface ? "kids-surface" : undefined} data-calm={state.settings.motion === false}>
       <ThemeApplier theme={themeId} />
@@ -444,7 +445,7 @@ export default function HomePage() {
       >
         {content}
       </RoomTransition>
-      <VoiceBubble />
+      {!learningSurface && <VoiceBubble />}
       <SaveErrorBanner />
       {/* Mounted once at the root so a badge earned mid-quiz or mid-Move-Break
           is announced wherever the child is standing. */}

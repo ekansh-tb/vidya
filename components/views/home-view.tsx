@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useId, useMemo, useState, useRef } from "react";
 import { BookOpen, Compass, Home, Palette, Footprints, Settings, Users, ArrowRight, Music, Globe, NotebookPen, Wind, Trophy, GraduationCap } from "lucide-react";
 import { LearningCompanion } from "@/components/ui/learning-companion";
+import { hubActivities } from "@/lib/learning/hub-selection";
 import { companionUnlocks } from "@/lib/learning/activity";
 import { todayKey } from "@/lib/utils";
 import { useReducedMotion } from "framer-motion";
@@ -47,6 +48,9 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
     if (recommendation.kind === "topic") onNavigate("quiz", { subjectId: recommendation.subjectId, topicId: recommendation.topicId });
   };
   const name = state.name.split(" ")[0] || "friend";
+  const activities = hubActivities(learner, learner.learningLanguage ?? "en");
+  const savedActivity = activities.find(activity => activity.id === state.activities?.draft?.activityId && activity.revision === state.activities.draft.revision);
+  const starter = savedActivity ?? activities.find(activity => activity.interaction !== "offline");
   const last = subjects.find((s) => s.id === state.lastSubjectId);
   const hasQuiz = subjects.some((s) => Object.keys(banks[s.id] || {}).length > 0);
   const upcoming = (learner.upcomingExams || []).filter((e) => e.date >= todayKey())
@@ -68,8 +72,7 @@ export function HomeView({ state, learner, onNavigate, tab = "today" }: {
     <div className="kids-heading"><div><p className="learning-eyebrow">Hello, {name}</p><h1>{tab === "today" ? ((learner.grade ?? 1) <= 5 ? "Where will we go today?" : "Your next step") : tabs.find(item => item.id === tab)?.label}</h1><p className="kids-subtitle">{mode}</p></div></div>
     {tab === "today" && <div className="space-y-5">
       {learner.familyNote && !learner.familyNote.seenAt && <aside className="buddy-panel"><h2 className="font-bold">A note from home</h2><p className="my-2 whitespace-pre-wrap">{learner.familyNote.body}</p><button className="buddy-action" onClick={() => update(learner.id, { familyNote: { ...learner.familyNote!, seenAt: new Date().toISOString() } })}>Got it</button></aside>}
-      {recommendation.kind !== "unavailable" ? <NextBestQuestCard recommendation={recommendation} onStart={start} appearance="light" /> : <section className="kids-adventure domain-language"><div className="kids-adventure-copy"><span className="kids-tag">Choose your own next step</span><h2>Find a book to get lost in</h2><p>Curriculum practice for this grade is not ready yet. Browse the library or choose available exploration.</p><button className="buddy-action" onClick={() => onNavigate("library")}>Open the library <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></div><div className="kids-adventure-art" data-activity-art><ActivityArt domain="language" /></div></section>}
-      {state.activities?.draft && <button className="buddy-action" onClick={() => onNavigate("activities")}>Resume your saved activity</button>}
+      {starter && (savedActivity || recommendation.kind === "unavailable") ? <section className={"kids-adventure domain-" + starter.domain}><div className="kids-adventure-copy"><span className="kids-tag">{savedActivity ? "Right where you left off" : "General exploration for your grade"}</span><h2>{starter.title[learner.learningLanguage ?? "en"]}</h2><p>{starter.objective[learner.learningLanguage ?? "en"]}</p><button className="buddy-action" onClick={() => onNavigate("activities", { activityId: starter.id })}>{savedActivity ? "Continue playing" : "Start activity"} <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></div><div className="kids-adventure-art" data-activity-art><ActivityArt domain={starter.domain} /></div></section> : recommendation.kind !== "unavailable" ? <NextBestQuestCard recommendation={recommendation} onStart={start} appearance="light" /> : <section className="kids-adventure domain-language"><div className="kids-adventure-copy"><span className="kids-tag">Choose your own next step</span><h2>Find a book to get lost in</h2><p>Curriculum practice for this grade is not ready yet. Browse the library or choose available exploration.</p><button className="buddy-action" onClick={() => onNavigate("library")}>Open the library <ArrowRight aria-hidden="true" className="w-4 h-4" /></button></div><div className="kids-adventure-art" data-activity-art><ActivityArt domain="language" /></div></section>}
       {last && <button className="buddy-tile w-full" onClick={() => onNavigate("subject", { subjectId: last.id })}><BookOpen aria-hidden="true" className="w-6 h-6" /><span><strong>Continue {last.name}</strong><small>Return to your last classroom</small></span><ArrowRight aria-hidden="true" className="w-4 h-4 ml-auto" /></button>}
       <div className="grid sm:grid-cols-2 gap-3">{tile("Make something", "Draw ideas, write, or try a melody", Palette, "music")}{tile("Take a break", "A calm moment or a little movement", Wind, "wellness")}</div>
       {upcoming && <aside className="buddy-panel"><h2 className="font-bold">Your upcoming plan</h2><p>{upcoming.title} · {upcoming.date}</p><button className="buddy-action mt-3" onClick={() => onNavigate(upcoming.subjectId ? "exam-prep" : "settings", upcoming.subjectId ? { subjectId: upcoming.subjectId } : undefined)}>Open your plan</button></aside>}

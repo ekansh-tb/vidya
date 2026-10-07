@@ -12,10 +12,8 @@ import { learningHaptic } from "@/lib/learning/sensory";
 import { useGameStore } from "@/lib/game-store";
 import { placementFor, placementLabel, experienceMode } from "@/lib/learning/placement";
 import { recordLocalMeasurement } from "@/lib/learning/local-measurement";
-import { placementKey, eligibleActivities, distinctLearningDays, companionUnlocks, type ActivityDomain } from "@/lib/learning/activity";
-import { variedActivities } from "@/lib/learning/hub-selection";
-import { PUBLISHED_SCHOOL_GRADES } from "@/lib/learning/release";
-import { ACTIVITY_CATALOG } from "@/lib/learning/catalog";
+import { placementKey, distinctLearningDays, companionUnlocks, type ActivityDomain } from "@/lib/learning/activity";
+import { hubActivities, variedActivities } from "@/lib/learning/hub-selection";
 import { ActivityPlayer } from "./activity-player";
 import { LearningCompanion } from "@/components/ui/learning-companion";
 import { CreationGallery } from "@/components/learning/creation-gallery";
@@ -38,9 +36,10 @@ const TABS = [
 ] as const;
 export type LearningHubTab = typeof TABS[number]["id"];
 
-export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play", onTabChange }: {
+export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play", onTabChange, initialActivityId }: {
   onBack: () => void; onSettings: () => void; onSwitch: () => void; onLink: () => void;
   tab?: LearningHubTab; onTabChange: (tab: LearningHubTab) => void;
+  initialActivityId?: string;
 }) {
   const { learner, state, set, updateLearnerMeta } = useGameStore();
   const reduced = useReducedMotion();
@@ -52,13 +51,13 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play"
   const hi = lang === "hi";
   const early = placement?.kind === "early-years";
   const [domain, chooseDomain] = useState<ActivityDomain | null>(null);
-  const [selected, select] = useState<string | null>(null);
+  const [selected, select] = useState<string | null>(initialActivityId ?? null);
   const [expanded, expand] = useState(false);
   const [journeyDay, selectDay] = useState<number | null>(null);
   const activityState = state.activities ?? { completions: [] };
   const completedDays = distinctLearningDays(activityState);
   const day = journeyDay ?? Math.min(14, completedDays.length + (completedDays.includes(todayKey()) ? 0 : 1));
-  const available = placement && (early || (placement.kind === "school" && PUBLISHED_SCHOOL_GRADES.includes(placement.grade))) ? eligibleActivities(ACTIVITY_CATALOG, placement, lang) : [];
+  const available = hubActivities(learner, lang);
   const draft = available.find(activity => activity.id === activityState.draft?.activityId && activity.revision === activityState.draft.revision);
   const chosen = available.find(activity => activity.id === selected);
   const playable = available.filter(activity => activity.interaction !== "offline");
