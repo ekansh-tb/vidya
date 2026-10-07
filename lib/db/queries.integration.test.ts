@@ -33,6 +33,7 @@ import {
   recordSafetySignal, safetySignalsForParent, markSafetySignalsSeen,
 } from "./queries";
 import type { GameState } from "../types";
+import { mergeGameState } from "../sync/merge";
 
 const hasDb = integrationDatabaseConfigured();
 const d = hasDb ? describe : describe.skip;
@@ -512,6 +513,25 @@ d("db integration", { timeout: DB_TIMEOUT_MS }, () => {
       }
       const latest = await getLearnerState(learnerA);
       expect(latest?.state, "a rejected push must not have been written").toMatchObject({ xp: 20 });
+    });
+
+    it("reconciles racing device saves without losing later local work or the other device's work", async () => {
+      const tablet = { ...state(21), badges: ["tablet"], activities: { completions: [], creations: { tablet: ["#248781"] } } } as GameState;
+      const laptop = { ...state(22), badges: ["laptop"], activities: { completions: [], creations: { laptop: ["#d64d46"] } } } as GameState;
+      const results = await Promise.all([tablet, laptop].map(copy => pushLearnerState({ learnerId: learnerA, state: copy, expectedRevision: 2 })));
+      expect(results.filter(r => r.ok)).toHaveLength(1);
+      const losingIndex = results.findIndex(r => !r.ok);
+      const conflict = results[losingIndex];
+      if (conflict.ok) throw new Error("Expected a refused stale save");
+      const latestLocal = { ...[tablet, laptop][losingIndex], badges: [...[tablet, laptop][losingIndex].badges, "later-answer"] };
+      const merged = mergeGameState(latestLocal, conflict.serverState);
+      const saved = await pushLearnerState({ learnerId: learnerA, state: merged, expectedRevision: conflict.serverRevision });
+      expect(saved.ok).toBe(true);
+      const report = await getLearnerStateForParent(PARENT_A, learnerA);
+      const stored = report?.state as GameState | null;
+      expect(stored?.badges).toEqual(expect.arrayContaining(["tablet", "laptop", "later-answer"]));
+      expect(stored?.activities?.creations).toEqual({ tablet: ["#248781"], laptop: ["#d64d46"] });
+      expect(await getLearnerStateForParent(PARENT_B, learnerA)).toBeNull();
     });
   });
 });
