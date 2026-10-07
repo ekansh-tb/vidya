@@ -576,6 +576,7 @@
 .parent-auth-shell { min-height:100svh; background:#f7f8fc; color:#252544; padding:48px 20px 36px; display:flex; justify-content:center; font-family:'Plus Jakarta Sans',system-ui,sans-serif; color-scheme:light; }
 .parent-auth-content { width:100%; max-width:440px; }
 .parent-auth-brand { display:flex; align-items:center; gap:9px; color:#252544; text-decoration:none; width:fit-content; margin:0 auto 28px; }
+.parent-auth-brand .kids-brand-mark { background:#6554c0; }
 .parent-auth-brand strong { font-family:'Outfit',system-ui,sans-serif; font-size:1.8rem; letter-spacing:-.04em; }
 .parent-auth-label { font-size:.8rem; color:#56566f; border-left:1px solid #d9d8e5; padding-left:12px; margin-left:6px; }
 .parent-auth-intro { text-align:center; margin-bottom:24px; }
