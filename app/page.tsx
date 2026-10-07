@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { EnrollmentEntry } from "@/components/views/enrollment-entry";
-import { LearningHub } from "@/components/views/learning-hub";
+import { LearningHub, type LearningHubTab } from "@/components/views/learning-hub";
 import { HomeView, type HomeTab } from "@/components/views/home-view";
 import { SubjectView } from "@/components/views/subject-view";
 import { QuizView } from "@/components/views/quiz-view";
@@ -51,6 +51,8 @@ export default function HomePage() {
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [recommendationNow, setRecommendationNow] = useState(() => Date.now());
   const [showAddLearner, setShowAddLearner] = useState(false);
+  const [homeTab, setHomeTab] = useState<HomeTab>("today");
+  const [hubTab, setHubTab] = useState<LearningHubTab>("play");
 
   useEffect(() => { hydrate(); }, [hydrate]);
 
@@ -74,9 +76,12 @@ export default function HomePage() {
   }, [hydrated, state.settings.sound, state.settings.music, state.settings.musicVolume, state.settings.sfxVolume, state.onboarded]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     setQuizResult(null);
     setView({ name: "home" });
     setShowAddLearner(false);
+    setHubTab("play");
+    setHomeTab("today");
   }, [learner.id]);
 
   // Theme = learner override OR derived from grade
@@ -94,10 +99,10 @@ export default function HomePage() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="kids-surface min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-3 animate-float">🦚</div>
-          <div className="text-white/60 text-sm">Loading…</div>
+          <span className="kids-brand-mark mx-auto" aria-hidden="true">v<span>•</span></span>
+          <div className="mt-4 text-sm" role="status">Opening your learning space…</div>
         </div>
       </div>
     );
@@ -165,6 +170,7 @@ export default function HomePage() {
           learner={learner}
           onSave={(picked) => {
             updateLearnerMeta(learner.id, { pickedSubjects: picked, subjectsLocked: true });
+            window.scrollTo({ top: 0, behavior: "instant" });
             setView({ name: "home" });
           }}
         />
@@ -175,9 +181,12 @@ export default function HomePage() {
   }
 
   const navigate = (name: ViewName, params?: Record<string, unknown>) => {
+    if (name === "home" && ["today", "explore", "create", "journey"].includes(String(params?.tab))) setHomeTab(params?.tab as HomeTab);
+    if (name === "activities" && ["play", "stories", "make", "journey"].includes(String(params?.tab))) setHubTab(params?.tab as LearningHubTab);
+    window.scrollTo({ top: 0, behavior: "instant" });
     setView({ name, params });
   };
-  const back = () => setView({ name: "home" });
+  const back = () => { window.scrollTo({ top: 0, behavior: "instant" }); setView({ name: "home" }); };
   const showQuizResult = (result: QuizResult) => {
     setRecommendationNow(Date.now());
     setQuizResult(result);
@@ -233,14 +242,14 @@ export default function HomePage() {
       />
     );
   } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)) {
-    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
+    content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined}/>;
   } else {
     switch (view.name) {
       case "activities":
-        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")}/>;
+        content = <LearningHub onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined}/>;
         break;
       case "home":
-        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
+        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={homeTab} />;
         break;
       case "subject":
         content = (
@@ -396,7 +405,7 @@ export default function HomePage() {
           <LearnersView
             learners={Object.values(profiles.learners).filter((l,i,all) => canSync(l) && all.findIndex(other=>other.remoteId===l.remoteId && canSync(other))===i)}
             currentId={learner.id}
-            onSwitch={(id) => { switchLearner(id); }}
+            onSwitch={(id) => { switchLearner(id); back(); }}
             onBack={back}
             onAdd={() => setShowAddLearner(true)}
           />
@@ -417,15 +426,16 @@ export default function HomePage() {
         );
         break;
       default:
-        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={(["today", "explore", "create", "journey"].includes(String(view.params?.tab)) ? view.params?.tab : "today") as HomeTab} />;
+        content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={homeTab} />;
     }
   }
 
+  const learningSurface = !quizResult && (["home", "activities", "settings", "learners"].includes(view.name) || (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)));
   return (
-    <>
+    <div className={learningSurface ? "kids-surface" : undefined} data-calm={state.settings.motion === false}>
       <ThemeApplier theme={themeId} />
       <div className="account-save-status" role="status">{learner.learningLanguage === "hi" ? ({idle:"खाता जोड़ें",syncing:"खाते में सहेज रहे हैं…",synced:"खाते में सहेजा",offline:"ऑफ़लाइन: इस डिवाइस पर सहेजा, इंटरनेट पर सिंक होगा",error:"खाते में नहीं सहेजा: फिर जोड़ें या इंटरनेट जाँचें"})[sync.status] : ({idle:"Connect an account",syncing:"Saving to your account…",synced:"Saved to your account",offline:"Offline: saved on this device, waiting to sync",error:"Account save unavailable. Check connection or reconnect"})[sync.status]}</div>
-      <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />
+      {!learningSurface && <CosmicBg mode={cosmicModeForGrade(learner.grade)} intensity={0.7} />}
       {/* Each view change reads as stepping into a different room, which is the
           metaphor the whole product is built on (see VISION.md). `door` marks
           the transitions that are genuinely entering a learning space rather
@@ -436,11 +446,11 @@ export default function HomePage() {
       >
         {content}
       </RoomTransition>
-      <VoiceBubble />
+      {!learningSurface && <VoiceBubble />}
       <SaveErrorBanner />
       {/* Mounted once at the root so a badge earned mid-quiz or mid-Move-Break
           is announced wherever the child is standing. */}
       <BadgeToast badges={state.badges} learnerId={learner.id} />
-    </>
+    </div>
   );
 }

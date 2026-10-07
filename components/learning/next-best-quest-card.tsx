@@ -9,10 +9,12 @@ export function NextBestQuestCard({
   recommendation,
   onStart,
   compact = false,
+  appearance = "standard",
 }: {
   recommendation: NextQuestRecommendation;
   onStart?: () => void;
   compact?: boolean;
+  appearance?: "standard" | "light";
 }) {
   const headingId = useId();
   const descriptionId = useId();
@@ -70,7 +72,8 @@ export function NextBestQuestCard({
     <section
       aria-labelledby={headingId}
       aria-describedby={descriptionId}
-      className={`rounded-3xl relative overflow-hidden text-left ${compact ? "p-4" : "p-5"}`}
+      className={`next-quest-card rounded-3xl relative overflow-hidden text-left ${compact ? "p-4" : "p-5"}`}
+      data-appearance={appearance}
       style={{
         background: subject
           ? `linear-gradient(135deg, ${subject.soft} 0%, rgba(167, 139, 250, 0.12) 100%)`
@@ -97,7 +100,7 @@ export function NextBestQuestCard({
               <Sparkles className="w-3 h-3" aria-hidden="true" /> Next best quest
             </span>
             {subject && (
-              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: subject.accent }}>
+              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: appearance === "light" ? "#6554c0" : subject.accent }}>
                 · {subject.name}
               </span>
             )}

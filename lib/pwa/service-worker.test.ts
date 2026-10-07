@@ -72,7 +72,7 @@ function client(id: string, acknowledge = true): FakeClient {
   };
 }
 
-function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()) {
+function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn(), compatibilityRelease = false) {
   const listeners = new Map<string, (event: Record<string, unknown>) => void>();
   const caches = new MemoryCaches();
   const claim = vi.fn(async () => undefined);
@@ -90,7 +90,8 @@ function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()
     __VIDYA_SW_TEST__: undefined as unknown,
   };
 
-  vm.runInNewContext(workerSource, {
+  const source = compatibilityRelease ? workerSource.replace(/const CACHE_VERSION = "[^"]+";/, 'const CACHE_VERSION = "2026-10-07-sync-1";') : workerSource;
+  vm.runInNewContext(source, {
     self,
     caches,
     fetch: fetchResource,
@@ -135,14 +136,14 @@ describe("required account compatibility update", () => {
     vi.spyOn(MemoryCache.prototype, "addAll").mockResolvedValue(undefined);
   });
 
-  it("activates only after the anonymous current shell and dependencies are cacheable", async () => {
+  it("preserves the account compatibility release activation after complete public precache", async () => {
     const fetchResource = vi.fn(async (request: Request) => {
       expect(request.credentials).toBe("omit");
       const response = new Response(request.url.endsWith("/") ? '<script src="/_next/static/current.js"></script>' : "current JS");
       Object.defineProperty(response, "type", { value: "basic" });
       return response;
     });
-    const { listeners, caches, policy, skipWaiting } = workerHarness([], fetchResource);
+    const { listeners, caches, policy, skipWaiting } = workerHarness([], fetchResource, true);
     let work: Promise<void> | undefined;
     listeners.get("install")!({ waitUntil: (promise: Promise<void>) => { work = promise; } });
     await work;
@@ -150,6 +151,20 @@ describe("required account compatibility update", () => {
     expect(await (await caches.open(policy.STATIC_CACHE)).match("/")).toBeDefined();
     expect(skipWaiting).toHaveBeenCalledOnce();
     expect((await policy.readUpdateMarker())?.updateId).toBe("required-2026-10-07-sync-1");
+  });
+
+  it("installs a visual update without interrupting an in-progress activity", async () => {
+    const fetchResource = vi.fn(async () => {
+      const response = new Response("<html>Public shell</html>");
+      Object.defineProperty(response, "type", { value: "basic" });
+      return response;
+    });
+    const { listeners, policy, skipWaiting } = workerHarness([], fetchResource);
+    let work: Promise<void> | undefined;
+    listeners.get("install")!({ waitUntil: (promise: Promise<void>) => { work = promise; } });
+    await work;
+    expect(skipWaiting).not.toHaveBeenCalled();
+    expect(await policy.readUpdateMarker()).toBeNull();
   });
 
   it("keeps the old client when authentication or missing assets prevent a complete shell", async () => {

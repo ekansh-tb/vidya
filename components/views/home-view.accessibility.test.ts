@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { hubActivities } from "@/lib/learning/hub-selection";
+import { placementLabel, experienceMode } from "@/lib/learning/placement";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
 
@@ -51,6 +53,8 @@ new Function("require", "exports", compiled)((id: string) => {
     nextPeriod: () => null, periodProgress: () => 0.5,
   };
   if (id === "@/lib/economy") return { xpToLevel: () => ({ level: 1, xpInLevel: 0, xpNeeded: 100 }) };
+  if (id === "@/lib/learning/hub-selection") return { hubActivities };
+  if (id === "@/lib/learning/placement") return { placementLabel, experienceMode };
   if (id === "@/lib/learning/activity") return { companionUnlocks: () => [] };
   if (id === "@/lib/utils") return { todayKey: () => "2026-10-01" };
   if (id.startsWith("@/components/")) return new Proxy({}, { get: () => () => null });
@@ -99,6 +103,6 @@ describe("Learning navigation", () => {
     const { onNavigate } = render();
     const explore = controls.find((p) => p.children && Array.isArray(p.children) && JSON.stringify(p.children).includes("Explore"));
     expect(explore).toBeDefined(); explore!.onClick!();
-    expect(onNavigate).toHaveBeenLastCalledWith("activities");
+    expect(onNavigate).toHaveBeenLastCalledWith("home", { tab: "explore" });
   });
 });

@@ -25,6 +25,11 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   const fresh = (): ActivityDraft => ({ activityId: activity.id, revision: activity.revision, step: 0, picks: [], marks: Array(canvasSize).fill(""), attempts: 0, independentResponses: 0, hints: 0, retries: 0, hinted: false, updatedAt: new Date().toISOString(), startedDay: todayKey() });
   const draft = existing?.activityId === activity.id && existing.revision === activity.revision ? existing : fresh();
   const finished = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    heading.current?.focus({ preventScroll: true });
+  }, []);
   const [desire, desireSet] = useState(false);
   const measure = useCallback((event: "start"|"complete"|"abandon"|"yes"|"later") => { if (placement) recordLocalMeasurement(learner.id, { placement:placementKey(placement), language:lang, device:window.innerWidth<600 ? "phone" : window.innerWidth<1000 ? "tablet" : "desktop" }, todayKey(), event); }, [learner.id, lang, placement]);
   const visitRecorded = useRef(false);
@@ -45,6 +50,7 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   };
   const finishStep = (change: Partial<ActivityDraft> = {}) => {
     if (finished.current) return;
+    stopSpeaking(); narrationSet("");
     const next = { ...draft, ...change, step: draft.step + 1, picks: [], counted: [], hinted: false, responseStatus: undefined, stepRetries: 0, paused: false, updatedAt: new Date().toISOString() };
     if (next.step >= activity.steps.length && placement) {
       finished.current = true;
@@ -70,12 +76,13 @@ export function ActivityPlayer({ activity, onExit }: { activity: LearningActivit
   };
   const correctFeedback = feedback === step.feedback[lang];
   const safeExit = () => { if (!done && !existing) save({}); if (!done) measure("abandon"); stopSpeaking(); onExit(); };
-  return <MotionConfig reducedMotion={calm ? "always" : "user"}><main className="activity-shell" lang={hi ? "hi" : "en"}>
+  return <MotionConfig reducedMotion={calm ? "always" : "user"}><main className="activity-shell kids-player" data-calm={calm} lang={hi ? "hi" : "en"}>
     <header className="learning-topbar"><button onClick={safeExit}>{hi ? "वापस और प्रगति सहेजो" : "Exit & save progress"}</button><button onClick={() => { stopSpeaking(); updateLearnerMeta(learner.id, { learningLanguage: hi ? "en" : "hi" }); narrationSet(""); }}>{hi ? "English" : "हिंदी"}</button></header>
-    <h1>{activity.title[lang]}</h1>
+    <h1 ref={heading} tabIndex={-1}>{activity.title[lang]}</h1>
     <p className="learning-caption">{activity.alignment === "ncf-foundational" ? (hi ? "NCF आधारित शुरुआती गतिविधि" : "NCF-based starter activity") : (hi ? "सामान्य खोज · स्कूल के पाठ्यक्रम का दावा नहीं" : "General exploration · no school syllabus claim")}</p>
     {done ? <section className="learning-panel"><CompanionCelebration/><LearningCompanion line={hi ? "तुमने हिस्सा लिया। अब असली दुनिया में कुछ खेलें?" : "You took part. Shall we try something away from the screen?"}/>{!desire && <div><p>{hi ? "कभी फिर खेलना चाहोगे?" : "Would you like to try this again another day?"}</p><button onClick={() => { measure("yes"); desireSet(true); }}>{hi ? "हाँ" : "Yes"}</button><button onClick={() => { measure("later"); desireSet(true); }}>{hi ? "बाद में" : "Maybe later"}</button></div>}<h2>{hi ? "अगला छोटा कदम" : "A little next step"}</h2><p>{activity.offline[lang]}</p><p>{hi ? "यह भागीदारी का रिकॉर्ड है, समझ का प्रमाण नहीं।" : "This records participation, not proof of understanding."}</p><button className="learning-primary" onClick={onExit}>{hi ? "मेरे खेल पर लौटो" : "Back to my activities"}</button></section> : paused ? <section className="learning-panel"><h2>{hi ? "विराम" : "Paused"}</h2><p>{hi ? "तुम्हारी जगह याद है।" : "Your place is saved."}</p><button className="learning-primary" onClick={() => { save({ paused: false }); pause(false); }}>{hi ? "फिर शुरू करो" : "Resume"}</button></section> : <section className="learning-panel">
       <div className="learning-player-bar"><span>{hi ? "कदम" : "Step"} {draft.step + 1}/{activity.steps.length}</span><button onClick={() => { save({ paused: true }); pause(true); stopSpeaking(); }}>{hi ? "विराम" : "Pause"}</button></div>
+      <div className="kids-step-progress" role="progressbar" aria-label={hi ? "गतिविधि के कदम" : "Activity steps"} aria-valuemin={0} aria-valuemax={activity.steps.length} aria-valuenow={draft.step} style={{ "--step-progress": String(draft.step / activity.steps.length * 100) + "%" } as React.CSSProperties}><span /></div>
       <h2>{step.instruction[lang]}</h2>
       <button onClick={read}>{hi ? "🔊 निर्देश सुनो" : "🔊 Read instruction aloud"}</button>
       {narration && <p role="status">{narration}</p>}
