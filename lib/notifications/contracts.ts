@@ -1,7 +1,7 @@
 import { z } from "zod";
 export const preferenceSchema = z.object({ enabled: z.boolean(), weekday: z.number().int().min(0).max(6), time: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/), timezone: z.string().min(1).max(80).refine(value => { try { new Intl.DateTimeFormat("en", { timeZone: value }); return true; } catch { return false; } }) }).strict();
 export type InvitationPreferences = z.infer<typeof preferenceSchema>;
-export const DEFAULT_INVITATION_PREFERENCES: InvitationPreferences = { enabled: false, weekday: 0, time: "10:00", timezone: "Asia/Kolkata" };
+export const DEFAULT_INVITATION_PREFERENCES: InvitationPreferences = { enabled: true, weekday: 0, time: "10:00", timezone: "Asia/Kolkata" };
 const exactHosts = new Set(["fcm.googleapis.com", "updates.push.services.mozilla.com", "updates-push.services.mozaws.net"]);
 export function allowedPushEndpoint(value: string): boolean {
   try { const url = new URL(value); const host = url.hostname.toLowerCase(); return url.protocol === "https:" && !url.username && !url.password && !url.hash && !url.search && (!url.port || url.port === "443") && url.pathname.length > 1 && (exactHosts.has(host) || /^(?:[a-z0-9-]+\.)+push\.apple\.com$/.test(host) || /^(?:[a-z0-9-]+\.)+notify\.windows\.com$/.test(host)); } catch { return false; }

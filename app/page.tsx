@@ -43,6 +43,7 @@ import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { syncAudioSettings } from "@/lib/audio";
 import { SoundControl } from "@/components/audio/sound-control";
+import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
 import { useSync } from "@/lib/sync/use-sync";
 import { canSync } from "@/lib/sync/client";
 import { AccountEntry } from "@/components/views/account-entry";
@@ -461,6 +462,8 @@ export default function HomePage() {
       >
         {content}
       </RoomTransition>
+
+      {view.name === "home" && learner.placement?.kind !== "early-years" && !quizResult && <LearningInstallationAlert language={learner.learningLanguage}/>}
 
       <SaveErrorBanner />
       {/* Mounted once at the root so a badge earned mid-quiz or mid-Move-Break

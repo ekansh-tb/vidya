@@ -32,6 +32,7 @@ import { FamilyNoteComposer, CareNoteComposer } from "@/components/views/parent-
 import { ParentEnrollment } from "@/components/parent/parent-enrollment";
 import { ParentCircles } from "@/components/circles/parent-circles";
 import { LearningPlanner } from "@/components/planning/learning-planner";
+import { ParentInstallationAlert } from "@/components/parent/parent-installation-alert";
 import { WeeklyInvitations, WeeklyFamilyInvitation } from "@/components/notifications/weekly-invitations";
 import { ParentInstallationGuide } from "@/components/parent/parent-installation-guide";
 import { familyParticipation, familyParticipationReport, parseParentAppearance, PARENT_DESTINATIONS, type ParentAppearance, type ParentDestination } from "@/components/parent/parent-experience-model";
@@ -260,6 +261,7 @@ export function ParentDashboard() {
         {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
         {learners.length === 0 && pendingLinkedLearners === 0 && !rosterPending && !rosterFailed && <div className="parent-card parent-welcome"><h2>A little setup. A world to explore.</h2><p>{deniedLinkedLearners > 0 ? "The profiles on this browser belong to another account. Add a learner to your own family space." : "Add your learner, confirm their level, then connect their device with a single-use code."}</p><ol><li>Sign in <span>Done</span></li><li>Add a learner and confirm their level</li><li>Link their device</li></ol><button className="parent-primary" onClick={startEnrollment}>Add a learner <ArrowRight size={16} aria-hidden="true" /></button></div>}
         {destination === "Overview" && <>
+          <ParentInstallationAlert onOpenControls={()=>setDestination("Controls")} />
           <WeeklyFamilyInvitation />
           {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />
           <details className="parent-card"><summary>More practice observations</summary><ParticipationDetails learner={reportLearner} /><ReportExport learner={reportLearner} reportSource={report} /></details></>}

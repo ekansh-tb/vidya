@@ -1,8 +1,8 @@
-# Optional family invitations
+# Family invitations
 
-Implemented as parent-owned opt-in preferences, reviewed browser push subscriptions and bounded operational delivery outcomes. No learner activity, name, reflection, free-text response or AI transcript is used. All defaults are off. The in-app invitation is optional and has no access/reward consequence.
+Implemented as parent-owned editable preferences, reviewed browser push subscriptions and bounded operational delivery outcomes. No learner activity, name, reflection, free-text response or AI transcript is used. New or absent preferences default on under the user’s updated instruction. Every saved explicit off setting is preserved. No browser permission or subscription is created automatically. The in-app invitation is optional and has no access/reward consequence.
 
-Apply additive migration `0016_family_notifications.sql` before mounting Controls. Existing parents have no preference row and therefore remain opted out. No backfill or actual notification send is part of validation.
+Apply additive migrations `0016_family_notifications.sql` and `0017_family_notifications_default.sql` before mounting Controls.0017 changes only the column default, never existing saved values. Existing parents with no row see default-on preferences; GET does not create a row. Browser enable first saves preferences, then asks for browser permission through a fresh intentional gesture when needed. No subscription backfill or actual notification send is part of validation.
 
 ## Production configuration remains closed
 
@@ -23,7 +23,7 @@ Endpoints are HTTPS only with reviewed provider hosts: GoogleFCM, MozillaAutopus
 
 ## Browser integration
 
-`WeeklyInvitations` goes in parentControls; `WeeklyFamilyInvitation` goes in Overview. Permission is requested only after the Enable button. Save preferences first. iOS/iPadOS16.4+ requires an installed HomeScreen webapp; browser/user permission capability is checked. Unsupported installation and unavailable transport have visible messages. Existing ParentInstallationGuide remains relevant.
+`WeeklyInvitations` goes in parentControls; `WeeklyFamilyInvitation` goes in Overview. Preferences save after Enable browser notifications. If permission is needed, a fresh Allow browser notifications button preserves the gesture browsers require. Permission is never requested during page load. iOS/iPadOS16.4+ requires an installed HomeScreen webapp; browser/user permission capability is checked. Unsupported installation and unavailable transport have visible messages. Existing ParentInstallationGuide remains relevant.
 
 Root integrates public `sw.js` handlers. Push notification uses fixed generic text (ignore untrusted dynamic payload):
 

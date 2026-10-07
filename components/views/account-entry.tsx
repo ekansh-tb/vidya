@@ -9,6 +9,7 @@ import { recoverableAccountCache } from "@/lib/sync/account-cache";
 import { ArrowRight, BookOpen, Compass, Palette } from "lucide-react";
 import { VidyaIntroduction } from "@/components/learning/vidya-introduction";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
+import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
 
 /** Local archives cannot establish account ownership. Only redeem can open play. */
 export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
@@ -64,6 +65,7 @@ export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
     <section className="welcome-paths" aria-label={hi ? "सीखने के तरीके" : "Ways to learn"}>
       {[{Icon:BookOpen,en:"Read a story",hi:"कहानी पढ़ो",body:"Books and stories to open a new idea.",bodyHi:"किताबों और कहानियों से नई सोच शुरू करो।"},{Icon:Compass,en:"Follow a question",hi:"सवाल खोजो",body:"Practice and exploration at your learning level.",bodyHi:"अपने स्तर पर प्रैक्टिस और नई खोज करो।"},{Icon:Palette,en:"Make it your own",hi:"कुछ अपना बनाओ",body:"Draw, build, or take an idea into real-world play.",bodyHi:"चित्र बनाओ, कुछ बनाओ या असली दुनिया में खेलो।"}].map(item=><div key={item.en}><item.Icon aria-hidden="true"/><h2>{hi ? item.hi : item.en}</h2><p>{hi ? item.bodyHi : item.body}</p></div>)}
     </section>
+    <LearningInstallationAlert language={hi ? "hi" : "en"}/>
     <footer className="welcome-footer"><span>{hi ? "अपने स्तर पर, अपनी गति से।" : "Your level. Your pace. Room to be curious."}</span><Link href="/mission">{hi ? "विद्या के बारे में" : "About Vidya"}</Link></footer>
     <SaveErrorBanner/>
   </main></div>;

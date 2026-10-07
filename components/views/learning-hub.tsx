@@ -1,4 +1,5 @@
 "use client";
+import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
 
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "framer-motion";
@@ -136,6 +137,7 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, on
       <details className="learning-panel"><summary>{hi ? "बड़ों के लिए: देखी गई प्रैक्टिस" : "For grown-ups: observed practice"}</summary><p className="learning-caption">{hi ? "ऐप की गतिविधि और बड़े की ऑफ़लाइन रिपोर्ट अलग रिकॉर्ड हैं। पूरा करना समझ का प्रमाण नहीं।" : "App participation and caregiver offline reports stay separate. Completion is not proof of understanding."}</p>{activityState.completions.slice(-7).reverse().map(completion => <p key={completion.key}>{completion.day} · {completion.source === "caregiver" ? (hi ? "बड़े की रिपोर्ट" : "caregiver report") : (hi ? "ऐप" : "app")} · {hi ? "प्रयास" : "attempts"}: {completion.attempts}, {hi ? "स्वतंत्र उत्तर" : "independent responses"}: {completion.independentResponses}, {hi ? "मदद" : "hints"}: {completion.hints}, {hi ? "दोबारा" : "retries"}: {completion.retries}{completion.delayedReview ? (hi ? " · देर से फिर अभ्यास" : " · delayed revisit") : ""}</p>)}<p>{hi ? "यह सीमित संपादकीय समीक्षा वाला शुरुआती संग्रह है। शिक्षक समीक्षा और बच्चों के साथ उपयोगिता शोध अभी बाकी हैं।" : "This starter has source-grounded editorial review. Independent educator validation and child usability research are pending."}</p><button onClick={onLink}>{hi ? "खाते और डिवाइस की मदद" : "Account & device help"}</button></details>
     </>}
     <VidyaIntroduction language={lang} />
+    {tab === "play" && <LearningInstallationAlert language={lang}/>}
     <footer className="kids-footer"><SensoryControls /><span>{hi ? "आवाज़ उपलब्ध न हो तो साथ में पढ़ सकते हैं।" : "No narration? You can read the instructions together."}</span></footer>
     {typeof document === "undefined" ? navigation : createPortal(navigation, document.body)}
   </main>;
