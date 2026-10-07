@@ -170,6 +170,7 @@ export default function HomePage() {
           learner={learner}
           onSave={(picked) => {
             updateLearnerMeta(learner.id, { pickedSubjects: picked, subjectsLocked: true });
+            window.scrollTo({ top: 0, behavior: "instant" });
             setView({ name: "home" });
           }}
         />

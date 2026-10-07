@@ -100,7 +100,7 @@ export function NextBestQuestCard({
               <Sparkles className="w-3 h-3" aria-hidden="true" /> Next best quest
             </span>
             {subject && (
-              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: subject.accent }}>
+              <span className={subject.isDeva ? "font-deva" : ""} style={{ color: appearance === "light" ? "#6554c0" : subject.accent }}>
                 · {subject.name}
               </span>
             )}
