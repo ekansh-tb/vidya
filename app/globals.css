@@ -561,3 +561,13 @@
 .kids-settings button[role=switch]:hover { background:transparent; }
 .kids-settings input[type=range] { accent-color:#6554c0; padding:0; margin:4px 0; border:0; background:transparent; }
 .kids-settings select { width:100%; }
+
+.learning-hub.kids-switcher { max-width:800px; padding-bottom:48px; }
+.learning-hub .kids-return { display:flex; align-items:center; gap:8px; font-size:.8rem; }
+.kids-learner-list { display:grid; gap:16px; }
+.learning-hub .kids-learner-card { display:flex; align-items:center; gap:16px; padding:20px; border:1px solid #e5e5f0; border-radius:22px; width:100%; }
+.kids-learner-avatar { display:flex; align-items:center; justify-content:center; width:60px; height:60px; border-radius:20px; background:#eeeafa; font-size:2rem; flex-shrink:0; }
+.kids-learner-name { flex:1; min-width:0; }.kids-learner-name strong { display:block; font-family:'Outfit',sans-serif; font-size:1.25rem; overflow-wrap:anywhere; }.kids-learner-name small { display:block; font-size:.8rem; color:var(--kid-muted); margin-top:4px; }
+.kids-learner-active { display:flex; align-items:center; gap:4px; padding:5px 8px; color:#326f61; background:var(--kid-mint); border-radius:9px; font-size:.7rem; flex-shrink:0; }
+.learning-hub .kids-learner-add { background:transparent; border:1px dashed #b9b5d4; }
+@media(max-width:480px) { .learning-hub .kids-learner-card { padding:14px; gap:12px; }.kids-learner-avatar { width:48px; height:48px; border-radius:15px; font-size:1.6rem; }.kids-learner-name strong { font-size:1.1rem; }.kids-learner-active { font-size:.65rem; } }

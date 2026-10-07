@@ -404,7 +404,7 @@ export default function HomePage() {
           <LearnersView
             learners={Object.values(profiles.learners).filter((l,i,all) => canSync(l) && all.findIndex(other=>other.remoteId===l.remoteId && canSync(other))===i)}
             currentId={learner.id}
-            onSwitch={(id) => { switchLearner(id); }}
+            onSwitch={(id) => { switchLearner(id); back(); }}
             onBack={back}
             onAdd={() => setShowAddLearner(true)}
           />
@@ -429,7 +429,7 @@ export default function HomePage() {
     }
   }
 
-  const learningSurface = !quizResult && (["home", "activities", "settings"].includes(view.name) || (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)));
+  const learningSurface = !quizResult && (["home", "activities", "settings", "learners"].includes(view.name) || (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile"].includes(view.name)));
   return (
     <div className={learningSurface ? "kids-surface" : undefined} data-calm={state.settings.motion === false}>
       <ThemeApplier theme={themeId} />
