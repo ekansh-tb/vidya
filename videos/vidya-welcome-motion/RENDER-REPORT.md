@@ -38,3 +38,5 @@ The project pins HyperFrames 0.8.140. The `flowchart` source is adapted in place
 Studio: `http://localhost:7318/#project/vidya-welcome-motion`. The running editor permits direct changes. Its Edit with Framey button offers the HyperFrames desktop app for chat-based changes: https://hyperframes.dev/studio/download
 
 Proof artifacts are kept outside Git in the task's `vidya-balanced-landing-oct7` visualization folder as `welcome-motion-contact-sheet.jpg` and `welcome-motion-encoded-hold.png`. Intermediate renders, snapshots, generated guides and check logs are not delivery source.
+
+App preview found MP4 playback unavailable in the in-app browser while the static fallback worked and the asset returned HTTP 200. Added a VP9 WebM delivery variant from the verified MP4 using FFmpeg for browser compatibility. Playback acceptance is recorded in the PR.
