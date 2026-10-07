@@ -78,11 +78,15 @@ function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()
   const caches = new MemoryCaches();
   const claim = vi.fn(async () => undefined);
   const skipWaiting = vi.fn(async () => undefined);
+  const showNotification = vi.fn(async () => undefined);
+  const openWindow = vi.fn(async () => undefined);
   const self = {
     location: { origin: ORIGIN },
+    registration: { showNotification },
     clients: {
       claim,
       matchAll: vi.fn(async () => windowClients),
+      openWindow,
     },
     skipWaiting,
     addEventListener: (type: string, listener: (event: Record<string, unknown>) => void) => {
@@ -118,6 +122,8 @@ function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()
     clients: windowClients,
     claim,
     skipWaiting,
+    showNotification,
+    openWindow,
     policy: self.__VIDYA_SW_TEST__ as {
       STATIC_CACHE: string;
       LEARNING_CACHE: string;
@@ -132,6 +138,30 @@ function workerHarness(windowClients: FakeClient[] = [], fetchResource = vi.fn()
     },
   };
 }
+
+describe("private family push boundary", () => {
+  it("ignores payload names, messages and URLs on the lock screen", async () => {
+    const worker = workerHarness();
+    let delivery: Promise<void> | undefined;
+    const payload = vi.fn(() => ({ name: "Private child", body: "Private reflection", url: "https://evil.example" }));
+    worker.listeners.get("push")!({ data: { json: payload }, waitUntil: (value: Promise<void>) => { delivery = value; } });
+    await delivery;
+    expect(payload).not.toHaveBeenCalled();
+    expect(worker.showNotification).toHaveBeenCalledWith("A little time together", expect.objectContaining({ tag: "vidya-family-invitation" }));
+    expect(JSON.stringify(worker.showNotification.mock.calls)).not.toContain("Private");
+  });
+
+  it("opens only the same-origin parent route, ignoring notification data", async () => {
+    const worker = workerHarness([client("child")]);
+    let delivery: Promise<void> | undefined;
+    const close = vi.fn();
+    worker.listeners.get("notificationclick")!({ notification: { close, data: { url: "https://evil.example" } }, waitUntil: (value: Promise<void>) => { delivery = value; } });
+    await delivery;
+    expect(close).toHaveBeenCalledOnce();
+    expect(worker.openWindow).toHaveBeenCalledWith(`${ORIGIN}/parent`);
+    expect(worker.clients[0].navigate).not.toHaveBeenCalled();
+  });
+});
 
 describe("required account compatibility update", () => {
   beforeEach(() => {

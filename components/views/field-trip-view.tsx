@@ -80,7 +80,7 @@ export function FieldTripView({
     <ReducedMotionProvider>
       <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <div className="px-5 pt-6">
-          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
             <ChevronLeft className="w-5 h-5" /> Home
           </button>
 
@@ -88,12 +88,12 @@ export function FieldTripView({
             <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#22D3EE" }} />
             <div className="relative flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(34,211,238,0.15)" }}>
-                <MapPin className="w-7 h-7 text-cyan-300" />
+                <MapPin className="w-7 h-7 text-[var(--accent)]" />
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">Field Trip</div>
-                <div className="font-display text-2xl font-bold text-white">Pick where to go</div>
-                <div className="text-sm text-white/60">
+                <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent)]">Field Trip</div>
+                <div className="font-display text-2xl font-bold text-[var(--text)]">Pick where to go</div>
+                <div className="text-sm text-[var(--text-muted)]">
                   {state.passportStamps?.length || 0} of {DESTINATIONS.length} stamps · {(state.passportStamps?.length || 0) * 30} explorer XP earned
                 </div>
               </div>
@@ -109,12 +109,12 @@ export function FieldTripView({
                 <div className="flex items-center gap-2 mb-3">
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: `${r.color}18`, color: r.color }}
+                    style={{ background: `${r.color}18`, color: "var(--accent)" }}
                     aria-hidden="true"
                   >
                     <RegionIcon className="w-4 h-4" />
                   </div>
-                  <h3 className="font-display text-xl font-bold text-white">{r.label}</h3>
+                  <h3 className="font-display text-xl font-bold text-[var(--text)]">{r.label}</h3>
                 </div>
                 <div className="space-y-3">
                   {list.map((d, i) => {
@@ -141,13 +141,13 @@ export function FieldTripView({
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-display font-bold text-lg text-white truncate">{d.name}</div>
-                          <div className="text-xs text-white/55 truncate">{d.tagline}</div>
+                          <div className="font-display font-bold text-lg text-[var(--text)] truncate">{d.name}</div>
+                          <div className="text-xs text-[var(--text-muted)] truncate">{d.tagline}</div>
                         </div>
                         {visited ? (
-                          <Stamp className="w-5 h-5 text-amber-300 flex-shrink-0" />
+                          <Stamp className="w-5 h-5 text-[var(--warning)] flex-shrink-0" />
                         ) : (
-                          <div className="text-[10px] font-bold uppercase tracking-widest text-white/40">Visit</div>
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Visit</div>
                         )}
                       </motion.button>
                     );
@@ -238,14 +238,14 @@ function TripView({
   return (
     <div className="min-h-screen pb-24 max-w-2xl mx-auto">
       <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-3 active:scale-95">
+        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-3 active:scale-95">
           <ArrowLeft className="w-5 h-5" /> Atlas
         </button>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="h-48 rounded-3xl overflow-hidden relative bg-[#111A32]"
+          className="h-48 rounded-3xl overflow-hidden relative bg-[var(--surface-strong)]"
         >
           <DestinationImage
             destination={dest}
@@ -258,18 +258,18 @@ function TripView({
             href={dest.imageSourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute top-3 right-3 max-w-[55%] truncate rounded-full bg-black/55 px-2.5 py-1 text-[9px] font-semibold text-white/75 backdrop-blur-sm hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            className="absolute top-3 right-3 max-w-[55%] truncate rounded-full bg-black/80 px-2.5 py-1 text-[9px] font-semibold text-white backdrop-blur-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             aria-label={`Image credit: ${dest.imageCredit}`}
           >
             {dest.imageCredit}
           </a>
           <div className="absolute bottom-0 inset-x-0 p-5">
-            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-cyan-300">
+            <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-white">
               <span className="text-sm leading-none" aria-hidden="true">{dest.emoji}</span>
               Field Trip
             </div>
             <div className="font-display text-3xl font-bold text-white drop-shadow">{dest.name}</div>
-            <div className="text-sm text-white/80">{dest.tagline}</div>
+            <div className="text-sm text-white">{dest.tagline}</div>
           </div>
         </motion.div>
 
@@ -284,8 +284,8 @@ function TripView({
             >
               <div className="glass-card p-5">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <div className="text-[11px] uppercase tracking-widest font-bold text-white/60">Did you know?</div>
+                  <Sparkles className="w-4 h-4 text-[var(--warning)]" />
+                  <div className="text-[11px] uppercase tracking-widest font-bold text-[var(--text-muted)]">Did you know?</div>
                 </div>
                 <ul className="space-y-3">
                   {dest.facts.map((f, i) => (
@@ -294,9 +294,9 @@ function TripView({
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 + i * 0.08 }}
-                      className="flex gap-3 text-sm text-white/85 leading-relaxed"
+                      className="flex gap-3 text-sm text-[var(--text-muted)] leading-relaxed"
                     >
-                      <span className="w-6 h-6 flex-shrink-0 rounded-full bg-white/[0.05] flex items-center justify-center text-[10px] font-bold text-white/60">
+                      <span className="w-6 h-6 flex-shrink-0 rounded-full bg-[var(--surface-strong)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)]">
                         {i + 1}
                       </span>
                       <span>{f}</span>
@@ -308,7 +308,7 @@ function TripView({
                   href={`https://en.wikipedia.org${dest.wikipediaPath}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl glass py-2 text-sm font-semibold text-cyan-300 active:scale-[0.99]"
+                  className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl glass py-2 text-sm font-semibold text-[var(--accent)] active:scale-[0.99]"
                 >
                   Read more on Wikipedia <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -321,21 +321,21 @@ function TripView({
 
           {phase === "quiz" && q && (
             <motion.div key={`quiz-${qIdx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2">
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2">
                 Question {qIdx + 1} of {dest.quiz.length}
               </div>
               <div className="glass-card p-5 mb-3">
-                <div className="font-display text-xl font-bold text-white leading-snug">{q.q}</div>
+                <div className="font-display text-xl font-bold text-[var(--text)] leading-snug">{q.q}</div>
               </div>
               <div className="space-y-2">
                 {shuffledOpts.map((opt, i) => {
                   const isSel = selected === opt;
                   const isAns = opt === q.a;
-                  let style = "glass border-white/10 text-white";
+                  let style = "glass border-[var(--border)] text-[var(--text)]";
                   if (revealed) {
-                    if (isAns) style = "bg-emerald-500/15 border-emerald-400/60 text-white ring-2 ring-emerald-400";
-                    else if (isSel) style = "bg-rose-500/15 border-rose-400/60 text-white ring-2 ring-rose-400";
-                    else style = "glass border-white/5 text-white/40";
+                    if (isAns) style = "bg-emerald-500/15 border-emerald-400/60 text-[var(--text)] ring-2 ring-emerald-400";
+                    else if (isSel) style = "bg-rose-500/15 border-rose-400/60 text-[var(--text)] ring-2 ring-rose-400";
+                    else style = "glass border-[var(--border)] text-[var(--text-muted)]";
                   }
                   return (
                     <button
@@ -344,12 +344,12 @@ function TripView({
                       disabled={revealed}
                       className={`w-full p-4 rounded-2xl border text-left font-semibold transition-all flex items-center gap-3 ${style}`}
                     >
-                      <div className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center text-sm font-bold text-white/70">
+                      <div className="w-8 h-8 rounded-xl bg-[var(--surface-strong)] flex items-center justify-center text-sm font-bold text-[var(--text-muted)]">
                         {String.fromCharCode(65 + i)}
                       </div>
                       <div className="flex-1">{opt}</div>
-                      {revealed && isAns && <Check className="w-4 h-4 text-emerald-400" />}
-                      {revealed && isSel && !isAns && <X className="w-4 h-4 text-rose-400" />}
+                      {revealed && isAns && <Check className="w-4 h-4 text-[var(--success)]" />}
+                      {revealed && isSel && !isAns && <X className="w-4 h-4 text-[var(--error)]" />}
                     </button>
                   );
                 })}
@@ -376,22 +376,22 @@ function TripView({
                   animate={{ rotate: 8, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
                 >
-                  <Stamp className="w-16 h-16 text-amber-300" />
+                  <Stamp className="w-16 h-16 text-[var(--warning)]" />
                 </motion.div>
               </div>
               <div className="font-display text-3xl font-bold text-gradient-sunset">Passport stamped!</div>
-              <div className="text-white/70 mt-2">
+              <div className="text-[var(--text-muted)] mt-2">
                 {dest.name} · {correctCount}/{dest.quiz.length} correct
               </div>
               <div className="mt-4 inline-flex items-center gap-3 glass rounded-2xl px-5 py-3">
-                <div className="text-amber-300 font-display font-bold">+{10 + correctCount * 5}🪙</div>
-                <div className="text-cyan-300 font-display font-bold">+30 XP</div>
-                {alreadyStamped && <div className="text-white/40 text-xs">Already in your passport</div>}
+                <div className="text-[var(--warning)] font-display font-bold">+{10 + correctCount * 5}🪙</div>
+                <div className="text-[var(--accent)] font-display font-bold">+30 XP</div>
+                {alreadyStamped && <div className="text-[var(--text-muted)] text-xs">Already in your passport</div>}
               </div>
               <Button size="lg" className="w-full mt-6" onClick={() => { sfx.click(); onBack(); }}>
                 Back to Atlas
               </Button>
-              <button onClick={() => { sfx.click(); onClose(); }} className="block mx-auto mt-3 text-sm text-white/50 active:scale-95">
+              <button onClick={() => { sfx.click(); onClose(); }} className="block mx-auto mt-3 text-sm text-[var(--text-muted)] active:scale-95">
                 Back to school
               </button>
             </motion.div>

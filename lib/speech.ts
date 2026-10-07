@@ -5,9 +5,11 @@
 
 import { readPersistedAudioSettings } from "./audio-bootstrap";
 import { selectSpeechVoice } from "./speech-voices";
+import { authorizeAudioFromGesture, isAudioAuthorized, isAudioMuted, setNarrationActive } from "./audio";
 
 let voiceCache: SpeechSynthesisVoice[] | null = null;
 let currentLine: string | null = null;
+let speechSession = 0;
 const listeners = new Set<(line: string | null) => void>();
 
 function notify(line: string | null) {
@@ -28,7 +30,7 @@ function getVoices(): SpeechSynthesisVoice[] {
   return voiceCache;
 }
 
-const DEFAULT_VOICE_VOLUME = 0.9;
+const DEFAULT_VOICE_VOLUME = 0.55;
 
 // `settings.voiceVolume` was written by the slider and read by nobody: speak()
 // hardcoded 0.9 and every caller took the default, so the slider was purely
@@ -57,11 +59,13 @@ function currentVoiceVolume(): number {
 export function speak(text: string, opts: { lang?: string; rate?: number; pitch?: number; volume?: number; onEnd?: () => void } = {}) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   const saved = readPersistedAudioSettings();
-  if (saved?.voice === false) return;
+  if (!isAudioAuthorized() || saved?.voice === false || saved?.audioMuted || isAudioMuted() || (typeof document !== "undefined" && document.hidden)) return;
   const { lang = "en", rate = 0.98, pitch = 1, volume = saved?.voiceVolume ?? currentVoiceVolume(), onEnd } = opts;
 
+  const session = ++speechSession;
   // Cancel any ongoing speech
   window.speechSynthesis.cancel();
+  setNarrationActive(false);
 
   const utterance = new SpeechSynthesisUtterance(text);
   const voice = selectSpeechVoice(getVoices(), lang, saved?.voiceURI);
@@ -69,18 +73,26 @@ export function speak(text: string, opts: { lang?: string; rate?: number; pitch?
   utterance.lang = voice?.lang ?? lang;
   utterance.rate = rate;
   utterance.pitch = pitch;
-  utterance.volume = volume;
+  utterance.volume = Math.min(1, Math.max(0, volume));
 
-  utterance.onstart = () => notify(text);
-  utterance.onend = () => { notify(null); onEnd?.(); };
-  utterance.onerror = () => { notify(null); onEnd?.(); };
+  utterance.onstart = () => { if (session !== speechSession) return; setNarrationActive(true); notify(text); };
+  utterance.onend = () => { if (session !== speechSession) return; setNarrationActive(false); notify(null); onEnd?.(); };
+  utterance.onerror = () => { if (session !== speechSession) return; setNarrationActive(false); notify(null); onEnd?.(); };
 
   window.speechSynthesis.speak(utterance);
 }
 
+/** Explicit Hear, Read, Preview and Hint buttons authorize their narration. */
+export function speakFromGesture(text: string, opts: Parameters<typeof speak>[1] = {}) {
+  authorizeAudioFromGesture();
+  speak(text, opts);
+}
+
 export function stopSpeaking() {
+  speechSession++;
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
+  setNarrationActive(false);
   notify(null);
 }
 
@@ -134,4 +146,9 @@ if (typeof window !== "undefined" && window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => {
     voiceCache = window.speechSynthesis.getVoices();
   };
+}
+
+// Speech also pauses when the page becomes inactive.
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopSpeaking(); });
 }

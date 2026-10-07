@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Missing Beat",
+  "titleHindi": "खोई हुई ताल",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "missing-beat",
+      "title": "The Missing Beat",
+      "paragraphs": [
+        "Dev tapped a slow rhythm on his drum. Sana clapped along, but one clap came late. They stopped and looked at each other.",
+        "‘Let us try again,’ said Dev. This time Sana listened first. Tap, tap, a little silence, tap.",
+        "Sana had thought the silence was a mistake. Dev said it was part of his rhythm. She tried leaving that space too.",
+        "Their new song had taps, claps and quiet moments. They called it The Missing Beat, although nothing was missing now."
+      ],
+      "illustration": "/books/vidya/missing-beat.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "खोई हुई ताल",
+      "chapters": [
+        {
+          "id": "missing-beat",
+          "title": "खोई हुई ताल",
+          "paragraphs": [
+            "देव ने ढोल पर धीमी ताल बजाई। सना साथ में ताली बजा रही थी, पर एक ताली देर से बजी। दोनों रुक गए।",
+            "‘फिर से कोशिश करें,’ देव ने कहा। इस बार सना ने पहले सुना। ठक, ठक, थोड़ी चुप्पी, फिर ठक।",
+            "सना को लगा था कि चुप्पी गलती है। देव ने कहा कि वह भी ताल का हिस्सा है। सना ने वह जगह खाली छोड़ी।",
+            "नई धुन में ढोल, ताली और शांत पल थे। उन्होंने उसका नाम खोई हुई ताल रखा, हालाँकि अब कुछ भी खोया नहीं था।"
+          ],
+          "illustration": "/books/vidya/missing-beat.svg"
+        }
+      ]
+    }
+  }
+}

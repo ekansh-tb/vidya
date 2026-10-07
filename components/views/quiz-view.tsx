@@ -119,7 +119,8 @@ export function QuizView({
   const [sixSevenShown, setSixSevenShown] = useState<Set<number>>(() => new Set());
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([]);
   const [bookOpen, setBookOpen] = useState(false);
-  const reduced = useReducedMotion();
+  const osReduced = useReducedMotion();
+  const reduced = Boolean(osReduced || state.settings.motion === false);
 
   const currentQ = questions[qIdx];
   const currentSubject = currentQ ? SUBJECT_MAP[currentQ.subjectId] : null;
@@ -394,7 +395,7 @@ export function QuizView({
     <ReducedMotionProvider>
       <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <AnimatePresence>
-          {sixSeven !== null && (
+          {sixSeven !== null && !reduced && (
             <SixSevenOverlay score={sixSeven} onDone={() => setSixSeven(null)} />
           )}
         </AnimatePresence>
@@ -413,13 +414,13 @@ export function QuizView({
                 target for small fingers. */}
             <button
               onClick={() => { sfx.click(); onClose?.(); }}
-              className="text-white/50 active:scale-95 w-11 h-11 -ml-2.5 flex items-center justify-center"
+              className="text-[var(--text-muted)] active:scale-95 w-11 h-11 -ml-2.5 flex items-center justify-center"
               aria-label="Close quiz"
             >
               <X className="w-6 h-6" />
             </button>
             <div className="flex-1 mx-4">
-              <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--surface-strong)] rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${((qIdx + 1) / questions.length) * 100}%` }}
@@ -429,13 +430,13 @@ export function QuizView({
                 />
               </div>
             </div>
-            <div className="text-xs font-mono text-white/50">
+            <div className="text-xs font-mono text-[var(--text-muted)]">
               {qIdx + 1}/{questions.length}
             </div>
             {currentQ && (
               <button
                 onClick={() => { sfx.click(); setBookOpen(true); }}
-                className="ml-3 w-11 h-11 rounded-full glass flex items-center justify-center text-white/70 active:scale-95"
+                className="ml-3 w-11 h-11 rounded-full glass flex items-center justify-center text-[var(--text-muted)] active:scale-95"
                 style={currentSubject ? { color: currentSubject.accent, background: currentSubject.soft } : undefined}
                 aria-label="Open book"
                 title="Skim the book"
@@ -453,8 +454,8 @@ export function QuizView({
               {/* Hindi/Marathi/Sanskrit subject names are Devanagari; the topic
                   title beside this already switches font, this did not. */}
               <div className={`text-sm font-semibold ${currentSubject.isDeva ? "font-deva" : ""}`} style={{ color: currentSubject.accent }}>{currentSubject.name}</div>
-              <div className="text-xs text-white/40">·</div>
-              <div className={`text-xs text-white/60 ${currentSubject.isDeva ? "font-deva" : ""}`}>{currentQ.topicTitle}</div>
+              <div className="text-xs text-[var(--text-muted)]">·</div>
+              <div className={`text-xs text-[var(--text-muted)] ${currentSubject.isDeva ? "font-deva" : ""}`}>{currentQ.topicTitle}</div>
             </div>
           )}
 
@@ -471,10 +472,10 @@ export function QuizView({
                 className="flex items-center justify-center gap-1.5 mb-3"
               >
                 <motion.span
-                  animate={reduced || combo < 5 ? {} : { rotate: [0, -12, 12, 0] }}
-                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1.2 }}
+                  animate={reduced || combo < 5 ? { rotate: 0 } : { rotate: [0, -12, 12, 0] }}
+                  transition={reduced || combo < 5 ? { duration: 0 } : { duration: 0.5, repeat: Infinity, repeatDelay: 1.2 }}
                 >
-                  <Zap className="w-4 h-4 text-amber-300" fill="#FBBF24" />
+                  <Zap className="w-4 h-4 text-[var(--warning)]" fill="#FBBF24" />
                 </motion.span>
                 <span className="text-sm font-bold text-gradient-sunset">{combo}× Combo</span>
               </motion.div>
@@ -489,8 +490,8 @@ export function QuizView({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             className="glass-card p-6 mb-4"
           >
-            <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-2">Question</div>
-            <h2 className={`font-display text-2xl font-bold text-white leading-snug ${isDeva ? "font-deva" : ""}`}>
+            <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-2">Question</div>
+            <h2 className={`font-display text-2xl font-bold text-[var(--text)] leading-snug ${isDeva ? "font-deva" : ""}`}>
               {currentQ.q}
             </h2>
             {hintUsed && (
@@ -500,8 +501,8 @@ export function QuizView({
                 className="mt-4 p-3 rounded-2xl bg-amber-400/10 border border-amber-400/30"
               >
                 <div className="flex gap-2">
-                  <Lightbulb className="w-4 h-4 text-amber-300 flex-shrink-0 mt-0.5" />
-                  <div className={`text-sm text-amber-100 ${isDeva ? "font-deva" : ""}`}>
+                  <Lightbulb className="w-4 h-4 text-[var(--warning)] flex-shrink-0 mt-0.5" />
+                  <div className={`text-sm text-[var(--text)] ${isDeva ? "font-deva" : ""}`}>
                     Hint: {currentQ.ex.split(".")[0]}.
                   </div>
                 </div>
@@ -514,13 +515,13 @@ export function QuizView({
               const isElim = eliminated.includes(opt);
               const isSelected = selected === opt;
               const isAnswer = opt === currentQ.a;
-              let style = "glass border-white/10 text-white hover:bg-white/[0.09]";
+              let style = "glass border-[var(--border)] text-[var(--text)] hover:bg-[var(--surface-strong)]";
               if (revealed) {
-                if (isAnswer) style = "bg-emerald-500/15 border-emerald-400/60 text-white ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30";
-                else if (isSelected) style = "bg-rose-500/15 border-rose-400/60 text-white ring-2 ring-rose-400 shadow-lg shadow-rose-500/30";
-                else style = "glass border-white/5 text-white/40";
+                if (isAnswer) style = "bg-emerald-500/15 border-emerald-400/60 text-[var(--text)] ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/30";
+                else if (isSelected) style = "bg-rose-500/15 border-rose-400/60 text-[var(--text)] ring-2 ring-rose-400 shadow-lg shadow-rose-500/30";
+                else style = "glass border-[var(--border)] text-[var(--text-muted)]";
               } else if (isElim) {
-                style = "bg-white/[0.02] border-white/5 text-white/20 line-through cursor-not-allowed";
+                style = "bg-[var(--surface-strong)] border-[var(--border)] text-[var(--text-muted)] line-through cursor-not-allowed";
               }
               return (
                 <motion.button
@@ -556,15 +557,15 @@ export function QuizView({
                   className={`w-full p-4 rounded-2xl border text-left font-semibold transition-all flex items-center gap-3 ${style} ${isDeva ? "font-deva" : ""}`}
                 >
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-                    revealed && isAnswer ? "bg-emerald-500 text-white"
-                    : revealed && isSelected ? "bg-rose-500 text-white"
-                    : "bg-white/[0.08] text-white/70"
+                    revealed && isAnswer ? "bg-[var(--success)] text-[var(--surface)]"
+                    : revealed && isSelected ? "bg-[var(--error)] text-[var(--surface)]"
+                    : "bg-[var(--surface-strong)] text-[var(--text-muted)]"
                   }`}>
                     {String.fromCharCode(65 + i)}
                   </div>
                   <div className="flex-1">{opt}</div>
-                  {revealed && isAnswer && <Check className="w-5 h-5 text-emerald-400" />}
-                  {revealed && isSelected && !isAnswer && <X className="w-5 h-5 text-rose-400" />}
+                  {revealed && isAnswer && <Check className="w-5 h-5 text-[var(--success)]" />}
+                  {revealed && isSelected && !isAnswer && <X className="w-5 h-5 text-[var(--error)]" />}
                 </motion.button>
               );
             })}
@@ -583,14 +584,14 @@ export function QuizView({
               <button
                 onClick={useHint}
                 disabled={hintUsed}
-                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-amber-300 disabled:opacity-30 active:scale-95"
+                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-[var(--warning)] disabled:opacity-30 active:scale-95"
               >
                 <Lightbulb className="w-4 h-4" /> Hint · free
               </button>
               <button
                 onClick={useFifty}
                 disabled={fiftyUsed}
-                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-violet-300 disabled:opacity-30 active:scale-95"
+                className="flex items-center gap-1.5 glass rounded-full px-4 min-h-11 text-sm font-semibold text-[var(--accent-2)] disabled:opacity-30 active:scale-95"
               >
                 <ScanLine className="w-4 h-4" /> Narrow the choices · free
               </button>
@@ -600,10 +601,10 @@ export function QuizView({
           {revealed && (
             <motion.div initial={reduced ? { opacity: 0 } : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-5">
               <div className={`rounded-3xl p-4 mb-3 ${isCorrectAnswer ? "bg-emerald-500/15 border border-emerald-400/30" : "bg-rose-500/15 border border-rose-400/30"}`}>
-                <div className={`flex items-center gap-2 mb-1.5 font-bold ${isCorrectAnswer ? "text-emerald-300" : "text-rose-300"}`}>
+                <div className={`flex items-center gap-2 mb-1.5 font-bold ${isCorrectAnswer ? "text-[var(--success)]" : "text-[var(--error)]"}`}>
                   {isCorrectAnswer ? <><Check className="w-5 h-5" /> Correct!</> : <><X className="w-5 h-5" /> Not quite</>}
                 </div>
-                <div className={`text-sm text-white/80 ${isDeva ? "font-deva" : ""}`}>{currentQ.ex}</div>
+                <div className={`text-sm text-[var(--text-muted)] ${isDeva ? "font-deva" : ""}`}>{currentQ.ex}</div>
               </div>
               <Button size="lg" className="w-full" onClick={nextQuestion}>
                 {qIdx + 1 < questions.length ? "Next Question" : "Finish Quiz"} <ArrowRight className="inline w-5 h-5 ml-1" />

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { creationProjectSchema } from "./creation/project";
 import type { GameState, MissedQuestion, SubjectId } from "./types";
 
 const isoTimestampSchema = z.iso.datetime({ offset: true });
@@ -17,6 +18,7 @@ const activityCompletionsSchema = z.array(z.object({
 const activityEvidenceSchema = z.object({ completions: activityCompletionsSchema }).optional();
 
 const syncedStateSchema = z.object({
+  creativeStudio: z.unknown().optional(),
   activities: activityEvidenceSchema,
   progress: z.record(
     z.string().min(1).max(128),
@@ -64,6 +66,7 @@ const parentReportReflectionSchema = z.discriminatedUnion("private", [
 ]);
 
 const parentReportStateSchema = z.object({
+  sharedCreations: z.array(creationProjectSchema.extend({ visibility: z.literal("parent") })).max(20).optional(),
   activities: activityEvidenceSchema,
   progress: syncedStateSchema.shape.progress,
   stats: syncedStateSchema.shape.stats,
@@ -117,6 +120,11 @@ export function minimizeParentReportState(value: unknown): ParentReportState | n
 
   return {
     ...(parsed.data.activities ? { activities: { completions: parsed.data.activities.completions } } : {}),
+    sharedCreations: (() => {
+      const studio = parsed.data.creativeStudio;
+      if (!studio || typeof studio !== "object" || !("projects" in studio) || !Array.isArray(studio.projects)) return [];
+      return studio.projects.map(value => creationProjectSchema.safeParse(value)).filter(result => result.success && result.data.visibility === "parent").slice(0, 20).map(result => ({ ...result.data!, visibility: "parent" as const }));
+    })(),
     progress: parsed.data.progress,
     stats: parsed.data.stats,
     streak: parsed.data.streak,
@@ -204,6 +212,7 @@ function applyRemoteReport(localState: GameState, remoteState: ParentReportState
   return {
     ...localState,
     ...(remoteState.activities ? { activities: { ...localState.activities, completions:remoteState.activities.completions } } : {}),
+    creativeStudio: { version: 1, projects: remoteState.sharedCreations ?? [] },
     progress: remoteState.progress,
     stats: { ...localState.stats, ...remoteState.stats },
     streak: remoteState.streak,

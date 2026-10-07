@@ -45,8 +45,9 @@ export const DEFAULT_STATE: GameState = {
   missedQuestions: [],
   dailyReflections: [],
   settings: {
+    version: 2, appearance: "light", companion: true, audioMuted: false,
     sound: true, music: false, voice: true,
-    musicVolume: -16, sfxVolume: -8, voiceVolume: 0.9,
+    musicVolume: -24, sfxVolume: -18, voiceVolume: 0.55,
   },
   onboarded: false,
 };

@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "Signals from the Hill",
+  "titleHindi": "पहाड़ी से संकेत",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "signal-hill",
+      "title": "Signals from the Hill",
+      "paragraphs": [
+        "During a supervised club game, two teams stood at opposite ends of the school ground. They wanted to send messages using coloured cards. The hill in their story was only a chalk drawing.",
+        "The first team held up blue for ‘ready.’ The second thought blue meant ‘wait.’ Both teams were sure they had sent the correct signal. Their cards had colours, but they had not agreed on meanings.",
+        "They met in the middle and wrote a small codebook. They chose signals for ready, wait and stop, then practised each one. Shape symbols accompanied the colours so colour alone was not required.",
+        "On the next round, one card could not be seen clearly. Instead of guessing, the receiving team sent the agreed signal for ‘please repeat.’ The game paused while they moved into a clearer position.",
+        "Their teacher asked what the successful round proved. It showed that their small system had worked under those conditions. It did not prove the code could handle every distance or every situation.",
+        "They ended with a message both teams understood: time for a break. The codebook stayed in the club box, ready for another careful test."
+      ],
+      "illustration": "/books/vidya/signal-hill.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "पहाड़ी से संकेत",
+      "chapters": [
+        {
+          "id": "signal-hill",
+          "title": "पहाड़ी से संकेत",
+          "paragraphs": [
+            "देखरेख में समूह खेल के दौरान दो टीमें मैदान के दो सिरों पर खड़ी थीं। उन्हें रंगीन कार्ड से संदेश भेजने थे। कहानी की पहाड़ी केवल चॉक का चित्र थी।",
+            "पहली टीम ने ‘तैयार’ के लिए नीला दिखाया। दूसरी ने नीले का अर्थ ‘रुको’ समझा। दोनों को अपना संकेत सही लगा। रंग थे, पर अर्थ पर सहमति नहीं थी।",
+            "बीच में मिलकर छोटी संकेत-पुस्तिका बनाई। तैयार, इंतज़ार और बंद के संकेत चुने और अभ्यास किया। रंगों के साथ आकार भी रखे, ताकि केवल रंग पर निर्भर न रहें।",
+            "अगली बार एक कार्ड साफ नहीं दिखा। अनुमान लगाने के बजाय दूसरी टीम ने ‘दोहराएँ’ का तय संकेत दिया। साफ जगह पर जाने तक खेल रुका।",
+            "शिक्षक ने पूछा कि सफल दौर से क्या सिद्ध हुआ। उन्हीं परिस्थितियों में छोटी व्यवस्था काम की थी। हर दूरी और स्थिति में काम करना सिद्ध नहीं हुआ था।",
+            "दोनों को समझ आने वाले संदेश पर खेल खत्म हुआ: अब विराम। संकेत-पुस्तिका डिब्बे में रही, अगली ध्यानपूर्वक जाँच के लिए।"
+          ],
+          "illustration": "/books/vidya/signal-hill.svg"
+        }
+      ]
+    }
+  }
+}

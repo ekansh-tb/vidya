@@ -1,3 +1,4 @@
+import { allowedIntegrationPair, allowedIntegrationUrl } from "../../scripts/integration-database-contract.mjs";
 // Never fall back to application URLs or let URL parameters override identity.
 export function postgresHarnessConfig(env) {
   if (env.VIDYA_RUN_MIGRATION_INTEGRATION !== "1") {
@@ -7,7 +8,7 @@ export function postgresHarnessConfig(env) {
   try { url = new URL(env.VIDYA_TEST_DATABASE_URL); }
   catch { throw new Error("A valid VIDYA_TEST_DATABASE_URL is required."); }
   if (!["postgres:", "postgresql:"].includes(url.protocol) ||
-      url.pathname !== "/vidya_integration" || url.username !== "vidya_test_runner" ||
+      !allowedIntegrationUrl(url) ||
       !url.hostname || /pooler|pgbouncer/i.test(url.hostname) || url.hash ||
       [...url.searchParams.keys()].some((key) => key !== "sslmode") ||
       url.searchParams.getAll("sslmode").length > 1 ||
@@ -24,8 +25,7 @@ export function postgresHarnessConfig(env) {
 }
 
 export function assertHarnessIdentity(row) {
-  if (row?.database !== "vidya_integration" ||
-      row?.role !== "vidya_test_runner" || row?.session_role !== "vidya_test_runner") {
+  if (!allowedIntegrationPair(row?.database, row?.role) || row?.session_role !== row?.role) {
     throw new Error("Refusing connected database or role mismatch.");
   }
 }

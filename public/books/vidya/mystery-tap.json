@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Mystery Tap",
+  "titleHindi": "रहस्यमय टप-टप",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "mystery-tap",
+      "title": "The Mystery Tap",
+      "paragraphs": [
+        "At night, Keshav heard tap, tap near the kitchen. He imagined a tiny drummer behind the wall. In the morning he told his mother about the sound.",
+        "They listened together. The sound came at uneven times. Keshav drew dots whenever he heard it, but the dots did not make a steady rhythm.",
+        "His mother checked the kitchen with him. A loose tap let water fall into a bowl. Each drop made the noise. Keshav's tiny drummer was a good story, but it was not their explanation.",
+        "An adult arranged to repair the tap. Keshav watched the bowl while they waited. The dots on his page helped him explain when the drops had fallen.",
+        "That evening the kitchen was quiet. Keshav wrote a new story about a drummer who had moved away. At the top he wrote ‘Fiction.’",
+        "He kept the page of dots too. One page held an imagined world. The other helped describe something they had observed."
+      ],
+      "illustration": "/books/vidya/mystery-tap.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "रहस्यमय टप-टप",
+      "chapters": [
+        {
+          "id": "mystery-tap",
+          "title": "रहस्यमय टप-टप",
+          "paragraphs": [
+            "रात को केशव ने रसोई के पास टप-टप सुनी। उसने दीवार के पीछे छोटे ढोलकिए की कल्पना की। सुबह उसने माँ को आवाज़ बताई।",
+            "दोनों ने साथ सुना। आवाज़ बराबर अंतर पर नहीं आती थी। केशव हर आवाज़ पर बिंदु बनाता गया, लेकिन बिंदुओं से नियमित ताल नहीं बनी।",
+            "माँ ने उसके साथ रसोई देखी। ढीले नल से पानी कटोरे में गिरता था। हर बूँद आवाज़ करती थी। ढोलकिए की कहानी अच्छी थी, पर कारण कुछ और था।",
+            "एक बड़े ने नल ठीक कराने की व्यवस्था की। इंतज़ार में केशव कटोरा देखता रहा। बिंदुओं से वह समझा पाया कि बूँदें कब गिरी थीं।",
+            "शाम को रसोई शांत थी। केशव ने कहीं और चले गए ढोलकिए की नई कहानी लिखी। ऊपर उसने लिखा, ‘काल्पनिक कहानी।’",
+            "उसने बिंदुओं का पन्ना भी रखा। एक पन्ने में कल्पना की दुनिया थी। दूसरा देखी हुई घटना समझने में मदद करता था।"
+          ],
+          "illustration": "/books/vidya/mystery-tap.svg"
+        }
+      ]
+    }
+  }
+}

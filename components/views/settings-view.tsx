@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, BarChart3, Volume2, Music, Mic } from "lucide-react";
 import type { GameState, ViewName } from "@/lib/types";
-import { sfx, startMusic, stopMusic, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
-import { speak, stopSpeaking, setVoiceVolume } from "@/lib/speech";
+import { sfx, startMusic, stopMusic, enableAudioFromGesture, setMusicVolume, setSfxVolume, setSfxEnabled } from "@/lib/audio";
+import { speakFromGesture, stopSpeaking, setVoiceVolume } from "@/lib/speech";
 
 export function SettingsView({
   state, setState, onBack, onNavigate,
@@ -39,7 +39,7 @@ export function SettingsView({
   const toggleMusic = () => {
     const next = !state.settings.music;
     setState((p) => ({ ...p, settings: { ...p.settings, music: next } }));
-    if (next) startMusic(); else stopMusic();
+    if (next) void enableAudioFromGesture().then(() => startMusic()).catch(() => {}); else stopMusic();
   };
 
   const toggleVoice = () => {
@@ -77,6 +77,12 @@ export function SettingsView({
         </button>
 
         <h1 className="font-display text-3xl font-bold text-[var(--kid-ink)] mb-5">Settings</h1>
+        <section className="glass-card p-5 mb-5" aria-labelledby="appearance-heading">
+          <h2 id="appearance-heading" className="font-display text-xl font-bold">Make yourself comfortable</h2>
+          <fieldset className="mt-3"><legend>Appearance</legend><div className="flex gap-2 flex-wrap">{(["light", "dark", "system"] as const).map(appearance => <button key={appearance} aria-pressed={(state.settings.appearance ?? "light") === appearance} onClick={() => setState(s => ({ ...s, settings: { ...s.settings, version: 2, appearance } }))}>{appearance[0].toUpperCase() + appearance.slice(1)}</button>)}</div></fieldset>
+          <label className="flex items-center gap-3 min-h-12"><input type="checkbox" checked={state.settings.companion !== false} onChange={e => setState(s => ({ ...s, settings: { ...s.settings, version: 2, companion: e.target.checked } }))} />Show Tara, the illustrated bird</label>
+          <p className="text-sm text-[var(--text-muted)]">Your decorations stay saved when you hide the companion.</p>
+        </section>
 
         <div className="space-y-3">
           <div className="glass-card p-4">
@@ -180,7 +186,7 @@ export function SettingsView({
                 </select>
               </label>
               <p className="text-xs text-[var(--kid-muted)]">Voices come from this device. Natural or enhanced voices sound clearer when available. This changes spoken guidance, not the lesson language.</p>
-              <button type="button" disabled={!voices.length} onClick={() => speak("Hello. I'm Vidya, your learning guide. We can take this one step at a time.")} className="rounded-xl border border-white/30 px-4 py-2 text-sm text-[var(--kid-ink)] disabled:opacity-50">Preview voice</button>
+              <button type="button" disabled={!voices.length} onClick={() => speakFromGesture("Hello. I'm Vidya, your learning guide. We can take this one step at a time.")} className="rounded-xl border border-white/30 px-4 py-2 text-sm text-[var(--kid-ink)] disabled:opacity-50">Preview voice</button>
               <button type="button" onClick={stopSpeaking} className="rounded-xl px-4 py-2 text-sm text-[var(--kid-muted)]">Stop preview</button>
               {!voices.length && <p role="status" className="text-xs text-[var(--kid-muted)]">No English device voice is available yet. You can keep learning with text.</p>}
               </div>

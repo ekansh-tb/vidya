@@ -1,309 +1,165 @@
 "use client";
 
-// Audio engine: procedural background music + sound effects using Tone.js.
-// All audio requires a user gesture to start (browser autoplay policy).
-//
-// Tone is imported dynamically so it never lands in the server bundle and
-// only loads once a learner actually triggers sound.
-
 import type * as ToneT from "tone";
-import { readPersistedAudioSettings } from "./audio-bootstrap";
+import { readPersistedAudioSettings, type AudioSettings } from "./audio-bootstrap";
 
-type ToneModule = typeof import("tone");
-
+export type StudioInstrument = "keyboard" | "marimba" | "synth" | "percussion";
+export type StudioHandle = { play: (note: number, at?: number) => void; stop: () => void; dispose: () => void };
+type Disposable = { dispose: () => unknown };
 let started = false;
+let intentAuthorized = false;
 let initPromise: Promise<void> | null = null;
-let gestureArmed = false;
-
-// `settings.sound` was written by the Settings toggle and read by nobody: every
-// sfx.* function played regardless, so muting sound effects did nothing. This
-// flag is that setting, and every sfx.* function below now consults it.
+let muted = false;
 let sfxEnabled = true;
-/** True once the UI has pushed a value, so init stops second-guessing it. */
-let sfxEnabledExplicit = false;
+let requestedMusicVol = -24;
+let requestedSfxVol = -18;
+let musicWanted = false;
+let studioCount = 0;
+let narrating = false;
+let master: ToneT.Volume | null = null;
+let musicBus: ToneT.Volume | null = null;
+let effectsBus: ToneT.Volume | null = null;
+let ambientClock: ToneT.Clock | null = null;
+let effectSynth: ToneT.PolySynth | null = null;
+const resources: Disposable[] = [];
+const studios = new Set<StudioHandle>();
+const listeners = new Set<() => void>();
+let removeVisibility: (() => void) | null = null;
 
-// Last volumes asked for, remembered even when the buses do not exist yet.
-// page.tsx pushes the learner's saved volumes on hydrate, which is *before*
-// the first gesture creates the buses; without this the request landed on a
-// null bus and init silently fell back to the built-in defaults.
-let requestedMusicVol: number | null = null;
-let requestedSfxVol: number | null = null;
-let synth: ToneT.PolySynth | null = null;
-let bell: ToneT.MetalSynth | null = null;
-let kick: ToneT.MembraneSynth | null = null;
-let noiseSnap: ToneT.NoiseSynth | null = null;
-let masterVolume: ToneT.Volume | null = null;
-let musicVolume: ToneT.Volume | null = null;
-let sfxVolume: ToneT.Volume | null = null;
-let pattern: ToneT.Loop | null = null;
-let bassSeq: ToneT.Loop | null = null;
-let melodySeq: ToneT.Sequence<string> | null = null;
-let isMusicPlaying = false;
-
-async function ensureTone(): Promise<ToneModule | null> {
-  if (typeof window === "undefined") return null;
-  return import("tone");
+const clampDb = (db: number) => Number.isFinite(db) ? Math.min(0, Math.max(-60, db)) : -24;
+function hidden() { return typeof document !== "undefined" && document.hidden; }
+function own<T extends Disposable>(node: T): T { resources.push(node); return node; }
+function notify() { listeners.forEach((fn) => fn()); }
+export function subscribeAudio(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }
+export function isAudioStarted() { return started; }
+export function isAudioAuthorized() { return intentAuthorized; }
+/** A remembered preference is not a gesture. Call only from labelled sound actions. */
+export function authorizeAudioFromGesture() { intentAuthorized = true; }
+export function isAudioMuted() { return muted; }
+export function isSfxEnabled() { return sfxEnabled; }
+function applyAmbience() {
+  if (musicBus) { musicBus.volume.value = narrating ? requestedMusicVol - 12 : requestedMusicVol; musicBus.mute = muted || studioCount > 0 || hidden(); }
+  if (started && musicWanted && !muted && !studioCount && !hidden()) ambientClock?.start();
+  else ambientClock?.stop();
+}
+export function syncAudioSettings(settings: AudioSettings) {
+  muted = settings.audioMuted ?? false;
+  sfxEnabled = settings.sound;
+  requestedMusicVol = clampDb(settings.musicVolume);
+  requestedSfxVol = clampDb(settings.sfxVolume);
+  musicWanted = settings.music;
+  if (master) master.mute = muted || hidden();
+  if (effectsBus) effectsBus.volume.value = requestedSfxVol;
+  applyAmbience();
+  notify();
 }
 
-/**
- * Boots the audio engine. Safe to call any number of times and from several
- * places at once: concurrent callers share one in-flight promise, so a gesture
- * and a music toggle landing together cannot build two sets of buses.
- */
-export function initAudio(opts: { musicVol?: number; sfxVol?: number } = {}): Promise<void> {
-  if (started) return Promise.resolve();
-  initPromise ??= doInit(opts).catch((err) => {
-    // Let a later gesture retry rather than wedging audio off for the session.
-    initPromise = null;
-    throw err;
-  });
-  return initPromise;
-}
-
-async function doInit(opts: { musicVol?: number; sfxVol?: number }) {
-  const Tone = await ensureTone();
-  if (!Tone) return;
+/** Only call from an intentional sound-enabling action, never from hydration. */
+export async function enableAudioFromGesture() {
+  if (typeof window === "undefined") return;
+  authorizeAudioFromGesture();
+  const Tone = await import("tone");
   await Tone.start();
-  started = true;
-
-  // Adopt the learner's saved preferences. Init can now happen on a bare
-  // gesture with no caller to pass them in, so the engine reads them itself.
+  if (!started) {
+    initPromise ??= buildAudio(Tone).catch((error) => { initPromise = null; throw error; });
+    await initPromise;
+  }
+  applyAmbience();
+  notify();
+}
+export function initAudio(opts: { musicVol?: number; sfxVol?: number } = {}) {
+  if (opts.musicVol !== undefined) requestedMusicVol = clampDb(opts.musicVol);
+  if (opts.sfxVol !== undefined) requestedSfxVol = clampDb(opts.sfxVol);
+  return enableAudioFromGesture();
+}
+async function buildAudio(Tone: typeof import("tone")) {
   const saved = readPersistedAudioSettings();
-  if (!sfxEnabledExplicit && typeof saved?.sound === "boolean") sfxEnabled = saved.sound;
-
-  const musicVol = opts.musicVol ?? requestedMusicVol ?? saved?.musicVolume ?? -16;
-  const sfxVol = opts.sfxVol ?? requestedSfxVol ?? saved?.sfxVolume ?? -8;
-
-  // Volume buses
-  masterVolume = new Tone.Volume(-6).toDestination();
-  musicVolume = new Tone.Volume(musicVol).connect(masterVolume);
-  sfxVolume = new Tone.Volume(sfxVol).connect(masterVolume);
-
-  // Background music: soft polysynth pad with bell arpeggio over a gentle bass.
-  const reverb = new Tone.Reverb({ decay: 5, wet: 0.5 }).connect(musicVolume);
-  const delay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.3, wet: 0.25 }).connect(reverb);
-
-  const pad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "sine8" },
-    envelope: { attack: 0.6, decay: 0.4, sustain: 0.7, release: 1.6 },
-  }).connect(reverb);
+  if (saved) syncAudioSettings(saved);
+  master = own(new Tone.Volume(-8).toDestination());
+  master.mute = muted || hidden();
+  musicBus = own(new Tone.Volume(requestedMusicVol).connect(master));
+  effectsBus = own(new Tone.Volume(requestedSfxVol).connect(master));
+  const reverb = own(new Tone.Reverb({ decay: 2, wet: 0.25 }).connect(musicBus));
+  const pad = own(new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: "sine" }, envelope: { attack: 0.8, decay: 0.4, sustain: 0.3, release: 1.8 },
+  }).connect(reverb));
   pad.volume.value = -10;
-
-  const bassSynth = new Tone.MonoSynth({
-    oscillator: { type: "triangle" },
-    envelope: { attack: 0.05, decay: 0.4, sustain: 0.4, release: 0.8 },
-    filter: { Q: 1, type: "lowpass", rolloff: -24 },
-    filterEnvelope: { attack: 0.05, decay: 0.3, sustain: 0.4, baseFrequency: 200, octaves: 2.5 },
-  }).connect(musicVolume);
-  bassSynth.volume.value = -16;
-
-  const bellSynth = new Tone.PluckSynth({
-    attackNoise: 0.4, dampening: 6000, resonance: 0.9,
-  }).connect(delay);
-  bellSynth.volume.value = -14;
-
-  Tone.getTransport().bpm.value = 78;
-
-  // Pentatonic C minor (calm, oriental feel)
-  const padChords = [
-    ["C3", "Eb3", "G3", "Bb3"],
-    ["Ab2", "C3", "Eb3", "G3"],
-    ["F2", "Ab2", "C3", "Eb3"],
-    ["G2", "Bb2", "D3", "F3"],
-  ];
-  let chordIndex = 0;
-  pattern = new Tone.Loop((time) => {
-    pad.triggerAttackRelease(padChords[chordIndex], "1m", time);
-    chordIndex = (chordIndex + 1) % padChords.length;
-  }, "1m");
-
-  const bassNotes = ["C2", "Ab1", "F2", "G2"];
-  let bassIdx = 0;
-  bassSeq = new Tone.Loop((time) => {
-    bassSynth.triggerAttackRelease(bassNotes[bassIdx], "2n", time);
-    bassIdx = (bassIdx + 1) % bassNotes.length;
-  }, "1m");
-
-  // Sparse bell arpeggio
-  const bellNotes = ["C5", "Eb5", "G5", "C6", "Bb5", "G5", "Eb5", "C5"];
-  melodySeq = new Tone.Sequence((time, note: string) => {
-    if (Math.random() > 0.4) bellSynth.triggerAttackRelease(note, "16n", time);
-  }, bellNotes, "4n");
-
-  // SFX instruments
-  synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: "triangle" },
-    envelope: { attack: 0.01, decay: 0.15, sustain: 0.05, release: 0.3 },
-  }).connect(sfxVolume);
-
-  bell = new Tone.MetalSynth({
-    envelope: { attack: 0.001, decay: 0.4, release: 0.3 },
-    harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 0.5,
-  }).connect(sfxVolume);
-  bell.volume.value = -22;
-
-  kick = new Tone.MembraneSynth({
-    pitchDecay: 0.05, octaves: 4,
-    envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 },
-  }).connect(sfxVolume);
-  kick.volume.value = -12;
-
-  noiseSnap = new Tone.NoiseSynth({
-    noise: { type: "white" },
-    envelope: { attack: 0.001, decay: 0.1, sustain: 0 },
-  }).connect(sfxVolume);
-  noiseSnap.volume.value = -22;
-}
-
-export async function startMusic() {
-  if (!started) await initAudio();
-  if (isMusicPlaying) return;
-  const Tone = await ensureTone();
-  if (!Tone) return;
-  pattern?.start(0);
-  bassSeq?.start("1m");
-  melodySeq?.start("2m");
-  Tone.getTransport().start();
-  isMusicPlaying = true;
-}
-
-export async function stopMusic() {
-  const Tone = await ensureTone();
-  if (!Tone) return;
-  pattern?.stop();
-  bassSeq?.stop();
-  melodySeq?.stop();
-  Tone.getTransport().stop();
-  isMusicPlaying = false;
-}
-
-export function setMusicVolume(db: number) {
-  requestedMusicVol = db;
-  if (musicVolume) musicVolume.volume.value = db;
-}
-export function setSfxVolume(db: number) {
-  requestedSfxVol = db;
-  if (sfxVolume) sfxVolume.volume.value = db;
-}
-
-/** Mirrors `settings.sound`. Silences every sfx.* without tearing down audio. */
-export function setSfxEnabled(on: boolean) {
-  sfxEnabled = on;
-  sfxEnabledExplicit = true;
-}
-
-export function isSfxEnabled() {
-  return sfxEnabled;
-}
-
-/** Both gates every sound effect answers to: the engine is up, and SFX are on. */
-function sfxReady() {
-  return started && sfxEnabled;
-}
-
-/**
- * Starts the audio engine on the learner's first genuine gesture.
- *
- * initAudio() used to run only at the end of onboarding or from startMusic().
- * Background music defaults to off, so on every load after the first session
- * nothing ever called it: `started` stayed false and every sound effect was a
- * silent no-op for the whole session. The gesture requirement is real (browser
- * autoplay policy) — so we satisfy it with the first tap or key instead of
- * with a screen the learner only ever sees once.
- *
- * Deliberately does NOT start background music: that still needs its own
- * explicit toggle.
- */
-export function armAudioOnFirstGesture() {
-  if (typeof window === "undefined" || gestureArmed || started) return;
-  gestureArmed = true;
-
-  const events = ["pointerdown", "keydown", "touchstart"] as const;
-  const onGesture = () => {
-    for (const e of events) window.removeEventListener(e, onGesture);
-    initAudio().catch(() => {
-      // Re-arm so a later tap can retry. Without this the one-shot listener is
-      // already gone and a single transient failure would mute the session.
-      gestureArmed = false;
-      armAudioOnFirstGesture();
-    });
-  };
-  for (const e of events) {
-    window.addEventListener(e, onGesture, { once: true, passive: true });
+  const chords = [["C3", "E3", "G3"], ["F3", "A3", "C4"], ["D3", "F3", "A3"], ["G3", "B3", "D4"]];
+  let chord = 0;
+  // A private clock avoids changing BPM or stopping another room's Transport.
+  ambientClock = own(new Tone.Clock((time) => {
+    if (!muted && !studioCount && !hidden()) pad.triggerAttackRelease(chords[chord++ % chords.length], 3, time);
+  }, 0.2));
+  effectSynth = own(new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.12, sustain: 0, release: 0.15 },
+  }).connect(effectsBus));
+  started = true;
+  if (typeof document !== "undefined") {
+    const onVisibility = () => {
+      if (master) master.mute = muted || hidden();
+      if (hidden()) studios.forEach((handle) => handle.stop());
+      applyAmbience();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    removeVisibility = () => document.removeEventListener("visibilitychange", onVisibility);
   }
 }
+export async function startMusic() { musicWanted = true; applyAmbience(); }
+export async function stopMusic() { musicWanted = false; applyAmbience(); }
+export function setMusicVolume(db: number) { requestedMusicVol = clampDb(db); applyAmbience(); }
+export function setSfxVolume(db: number) { requestedSfxVol = clampDb(db); if (effectsBus) effectsBus.volume.value = requestedSfxVol; }
+export function setSfxEnabled(on: boolean) { sfxEnabled = on; }
+export function setMasterMuted(on: boolean) { muted = on; if (master) master.mute = on || hidden(); if (on) studios.forEach((handle) => handle.stop()); applyAmbience(); notify(); }
+export function setStudioActive(on: boolean) { studioCount = Math.max(0, studioCount + (on ? 1 : -1)); applyAmbience(); }
+export function setNarrationActive(on: boolean) { narrating = on; applyAmbience(); }
+// Compatibility export: arbitrary taps no longer silently authorize sound.
+export function armAudioOnFirstGesture() {}
 
-// Arm on import. lib/audio.ts is pulled in by the app shell, so this runs once
-// per client load; the window guard keeps it inert during SSR.
-armAudioOnFirstGesture();
-
-// === SFX ===
-export const sfx = {
-  click: () => {
-    if (!sfxReady() || !synth) return;
-    synth.triggerAttackRelease("E5", "32n");
-  },
-  correct: async () => {
-    if (!sfxReady() || !synth) return;
-    const Tone = await ensureTone();
-    if (!Tone || !synth) return;
-    // Previously read `(window as any).Tone?.now?.() ?? 0`. Tone is loaded as
-    // a dynamic ES module and never attached to window, so that always fell
-    // through to 0 and collapsed the arpeggio into a single instant chord.
-    const now = Tone.now();
-    synth.triggerAttackRelease("C5", "8n", now);
-    synth.triggerAttackRelease("E5", "8n", now + 0.08);
-    synth.triggerAttackRelease("G5", "4n", now + 0.16);
-  },
-  wrong: () => {
-    if (!sfxReady() || !synth) return;
-    synth.triggerAttackRelease("E4", "8n");
-    setTimeout(() => synth?.triggerAttackRelease("Bb3", "4n"), 90);
-  },
-  coin: () => {
-    if (!sfxReady() || !bell) return;
-    bell.triggerAttackRelease("C6", "32n");
-    setTimeout(() => bell?.triggerAttackRelease("E6", "16n"), 50);
-  },
-  levelUp: async () => {
-    if (!sfxReady() || !synth) return;
-    const Tone = await ensureTone();
-    if (!Tone || !synth) return;
-    const now = Tone.now();
-    synth.triggerAttackRelease("C5", "8n", now);
-    synth.triggerAttackRelease("E5", "8n", now + 0.1);
-    synth.triggerAttackRelease("G5", "8n", now + 0.2);
-    synth.triggerAttackRelease("C6", "4n", now + 0.3);
-  },
-  badge: async () => {
-    if (!sfxReady() || !bell) return;
-    const Tone = await ensureTone();
-    if (!Tone || !bell) return;
-    const now = Tone.now();
-    bell.triggerAttackRelease("E5", "8n", now);
-    bell.triggerAttackRelease("G5", "8n", now + 0.12);
-    bell.triggerAttackRelease("C6", "4n", now + 0.24);
-  },
-  drumroll: () => {
-    if (!sfxReady() || !kick) return;
-    kick.triggerAttackRelease("C2", "8n");
-  },
-  whoosh: () => {
-    if (!sfxReady() || !noiseSnap) return;
-    noiseSnap.triggerAttackRelease("8n");
-  },
-  sixSeven: async () => {
-    if (!sfxReady() || !synth || !bell) return;
-    const Tone = await ensureTone();
-    if (!Tone || !synth || !bell) return;
-    const now = Tone.now();
-    synth.triggerAttackRelease("G4", "16n", now);
-    synth.triggerAttackRelease("B4", "16n", now + 0.09);
-    bell.triggerAttackRelease("D5", "8n", now + 0.22);
-    bell.triggerAttackRelease("G5", "4n", now + 0.36);
-  },
-};
-
-export function isAudioStarted() {
-  return started;
+export async function createStudioInstrument(kind: StudioInstrument): Promise<StudioHandle> {
+  await enableAudioFromGesture();
+  const Tone = await import("tone");
+  if (!effectsBus) throw new Error("Sound is unavailable. Try enabling sound again.");
+  const nodes: Disposable[] = [];
+  const frequencies = [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25];
+  const pitched = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: kind === "synth" ? "triangle" : "sine" },
+    envelope: kind === "marimba" ? { attack: 0.001, decay: 0.3, sustain: 0, release: 0.15 } : { attack: 0.015, decay: 0.2, sustain: 0.15, release: 0.3 },
+  }).connect(effectsBus);
+  nodes.push(pitched);
+  const drum = kind === "percussion" ? new Tone.MembraneSynth({ volume: -8 }).connect(effectsBus) : null;
+  const shaker = kind === "percussion" ? new Tone.NoiseSynth({ volume: -20, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 } }).connect(effectsBus) : null;
+  if (drum) nodes.push(drum);
+  if (shaker) nodes.push(shaker);
+  let disposed = false;
+  const handle: StudioHandle = {
+    play(note, at) {
+      if (disposed || muted || hidden() || !Number.isInteger(note) || note < 0 || note > 7) return;
+      const time = at ?? Tone.now() + 0.01;
+      if (drum && note < 2) drum.triggerAttackRelease(note === 0 ? "C2" : "G2", 0.12, time);
+      else if (shaker) shaker.triggerAttackRelease(0.05, time);
+      else pitched.triggerAttackRelease(frequencies[note], 0.2, time);
+    },
+    stop() { pitched.releaseAll(); drum?.triggerRelease(); },
+    dispose() { if (disposed) return; disposed = true; handle.stop(); nodes.forEach((node) => node.dispose()); studios.delete(handle); },
+  };
+  studios.add(handle);
+  return handle;
 }
+export function disposeAudio() {
+  studios.forEach((handle) => handle.dispose());
+  ambientClock?.stop();
+  resources.splice(0).reverse().forEach((node) => node.dispose());
+  removeVisibility?.(); removeVisibility = null;
+  master = musicBus = effectsBus = null; ambientClock = null; effectSynth = null;
+  started = false; intentAuthorized = false; initPromise = null; studioCount = 0; narrating = false;
+  notify();
+}
+function effect(notes: string[]) {
+  if (!started || !sfxEnabled || muted || hidden() || !effectSynth) return;
+  notes.forEach((note) => effectSynth?.triggerAttackRelease(note, 0.12));
+}
+export const sfx = {
+  click: () => effect(["E5"]), correct: () => effect(["C5", "E5", "G5"]),
+  wrong: () => effect(["E4"]), coin: () => effect(["C6"]), levelUp: () => effect(["C5", "E5", "G5", "C6"]),
+  badge: () => effect(["E5", "G5"]), drumroll: () => effect(["C3"]), whoosh: () => effect(["G4"]), sixSeven: () => effect(["G4", "B4", "D5"]),
+};

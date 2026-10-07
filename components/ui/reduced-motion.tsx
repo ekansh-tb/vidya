@@ -2,6 +2,7 @@
 
 import { MotionConfig } from "framer-motion";
 import type { ReactNode } from "react";
+import { useGameStore } from "@/lib/game-store";
 
 /**
  * Makes every framer-motion animation inside honour the OS "reduce motion"
@@ -21,5 +22,6 @@ import type { ReactNode } from "react";
  * every motion element — one wrapper cannot be forgotten halfway down a file.
  */
 export function ReducedMotionProvider({ children }: { children: ReactNode }) {
-  return <MotionConfig reducedMotion="user">{children}</MotionConfig>;
+  const motionEnabled = useGameStore(s => s.state.settings.motion !== false);
+  return <MotionConfig reducedMotion={motionEnabled ? "user" : "always"}>{children}</MotionConfig>;
 }

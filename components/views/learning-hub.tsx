@@ -13,12 +13,13 @@ import { useGameStore } from "@/lib/game-store";
 import { placementFor, placementLabel, experienceMode } from "@/lib/learning/placement";
 import { recordLocalMeasurement } from "@/lib/learning/local-measurement";
 import { placementKey, distinctLearningDays, companionUnlocks, type ActivityDomain } from "@/lib/learning/activity";
-import { hubActivities, variedActivities } from "@/lib/learning/hub-selection";
+import { usePublishedActivities } from "@/lib/learning/use-published-activities";
+import { variedActivities } from "@/lib/learning/hub-selection";
 import { ActivityPlayer } from "./activity-player";
 import { VidyaIntroduction } from "@/components/learning/vidya-introduction";
 import { LearningCompanion } from "@/components/ui/learning-companion";
 import { CreationGallery } from "@/components/learning/creation-gallery";
-import { speak } from "@/lib/speech";
+import { speakFromGesture } from "@/lib/speech";
 import { todayKey, dayKeyOf } from "@/lib/utils";
 
 const DOMAINS: { id: ActivityDomain; en: string; hi: string; picture: string }[] = [
@@ -37,10 +38,12 @@ const TABS = [
 ] as const;
 export type LearningHubTab = typeof TABS[number]["id"];
 
-export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play", onTabChange, initialActivityId }: {
+export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, onMusic, onLibrary, onPlan, tab = "play", onTabChange, initialActivityId, initialActivityRevision }: {
   onBack: () => void; onSettings: () => void; onSwitch: () => void; onLink: () => void;
+  onCreate?: () => void; onMusic?: () => void; onLibrary?: () => void; onPlan?: () => void;
   tab?: LearningHubTab; onTabChange: (tab: LearningHubTab) => void;
   initialActivityId?: string;
+  initialActivityRevision?: number;
 }) {
   const { learner, state, set, updateLearnerMeta } = useGameStore();
   const reduced = useReducedMotion();
@@ -53,14 +56,16 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play"
   const early = placement?.kind === "early-years";
   const [domain, chooseDomain] = useState<ActivityDomain | null>(null);
   const [selected, select] = useState<string | null>(initialActivityId ?? null);
+  const [selectedRevision, selectRevision] = useState(initialActivityRevision);
   const [expanded, expand] = useState(false);
   const [journeyDay, selectDay] = useState<number | null>(null);
   const activityState = state.activities ?? { completions: [] };
   const completedDays = distinctLearningDays(activityState);
   const day = journeyDay ?? Math.min(14, completedDays.length + (completedDays.includes(todayKey()) ? 0 : 1));
-  const available = hubActivities(learner, lang);
-  const draft = available.find(activity => activity.id === activityState.draft?.activityId && activity.revision === activityState.draft.revision);
-  const chosen = available.find(activity => activity.id === selected);
+  const publication = usePublishedActivities(learner, lang, initialActivityId && initialActivityRevision ? { activityId: initialActivityId, revision: initialActivityRevision } : activityState.draft);
+  const available = publication.activities;
+  const draft = publication.savedActivity ?? available.find(activity => activity.id === activityState.draft?.activityId && activity.revision === activityState.draft.revision);
+  const chosen = [draft, ...available].find(activity => activity?.id === selected && (selectedRevision === undefined || activity.revision === selectedRevision));
   const playable = available.filter(activity => activity.interaction !== "offline");
   const next = draft ?? playable[(day - 1) % Math.max(1, playable.length)];
   const outdoors = available.filter(activity => activity.interaction === "offline");
@@ -83,14 +88,14 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play"
   }, [selected]);
   const start = (id: string, buttonId: string) => {
     launchTarget.current = { id: buttonId, scroll: window.scrollY };
-    sfx.click(); learningHaptic(); select(id);
+    sfx.click(); learningHaptic(); selectRevision(undefined); select(id);
     set(current => ({ ...current, activities: { ...(current.activities ?? { completions: [] }), nextActivityId: id } }));
   };
   const changeTab = (value: LearningHubTab) => {
     chooseDomain(null); expand(false); onTabChange(value);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
-  if (chosen) return <ActivityPlayer key={chosen.id} activity={chosen} onExit={() => select(null)} />;
+  if (chosen) return <ActivityPlayer key={`${chosen.id}@${chosen.revision}`} activity={chosen} onExit={() => select(null)} />;
   const navigation = <nav className="kids-nav" aria-label={hi ? "सीखने का रास्ता" : "Learning navigation"} data-calm={calm}>
     {TABS.map(item => <button key={item.id} aria-current={tab === item.id ? "page" : undefined} onClick={() => changeTab(item.id)}><item.icon aria-hidden="true" /><span>{hi ? item.hi : item.id === "play" && !early ? "Explore" : item.en}</span></button>)}
   </nav>;
@@ -99,13 +104,15 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play"
       <div className="kids-brand">{!early && <button className="kids-icon" onClick={onBack} aria-label={hi ? "सीखने पर लौटो" : "Back to learning"}><ArrowLeft aria-hidden="true" /></button>}<span className="kids-brand-mark" aria-hidden="true">v<span>•</span></span><strong>vidya</strong><span className="kids-level">{placementLabel(learner)}</span></div>
       <div className="kids-header-actions"><button className="kids-language" onClick={() => updateLearnerMeta(learner.id, { learningLanguage: hi ? "en" : "hi" })}>{hi ? "English" : "हिंदी"}</button><button className="kids-icon" onClick={onSwitch} aria-label={hi ? "सीखने वाला बदलो" : "Switch learner"}><Users aria-hidden="true" /></button><button className="kids-icon" onClick={onSettings} aria-label={hi ? "सेटिंग" : "Settings"}><Settings aria-hidden="true" /></button></div>
     </header>
-    <div className="kids-heading"><div><p className="learning-eyebrow">{hi ? "नमस्ते, " + name : "Hello, " + name}</p><h1>{hi ? ({ play: "आज क्या खेलें?", stories: "कहानी चुनो", make: "कुछ अपना बनाओ", journey: "तुम्हारी छोटी खोजें" })[tab] : ({ play: early ? "Choose your next discovery" : "Find your next discovery", stories: "A story starts here", make: "Make it your own", journey: "Look what you tried" })[tab]}</h1></div>{early && <button className="kids-icon" aria-label={hi ? "रास्ते के नाम सुनो" : "Hear the navigation labels"} onClick={() => speak(hi ? "खेलो। कहानियाँ। बनाओ। मेरी यात्रा। अपनी पसंद चुनो।" : "Play. Stories. Make. My Journey. Choose where to go.", { lang: hi ? "hi-IN" : "en-IN", rate: .85 })}><Volume2 aria-hidden="true" /></button>}</div>
+    <div className="kids-heading"><div><p className="learning-eyebrow">{hi ? "नमस्ते, " + name : "Hello, " + name}</p><h1>{hi ? ({ play: "आज क्या खेलें?", stories: "कहानी चुनो", make: "कुछ अपना बनाओ", journey: "तुम्हारी छोटी खोजें" })[tab] : ({ play: early ? "Choose your next discovery" : "Find your next discovery", stories: "A story starts here", make: "Make it your own", journey: "Look what you tried" })[tab]}</h1></div>{early && <button className="kids-icon" aria-label={hi ? "रास्ते के नाम सुनो" : "Hear the navigation labels"} onClick={() => speakFromGesture(hi ? "खेलो। कहानियाँ। बनाओ। मेरी यात्रा। अपनी पसंद चुनो।" : "Play. Stories. Make. My Journey. Choose where to go.", { lang: hi ? "hi-IN" : "en-IN", rate: .85 })}><Volume2 aria-hidden="true" /></button>}</div>
+    {selected && selectedRevision !== undefined && !chosen && <section className="learning-panel" role="status"><h2>{hi ? "सहेजा हुआ संस्करण खोलना" : "Opening the saved version"}</h2><p>{hi ? "यह संस्करण उपलब्ध न हो तो कोई नया संस्करण उसकी जगह नहीं खुलेगा। ऑनलाइन होकर फिर कोशिश करें, या दूसरा खेल चुनें।" : "If this version is unavailable, a newer version will not replace it. Connect and try again, or choose another activity."}</p><button onClick={() => select(null)}>{hi ? "दूसरा खेल चुनो" : "Choose another activity"}</button></section>}
     {tab === "play" && next && <section className={"kids-adventure domain-" + next.domain}>
       <div className="kids-adventure-copy"><span className="kids-tag">{draft ? (hi ? "तुम्हारा सहेजा हुआ खेल" : "Right where you left off") : (hi ? "आज का छोटा खेल" : "Your next discovery")}</span><h2>{next.title[lang]}</h2><p>{next.objective[lang]}</p><button id="next-activity" className="learning-primary" onClick={() => start(next.id, "next-activity")}><Play aria-hidden="true" fill="currentColor" size={18} />{draft ? (hi ? "मेरा खेल जारी रखो" : "Continue playing") : (hi ? "चलो खेलें" : early ? "Let’s play" : "Start activity")}<ArrowRight aria-hidden="true" size={19} /></button></div>
       <div className="kids-adventure-art" data-activity-art><ActivityArt domain={next.domain} /></div>
     </section>}
     {!available.length && <section className="learning-panel"><h2>{hi ? "यह संग्रह अभी तैयार हो रहा है" : "This collection is being prepared"}</h2><p role="status">{hi ? "इस स्तर की गतिविधियाँ अभी तैयार नहीं हैं। किसी दूसरी कक्षा की सामग्री नहीं दी जाएगी।" : "Activities for this level are not ready yet. Another grade’s content will not be substituted."}</p>{!early && <button onClick={onBack} className="learning-primary">{hi ? "सीखने पर लौटो" : "Back to learning"}</button>}</section>}
-    {tab === "make" && <CreationGallery state={activityState} activities={available} language={lang} />}
+    {tab === "make" && <><section className="learning-panel"><h2>{hi ? "अपने विचार बनाओ" : "Make something of your own"}</h2><div className="flex gap-3 flex-wrap">{onCreate && <button onClick={onCreate}>{hi ? "चित्र और कहानी बनाओ" : "Draw, build or tell a story"}</button>}{onMusic && <button onClick={onMusic}>{hi ? "संगीत बनाओ" : "Make music"}</button>}</div></section><CreationGallery state={activityState} activities={available} language={lang} /></>}
+    {tab === "stories" && onLibrary && <button className="learning-primary" onClick={onLibrary}>{hi ? "किताबें पढ़ो" : "Open the reading shelf"}</button>}
     {tab !== "journey" && available.length > 0 && <>
       <div className="kids-section-heading"><h2>{hi ? (tab === "play" ? "तुम चुनो" : tab === "make" ? "क्या बनाओगे?" : "शब्द, चित्र और कहानियाँ") : tab === "play" ? "What looks fun?" : tab === "make" ? "What will you make?" : "Words, pictures & stories"}</h2><span>{hi ? "अपनी पसंद से" : "Your choice"}</span></div>
       {tab === "play" && <div className="learning-domain-picker" role="group" aria-label={hi ? "गतिविधि चुनो" : "Choose an activity area"}><button aria-pressed={!domain} onClick={() => { chooseDomain(null); expand(false); }}>{hi ? "सब" : "All"}</button>{DOMAINS.filter(item => available.some(activity => activity.domain === item.id)).map(item => <button key={item.id} aria-pressed={domain === item.id} onClick={() => chooseDomain(domain === item.id ? null : item.id)}><span aria-hidden="true">{item.picture}</span>{item[lang]}</button>)}</div>}
@@ -121,6 +128,7 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, tab = "play"
       {tab === "play" && offline && <button id="offline-next" className="kids-outdoor" onClick={() => start(offline.id, "offline-next")}><span className="kids-outdoor-art" aria-hidden="true"><ActivityArt domain="real-world" /></span><span><small>{hi ? "फिर, स्क्रीन से दूर" : "Then, away from the screen"}</small><strong>{offline.title[lang]}</strong><span>{hi ? "बड़े के साथ असली दुनिया में खेलो" : "A little real-world play with your grown-up"}</span></span><ArrowRight aria-hidden="true" /></button>}
     </>}
     {tab === "journey" && <>
+      {onPlan && <section className="learning-panel"><h2>{hi ? "साथ में समय चुनें" : "Choose time together"}</h2><p>{hi ? "बड़े के साथ अपना असली समय देखें। खेलने के लिए योजना पूरी करना ज़रूरी नहीं।" : "With a grown-up, plan around your actual day. A plan is optional and never blocks play."}</p><button onClick={onPlan}>{hi ? "परिवार की योजना" : "Open the family plan"}</button></section>}
       <LearningCompanion compact decorations={companionUnlocks(activityState)} line={hi ? "जो खोजा और बनाया, वह यहाँ रहता है। छुट्टी लेने पर कुछ नहीं खोता।" : "Your discoveries and creations stay here. Taking a break loses nothing."} />
       <section className="learning-panel learning-history"><h2>{hi ? "तुम्हारे सीखने के दिन" : "Your learning days"}</h2><p>{completedDays.length} {hi ? "अलग दिन" : "distinct days"}</p><div className="learning-week" aria-label={hi ? "पिछले सात दिन" : "Last seven days"}>{Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setDate(date.getDate() - 6 + index); const key = dayKeyOf(date); return <span key={key} className={completedDays.includes(key) ? "participated" : ""} title={key}>{date.toLocaleDateString(hi ? "hi-IN" : "en-IN", { weekday: "short" })}<b aria-label={completedDays.includes(key) ? (hi ? "भाग लिया" : "participated") : (hi ? "खाली दिन" : "open day")}>{completedDays.includes(key) ? "●" : "○"}</b></span>; })}</div><p>{hi ? "साथी के पत्ते, स्कार्फ़ और तारे 1, 3 और 7 अलग दिनों पर जुड़ते हैं।" : "Tara’s leaf, scarf, and star appear after 1, 3, and 7 distinct days."}</p></section>
       {early && <section className="learning-panel"><h2>{hi ? "14 दिन की शुरुआती यात्रा" : "Your 14-day starter journey"}</h2><div className="learning-day-picker"><label htmlFor="starter-day">{hi ? "एक दिन चुनो" : "Choose a day"}</label><select id="starter-day" value={day} onChange={event => selectDay(Number(event.target.value))}>{Array.from({ length: 14 }, (_, index) => <option key={index} value={index + 1}>{hi ? "दिन" : "Day"} {index + 1}</option>)}</select><p>{hi ? "छोटी शुरुआत, विकल्प और दोबारा खेलना। फिर असली दुनिया में खेलो। पूरा पाठ्यक्रम नहीं।" : "Short visits, choices and replay, followed by real-world play. A starter collection, not a complete curriculum."}</p></div><button onClick={() => changeTab("play")} className="learning-primary">{hi ? "इस दिन का खेल देखो" : "See this day’s play"}<ArrowRight aria-hidden="true" size={18} /></button></section>}

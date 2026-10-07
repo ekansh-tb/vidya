@@ -33,6 +33,9 @@ async function verifiedClient(config) {
     const { rows } = await client.query(
       "select current_database() as database, current_user as role, session_user as session_role, pg_backend_pid() as backend_pid");
     assertHarnessIdentity(rows[0]);
+    const expected = new URL(config.connectionString);
+    assert.equal(rows[0].database,expected.pathname.slice(1));
+    assert.equal(rows[0].role,expected.username);
     client.harnessBackendPid = rows[0].backend_pid;
     return client;
   } catch (error) {
@@ -55,7 +58,7 @@ async function withSchema(config, label, body) {
     admin = await verifiedClient(config);
     sessions.add(admin);
     schemaCreationAttempted = true;
-    await admin.query(`create schema ${quoted} authorization vidya_test_runner`);
+    await admin.query(`create schema ${quoted}`);
     const ownership = await admin.query(
       "select oid from pg_namespace where nspname = $1 and nspowner = current_user::regrole", [schema]);
     ownedOid = ownership.rows[0]?.oid;

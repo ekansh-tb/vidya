@@ -1,22 +1,19 @@
 "use client";
-import { AddLearnerView, makeLearner } from "@/components/views/add-learner-view";
+import { makeLearner } from "@/components/views/add-learner-view";
 import { PlacementEditor } from "@/components/parent/placement-editor";
 import { profilePlacementFields } from "@/lib/learning/placement";
-import { ActivityEvidence } from "@/components/learning/activity-evidence";
 import { placementLabel } from "@/lib/learning/placement";
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { readCreationProject, frameSVG } from "@/lib/creation/project";
 import { useUser, SignOutButton } from "@clerk/nextjs";
-import { Check, Copy, FileDown } from "lucide-react";
-import { CosmicBg } from "@/components/effects/cosmic-bg";
-import { OpinionCard } from "@/components/parent/opinion-card";
-import { copyText } from "@/lib/clipboard";
+import { FileDown, HeartHandshake, ArrowRight, Bird } from "lucide-react";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
 import { DevicePanel } from "@/components/parent/device-panel";
-import { UsagePanel } from "@/components/parent/usage-panel";
 import { SyllabusPanel } from "@/components/parent/syllabus-panel";
 import { SafetyPanel } from "@/components/parent/safety-panel";
 import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
@@ -24,8 +21,6 @@ import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-pane
 import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
 import { FamilyAiPausePanel } from "@/components/parent/family-ai-pause-panel";
 import { useGameStore } from "@/lib/game-store";
-import { subjectsForLearner } from "@/lib/content/subjects";
-import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
 import type { LearnerProfile } from "@/lib/types";
 import {
   chooseParentReportState,
@@ -33,33 +28,27 @@ import {
   type ParentReportDecision,
   type ParentReportLoadState,
 } from "@/lib/parent-report";
-import {
-  RecentReflections,
-  WellnessSignals,
-  CapabilityMap,
-  FamilyNoteComposer,
-  CareNoteComposer,
-  type SubjectLearningStat,
-} from "@/components/views/parent-view";
+import { FamilyNoteComposer, CareNoteComposer } from "@/components/views/parent-view";
+import { ParentEnrollment } from "@/components/parent/parent-enrollment";
+import { ParentCircles } from "@/components/circles/parent-circles";
+import { LearningPlanner } from "@/components/planning/learning-planner";
+import { WeeklyInvitations, WeeklyFamilyInvitation } from "@/components/notifications/weekly-invitations";
+import { ParentInstallationGuide } from "@/components/parent/parent-installation-guide";
+import { familyParticipation, familyParticipationReport, parseParentAppearance, PARENT_DESTINATIONS, type ParentAppearance, type ParentDestination } from "@/components/parent/parent-experience-model";
+import "./family-dashboard.css";
 
-/**
- * Parent Clerk dashboard.
- *
- * Linked-profile contract: the learner roster comes from this browser. When a
- * profile has a remote id, reporting fields prefer its validated server sync,
- * while an explicit local fallback keeps the dashboard useful offline.
- *
- * The dashboard mirrors the in-kid-app parent room (parent-view.tsx) but
- * with no PIN gate (Clerk auth IS the gate), a learner picker, and a
- * desktop-friendly layout.
- */
+/** Ownership-scoped parent space. Navigation never changes the active learner device. */
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
   const [adding, add] = useState(false);
+  const [destination, setDestination] = useState<ParentDestination>("Overview");
+  const [appearanceState, setAppearance] = useState<{ parentId: string | null; value: ParentAppearance }>({ parentId: null, value: "light" });
   const [savingLearner, saving] = useState(false);
   const [enrollmentError, enrollmentErrorSet] = useState("");
   const [pendingEnrollment, pendingEnrollmentSet] = useState<LearnerProfile | null>(null);
+  const [rosterRefresh, refreshRoster] = useState(0);
+  const [rosterLoad, setRosterLoad] = useState<{ parentId: string | null; status: "loading" | "ready" | "error" }>({ parentId: null, status: "loading" });
   const [ownedRoster, roster] = useState<{parentId:string|null; learners:LearnerProfile[]}>({parentId:null,learners:[]});
   const updateProfile = (id:string, patch:Partial<LearnerProfile>) => {
     if (useGameStore.getState().profiles.learners[id]) updateLearnerMeta(id,patch);
@@ -75,6 +64,24 @@ export function ParentDashboard() {
   useEffect(() => { hydrate(); }, [hydrate]);
 
   const activeParentId = isSignedIn ? user?.id ?? null : null;
+  useEffect(() => {
+    setSelectedId(null);
+    pendingEnrollmentSet(null);
+    enrollmentErrorSet("");
+    add(false);
+    setDestination("Overview");
+  }, [activeParentId]);
+  const appearance = appearanceState.parentId === activeParentId ? appearanceState.value : "light";
+  useEffect(() => {
+    if (!activeParentId) return;
+    let value: ParentAppearance = "light";
+    try { value = parseParentAppearance(localStorage.getItem(`vidya:parent:appearance:v1:${activeParentId}`)); } catch { /* Storage is optional. */ }
+    setAppearance({ parentId: activeParentId, value });
+  }, [activeParentId]);
+  const changeAppearance = (value: ParentAppearance) => {
+    setAppearance({ parentId: activeParentId, value });
+    if (activeParentId) try { localStorage.setItem(`vidya:parent:appearance:v1:${activeParentId}`, value); } catch { /* Continue for this visit. */ }
+  };
   const localLearners = useMemo(() => {
     const remote = ownedRoster.parentId === activeParentId ? ownedRoster.learners : [];
     return remote.map(r => Object.values(profiles.learners).find(l => l.remoteId === r.remoteId && l.deviceToken) ?? r);
@@ -82,11 +89,13 @@ export function ParentDashboard() {
   useEffect(() => {
     if (!activeParentId) { roster({parentId:null,learners:[]}); return; }
     const controller = new AbortController();
+    setRosterLoad({ parentId: activeParentId, status: "loading" });
     void (async () => {
       try {
         const response = await fetch("/api/parent/learners", {signal:controller.signal,cache:"no-store"});
         const data = await response.json();
-        if (!response.ok || !Array.isArray(data.learners) || controller.signal.aborted) return;
+        if (controller.signal.aborted) return;
+        if (!response.ok || !Array.isArray(data.learners)) { setRosterLoad({ parentId: activeParentId, status: "error" }); return; }
         const entries: LearnerProfile[] = [];
         for (const row of data.learners) {
           const context = profilePlacementFields.safeParse(row);
@@ -94,10 +103,11 @@ export function ParentDashboard() {
           entries.push({...makeLearner({id:`remote:${row.id}`,name:row.name,...context.data,avatarId:"peacock",themeId:row.grade===null || row.grade<=2 ? "playful" : "vivid"}),remoteId:row.id,createdAt:row.createdAt});
         }
         roster({parentId:activeParentId,learners:entries});
-      } catch { /* Local owned profiles and reporting fallback remain available. */ }
+        setRosterLoad({ parentId: activeParentId, status: "ready" });
+      } catch { if (!controller.signal.aborted) setRosterLoad({ parentId: activeParentId, status: "error" }); }
     })();
     return () => controller.abort();
-  }, [activeParentId]);
+  }, [activeParentId, rosterRefresh]);
   const activeReports = useMemo(
     () => remoteReportCache.parentId === activeParentId ? remoteReportCache.reports : {},
     [activeParentId, remoteReportCache],
@@ -220,348 +230,101 @@ export function ParentDashboard() {
       const context = profilePlacementFields.parse(data.learner);
       const saved = {...l,...context,name:data.learner.name,id:`remote:${data.learner.id}`,remoteId:data.learner.id};
       roster(current => ({parentId:activeParentId,learners:[...current.learners.filter(r=>r.remoteId!==saved.remoteId),saved]}));
-      setSelectedId(saved.id); pendingEnrollmentSet(null); add(false);
+      setSelectedId(saved.id); pendingEnrollmentSet(null); add(false); setDestination("Children");
     } catch (error) { enrollmentErrorSet(error instanceof Error ? error.message : "Check your connection and try again."); }
     finally { saving(false); }
   };
 
-  // Loading guard
-  if (!isLoaded || !hydrated) {
-    return (
-      <main className="min-h-screen flex items-center justify-center text-neutral-400">
-        <CosmicBg mode="parent" intensity={0.6} />
-        <div className="text-sm">Loading…</div>
-      </main>
-    );
-  }
+  if (!isLoaded || !hydrated) return <main className="parent-dashboard parent-family" data-parent-appearance={appearance}><div className="parent-loading" role="status">Opening your family space…</div></main>;
+  if (!isSignedIn) return <main className="parent-dashboard parent-family" data-parent-appearance="light"><div className="parent-loading"><Link href="/sign-in?next=/parent">Sign in to open your family space</Link></div></main>;
 
-  if (!isSignedIn) {
-    // Defence in depth — middleware should already gate this, but if for any
-    // reason the user isn't signed in, point them home rather than crash.
-    return (
-      <main className="min-h-screen flex items-center justify-center text-neutral-400">
-        <CosmicBg mode="parent" intensity={0.6} />
-        <div className="text-sm">
-          <Link href="/sign-in?next=/parent" className="text-violet-400 hover:text-violet-300 underline">
-            Sign in to continue →
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  const rosterPending = rosterLoad.parentId !== activeParentId || rosterLoad.status === "loading";
+  const rosterFailed = rosterLoad.parentId === activeParentId && rosterLoad.status === "error";
+  const report = selectedReport ?? (selected ? chooseParentReportState(selected.state, { status: "unlinked" }) : null);
+  const reportLearner = selected && report ? { ...selected, state: report.state } : null;
+  const startEnrollment = () => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); setDestination("Children"); };
 
-  return (
-    <main className="parent-dashboard min-h-screen text-neutral-100 relative">
-      <CosmicBg mode="parent" intensity={0.6} />
-      <header className="border-b border-neutral-900 relative bg-neutral-950/40 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.4em] text-neutral-500">Vidya · Parent</div>
-            <h1 className="font-display text-2xl font-bold mt-1">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="https://vidyagyan.study"
-              className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
-            >
-              Kid app →
-            </Link>
-            <SignOutButton>
-              <button
-                type="submit"
-                className="text-[11px] uppercase tracking-widest font-bold px-3 py-2 rounded-md border border-neutral-800 hover:border-neutral-700 active:scale-95 transition"
-              >
-                Sign out
-              </button>
-            </SignOutButton>
-          </div>
-        </div>
-      </header>
-
-      <section className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        {/* Identity strip */}
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4 flex items-center justify-between">
-          <div>
-            <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-1">Signed in as</div>
-            <div className="text-base font-semibold">{displayName}</div>
-            {email && <div className="text-xs text-neutral-500 mt-0.5">{email}</div>}
-          </div>
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            {learners.length} learner{learners.length === 1 ? "" : "s"} in your account
-          </div>
-        </div>
-
-        <details className="rounded-xl border border-neutral-700 p-4"><summary className="min-h-11 font-semibold cursor-pointer">Family settings and optional AI</summary>
-        <AiConnectionsPanel
-          key={`ai-connections-${activeParentId}`}
-          onConnectionsChanged={() => setAiPolicyRevision((revision) => revision + 1)}
-        />
-        <AiTutorControlsPanel
-          key={`ai-tutors-${activeParentId}`}
-          refreshToken={aiPolicyRevision}
-          onProfilesChanged={() => setAiPolicyRevision((revision) => revision + 1)}
-        />
-        <FamilyAiPausePanel
-          key={`family-ai-pause-${activeParentId}`}
-          onPaused={() => setAiPolicyRevision((revision) => revision + 1)}
-        />
-        </details>
-        {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool companion</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. Device linking preserves progress; it does not unlock AI tutoring.</p></div> : <LearnerAiTutorAccessPanel
-          key={`learner-ai-access-${activeParentId}`}
-          learner={selected}
-          refreshToken={aiPolicyRevision}
-        />)}
-
-        {/* Empty state — no learners yet */}
-        {learners.length === 0 && pendingLinkedLearners > 0 && (
-          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center" role="status" aria-live="polite">
-            <h2 className="font-display text-xl font-bold mb-2">Checking linked learners</h2>
-            <p className="text-sm text-neutral-400 max-w-md mx-auto">
-              Confirming which synced learner profiles belong to this signed-in parent account.
-            </p>
-          </div>
-        )}
-
-        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners > 0 && (
-          <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">No linked learners for this account</h2>
-            <p className="text-sm text-neutral-400 max-w-md mx-auto">
-              The learner profiles linked on this browser belong to a different parent account.
-            </p>
-          </div>
-        )}
-
-        {learners.length === 0 && pendingLinkedLearners === 0 && deniedLinkedLearners === 0 && (
-          <div className="rounded-lg border border-violet-900/50 bg-violet-950/20 px-6 py-8 text-center">
-            <h2 className="font-display text-xl font-bold mb-2">Create your first learner</h2>
-            <p className="text-sm text-neutral-400 max-w-md mx-auto mb-5">
-              Choose their learning level here, then connect their device with a single-use code. Their activities will be saved to your account.
-            </p>
-            <Link
-              href="https://vidyagyan.study"
-              className="inline-block rounded-md bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold px-4 py-2 transition"
-            >
-              Open the kid app →
-            </Link>
-          </div>
-        )}
-
-        {/* Learner picker (only show if multiple) */}
-        {learners.length > 1 && selected && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 flex-shrink-0">
-              Viewing
-            </span>
-            {learners.map((l) => {
-              const active = l.id === selected.id;
-              return (
-                <button
-                  key={l.id}
-                  // Local to this dashboard ONLY. This used to also call
-                  // switchLearner(), which rewrites the shared
-                  // `currentLearnerId` — so a parent glancing at one child's
-                  // numbers silently moved the kid app into that child's
-                  // profile, and the next kid to open Vidya landed inside their
-                  // sibling's account. Reading must never rewrite whose app it
-                  // is.
-                  aria-pressed={active}
-                  onClick={() => setSelectedId(l.id)}
-                  className="rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition"
-                  style={{
-                    background: active ? "rgba(167,139,250,0.18)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${active ? "rgba(167,139,250,0.5)" : "rgba(255,255,255,0.08)"}`,
-                    color: active ? "rgb(196, 181, 253)" : "rgba(255,255,255,0.65)",
-                  }}
-                >
-                  {l.name || "Unnamed"} · {placementLabel(l)}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        <button className="buddy-action my-4" onClick={() => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); }}>Add a learner</button>
-        {adding && <div aria-busy={savingLearner}>
-          {enrollmentError && <p role="alert">{enrollmentError} Your details are still here. Try saving again.</p>}
-          {savingLearner && <p role="status">Saving to your account…</p>}
-          <fieldset disabled={savingLearner}><AddLearnerView existingIds={localLearners.map(l => l.id)} onBack={() => { add(false); pendingEnrollmentSet(null); }} onSave={l => void saveEnrollment(l)}/></fieldset>
-        </div>}
-        {selected && !adding && (
-          <>
-            {/* Above everything, including the setup panels, and it renders
-                nothing when there is nothing to say. If a child has disclosed
-                self-harm or that someone is hurting them, that cannot sit below
-                a syllabus form — a parent must not have to scroll to find it. */}
-            <SafetyPanel key={`safety-${selected.id}`} learner={selected} />
-
-            {/* Ownership first, then the code. Without a server row there is
-                nothing for a claim code to point at, which is why the link
-                panel used to say "nothing to link to" for every learner. */}
-            <ClaimAccountPanel
-              key={`claim-${selected.id}`}
-              learner={selected}
-              onClaimed={(remoteId) => updateLearnerMeta(selected.id, { remoteId })}
-            />
+  return <main className="parent-dashboard parent-family" data-parent-appearance={appearance}>
+    <a className="parent-skip" href="#parent-content">Skip to family content</a>
+    <header className="parent-header"><div className="parent-header-inner">
+      <Link href="/parent" className="parent-brand"><Bird size={28} aria-hidden="true" /><span>Vidya<span className="parent-brand-caption">Family space</span></span></Link>
+      <div className="parent-header-actions"><Link href="https://vidyagyan.study">Open learner app <ArrowRight size={16} aria-hidden="true" /></Link><SignOutButton><button type="button">Sign out</button></SignOutButton></div>
+    </div></header>
+    <div className="parent-layout">
+      <aside className="parent-sidebar"><nav aria-label="Parent navigation">{PARENT_DESTINATIONS.map(item => <button key={item} type="button" aria-current={destination === item ? "page" : undefined} onClick={() => setDestination(item)}>{item}</button>)}</nav><p>Room to explore.<br />Someone to come back to.</p></aside>
+      <section className="parent-content" id="parent-content" aria-label={destination}>
+        <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1>{destination}</h1></div><span className="parent-account">{displayName}<span>{email}</span></span></div>
+        {learners.length > 0 && <div className="parent-learner-picker"><label htmlFor="parent-selected-learner">Viewing learner</label><select id="parent-selected-learner" value={selected?.id ?? ""} onChange={event => setSelectedId(event.target.value)}>{learners.map(learner => <option key={learner.id} value={learner.id}>{learner.name || "Unnamed learner"} · {placementLabel(learner)}</option>)}</select></div>}
+        {selected && !adding && <SafetyPanel key={`safety-${selected.id}`} learner={selected} />}
+        {learners.length === 0 && (pendingLinkedLearners > 0 || rosterPending) && <div className="parent-card" role="status"><h2>Checking your learners</h2><p>Confirming which saved profiles belong to your account.</p></div>}
+        {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
+        {learners.length === 0 && pendingLinkedLearners === 0 && !rosterPending && !rosterFailed && <div className="parent-card parent-welcome"><h2>A little setup. A world to explore.</h2><p>{deniedLinkedLearners > 0 ? "The profiles on this browser belong to another account. Add a learner to your own family space." : "Add your learner, confirm their level, then connect their device with a single-use code."}</p><ol><li>Sign in <span>Done</span></li><li>Add a learner and confirm their level</li><li>Link their device</li></ol><button className="parent-primary" onClick={startEnrollment}>Add a learner <ArrowRight size={16} aria-hidden="true" /></button></div>}
+        {destination === "Overview" && <>
+          <WeeklyFamilyInvitation />
+          {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />
+          <details className="parent-card"><summary>More practice observations</summary><ParticipationDetails learner={reportLearner} /><ReportExport learner={reportLearner} reportSource={report} /></details></>}
+          <div className="parent-card parent-family-invitation"><HeartHandshake size={30} aria-hidden="true" /><div><p className="parent-eyebrow">An invitation, whenever you have time</p><h2>Let them lead the conversation.</h2><p>Ask, “What would you like to show me today?” Let your child choose a story, a creation or something they noticed away from the screen. A few unhurried minutes can be enough.</p><p className="parent-small">Missing a family review never blocks learning or removes rewards.</p></div></div>
+          <div className="parent-card"><h2>What your child shares</h2><p>Routine reports contain practice observations. Private reflections and AI conversations do not appear here. Children choose what to show you themselves. Specific safeguarding concerns may need a separate response.</p></div>
+        </>}
+        <div hidden={destination !== "Children"}>
+          <div className="parent-actions parent-section-actions"><p>Keep each learner’s level and devices together.</p><button className="parent-primary" onClick={startEnrollment}>Add a learner</button></div>
+          {adding && <div aria-busy={savingLearner}>{enrollmentError && <p className="parent-error" role="alert">{enrollmentError} Your details are still here. Try saving again.</p>}<ParentEnrollment busy={savingLearner} onBack={() => { add(false); pendingEnrollmentSet(null); }} onSave={learner => void saveEnrollment(learner)} /></div>}
+          {selected && !adding && <><div className="parent-card"><h2>{selected.name || "Your learner"}</h2><p>{placementLabel(selected)}{selected.school ? ` · ${selected.school}` : ""}</p><PlacementEditor learner={selected} onChange={patch => updateProfile(selected.id, patch)} /></div>
+            <ClaimAccountPanel key={`claim-${selected.id}`} learner={selected} onClaimed={remoteId => updateLearnerMeta(selected.id, { remoteId })} />
             <LearnerLinkPanel key={`link-${selected.id}`} learner={selected} />
-
-            {/* Revoking lives behind Clerk only — the in-kid-app parent room is
-                PIN-guarded, which is a speed bump, not an authorisation. */}
             <DevicePanel key={`devices-${selected.id}`} learner={selected} />
-
-            {/* A count, not analytics — see the note in the component on why
-                this one deliberately has no "this might mean". */}
-            {selected.placement?.kind !== "early-years" && <UsagePanel key={`usage-${selected.id}`} learner={selected} />}
-            {selected.board && <SyllabusPanel
-              key={`syllabus-${selected.id}`}
-              learner={selected}
-              onSave={(patch) => updateLearnerMeta(selected.id, patch)}
-            />}
-            <SelectedLearnerView
-              key={selected.id}
-              learner={selectedReport ? { ...selected, state: selectedReport.state } : selected}
-              reportSource={selectedReport ?? chooseParentReportState(selected.state, { status: "unlinked" })}
-              onUpdateLearner={(patch) => updateProfile(selected.id, patch)}
-              localEditable={!!profiles.learners[selected.id]}
-            />
-          </>
-        )}
-
-        <footer className="text-[11px] text-neutral-600 leading-relaxed border-t border-neutral-900 pt-6 mt-8">
-          Reports describe observed practice, with its evidence window and limits.
-          Completing an activity does not prove understanding. Preschool guidance
-          is scripted; optional school AI remains under your controls.
-        </footer>
+            {selected.remoteId && <details className="parent-card"><summary>Plan learning together</summary><LearningPlanner key={`plan-${selected.remoteId}`} endpoint={`/api/parent/learners/${selected.remoteId}/plan`} /></details>}
+            <details className="parent-card"><summary>Optional learning setup</summary>{selected.board && <SyllabusPanel key={`syllabus-${selected.id}`} learner={selected} onSave={patch => updateLearnerMeta(selected.id, patch)} />}
+              {profiles.learners[selected.id] ? <><FamilyNoteComposer name={selected.name || "your learner"} note={selected.familyNote} onChange={next => updateProfile(selected.id, { familyNote: next })} />{selected.placement?.kind !== "early-years" && <CareNoteComposer name={selected.name || "your learner"} note={selected.careNote} onChange={next => updateProfile(selected.id, { careNote: next })} />}</> : <p>Family and care notes can be edited on the enrolled learner device. This linked report does not save note edits across devices.</p>}
+            </details></>}
+        </div>
+        <div hidden={destination !== "Controls"}>
+          <section className="parent-card"><h2>Appearance</h2><p>Choose how this family space looks. This does not change your child’s theme.</p><div className="parent-appearance" role="group" aria-label="Family space appearance">{(["light", "dark", "system"] as const).map(value => <button key={value} type="button" aria-pressed={appearance === value} onClick={() => changeAppearance(value)}>{value.charAt(0).toUpperCase() + value.slice(1)}</button>)}</div></section>
+          <ParentInstallationGuide />
+          <WeeklyInvitations key={`weekly-invitations-${activeParentId}`} />
+          <ParentCircles learnerId={selected?.remoteId} />
+          <details className="parent-card"><summary>Optional AI settings</summary><p>Linking a device does not enable AI tutoring. These settings remain separate.</p>
+            <AiConnectionsPanel key={`ai-connections-${activeParentId}`} onConnectionsChanged={() => setAiPolicyRevision(revision => revision + 1)} />
+            <AiTutorControlsPanel key={`ai-tutors-${activeParentId}`} refreshToken={aiPolicyRevision} onProfilesChanged={() => setAiPolicyRevision(revision => revision + 1)} />
+            <FamilyAiPausePanel key={`family-ai-pause-${activeParentId}`} onPaused={() => setAiPolicyRevision(revision => revision + 1)} />
+            {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool guidance</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. AI tutoring stays unavailable.</p></div> : <LearnerAiTutorAccessPanel key={`learner-ai-access-${activeParentId}`} learner={selected} refreshToken={aiPolicyRevision} />)}
+          </details>
+        </div>
+        <footer className="parent-footer">Practice observations describe the available evidence. A completed activity does not prove understanding. No recorded activity does not mean no learning.<Link href="/mission">Our mission</Link></footer>
       </section>
-    </main>
-  );
+    </div>
+  </main>;
 }
 
-function SelectedLearnerView({
-  learner, reportSource, onUpdateLearner, localEditable,
-}: {
-  learner: ReturnType<typeof useGameStore.getState>["profiles"]["learners"][string];
-  reportSource: ParentReportDecision;
-  onUpdateLearner: (patch: Parameters<ReturnType<typeof useGameStore.getState>["updateLearnerMeta"]>[1]) => void;
-  localEditable: boolean;
-}) {
-  const state = learner.state;
-  const questionBanks = questionsForLearner(learner);
-  const questionStatsAvailable = Object.keys(questionBanks).length > 0;
-  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
-  const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
-    ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
-    : null;
+function FamilyOverview({ learner }: { learner: LearnerProfile }) {
+  const report = familyParticipation(learner.state);
+  return <section className="parent-card"><div className="parent-summary-title"><div><p className="parent-eyebrow">Last seven calendar days</p><h2>{learner.name || "Your learner"}’s participation</h2></div><span className="parent-small">{report.window}</span></div>
+    <div className="parent-week" aria-label="Recorded participation by day">{report.days.map(day => <div key={day.day}><span>{day.label}</span><span className={`parent-day ${day.app ? "has-app" : day.caregiver ? "has-caregiver" : ""}`} aria-label={`${day.day}: ${day.app ? "app participation" : day.caregiver ? "caregiver-reported activity" : "no recorded activity"}`}>{day.app ? "●" : day.caregiver ? "○" : "·"}</span></div>)}</div>
+    <p className="parent-small">Filled circles: app participation. Outlined circles: caregiver reports. Both are shown separately in the totals.</p>
+    <dl className="parent-stats"><div><dt>App completions</dt><dd>{report.appCompletions}</dd></div><div><dt>Caregiver reports</dt><dd>{report.caregiverReports}</dd></div><div><dt>Creation activities completed</dt><dd>{report.completedCreations}</dd></div></dl>
+    {report.appCompletions + report.caregiverReports === 0 && <p>No activity completion records in this window. Older rooms may not record this evidence, and offline changes may still need to sync.</p>}
+  </section>;
+}
 
-  const learnerSubjects = subjectsForLearner(learner.board, learner.pickedSubjects, learner.grade);
-  const subjectStats = useMemo(
-    () => learnerSubjects.map((s) => {
-      const topics = Object.keys(questionBanks[s.id] || {});
-      let attempts = 0, correct = 0, masterySum = 0;
-      topics.forEach((t) => {
-        const p = state.progress?.[s.id]?.[t];
-        if (p) { attempts += p.attempts || 0; correct += p.correct || 0; masterySum += p.mastery || 0; }
-      });
-      return { ...s, attempts, correct, mastery: topics.length ? Math.round(masterySum / topics.length) : null };
-    }),
-    [learnerSubjects, questionBanks, state.progress],
-  );
+function SharedCreations({ learner }: { learner: LearnerProfile }) {
+  const projects = (learner.state.creativeStudio?.projects ?? []).map(readCreationProject).filter(project => project?.visibility === "parent").slice(-6);
+  return <section className="parent-card"><h2>Creations they chose to share</h2><p>Your child controls which saved creations appear here. Private projects and unfinished drafts stay out of this view.</p>
+    {projects.length ? <div className="parent-shared-grid">{projects.map(project => project && <details key={project.id} className="parent-shared-project"><summary>{project.title || "Untitled creation"}<span className="parent-small"> · {project.mode}</span></summary><Image src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(frameSVG(project.frames[0]))}`} width={720} height={480} unoptimized alt={`First frame of ${project.title || "their shared creation"}`} /><p>{project.frames[0].caption}</p>{project.mode === "story" && project.pages.map(page => <p key={page.id}>{page.text}</p>)}</details>)}</div> : <p>No shared creations yet. There is no expectation to share everything.</p>}
+  </section>;
+}
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="md:col-span-3">
-        <ReportSourceNotice source={reportSource} />
-      </div>
+function ParticipationDetails({ learner }: { learner: LearnerProfile }) {
+  const report = familyParticipation(learner.state);
+  return <><dl className="parent-stats"><div><dt>Response attempts</dt><dd>{report.attempts}</dd></div><div><dt>Independent responses</dt><dd>{report.independentResponses}</dd></div><div><dt>Hints / retries</dt><dd>{report.hints} / {report.retries}</dd></div></dl><p>A hinted response is different from an independent answer. These figures do not score ability or personality.</p></>;
+}
 
-      {/* Top-of-fold opinion + identity */}
-      <div className="md:col-span-3 rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Profile</div>
-        <div className="font-display text-3xl font-bold mt-1">{learner.name || "Unnamed learner"}</div>
-        <div className="text-xs text-neutral-500 mt-0.5">
-          {placementLabel(learner)} · {boardLabel(learner.board)}
-          {learner.school ? ` · ${learner.school}` : ""}
-          {learner.city ? ` · ${learner.city}` : ""}
-        </div>
-        {learner.interests && learner.interests.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 self-center mr-1">
-              loves
-            </span>
-            {learner.interests.map((i) => (
-              <span
-                key={i}
-                className="text-[11px] rounded-full px-2 py-0.5"
-                style={{ background: "rgba(167,139,250,0.12)", color: "rgba(196,181,253,0.95)" }}
-              >
-                {i}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="md:col-span-3"><ActivityEvidence state={state}/><PlacementEditor learner={learner} onChange={onUpdateLearner}/></div>
-      {/* Setup status — what the parent has and hasn't configured */}
-      <div className="md:col-span-3">
-        <SetupStatus learner={learner} />
-      </div>
-
-      {/* Two-column body: communications + insights */}
-      <div className="md:col-span-2 space-y-4">
-        {localEditable ? <><FamilyNoteComposer
-          name={learner.name || "your learner"}
-          note={learner.familyNote}
-          onChange={(next) => onUpdateLearner({ familyNote: next })}
-        />
-        {learner.placement?.kind !== "early-years" && <CareNoteComposer
-          name={learner.name || "your learner"}
-          note={learner.careNote}
-          onChange={(next) => onUpdateLearner({ careNote: next })}
-        />}</> : <div className="rounded-lg border border-neutral-800 p-5"><h2>Notes on this device</h2><p className="text-sm text-neutral-400">Notes and local settings can be edited on the browser where this learner enrolled. This linked report does not save note edits across devices.</p></div>}
-        <RecentReflections state={state} name={learner.name || "your learner"} />
-        <WellnessSignals
-          state={state}
-          subjectStats={subjectStats}
-          missedQuestions={learnerMisses}
-          questionStatsAvailable={questionStatsAvailable}
-        />
-        <ReportExport learner={learner} subjectStats={subjectStats} reportSource={reportSource} />
-      </div>
-
-      <div className="space-y-4">
-        {localEditable && learner.placement?.kind !== "early-years" && <CapabilityMap learner={learner} onUpdateLearner={onUpdateLearner} />}
-
-        {/* Headline snapshot card */}
-        {learner.placement?.kind !== "early-years" && <><div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Snapshot</div>
-          <div className="grid grid-cols-2 gap-3">
-            <StatTile label="Accuracy" value={!questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%`} />
-            <StatTile label="Quizzes" value={questionStatsAvailable ? String(state.stats.quizzesCompleted) : "Unavailable"} />
-            <StatTile label="Streak" value={`${state.streak}d`} />
-            <StatTile label="Longest" value={`${state.longestStreak || 0}d`} />
-          </div>
-        </div>
-
-        {/* Weekly recap — last 7 days of activity */}
-        <WeeklyRecap learner={learner} />
-
-        {/* Sample OpinionCard — preserved as a "this is what richer findings will look like" */}
-        <OpinionCard
-          tone="warm"
-          window={questionStatsAvailable ? "Over the whole profile" : `${placementLabel(learner)} curriculum availability`}
-          observation={questionStatsAvailable
-            ? `${state.stats.totalAnswered} questions answered, ${state.dailyReflections?.length ?? 0} reflections logged.`
-            : "No grade-matched quiz bank is available yet, so Vidya is not showing quiz totals."}
-          opinion={
-            !questionStatsAvailable
-              ? "This means the curriculum content is still being prepared. It does not say anything about the learner's progress."
-              : state.stats.totalAnswered === 0
-              ? "This might mean it's still day one. Give it a week before reading anything into the numbers."
-              : "This might mean the kid is in a healthy rhythm. Notice it out loud when you can — kids feel seen when adults reference their work specifically."
-          }
-        /></>}
-      </div>
-    </div>
-  );
+function ReportExport({ learner, reportSource }: { learner: LearnerProfile; reportSource: ParentReportDecision }) {
+  return <button className="parent-secondary" onClick={() => {
+    const source = reportSource.source === "remote" ? `Synced progress: ${reportSource.updatedAt}` : "Source: progress available on this device; synced records may be unavailable.";
+    const report = familyParticipationReport(learner.name || "Learner", placementLabel(learner), learner.state) + `\n${source}\n`;
+    const url = URL.createObjectURL(new Blob([report], { type: "text/markdown" }));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `vidya-practice-${dayKeyOf(new Date())}.md`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }}><FileDown size={16} aria-hidden="true" /> Download practice observations</button>;
 }
 
 function ReportSourceNotice({ source }: { source: ParentReportDecision }) {
@@ -606,429 +369,4 @@ function ReportSourceNotice({ source }: { source: ParentReportDecision }) {
       <p className="mt-1 text-xs text-neutral-400">{detail}</p>
     </div>
   );
-}
-
-// -----------------------------------------------------------------------------
-// Markdown report export — for sharing with teachers / paediatricians / self.
-// Parent owns the data; we just shape it into a useful document.
-// -----------------------------------------------------------------------------
-
-function ReportExport({
-  learner, subjectStats, reportSource,
-}: {
-  learner: LearnerProfile;
-  subjectStats: SubjectLearningStat[];
-  reportSource: ParentReportDecision;
-}) {
-  const [copiedAt, setCopiedAt] = useState<number | null>(null);
-
-  const report = useMemo(
-    () => buildMarkdownReport(learner, subjectStats, reportSource),
-    [learner, reportSource, subjectStats],
-  );
-
-  const [copyFailed, setCopyFailed] = useState(false);
-
-  const copy = async () => {
-    // copyText falls back to execCommand for webviews that block the async
-    // Clipboard API, and reports honestly when both routes fail — the old
-    // code swallowed the error, so the button just did nothing.
-    const ok = await copyText(report);
-    if (ok) {
-      setCopyFailed(false);
-      setCopiedAt(Date.now());
-      setTimeout(() => setCopiedAt(null), 2200);
-    } else {
-      setCopyFailed(true);
-    }
-  };
-
-  const download = () => {
-    const blob = new Blob([report], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const safeName = (learner.name || "learner").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    a.href = url;
-    a.download = `vidya-${safeName}-${dayKeyOf(new Date())}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">Share report</div>
-          <div className="text-sm text-neutral-300 mt-0.5">
-            One markdown document. Share with a teacher, a paediatrician, or just save it for yourself.
-          </div>
-        </div>
-      </div>
-      <div className="flex gap-2 mt-3">
-        <button
-          onClick={copy}
-          className="rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 active:scale-95 transition"
-          style={{
-            background: copiedAt ? "rgba(52, 211, 153, 0.2)" : "rgba(167,139,250,0.18)",
-            color: copiedAt ? "#86efac" : "#c4b5fd",
-            border: `1px solid ${copiedAt ? "rgba(52, 211, 153, 0.4)" : "rgba(167,139,250,0.35)"}`,
-          }}
-        >
-          {copiedAt ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copiedAt ? "Copied" : copyFailed ? "Couldn\u2019t copy \u2014 use Download" : "Copy to clipboard"}
-        </button>
-        <button
-          onClick={download}
-          className="rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 active:scale-95 transition"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            color: "rgba(255,255,255,0.75)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <FileDown className="w-3.5 h-3.5" /> Download .md
-        </button>
-      </div>
-      <details className="mt-3">
-        <summary className="text-[11px] uppercase tracking-widest font-bold text-neutral-500 cursor-pointer hover:text-neutral-300">
-          Preview
-        </summary>
-        <pre className="mt-2 text-[11px] text-neutral-400 whitespace-pre-wrap font-mono leading-relaxed bg-neutral-950/60 border border-neutral-800 rounded-md p-3 max-h-80 overflow-auto">
-{report}
-        </pre>
-      </details>
-    </div>
-  );
-}
-
-function buildMarkdownReport(
-  learner: LearnerProfile,
-  subjectStats: SubjectLearningStat[],
-  reportSource: ParentReportDecision,
-): string {
-  const state = learner.state;
-  const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
-  const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
-    ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
-    : null;
-  // Local date: this is stamped on a report a parent reads in their own timezone.
-  const today = dayKeyOf(new Date());
-
-  const subjectLines = questionStatsAvailable
-    ? subjectStats
-        .filter((s) => s.mastery != null && s.attempts > 0)
-        .sort((a, b) => (b.mastery ?? 0) - (a.mastery ?? 0))
-        .map((s) => `- **${s.name}**: ${s.mastery}% recorded practice score, ${s.attempts} attempts (${s.correct} correct)`)
-        .join("\n") || "_No subject attempts yet._"
-    : `_Grade ${learner.grade} practice scoring is unavailable until grade-matched content is ready._`;
-
-  // PRIVACY: reflections the kid marked "Just for me" must never appear here.
-  // The kid is shown a lock and told their parent cannot read it; the on-screen
-  // parent view honours that, but this report — the one feature built for
-  // sharing onward with a teacher or doctor — used to quote every private body
-  // verbatim. Filter first, then say how many were withheld so the parent is
-  // not misled about completeness.
-  const reflections = state.dailyReflections || [];
-  const shareable = reflections.filter((r) => !r.private);
-  const privateCount = reflections.length - shareable.length;
-  const latestReflections =
-    (shareable
-      .slice()
-      .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
-      .slice(0, 5)
-      .map((r) => `- _${r.date}_ — "${r.body}"`)
-      .join("\n") || "_No reflections yet._") +
-    (privateCount > 0
-      ? `\n\n_${privateCount} reflection${privateCount === 1 ? "" : "s"} kept private by ${learner.name || "your learner"} and excluded from this report._`
-      : "");
-
-  const examLines = (learner.upcomingExams || [])
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((e) => `- **${e.date}** — ${e.title}`)
-    .join("\n") || "_None logged._";
-
-  const missesCount = missedQuestionsForLearner(learner, state.missedQuestions).length;
-  const sourceNote = reportSource.source === "remote"
-    ? `Numbers use synced learner progress last updated ${new Date(reportSource.updatedAt!).toLocaleString()}.`
-    : reportSource.fallbackReason === "loading"
-      ? "Synced progress was still loading, so numbers use progress stored on this device."
-      : reportSource.fallbackReason === "absent"
-        ? "No synced progress was available, so numbers use progress stored on this device."
-        : reportSource.fallbackReason === "unavailable"
-          ? "Synced progress could not be reached, so numbers use progress stored on this device."
-          : "This profile is not linked, so numbers use progress stored on this device.";
-
-  return `# Vidya: ${learner.name || "Learner"} report
-
-_Generated ${today}. ${sourceNote}_
-
-## Profile
-- **Grade**: ${learner.grade}
-- **Board**: ${learner.board}
-- **School**: ${learner.school || "—"}${learner.city ? ` (${learner.city})` : ""}
-- **Interests**: ${(learner.interests || []).join(", ") || "—"}
-
-## Snapshot
-- **Accuracy**: ${!questionStatsAvailable ? "Unavailable for current curriculum" : accuracy == null ? "Not yet" : `${accuracy}%`}
-- **Questions answered**: ${questionStatsAvailable ? state.stats.totalAnswered : "Unavailable for current curriculum"}
-- **Quizzes completed**: ${questionStatsAvailable ? state.stats.quizzesCompleted : "Unavailable for current curriculum"}
-- **Daily quests completed**: ${questionStatsAvailable ? state.stats.dailyQuestsCompleted : "Unavailable for current curriculum"}
-- **Current streak**: ${state.streak} day${state.streak === 1 ? "" : "s"}
-- **Longest streak**: ${state.longestStreak || 0} day${state.longestStreak === 1 ? "" : "s"}
-- **Wrong-Answer Notebook**: ${questionStatsAvailable
-  ? `${missesCount} question${missesCount === 1 ? "" : "s"} awaiting a second try`
-  : "Unavailable for current curriculum"}
-
-## Observed subject practice
-${subjectLines}
-
-## Recent reflections (kid's own words)
-${latestReflections}
-
-## Upcoming exams
-${examLines}
-
----
-
-_All findings are observations, not verdicts. Read together with the kid, never at them. Vidya never claims — only opines._
-`;
-}
-
-// -----------------------------------------------------------------------------
-// Setup status — at-a-glance "what's configured for this kid" checklist.
-// Read-only here; each row hints where to flip the bit.
-// -----------------------------------------------------------------------------
-
-function SetupStatus({ learner }: { learner: LearnerProfile }) {
-  const early = learner.placement?.kind === "early-years";
-  const items = early ? [
-    { label:"Name and early-years level", done:!!learner.name?.trim(), hint:placementLabel(learner) },
-    { label:"Language choices", done:true, hint:"English by default; Hindi can be selected on each learner device" },
-    { label:"Owned learning profile", done:!!learner.remoteId, hint:learner.remoteId ? "Claimed by this account" : "Claim the profile above to enable device linking." },
-    { label:"Companion guidance", done:true, hint:"Scripted activities; AI tutoring stays unavailable." },
-  ] : [
-    {
-      label: "Name + grade + board",
-      done: !!learner.name?.trim(),
-      hint: "Set during onboarding on the kid app.",
-    },
-    {
-      label: "Interests captured",
-      done: !!learner.interests && learner.interests.length > 0,
-      hint: learner.interests && learner.interests.length > 0
-        ? `${learner.interests.length} picked`
-        : "Kid can pick in their profile.",
-    },
-    {
-      label: "AI tone preference",
-      done: !!learner.aiTone,
-      hint: learner.aiTone ? `set to ${learner.aiTone}` : "Kid picks in their profile.",
-    },
-    {
-      // The old label claimed this PIN unlocked the AI tutor at rung 2. It
-      // never did after the rebuild — computeRung ignores parentPin entirely
-      // and reads verifiedLevel, which only a redeemed claim code sets. Saying
-      // otherwise sent parents to set a PIN and wonder why nothing opened.
-      label: "Parent PIN (guards the in-app parent room)",
-      done: !!learner.parentPin,
-      hint: learner.parentPin ? "set" : "Set from the in-kid-app Parent room.",
-    },
-    {
-      label: "Device linked for progress synchronization",
-      done: (learner.verifiedLevel ?? 0) >= 2,
-      hint: (learner.verifiedLevel ?? 0) >= 2
-        ? "linked"
-        : "Create a code above and have them type it in.",
-    },
-    {
-      label: "Care note (parent → AI)",
-      done: !!learner.careNote?.trim(),
-      hint: learner.careNote?.trim() ? "written" : "Write a paragraph above.",
-    },
-    {
-      label: "Family note (parent → kid)",
-      done: !!learner.familyNote,
-      hint: learner.familyNote?.seenAt
-        ? `seen ${prettyRelative(learner.familyNote.seenAt)}`
-        : learner.familyNote
-          ? "sent, not seen yet"
-          : "Send one above.",
-    },
-    {
-      label: "Upcoming exam logged",
-      done: (learner.upcomingExams?.length ?? 0) > 0,
-      hint: (learner.upcomingExams?.length ?? 0) > 0
-        ? `${learner.upcomingExams!.length} on calendar`
-        : "Add one from the in-kid-app Parent room.",
-    },
-  ];
-  const doneCount = items.filter((i) => i.done).length;
-
-  return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">
-            Setup status
-          </div>
-          <div className="text-sm text-neutral-300 mt-0.5">
-            {doneCount} of {items.length} configured
-          </div>
-        </div>
-        <div
-          className="rounded-full px-3 py-1 text-[10px] uppercase tracking-widest font-bold"
-          style={{
-            background: doneCount === items.length ? "rgba(52, 211, 153, 0.15)" : "rgba(167,139,250,0.15)",
-            color: doneCount === items.length ? "#86efac" : "#c4b5fd",
-          }}
-        >
-          {doneCount === items.length ? "Complete" : `${Math.round((doneCount / items.length) * 100)}%`}
-        </div>
-      </div>
-      <ul className="space-y-2">
-        {items.map((i, idx) => (
-          <li key={idx} className="flex items-start gap-3 text-xs">
-            <span
-              className="mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
-              style={{
-                background: i.done ? "rgba(52, 211, 153, 0.25)" : "rgba(255,255,255,0.06)",
-                color: i.done ? "#86efac" : "#71717a",
-              }}
-            >
-              {i.done ? "✓" : "·"}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className={i.done ? "text-neutral-200" : "text-neutral-400"}>{i.label}</div>
-              <div className="text-[11px] text-neutral-600">{i.hint}</div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function prettyRelative(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const m = Math.round(diffMs / 60_000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.round(h / 24);
-  return `${d}d ago`;
-}
-
-// -----------------------------------------------------------------------------
-// Weekly recap — derived from state. No DB needed; everything is on-device.
-// -----------------------------------------------------------------------------
-
-function WeeklyRecap({ learner }: { learner: LearnerProfile }) {
-  const state = learner.state;
-  const questionStatsAvailable = Object.keys(questionsForLearner(learner)).length > 0;
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const reflectionsWeek = (state.dailyReflections || []).filter((r) => new Date(r.savedAt).getTime() >= sevenDaysAgo);
-  const missesWeek = missedQuestionsForLearner(learner, state.missedQuestions)
-    .filter((m) => new Date(m.missedAt).getTime() >= sevenDaysAgo);
-  const reflectionPrivateCount = reflectionsWeek.filter((r) => r.private).length;
-
-  const hasAny = reflectionsWeek.length + missesWeek.length > 0 || state.streak > 0;
-
-  if (!hasAny) {
-    return (
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-2">Last 7 days</div>
-        <div className="text-sm italic text-neutral-500">
-          Nothing yet this week. Vidya recap fills in once the kid uses any room.
-        </div>
-      </div>
-    );
-  }
-
-  const days = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (6 - i));
-    return {
-      // dayKeyOf, not toISOString: `d` is LOCAL midnight, which in IST is
-      // 18:30 UTC the previous day — so the UTC form labelled every column
-      // with yesterday's date and none of them matched `reflectionDates`,
-      // whose keys are written from the local todayKey().
-      iso: dayKeyOf(d),
-      label: d.toLocaleDateString(undefined, { weekday: "short" })[0],
-    };
-  });
-  const reflectionDates = new Set(reflectionsWeek.map((r) => r.date));
-
-  return (
-    <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
-      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mb-3">Last 7 days</div>
-
-      {/* Day-of-week heatmap of reflections */}
-      <div className="flex items-end gap-1 mb-3">
-        {days.map((d) => {
-          const done = reflectionDates.has(d.iso);
-          return (
-            <div key={d.iso} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                className="w-full aspect-square rounded-sm transition-all"
-                style={{
-                  background: done ? "rgba(167,139,250,0.85)" : "rgba(255,255,255,0.05)",
-                  boxShadow: done ? "0 0 6px rgba(167,139,250,0.5)" : "none",
-                }}
-                title={d.iso}
-              />
-              <div className="text-[8px] uppercase tracking-widest text-neutral-600">{d.label}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <RecapStat
-          label="Reflections"
-          value={reflectionsWeek.length}
-          sub={reflectionPrivateCount > 0 ? `${reflectionPrivateCount} private` : undefined}
-        />
-        <RecapStat
-          label="New misses"
-          value={questionStatsAvailable ? missesWeek.length : "Unavailable"}
-        />
-        <RecapStat
-          label="Current streak"
-          value={state.streak}
-          sub={`longest ${state.longestStreak || 0}`}
-        />
-      </div>
-    </div>
-  );
-}
-
-function RecapStat({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return (
-    <div>
-      <div className="font-display text-2xl font-bold tracking-tight">{value}</div>
-      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500 mt-0.5">{label}</div>
-      {sub && <div className="text-[10px] text-neutral-600 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
-
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-widest font-bold text-neutral-500">{label}</div>
-      <div className="font-display text-2xl font-bold mt-0.5 tracking-tight">{value}</div>
-    </div>
-  );
-}
-
-function boardLabel(board: string | null): string {
-  switch (board) {
-    case "cambridge-primary": return "Cambridge Primary";
-    case "cambridge-lower-secondary": return "Cambridge Lower Secondary";
-    case "cambridge-igcse": return "Cambridge IGCSE";
-    case "icse": return "ICSE / CISCE";
-    case "cbse": return "CBSE / NCERT";
-    default: return board ?? "Early years";
-  }
 }

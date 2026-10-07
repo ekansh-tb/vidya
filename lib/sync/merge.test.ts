@@ -369,3 +369,30 @@ describe("mergeGameState — total and pure", () => {
     expect(twice).toEqual(once);
   });
 });
+
+
+describe("music drafts across devices", () => {
+  const oldDraft = { notes: [0, 2], tempoMs: 300, instrument: "keyboard" as const, updatedAt: "2026-10-08T01:00:00Z" };
+  const newDraft = { notes: [7], tempoMs: 400, bpm: 75, instrument: "marimba" as const, layers: [{ instrument: "percussion" as const, steps: [0, -1, 2] }], updatedAt: "2026-10-08T02:00:00Z" };
+  it("keeps the newer layered draft regardless of sync direction", () => {
+    expect(mergeGameState(base({ musicDraft: oldDraft }), base({ musicDraft: newDraft })).musicDraft).toEqual(newDraft);
+    expect(mergeGameState(base({ musicDraft: newDraft }), base({ musicDraft: oldDraft })).musicDraft).toEqual(newDraft);
+  });
+  it("does not drop saved drafts when an older client cannot represent them", () => {
+    expect(mergeGameState(base(), base({ musicDraft: newDraft })).musicDraft).toEqual(newDraft);
+    expect(mergeGameState(base({ musicDraft: newDraft }), base()).musicDraft).toEqual(newDraft);
+  });
+  it("preserves an intentionally cleared newer draft", () => {
+    const cleared = { ...newDraft, notes: [], layers: [], updatedAt: "2026-10-08T03:00:00Z" };
+    expect(mergeGameState(base({ musicDraft: cleared }), base({ musicDraft: newDraft })).musicDraft).toEqual(cleared);
+  });
+  it("ignores structurally corrupt remote drafts", () => {
+    expect(mergeGameState(base({ musicDraft: newDraft }), { musicDraft: "corrupt" } as unknown as GameState).musicDraft).toEqual(newDraft);
+  });
+  it("keeps legacy layered and keyboard compositions without altering identities", () => {
+    const legacy = { id: "old", name: "First melody", notes: [0, 4], tempoMs: 600, createdAt: "2026-01-01" };
+    const layered = { id: "new", name: "Our rhythm", ...newDraft, version: 2 as const, createdAt: "2026-10-08" };
+    const result = mergeGameState(base({ savedCompositions: [legacy] }), base({ savedCompositions: [layered] }));
+    expect(result.savedCompositions).toEqual([legacy, layered]);
+  });
+});

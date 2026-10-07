@@ -71,7 +71,7 @@ export function NotebookView({
   const backButton = (
     <button
       onClick={() => { sfx.click(); onBack(); }}
-      className="flex items-center gap-1 min-h-[44px] -ml-1 pr-2 text-white/60 font-medium mb-1 active:scale-95"
+      className="flex items-center gap-1 min-h-[44px] -ml-1 pr-2 text-[var(--text-muted)] font-medium mb-1 active:scale-95"
     >
       <ChevronLeft className="w-5 h-5" /> Home
     </button>
@@ -85,11 +85,11 @@ export function NotebookView({
         <div className="px-5 pt-6">
           {backButton}
           <div className="glass-card p-6 mt-3 text-center">
-            <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-white/[0.06]">
-              <NotebookPen className="w-6 h-6 text-white/60" />
+            <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-[var(--surface-strong)]">
+              <NotebookPen className="w-6 h-6 text-[var(--text-muted)]" />
             </div>
-            <div className="font-display text-xl font-bold text-white mt-3">Notebook</div>
-            <p className="text-sm text-white/50 mt-1">
+            <div className="font-display text-xl font-bold text-[var(--text)] mt-3">Notebook</div>
+            <p className="text-sm text-[var(--text-muted)] mt-1">
               Pick your subjects first — then each one gets its own page here.
             </p>
           </div>
@@ -107,17 +107,17 @@ export function NotebookView({
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-30 blur-3xl" style={{ background: subject.accent }} />
           <div className="relative flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: subject.soft }}>
-              <NotebookPen className="w-6 h-6" style={{ color: subject.accent }} />
+              <NotebookPen className="w-6 h-6" style={{ color: "var(--accent)" }} />
             </div>
             <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-white/50">Notebook</div>
-              <div className={`font-display text-2xl font-bold text-white ${subject.isDeva ? "font-deva" : ""}`}>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">Notebook</div>
+              <div className={`font-display text-2xl font-bold text-[var(--text)] ${subject.isDeva ? "font-deva" : ""}`}>
                 {subject.name}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-white/40">Saved</div>
-              <div className="flex items-center gap-1 text-xs text-emerald-300 font-semibold">
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)]">Saved</div>
+              <div className="flex items-center gap-1 text-xs text-[var(--success)] font-semibold">
                 {savedAt ? <><Check className="w-3 h-3" /> Auto</> : "Idle"}
               </div>
             </div>
@@ -138,8 +138,8 @@ export function NotebookView({
                   active ? "shadow-lg" : "opacity-60"
                 } ${s.isDeva ? "font-deva" : ""}`}
                 style={{
-                  background: active ? s.soft : "rgba(255,255,255,0.04)",
-                  color: active ? s.accent : "rgba(255,255,255,0.6)",
+                  background: active ? s.soft : "var(--surface-strong)",
+                  color: active ? "var(--accent)" : "var(--text-muted)",
                   boxShadow: active ? `0 0 12px ${s.glow}` : "none",
                 }}
               >
@@ -157,18 +157,18 @@ export function NotebookView({
           <div
             className="absolute inset-0 pointer-events-none opacity-40"
             style={{
-              backgroundImage: "repeating-linear-gradient(180deg, transparent 0, transparent 27px, rgba(255,255,255,0.06) 28px)",
+              backgroundImage: "repeating-linear-gradient(180deg, transparent 0, transparent 27px, var(--border) 28px)",
             }}
           />
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={`Write your ${subject.name} notes here. They save automatically.`}
-            className={`relative w-full h-full min-h-[55vh] bg-transparent outline-none p-5 pt-6 text-white placeholder-white/30 leading-7 resize-none ${subject.isDeva ? "font-deva" : ""}`}
+            className={`relative w-full h-full min-h-[55vh] bg-transparent outline-none p-5 pt-6 text-[var(--text)] placeholder-[var(--text-faint)] leading-7 resize-none ${subject.isDeva ? "font-deva" : ""}`}
             spellCheck
           />
         </div>
-        <div className="mt-3 flex items-center justify-between text-[11px] text-white/40">
+        <div className="mt-3 flex items-center justify-between text-[11px] text-[var(--text-muted)]">
           <div>{wordCount} words · {charCount} characters</div>
           <button
             onClick={() => {

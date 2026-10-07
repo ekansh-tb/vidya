@@ -298,6 +298,11 @@ export function LearnerAiTutorAccessPanel({
             Select one tutor for the learner currently shown in this dashboard. You control whether
             it is enabled, how many messages may be sent each day, and the maximum reply size.
           </p>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)]">
+            Live AI replies remain paused until verified age, processing consent, provider retention
+            and the learning scope have recorded reviews. Saving this assignment or an API key does
+            not complete those reviews. Authored activities remain available.
+          </p>
         </div>
         {remoteId && (
           <button

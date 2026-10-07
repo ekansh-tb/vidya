@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, RotateCcw, Lock, KeyRound, Eye, EyeOff, CalendarClock, Plus, X, Info, GraduationCap, ShieldCheck, ShieldAlert, Send, Heart, Trash2, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subjectsForLearner } from "@/lib/content/subjects";
-import { missedQuestionsForLearner, questionsForLearner } from "@/lib/content/questions/availability";
+import { questionsForLearner } from "@/lib/content/questions/availability";
 import type { ExamDate, FamilyNote, GameState, LearnerProfile, MissedQuestion, SubjectId } from "@/lib/types";
 import type { CapabilityKey, VerificationLevel } from "@/lib/auth/types";
 import { CAPABILITY_POLICIES } from "@/lib/capabilities/policies";
@@ -60,10 +60,10 @@ export function ParentView({
     return (
       <PinScaffold onBack={onBack} title="Set a parent PIN" subtitle={`For ${learner.name}'s parent view`}>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
-          4 digits. The kid won&apos;t see this. Use it whenever you open the parent room.
+          4 digits. Use it as a convenience lock when opening this local parent room.
           <br />
           <span style={{ color: "var(--text-faint)" }}>
-            This is a local speed bump — not real security. Real auth is the Clerk sign-in flow.
+            This local PIN does not secure server data. The signed-in parent dashboard uses Clerk authentication.
           </span>
         </p>
         <PinField label="New PIN" value={setPinValue} onChange={setSetPinValue} show={showSetPin} onToggleShow={() => setShowSetPin((s) => !s)} />
@@ -91,7 +91,7 @@ export function ParentView({
 
   if (phase === "gate") {
     return (
-      <PinScaffold onBack={onBack} title="Parent PIN" subtitle={`Unlock ${learner.name}'s analytics`}>
+      <PinScaffold onBack={onBack} title="Parent PIN" subtitle={`Open ${learner.name}'s local family controls`}>
         <PinField label="Enter PIN" value={pinInput} onChange={setPinInput} show={false} autoFocus />
         {pinError && (
           <div className="text-xs mt-3" style={{ color: "var(--error)" }}>{pinError}</div>
@@ -115,7 +115,7 @@ export function ParentView({
           className="mt-3 w-full text-[11px] uppercase tracking-widest font-bold"
           style={{ color: "var(--text-faint)" }}
           onClick={() => {
-            if (confirm(`Reset PIN? You'll lose access to ${learner.name}'s analytics until you set a new one.`)) {
+            if (confirm(`Reset PIN? You'll lose access to ${learner.name}'s local family controls until you set a new one.`)) {
               onUpdateLearner({ parentPin: undefined });
               setPhase("set");
               setPinInput("");
@@ -133,7 +133,6 @@ export function ParentView({
 
   const questionBanks = questionsForLearner(learner);
   const questionStatsAvailable = Object.keys(questionBanks).length > 0;
-  const learnerMisses = missedQuestionsForLearner(learner, state.missedQuestions);
   const accuracy = questionStatsAvailable && state.stats.totalAnswered > 0
     ? Math.round((state.stats.totalCorrect / state.stats.totalAnswered) * 100)
     : null;
@@ -163,35 +162,13 @@ export function ParentView({
         </p>
 
         <ActivityEvidence state={state}/><PlacementEditor learner={learner} onChange={onUpdateLearner}/>
-        {/* OPINION-ONLY headline ----------------------------------------- */}
-        <OpinionFrame
-          windowText={questionStatsAvailable
-            ? `Across ${state.stats.totalAnswered || 0} answered question${state.stats.totalAnswered === 1 ? "" : "s"}`
-            : `Grade ${learner.grade} curriculum availability`}
-          observation={
-            !questionStatsAvailable
-              ? "No grade-matched quiz bank is available yet, so Vidya is not showing a quiz score."
-              : accuracy == null
-              ? "Not enough data yet — this learner hasn't answered any quiz questions."
-              : `Overall accuracy ${accuracy}%. Current streak ${state.streak} day${state.streak === 1 ? "" : "s"}.`
-          }
-          opinion={
-            !questionStatsAvailable
-              ? "This means the curriculum content is still being prepared. It does not say anything about the learner's progress."
-              : accuracy == null
-              ? "This might mean the app is brand new on this device, or the kid is exploring non-quiz rooms first."
-              : accuracy >= 80
-                ? "This might mean the difficulty is currently a good fit — the kid is mostly getting things right but still being challenged."
-                : accuracy >= 60
-                  ? "This might mean the kid is in their stretch zone — getting most things right but pushing into harder material."
-                  : "This might mean specific topics need a parent-side conversation or a slower re-walk — not a sign of effort."
-          }
-          escalation={
-            questionStatsAvailable && accuracy != null && accuracy < 50 && state.stats.totalAnswered >= 20
-              ? "Worth a calm chat with the class teacher to compare notes — this is the kind of pattern that's better untangled together than guessed at alone."
-              : undefined
-          }
-        />
+        <section className="glass-card p-4 mb-5" aria-label="Recorded practice">
+          <h3 className="font-bold text-[var(--text)]">Recorded practice</h3>
+          <p className="text-sm text-[var(--text-muted)] mt-2">{questionStatsAvailable
+            ? accuracy == null ? "No quiz responses have been recorded on this device yet." : `${state.stats.totalAnswered} recorded responses, with ${accuracy}% answered correctly.`
+            : "No question bank is available for this placement yet. Activity participation appears separately."}</p>
+          <p className="text-xs text-[var(--text-muted)] mt-2">These are practice observations. They do not prove understanding, ability or effort. A missing record does not mean a child did not learn.</p>
+        </section>
 
         {/* Family note --------------------------------------------------- */}
         <FamilyNoteComposer
@@ -207,16 +184,7 @@ export function ParentView({
           onChange={(next) => onUpdateLearner({ careNote: next })}
         />
 
-        {/* Kid's recent reflections (verbatim) --------------------------- */}
-        <RecentReflections state={state} name={learner.name || "your learner"} />
-
-        {/* Wellness signals ---------------------------------------------- */}
-        <WellnessSignals
-          state={state}
-          subjectStats={subjectStats}
-          missedQuestions={learnerMisses}
-          questionStatsAvailable={questionStatsAvailable}
-        />
+        <section className="glass-card p-4 mb-5"><h3 className="font-bold text-[var(--text)]">Let your child choose what to share</h3><p className="text-sm text-[var(--text-muted)] mt-2">Private reflections and AI conversations stay out of routine family reports. Ask what they would like to show you. Shared creations are available in the signed-in parent dashboard.</p></section>
 
         {/* Upcoming exams ------------------------------------------------ */}
         <ExamManager
@@ -281,9 +249,8 @@ export function ParentView({
             not the same as being able to change it. */}
 
         {/* Backup & restore ---------------------------------------------- */}
-        {/* Placed high enough to be found before it is needed. All progress
-            lives in this browser only; this panel is the only way to survive
-            clearing site data or moving to a new device. */}
+        {/* Placed high enough to be found before it is needed. A backup can support recovery. Linked learners also synchronize
+            progress with their authenticated family account. */}
         <BackupPanel />
 
 
@@ -296,8 +263,8 @@ export function ParentView({
               { label: "Accuracy", value: !questionStatsAvailable ? "Unavailable" : accuracy == null ? "Not yet" : `${accuracy}%` },
               { label: "Quizzes Done", value: questionStatsAvailable ? state.stats.quizzesCompleted : "Unavailable" },
               { label: "Daily Quests", value: questionStatsAvailable ? state.stats.dailyQuestsCompleted : "Unavailable" },
-              { label: "Current Streak", value: `${state.streak} d` },
-              { label: "Longest Streak", value: `${state.longestStreak || 0} d` },
+              { label: "Historical streak", value: `${state.streak} d` },
+              { label: "Longest historical streak", value: `${state.longestStreak || 0} d` },
             ].map(({ label, value }) => (
               <div key={label}>
                 <div className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--text-faint)" }}>{label}</div>
@@ -321,25 +288,18 @@ export function ParentView({
               <div key={s.id} className="glass-card p-4">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: s.soft }}>
-                    <Icon className="w-5 h-5" style={{ color: s.accent }} />
+                    <Icon className="w-5 h-5" style={{ color: "var(--accent)" }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className={`font-bold ${s.isDeva ? "font-deva" : ""}`} style={{ color: "var(--text)" }}>{s.name}</div>
                     <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                       {s.mastery == null
-                        ? `Grade ${learner.grade} lessons are coming soon`
-                        : `${s.attempts} attempts · ${s.correct} correct`}
+                        ? "No question bank is available for this subject and placement."
+                        : `${s.attempts} practice sessions · ${s.correct} correct responses`}
                     </div>
                   </div>
-                  <div className="font-bold font-display text-sm" style={{ color: "var(--text)" }}>
-                    {s.mastery == null ? "Unavailable" : `${s.mastery}%`}
-                  </div>
                 </div>
-                {s.mastery != null && (
-                  <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${s.mastery}%`, background: s.accent, boxShadow: `0 0 6px ${s.glow}` }} />
-                  </div>
-                )}
+
               </div>
             );
           })}
@@ -347,11 +307,11 @@ export function ParentView({
 
         {/* Reset (last) -------------------------------------------------- */}
         <div className="glass-card p-4" style={{ border: "1px solid rgba(244, 114, 182, 0.35)" }}>
-          <div className="font-bold mb-2 flex items-center gap-1.5" style={{ color: "#F472B6" }}>
+          <div className="font-bold mb-2 flex items-center gap-1.5" style={{ color: "var(--error)" }}>
             <RotateCcw className="w-4 h-4" /> Reset {learner.name}&apos;s progress
           </div>
           <div className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
-            Clears XP, badges, missed-questions, streaks — for this learner only. Other learners are untouched. Cannot be undone.
+            Clears XP, badges, missed questions and streaks for this learner only. Other learners are untouched. Cannot be undone.
           </div>
           {!resetConfirm ? (
             <Button variant="danger" size="sm" onClick={() => setResetConfirm(true)}>Reset this learner</Button>
@@ -457,37 +417,6 @@ function PinField({
 }
 
 // -----------------------------------------------------------------------------
-// Opinion frame (inline; mirrors the /parent OpinionCard primitive)
-// -----------------------------------------------------------------------------
-
-function OpinionFrame({
-  windowText, observation, opinion, escalation,
-}: {
-  windowText: string;
-  observation: string;
-  opinion: string;
-  escalation?: string;
-}) {
-  return (
-    <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid var(--accent)" }}>
-      <div className="flex items-center gap-1.5 mb-2">
-        <Info className="w-3 h-3" style={{ color: "var(--accent)" }} />
-        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
-          Opinion · {windowText}
-        </span>
-      </div>
-      <div className="text-sm font-semibold mb-2" style={{ color: "var(--text)" }}>{observation}</div>
-      <div className="text-sm italic" style={{ color: "var(--text-muted)" }}>{opinion}</div>
-      {escalation && (
-        <div className="mt-3 pt-3 text-xs" style={{ borderTop: "1px dashed var(--border)", color: "var(--text-muted)" }}>
-          <span className="font-bold" style={{ color: "var(--text)" }}>What to do next: </span>{escalation}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// -----------------------------------------------------------------------------
 // Exam manager
 // -----------------------------------------------------------------------------
 
@@ -560,7 +489,7 @@ function ExamManager({
                 className="w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0"
                 style={{
                   background: daysAway <= 1 ? "rgba(244, 114, 182, 0.2)" : daysAway <= 7 ? "rgba(251, 191, 36, 0.18)" : "var(--accent-soft)",
-                  color: daysAway <= 1 ? "#F472B6" : daysAway <= 7 ? "#FBBF24" : "var(--accent)",
+                  color: daysAway <= 1 ? "var(--error)" : daysAway <= 7 ? "var(--warning)" : "var(--accent)",
                 }}
               >
                 <div className="font-display text-base font-bold leading-none">{daysAway < 0 ? "—" : daysAway}</div>
@@ -674,8 +603,8 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
   return (
     <div className="glass-card p-5 mb-5" style={{ borderTop: "2px solid #A78BFA" }}>
       <div className="flex items-center gap-1.5 mb-2">
-        <NotebookPen className="w-3.5 h-3.5" style={{ color: "#A78BFA" }} />
-        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#A78BFA" }}>
+        <NotebookPen className="w-3.5 h-3.5" style={{ color: "var(--accent-2)" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent-2)" }}>
           {name}&apos;s recent reflections
         </span>
       </div>
@@ -692,7 +621,7 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
           >
             <div className="text-[10px] uppercase tracking-widest font-bold mb-0.5" style={{ color: "var(--text-faint)" }}>
               {prettyDate(r.date)} · {prettyRelative(r.savedAt)}
-              {r.private && <span style={{ color: "#F472B6" }}> · 🔒 private</span>}
+              {r.private && <span style={{ color: "var(--error)" }}> · 🔒 private</span>}
             </div>
             {r.private ? (
               <div className="text-sm italic" style={{ color: "var(--text-faint)" }}>
@@ -746,8 +675,8 @@ export function FamilyNoteComposer({
   return (
     <div className="glass-card p-4 mb-5" style={{ borderTop: "2px solid #F472B6" }}>
       <div className="flex items-center gap-1.5 mb-3">
-        <Heart className="w-3.5 h-3.5" style={{ color: "#F472B6" }} />
-        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#F472B6" }}>
+        <Heart className="w-3.5 h-3.5" style={{ color: "var(--error)" }} />
+        <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--error)" }}>
           Note to {name}
         </span>
       </div>
@@ -836,8 +765,8 @@ export function CareNoteComposer({
     <div className="glass-card p-4 mb-5" style={{ borderTop: "2px solid #22D3EE" }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
-          <Heart className="w-3.5 h-3.5" style={{ color: "#22D3EE" }} />
-          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "#22D3EE" }}>
+          <Heart className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
+          <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
             How to care for {name}
           </span>
         </div>

@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Empty Shell Box",
+  "titleHindi": "खाली डिब्बा",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "shell-box",
+      "title": "The Empty Shell Box",
+      "paragraphs": [
+        "Ishaan had a box for his favourite things. His sister called it a shell box, although it held no shells. Ishaan liked the name.",
+        "He put in a leaf drawing and a ticket from a bus ride. His sister offered a bright bead. He said, ‘Thank you, but I do not want that today.’",
+        "The box still had a wide empty corner. His sister asked what would go there. Ishaan did not know yet. They decided it could wait.",
+        "Next week he added a drawing of the moon. The corner had been ready for a new idea, not waiting for something expensive."
+      ],
+      "illustration": "/books/vidya/shell-box.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "खाली डिब्बा",
+      "chapters": [
+        {
+          "id": "shell-box",
+          "title": "खाली डिब्बा",
+          "paragraphs": [
+            "ईशान के पास पसंदीदा चीज़ों का डिब्बा था। उसकी बहन उसे सीपियों का डिब्बा कहती थी, हालाँकि उसमें सीपियाँ नहीं थीं। ईशान को नाम पसंद था।",
+            "उसने पत्ते की तस्वीर और बस का टिकट रखा। बहन ने चमकीला मनका दिया। ईशान बोला, ‘धन्यवाद, पर आज मुझे यह नहीं चाहिए।’",
+            "डिब्बे का एक कोना खाली रहा। बहन ने पूछा, वहाँ क्या आएगा? ईशान अभी नहीं जानता था। दोनों ने इंतज़ार करने का सोचा।",
+            "अगले हफ़्ते उसने चाँद की तस्वीर रखी। खाली कोना किसी महँगी चीज़ के लिए नहीं, नए विचार के लिए तैयार था।"
+          ],
+          "illustration": "/books/vidya/shell-box.svg"
+        }
+      ]
+    }
+  }
+}

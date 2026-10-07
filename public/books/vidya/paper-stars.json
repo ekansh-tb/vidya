@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Paper Star Window",
+  "titleHindi": "कागज़ के तारों की खिड़की",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "paper-stars",
+      "title": "The Paper Star Window",
+      "paragraphs": [
+        "Mahi decorated the club window with paper stars. She liked neat rows. When her friend added a crooked star, Mahi wanted to move it immediately.",
+        "‘That star is dancing,’ her friend said. Mahi looked again. It did seem to lean towards the other stars. She decided to leave one row unfinished.",
+        "The next child added a moon. Another child made a cloud. Soon the window held a sky that nobody had planned alone.",
+        "Mahi still wanted some straight rows. The group kept a small corner for them and used the rest for a changing sky. They labelled both parts so visitors could understand the choice.",
+        "When a star fell, an adult helped them put it back safely. They did not say the child who made it had failed. Paper and tape sometimes need another try.",
+        "Mahi drew the window in her notebook. Under the picture she wrote, ‘My idea grew when other ideas had room.’"
+      ],
+      "illustration": "/books/vidya/paper-stars.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "कागज़ के तारों की खिड़की",
+      "chapters": [
+        {
+          "id": "paper-stars",
+          "title": "कागज़ के तारों की खिड़की",
+          "paragraphs": [
+            "माही ने समूह की खिड़की पर कागज़ के तारे लगाए। उसे सीधी कतारें पसंद थीं। दोस्त ने तिरछा तारा लगाया तो माही उसे तुरंत हटाना चाहती थी।",
+            "‘यह तारा नाच रहा है,’ दोस्त ने कहा। माही ने फिर देखा। तारा दूसरों की ओर झुका लगता था। उसने एक कतार अधूरी छोड़ दी।",
+            "अगले बच्चे ने चाँद जोड़ा। किसी ने बादल बनाया। खिड़की पर ऐसा आसमान बन गया जिसकी पूरी योजना किसी एक ने नहीं बनाई थी।",
+            "माही को कुछ सीधी कतारें अब भी चाहिए थीं। समूह ने उनके लिए छोटा कोना रखा। बाकी में बदलता आसमान था। दोनों हिस्सों पर उनकी पसंद लिखी।",
+            "एक तारा गिरा तो एक बड़े ने उसे सुरक्षित फिर लगाया। किसी ने बनाने वाले बच्चे को असफल नहीं कहा। कागज़ और टेप को कभी दोबारा कोशिश चाहिए।",
+            "माही ने खिड़की का चित्र बनाया। नीचे लिखा, ‘दूसरे विचारों को जगह मिली तो मेरा विचार भी बढ़ा।’"
+          ],
+          "illustration": "/books/vidya/paper-stars.svg"
+        }
+      ]
+    }
+  }
+}

@@ -181,16 +181,16 @@ export function MatchView({
       <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-5 pt-6">
         <button
           onClick={() => { sfx.click(); onClose(); }}
-          className="flex items-center gap-1 font-medium mb-6 active:scale-95 self-start text-white/60"
+          className="flex items-center gap-1 font-medium mb-6 active:scale-95 self-start text-[var(--text-muted)]"
         >
           <X className="w-5 h-5" /> Close
         </button>
         <div className="glass-card p-8 text-center">
           <div className="text-5xl mb-3 opacity-70">🌱</div>
-          <h2 className="font-display text-xl font-bold text-white mb-2">
+          <h2 className="font-display text-xl font-bold text-[var(--text)] mb-2">
             Match Quest is coming soon
           </h2>
-          <p className="text-sm text-white/60 mb-6">
+          <p className="text-sm text-[var(--text-muted)] mb-6">
             This topic does not have a Match Quest for your curriculum yet. Try another classroom activity in the meantime.
           </p>
           <Button onClick={() => { sfx.click(); onClose(); }}>Back</Button>
@@ -204,32 +204,32 @@ export function MatchView({
       <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <div className="px-5 pt-5">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => { sfx.click(); onClose(); }} className="text-white/50 active:scale-95">
+            <button onClick={() => { sfx.click(); onClose(); }} className="text-[var(--text-muted)] active:scale-95">
               <X className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-3 text-xs font-mono text-white/60">
+            <div className="flex items-center gap-3 text-xs font-mono text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" /> {elapsed}s
               </div>
-              <div className="text-white/20">·</div>
+              <div className="text-[var(--text-muted)]">·</div>
               <div className="flex items-center gap-1.5">
-                <RefreshCcw className="w-3.5 h-3.5 text-rose-300" /> {mistakes}
+                <RefreshCcw className="w-3.5 h-3.5 text-[var(--error)]" /> {mistakes}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: subject?.soft }}>
-              <subject.icon className="w-4 h-4" style={{ color: subject?.accent }} />
+              <subject.icon className="w-4 h-4" style={{ color: "var(--accent)" }} />
             </div>
-            <div className={`text-sm font-semibold ${isDeva ? "font-deva" : ""}`} style={{ color: subject?.accent }}>
+            <div className={`text-sm font-semibold ${isDeva ? "font-deva" : ""}`} style={{ color: "var(--accent)" }}>
               Match Quest
             </div>
-            <div className="text-xs text-white/40">·</div>
-            <div className={`text-xs text-white/60 ${isDeva ? "font-deva" : ""}`}>{topic.title}</div>
+            <div className="text-xs text-[var(--text-muted)]">·</div>
+            <div className={`text-xs text-[var(--text-muted)] ${isDeva ? "font-deva" : ""}`}>{topic.title}</div>
           </div>
 
-          <div className="text-[11px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">
+          <div className="text-[11px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-3 text-center">
             {matched.size} of {totalPairs} pairs found
           </div>
 
@@ -260,10 +260,10 @@ export function MatchView({
                       className={`absolute inset-0 rounded-2xl flex items-center justify-center p-3 text-center [transform:rotateY(180deg)] [backface-visibility:hidden] border transition-all ${
                         isMatched
                           ? "bg-emerald-500/20 border-emerald-400/60 shadow-lg shadow-emerald-500/30"
-                          : "glass border-white/15"
+                          : "glass border-[var(--border)]"
                       }`}
                     >
-                      <span className={`text-sm font-semibold leading-snug text-white ${isDeva ? "font-deva" : ""}`}>
+                      <span className={`text-sm font-semibold leading-snug text-[var(--text)] ${isDeva ? "font-deva" : ""}`}>
                         {card.text}
                       </span>
                     </div>
@@ -280,7 +280,7 @@ export function MatchView({
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-6 text-center"
               >
-                <div className="font-display text-2xl font-bold text-emerald-300">All matched!</div>
+                <div className="font-display text-2xl font-bold text-[var(--success)]">All matched!</div>
                 <Button size="lg" className="w-full mt-3" onClick={finishMatch}>
                   See Results
                 </Button>

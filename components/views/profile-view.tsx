@@ -43,13 +43,13 @@ function AiTonePicker({
   return (
     <div className="glass-card p-4 mb-5">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-cyan-300">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent)]">
           How Miss Vidya talks to you
         </div>
         {current && (
           <button
             onClick={() => { sfx.click(); onChange(undefined); }}
-            className="text-[10px] uppercase tracking-widest font-bold text-white/45 hover:text-white active:scale-95"
+            className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] hover:text-[var(--text)] active:scale-95"
           >
             Reset
           </button>
@@ -64,15 +64,15 @@ function AiTonePicker({
               onClick={() => { sfx.click(); onChange(t.id); }}
               className="rounded-2xl p-3 text-center transition active:scale-95"
               style={{
-                background: active ? "rgba(34,211,238,0.18)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${active ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.08)"}`,
+                background: active ? "rgba(34,211,238,0.18)" : "var(--surface-strong)",
+                border: `1px solid ${active ? "rgba(34,211,238,0.5)" : "var(--border)"}`,
               }}
             >
               <div className="text-2xl mb-1">{t.emoji}</div>
-              <div className={`text-[10px] uppercase tracking-widest font-bold ${active ? "text-cyan-200" : "text-white/65"}`}>
+              <div className={`text-[10px] uppercase tracking-widest font-bold ${active ? "text-[var(--accent)]" : "text-[var(--text-muted)]"}`}>
                 {t.label}
               </div>
-              <div className="text-[9px] leading-tight mt-1" style={{ color: active ? "rgba(34,211,238,0.85)" : "rgba(255,255,255,0.4)" }}>
+              <div className="text-[9px] leading-tight mt-1" style={{ color: active ? "var(--accent)" : "var(--text-muted)" }}>
                 {t.blurb}
               </div>
             </button>
@@ -106,10 +106,10 @@ function ReflectionRhythm({ reflections }: { reflections: { date: string }[] }) 
   return (
     <div className="glass-card p-4 mb-5">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-violet-300">
+        <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent-2)]">
           Reflection rhythm · last {days} days
         </div>
-        <div className="text-[11px] font-semibold text-white/60">
+        <div className="text-[11px] font-semibold text-[var(--text-muted)]">
           {total} of {days}
         </div>
       </div>
@@ -125,20 +125,20 @@ function ReflectionRhythm({ reflections }: { reflections: { date: string }[] }) 
                     ? "rgba(167,139,250,0.85)"
                     : isToday
                       ? "rgba(167,139,250,0.15)"
-                      : "rgba(255,255,255,0.04)",
+                      : "var(--surface-strong)",
                   boxShadow: r.done ? "0 0 8px rgba(167,139,250,0.5)" : "none",
                   border: isToday && !r.done ? "1px dashed rgba(167,139,250,0.4)" : "none",
                 }}
                 title={r.iso}
               />
-              <div className="text-[8px] uppercase tracking-widest text-white/30">
+              <div className="text-[8px] uppercase tracking-widest text-[var(--text-muted)]">
                 {r.label[0]}
               </div>
             </div>
           );
         })}
       </div>
-      <p className="text-[10px] italic text-white/40 mt-3 text-center">
+      <p className="text-[10px] italic text-[var(--text-muted)] mt-3 text-center">
         Each square is a day. Filled means you wrote a reflection.
       </p>
     </div>
@@ -205,7 +205,7 @@ export function ProfileView({
     <ReducedMotionProvider>
       <div className="min-h-screen pb-24 max-w-2xl mx-auto">
         <div className="px-5 pt-6">
-          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+          <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
             <ChevronLeft className="w-5 h-5" /> Home
           </button>
 
@@ -222,12 +222,12 @@ export function ProfileView({
                 <KeyRound className="w-5 h-5" style={{ color: "var(--accent)" }} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-display font-bold text-white text-sm">Got a code?</div>
-                <div className="text-xs text-white/55 mt-0.5">
+                <div className="font-display font-bold text-[var(--text)] text-sm">Got a code?</div>
+                <div className="text-xs text-[var(--text-muted)] mt-0.5">
                   Link this device to keep your progress safe.
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-white/40 flex-shrink-0" />
+              <ChevronRight className="w-5 h-5 text-[var(--text-muted)] flex-shrink-0" />
             </button>
           )}
 
@@ -237,15 +237,15 @@ export function ProfileView({
             <button
               onClick={() => { sfx.click(); setPickerOpen((v) => !v); }}
               aria-expanded={pickerOpen}
-              aria-label="Change buddy"
+              aria-label="Change profile avatar"
               className="inline-block active:scale-95 transition"
             >
               <Mascot avatarId={state.avatarId} customAvatar={state.customAvatar} size="lg" />
             </button>
             {/* A learner's full name is essential, so it wraps rather than
                 truncating — break-words keeps a long unbroken one in the card. */}
-            <div className="font-display text-3xl font-bold mt-3 text-white break-words">{learner.name || state.name}</div>
-            <div className="text-white/50 text-sm mt-0.5">
+            <div className="font-display text-3xl font-bold mt-3 text-[var(--text)] break-words">{learner.name || state.name}</div>
+            <div className="text-[var(--text-muted)] text-sm mt-0.5">
               {placementLabel(learner)} · {describeBoard(learner.board)}
               {learner.school ? ` · ${learner.school}` : ""}
             </div>
@@ -262,7 +262,7 @@ export function ProfileView({
                 exit={{ opacity: 0, height: 0 }}
                 className="glass-card p-4 mb-5 overflow-hidden"
               >
-                <div className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-3 text-center">Change buddy</div>
+                <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-3 text-center">Change profile avatar</div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                   {AVATARS.map((a) => (
                     <motion.button
@@ -274,7 +274,7 @@ export function ProfileView({
                       className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all ${
                         !state.customAvatar && state.avatarId === a.id
                           ? "glass-strong ring-2 ring-fuchsia-400"
-                          : "glass hover:bg-white/10"
+                          : "glass hover:bg-[var(--surface-strong)]"
                       }`}
                     >
                       <span className="text-3xl">{a.emoji}</span>
@@ -293,8 +293,8 @@ export function ProfileView({
                     onClick={() => { sfx.click(); fileInputRef.current?.click(); }}
                     className={`flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold transition-all ${
                       state.customAvatar
-                        ? "glass-strong ring-2 ring-cyan-300 text-white"
-                        : "glass text-white/80 hover:bg-white/10"
+                        ? "glass-strong ring-2 ring-cyan-300 text-[var(--text)]"
+                        : "glass text-[var(--text-muted)] hover:bg-[var(--surface-strong)]"
                     }`}
                   >
                     <Upload className="w-4 h-4" />
@@ -303,7 +303,7 @@ export function ProfileView({
                   {state.customAvatar && (
                     <button
                       onClick={() => { sfx.click(); setState((p) => ({ ...p, customAvatar: null })); }}
-                      className="rounded-2xl px-3 glass text-rose-300 hover:bg-rose-500/10"
+                      className="rounded-2xl px-3 glass text-[var(--error)] hover:bg-rose-500/10"
                       aria-label="Remove custom icon"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -311,7 +311,7 @@ export function ProfileView({
                   )}
                 </div>
                 {uploadError && (
-                  <div className="mt-2 text-xs text-rose-300 text-center">{uploadError}</div>
+                  <div className="mt-2 text-xs text-[var(--error)] text-center">{uploadError}</div>
                 )}
               </motion.div>
             )}
@@ -322,21 +322,21 @@ export function ProfileView({
           <div className="glass-card p-4 mb-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-fuchsia-300" />
-                <span className="text-[10px] uppercase tracking-widest font-bold text-fuchsia-300">
+                <Heart className="w-3.5 h-3.5 text-[var(--accent-2)]" />
+                <span className="text-[10px] uppercase tracking-widest font-bold text-[var(--accent-2)]">
                   What you love
                 </span>
               </div>
               <button
                 onClick={() => { sfx.click(); setInterestsEditing((v) => !v); }}
-                className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white active:scale-95"
+                className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] hover:text-[var(--text)] active:scale-95"
               >
                 {interestsEditing ? "Done" : currentInterests.length > 0 ? "Edit" : "Pick some"}
               </button>
             </div>
             {!interestsEditing ? (
               currentInterests.length === 0 ? (
-                <div className="text-xs italic text-white/40">
+                <div className="text-xs italic text-[var(--text-muted)]">
                   Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she&apos;ll use them in her examples.
                 </div>
               ) : (
@@ -367,12 +367,12 @@ export function ProfileView({
                       onClick={() => toggleInterest(c.id)}
                       className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95"
                       style={{
-                        background: active ? "rgba(244,114,182,0.18)" : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${active ? "rgba(244,114,182,0.5)" : "rgba(255,255,255,0.08)"}`,
+                        background: active ? "rgba(244,114,182,0.18)" : "var(--surface-strong)",
+                        border: `1px solid ${active ? "rgba(244,114,182,0.5)" : "var(--border)"}`,
                       }}
                     >
                       <span className="text-2xl">{c.emoji}</span>
-                      <span className={`text-[9px] uppercase tracking-wider font-semibold ${active ? "text-white" : "text-white/55"}`}>
+                      <span className={`text-[9px] uppercase tracking-wider font-semibold ${active ? "text-[var(--text)]" : "text-[var(--text-muted)]"}`}>
                         {c.label}
                       </span>
                     </button>
@@ -384,10 +384,10 @@ export function ProfileView({
 
           <div className="grid grid-cols-2 gap-3 mb-5">
             {[
-              { Icon: Flame, value: state.streak, label: "Day Streak", color: "text-orange-300" },
-              { Icon: TrendingUp, value: `${accuracy}%`, label: "Accuracy", color: "text-emerald-300" },
-              { Icon: Brain, value: state.stats.totalAnswered, label: "Questions", color: "text-violet-300" },
-              { Icon: Trophy, value: earned.length, label: "Badges", color: "text-amber-300" },
+              { Icon: Flame, value: state.streak, label: "Historical streak", color: "text-[var(--warning)]" },
+              { Icon: TrendingUp, value: `${accuracy}%`, label: "Accuracy", color: "text-[var(--success)]" },
+              { Icon: Brain, value: state.stats.totalAnswered, label: "Questions", color: "text-[var(--accent-2)]" },
+              { Icon: Trophy, value: earned.length, label: "Badges", color: "text-[var(--warning)]" },
             ].map(({ Icon, value, label, color }, i) => (
               <motion.div
                 key={label}
@@ -397,8 +397,8 @@ export function ProfileView({
                 className="glass-card p-4"
               >
                 <Icon className={`w-5 h-5 ${color} mb-1.5`} />
-                <div className="font-display text-3xl font-bold text-white">{value}</div>
-                <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{label}</div>
+                <div className="font-display text-3xl font-bold text-[var(--text)]">{value}</div>
+                <div className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">{label}</div>
               </motion.div>
             ))}
           </div>
@@ -412,9 +412,9 @@ export function ProfileView({
           {/* Reflection rhythm — last 14 days at a glance */}
           <ReflectionRhythm reflections={state.dailyReflections || []} />
 
-          <h3 className="font-display text-xl font-bold text-white mb-3 flex items-center gap-2">
+          <h3 className="font-display text-xl font-bold text-[var(--text)] mb-3 flex items-center gap-2">
             Badges
-            <span className="text-xs font-body font-medium text-white/50 bg-white/[0.06] px-2 py-0.5 rounded-full">
+            <span className="text-xs font-body font-medium text-[var(--text-muted)] bg-[var(--surface-strong)] px-2 py-0.5 rounded-full">
               {earned.length}/{BADGES.length}
             </span>
           </h3>
@@ -425,14 +425,14 @@ export function ProfileView({
               return (
                 <div key={b.id} className={`glass-card p-3 text-center ${isEarned ? "" : "opacity-50"}`}>
                   <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-2 ${
-                    isEarned ? `bg-gradient-to-br ${tier.gradient} shadow-lg ${tier.glow}` : "bg-white/[0.04] grayscale"
+                    isEarned ? `bg-gradient-to-br ${tier.gradient} shadow-lg ${tier.glow}` : "bg-[var(--surface-strong)] grayscale"
                   }`}>
-                    {isEarned ? b.icon : <Lock className="w-5 h-5 text-white/30" />}
+                    {isEarned ? b.icon : <Lock className="w-5 h-5 text-[var(--text-muted)]" />}
                   </div>
-                  <div className={`text-xs font-bold leading-tight ${isEarned ? "text-white" : "text-white/40"} ${(b.id === "bhasha-premi" || b.id === "marathi-mitra") ? "font-deva" : ""}`}>
+                  <div className={`text-xs font-bold leading-tight ${isEarned ? "text-[var(--text)]" : "text-[var(--text-muted)]"} ${(b.id === "bhasha-premi" || b.id === "marathi-mitra") ? "font-deva" : ""}`}>
                     {b.name}
                   </div>
-                  <div className="text-[10px] text-white/40 mt-0.5 leading-tight">{b.desc}</div>
+                  <div className="text-[10px] text-[var(--text-muted)] mt-0.5 leading-tight">{b.desc}</div>
                 </div>
               );
             })}

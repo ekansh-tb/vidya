@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-
 export type ThemeId = "playful" | "vivid" | "terminal";
+export type Appearance = "light" | "dark" | "system";
 
-/** Side-effect-only: sets data-theme on <html>. Renders nothing. */
-export function ThemeApplier({ theme }: { theme: ThemeId }) {
+/** Legacy theme IDs remain compatible; appearance is an independent choice. */
+export function ThemeApplier({ theme, appearance = "light" }: { theme: ThemeId; appearance?: Appearance }) {
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.appearance = appearance === "system" ? (media.matches ? "dark" : "light") : appearance;
+    };
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [theme, appearance]);
   return null;
 }
-
-/** Default theme suggestion by grade band. Always overridable on the learner profile. */
 export function themeForGrade(grade: number | null): ThemeId {
-  if (grade === null || grade <= 5) return "playful";   // Gen Alpha — primary
-  if (grade <= 8) return "vivid";     // Class 6–8 — early teen
-  return "vivid";                  // Class 9+ — Gen Z senior
+  return grade === null || grade <= 5 ? "playful" : "vivid";
 }

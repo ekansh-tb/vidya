@@ -22,7 +22,8 @@ describe.skipIf(!enabled)("isolated parent guidance lifecycle", { timeout: 60000
   beforeAll(async () => {
     const sql = getSql();
     const [identity] = await sql`select current_database() as database, current_user as role, session_user as session_role`;
-    expect(identity).toEqual({ database: "vidya_integration", role: "vidya_test_runner", session_role: "vidya_test_runner" });
+    const expected = new URL(process.env.DATABASE_URL!);
+    expect(identity).toEqual({ database: expected.pathname.slice(1), role: expected.username, session_role: expected.username });
     databaseVerified = true;
     await upsertParent({ id: parentA });
     await upsertParent({ id: parentB });

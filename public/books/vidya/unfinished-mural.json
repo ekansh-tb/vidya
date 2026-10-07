@@ -1,0 +1,56 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Unfinished Mural",
+  "titleHindi": "अधूरा भित्तिचित्र",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. School collection only; complexity is a reading preference, not a grade, age or ability assessment. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "unfinished-mural",
+      "title": "The Unfinished Mural",
+      "paragraphs": [
+        "The community centre invited young artists to paint a paper mural about their neighbourhood. Mira drew a busy market. Jay added a quiet lane. Someone wanted to fill every empty space before visitors arrived.",
+        "Mira noticed one blank rectangle at the edge. It belonged to a child who had begun a drawing but stopped. The child had chosen not to explain the unfinished picture, and the group did not demand a reason.",
+        "They asked whether the rectangle could stay blank. The child said yes. A small note explained that the mural included space for a story still being made, without naming its maker.",
+        "Visitors offered different ideas for the blank part. The organisers welcomed their thoughts but did not paint over it. An invitation to contribute was not permission to take over another person's space.",
+        "A week later, the child returned with a drawing of two windows. One was open, and one had a curtain. The group attached it without asking what each window meant.",
+        "Mira liked the mural's new balance. It held crowds, quiet lanes and a story whose maker could choose how much to share. The empty space had been part of the work."
+      ],
+      "illustration": "/books/vidya/unfinished-mural.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "अधूरा भित्तिचित्र",
+      "chapters": [
+        {
+          "id": "unfinished-mural",
+          "title": "अधूरा भित्तिचित्र",
+          "paragraphs": [
+            "सामुदायिक केंद्र ने युवा कलाकारों को मोहल्ले का कागज़ी भित्तिचित्र बनाने बुलाया। मीरा ने बाज़ार बनाया। जय ने शांत गली जोड़ी। किसी को आगंतुक आने से पहले हर खाली जगह भरनी थी।",
+            "मीरा ने किनारे पर खाली आयत देखा। एक बच्चे ने वहाँ चित्र शुरू किया था और रुक गया था। उसने कारण नहीं बताना चुना था। समूह ने कारण माँगने पर ज़ोर नहीं दिया।",
+            "उन्होंने पूछा कि क्या आयत खाली रह सकता है। बच्चे ने हाँ कहा। छोटी टिप्पणी में लिखा कि बन रही कहानी के लिए जगह है। बनाने वाले का नाम नहीं दिया।",
+            "आगंतुकों ने खाली हिस्से के लिए कई विचार दिए। आयोजकों ने सुना, पर उस पर रंग नहीं भरा। योगदान का निमंत्रण किसी और की जगह अपने हाथ में लेने की अनुमति नहीं था।",
+            "एक हफ़्ते बाद बच्चा दो खिड़कियों का चित्र लाया। एक खुली थी, दूसरी पर पर्दा था। समूह ने दोनों का अर्थ पूछे बिना चित्र लगाया।",
+            "मीरा को नया संतुलन अच्छा लगा। भीड़, शांत गली और अपनी बात कितना साझा करनी है चुनने वाले की कहानी साथ थीं। खाली जगह भी कलाकृति का हिस्सा थी।"
+          ],
+          "illustration": "/books/vidya/unfinished-mural.svg"
+        }
+      ]
+    }
+  }
+}

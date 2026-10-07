@@ -22,7 +22,8 @@ export async function connectAccountTestDatabase() {
     await client.connect();
     const result = await client.query("select current_database() as database, current_user as role, session_user as login");
     const identity = result.rows[0];
-    if (identity?.database !== "vidya_integration" || identity?.role !== "vidya_test_runner" || identity?.login !== "vidya_test_runner") {
+    const expected = new URL(process.env.DATABASE_URL!);
+    if (identity?.database !== expected.pathname.slice(1) || identity?.role !== expected.username || identity?.login !== expected.username) {
       throw new Error("Identity mismatch");
     }
   } catch {

@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { LearnerProfile, SubjectId } from "@/lib/types";
 import * as subjects from "@/lib/content/subjects";
 import * as boards from "@/lib/content/boards";
+import * as placement from "@/lib/learning/placement";
 
 // The repository's Vitest configuration preserves JSX. Compile this focused
 // render fixture without changing the shared configuration or app build.
@@ -19,6 +20,8 @@ const exports: { SubjectPickerView?: React.ComponentType<{ learner: LearnerProfi
 new Function("require", "exports", compiled)((id: string) => {
   if (id === "@/lib/content/subjects") return subjects;
   if (id === "@/lib/content/boards") return boards;
+  if (id === "@/lib/learning/placement") return placement;
+  if (id === "@/components/ui/reduced-motion") return { ReducedMotionProvider: ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children) };
   if (id === "@/lib/audio") return { sfx: { click: vi.fn() } };
   if (id === "@/components/ui/button") return {
     Button: ({ children, disabled, onClick }: React.PropsWithChildren<{ disabled?: boolean; onClick?: () => void }>) => {

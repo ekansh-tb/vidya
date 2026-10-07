@@ -1,0 +1,52 @@
+{
+  "sourceKind": "vidya-original",
+  "title": "The Dancing Ribbon",
+  "titleHindi": "नाचता फीता",
+  "author": "Vidya original, AI-authored",
+  "language": "English",
+  "sourceLabel": "Vidya original starter story",
+  "sourceUrl": "https://vidyagyan.study/mission",
+  "rights": "Original AI-authored text and original geometric illustrations created for Vidya. No third-party story text or artwork copied. Legal rights review by an independent professional has not been performed.",
+  "publicationStatus": "published",
+  "review": {
+    "authorship": "AI-authored original; implementation-agent editorial checks recorded separately.",
+    "factual": "2026-10-08: Root implementation agent read English and Hindi fictional text. Descriptions are bounded narrative events, with no syllabus, universal factual, ability or learning-outcome claim.",
+    "developmental": "2026-10-08: Root agent editorial suitability pass. Eligible for Nursery/LKG/UKG caregiver-led short picture/story reading. No independent developmental expert or child usability validation is claimed.",
+    "language": "2026-10-08: Root agent read paired English/Hindi paragraphs; Jo corrected to Jay/जय and quiet-lunch pointing translation corrected. No independent Hindi linguist review is claimed.",
+    "accessibility": "Structured aligned paragraphs, text-free covers and keyboard/button alternatives implemented. Automated contract checks passed for all24 titles/assets. 2026-10-08: Root desktop browser accepted red-cup loading/art, page2, scroll/pages, 21px font, Hindi, night theme, bookmark and position after exit/reload. Phone/tablet, screen-reader and physical-device narration acceptance remain pending.",
+    "rights": "Original AI-authored text and geometric SVG provenance checked in source. Root visually accepted final 24-cover contact sheet on 2026-10-08. No third-party story text/artwork copied and no independent legal rights assessment claimed.",
+    "limitations": "No independent educator, developmental expert or Hindi linguist review is claimed.",
+    "rootEditorial": "2026-10-08: Root agent read all24 English/Hindi texts, accepted all24 covers in a static contact sheet and accepted representative desktop reader loading/position controls. Bounded publication authorized; no independent expertise or learning-outcome claim."
+  },
+  "chapters": [
+    {
+      "id": "ribbon-wind",
+      "title": "The Dancing Ribbon",
+      "paragraphs": [
+        "A ribbon hangs by the window.",
+        "A breeze comes in.",
+        "The ribbon bends and turns.",
+        "Ria waves. The ribbon waves too."
+      ],
+      "illustration": "/books/vidya/ribbon-wind.svg"
+    }
+  ],
+  "translations": {
+    "hi": {
+      "title": "नाचता फीता",
+      "chapters": [
+        {
+          "id": "ribbon-wind",
+          "title": "नाचता फीता",
+          "paragraphs": [
+            "खिड़की के पास एक फीता लटका है।",
+            "हल्की हवा आती है।",
+            "फीता मुड़ता है और घूमता है।",
+            "रिया हाथ हिलाती है। फीता भी हिलता है।"
+          ],
+          "illustration": "/books/vidya/ribbon-wind.svg"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,130 @@
+.parent-dashboard.parent-family {
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --text: #15283f; --text-muted: #465a71; --text-faint: #526780;
+  --bg-base: #f3f7fc; --surface: #fff; --surface-2: #eef4fb;
+  --border: #c8d5e3; --border-strong: #9db3c9;
+  --accent: #006c67; --accent-soft: #e2f4f0; --accent-glow: transparent;
+  --success: #166349; --error: #ad283b; --warning: #845209;
+  --radius-md: 12px; --radius-lg: 20px; --radius-pill: 999px;
+  min-height: 100vh; background: var(--bg-base); color: var(--text); color-scheme: light;
+}
+.parent-dashboard.parent-family[data-parent-appearance=dark] {
+  --text: #ecf3fd; --text-muted: #bdcde0; --text-faint: #a8bdd6;
+  --bg-base: #0f1b2c; --surface: #18283c; --surface-2: #21334a;
+  --border: #415670; --border-strong: #63809e;
+  --accent: #8cdbcb; --accent-soft: #1e403f; --success: #9de1bd; --error: #ffa2ab; --warning: #efd094;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  .parent-dashboard.parent-family[data-parent-appearance=system] {
+    --text: #ecf3fd; --text-muted: #bdcde0; --text-faint: #a8bdd6;
+    --bg-base: #0f1b2c; --surface: #18283c; --surface-2: #21334a;
+    --border: #415670; --border-strong: #63809e;
+    --accent: #8cdbcb; --accent-soft: #1e403f; --success: #9de1bd; --error: #ffa2ab; --warning: #efd094;
+    color-scheme: dark;
+  }
+}
+.parent-family * { box-sizing: border-box; }
+.parent-family [hidden] { display: none !important; }
+.parent-family :is(h1,h2,h3) { font-family: var(--font-display), sans-serif; color: var(--text); }
+.parent-family h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 700; line-height: 1.15; margin: 6px 0; }
+.parent-family h2 { font-size: 1.3rem; font-weight: 650; line-height: 1.4; }
+.parent-family h3 { font-size: 1rem; font-weight: 650; }
+.parent-family p { color: var(--text-muted); line-height: 1.7; margin: 8px 0; }
+.parent-family :is(button,select,input,textarea,summary,a):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.parent-family :is(button,summary) { cursor: pointer; }
+.parent-family button { color: var(--text); min-height: 44px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 15px; font-size: .875rem; font-weight: 600; background: var(--surface); }
+.parent-family button:disabled { cursor: not-allowed; opacity: .6; }
+.parent-family :is(input,select,textarea) { max-width: 100%; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface); min-height: 44px; padding: 10px 12px; }
+.parent-family option { color: var(--text); background: var(--surface); }
+.parent-family input[type=checkbox] { width: 20px; min-height: 20px; accent-color: var(--accent); }
+.parent-family summary { padding: 8px 0; min-height: 44px; font-weight: 650; }
+.parent-family .parent-primary { color: var(--surface); background: var(--accent); border-color: var(--accent); display: inline-flex; align-items: center; gap: 10px; }
+.parent-family .parent-secondary { color: var(--accent); background: var(--accent-soft); display: inline-flex; align-items: center; gap: 8px; }
+.parent-family .parent-header { background: var(--surface); border-bottom: 1px solid var(--border); }
+.parent-family .parent-header-inner { max-width: 1220px; padding: 18px 28px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.parent-family .parent-brand { color: var(--accent); display: flex; align-items: center; gap: 12px; font-family: var(--font-display), sans-serif; font-size: 1.5rem; font-weight: 700; }
+.parent-family .parent-brand-caption { display: block; color: var(--text-muted); font-size: .72rem; font-family: var(--font-body), sans-serif; font-weight: 500; }
+.parent-family .parent-header-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.parent-family .parent-header-actions a { font-size: .8rem; display: inline-flex; align-items: center; min-height: 44px; gap: 8px; color: var(--accent); }
+.parent-family .parent-layout { display: grid; grid-template-columns: 190px minmax(0,1fr); max-width: 1220px; margin: auto; }
+.parent-family .parent-sidebar { padding: 36px 20px 28px 28px; }
+.parent-family .parent-sidebar nav { display: grid; gap: 6px; }
+.parent-family .parent-sidebar nav button { text-align: left; border-color: transparent; background: transparent; padding: 13px 16px; }
+.parent-family .parent-sidebar nav button[aria-current=page] { background: var(--accent-soft); color: var(--accent); border-color: var(--border); }
+.parent-family .parent-sidebar > p { font-size: .8rem; margin: 28px 16px; }
+.parent-family .parent-content { min-width: 0; padding: 30px 28px 40px; }
+.parent-family .parent-page-title { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.parent-family .parent-eyebrow { color: var(--accent); font-size: .75rem; font-weight: 650; margin: 0; }
+.parent-family .parent-account { font-size: .85rem; text-align: right; max-width: 50%; overflow-wrap: anywhere; }
+.parent-family .parent-account > span { display: block; color: var(--text-muted); font-size: .72rem; margin-top: 4px; }
+.parent-family .parent-learner-picker { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.parent-family .parent-learner-picker label { font-size: .85rem; color: var(--text-muted); }
+.parent-family .parent-learner-picker select { flex: 1; max-width: 440px; }
+.parent-family .parent-card { margin: 18px 0; padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+.parent-family .parent-summary-title { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.parent-family .parent-small { font-size: .75rem; color: var(--text-muted); }
+.parent-family .parent-week { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 10px; margin: 24px 0 12px; }
+.parent-family .parent-week > div { display: grid; gap: 8px; text-align: center; font-size: .72rem; color: var(--text-muted); }
+.parent-family .parent-day { height: 40px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); border-radius: 10px; font-size: 1.2rem; }
+.parent-family .parent-day.has-app { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.parent-family .parent-day.has-caregiver { border-color: var(--accent); color: var(--accent); }
+.parent-family .parent-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; margin: 22px 0; }
+.parent-family .parent-stats dt { font-size: .8rem; color: var(--text-muted); }
+.parent-family .parent-stats dd { font-size: 1.8rem; font-weight: 650; margin-top: 5px; }
+.parent-family .parent-family-invitation { display: flex; align-items: start; gap: 18px; background: var(--accent-soft); }
+.parent-family .parent-family-invitation > svg { color: var(--accent); flex-shrink: 0; margin-top: 3px; }
+.parent-family .parent-section-actions { justify-content: space-between; }
+.parent-family .parent-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.parent-family .parent-welcome ol { padding: 0 0 0 22px; line-height: 2; color: var(--text-muted); margin: 18px 0; }
+.parent-family .parent-welcome li > span { color: var(--accent); font-weight: 650; margin-left: 6px; }
+.parent-family .parent-enrollment label { display: block; font-size: .85rem; font-weight: 600; margin: 18px 0 6px; }
+.parent-family .parent-enrollment :is(select,input:not([type=checkbox])) { width: 100%; }
+.parent-family .parent-enrollment .parent-check { display: flex; align-items: start; gap: 12px; font-weight: 400; line-height: 1.6; }
+.parent-family .parent-check input { margin-top: 3px; flex-shrink: 0; }
+.parent-family .parent-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.parent-family .parent-appearance { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.parent-family .parent-appearance [aria-pressed=true] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.parent-family .parent-control-note { padding: 16px; margin-top: 20px; border-radius: 12px; background: var(--surface-2); }
+.parent-family .parent-footer { color: var(--text-muted); font-size: .75rem; border-top: 1px solid var(--border); padding-top: 24px; margin-top: 30px; line-height: 1.8; }
+.parent-family .parent-footer a { color: var(--accent); display: block; text-decoration: underline; min-height: 44px; }
+.parent-family .parent-loading { max-width: 600px; margin: auto; padding: 80px 24px; color: var(--text); }
+.parent-family .parent-error { color: var(--error); padding: 12px; border: 1px solid var(--error); border-radius: 12px; }
+.parent-family .parent-skip { position: absolute; top: 0; left: 20px; transform: translateY(-150%); z-index: 50; background: var(--surface); color: var(--accent); padding: 12px; }
+.parent-family .parent-skip:focus { transform: translateY(0); }
+/* Reuse existing security and linking panels with this page's semantic palette. */
+.parent-dashboard.parent-family :is(.glass-card,.learning-panel,.buddy-panel) { background: var(--surface); border: 1px solid var(--border); color: var(--text); box-shadow: none; padding: 20px; border-radius: 16px; }
+.parent-dashboard.parent-family :is(.text-neutral-100,.text-neutral-200,.text-neutral-300,.text-white) { color: var(--text); }
+.parent-dashboard.parent-family :is(.text-neutral-400,.text-neutral-500,.text-neutral-600) { color: var(--text-muted); }
+.parent-dashboard.parent-family :is(.text-violet-300,.text-violet-400,.text-emerald-100,.text-emerald-200,.text-emerald-300,.text-emerald-400,.text-violet-200,.text-cyan-200,.text-cyan-300,.text-cyan-400) { color: var(--accent); }
+.parent-dashboard.parent-family :is(.text-red-100,.text-red-200,.text-red-300,.text-red-400) { color: var(--error); }
+.parent-dashboard.parent-family :is(.text-amber-100,.text-amber-200,.text-amber-300,.text-amber-400) { color: var(--warning); }
+.parent-dashboard.parent-family [class*=bg-neutral-] { background: var(--surface); }
+.parent-dashboard.parent-family :is([class*=bg-cyan-],[class*=bg-emerald-],[class*=bg-amber-],[class*=bg-violet-],[class*=bg-red-]) { background: var(--surface-2); }
+.parent-dashboard.parent-family [class*=border-neutral-] { border-color: var(--border); }
+.parent-dashboard.parent-family .buddy-action { background: var(--accent-soft); color: var(--accent); }
+@media(max-width: 760px) {
+  .parent-family .parent-header-inner { padding: 14px 18px; flex-wrap: wrap; }
+  .parent-family .parent-layout { display: block; }
+  .parent-family .parent-sidebar { padding: 16px 18px 0; }
+  .parent-family .parent-sidebar nav { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .parent-family .parent-sidebar nav button { padding: 11px 6px; text-align: center; }
+  .parent-family .parent-sidebar > p { display: none; }
+  .parent-family .parent-content { padding: 24px 18px; }
+  .parent-family .parent-page-title { flex-wrap: wrap; }
+  .parent-family .parent-account { text-align: left; max-width: 100%; }
+  .parent-family .parent-card { padding: 18px; }
+  .parent-family .parent-summary-title { display: block; }
+  .parent-family .parent-week { gap: 5px; }
+  .parent-family .parent-learner-picker { display: grid; gap: 6px; }
+  .parent-family .parent-learner-picker select { width: 100%; max-width: none; }
+  .parent-family .parent-stats { gap: 12px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .parent-family .parent-family-invitation { display: block; }
+}
+@media(max-width: 400px) { .parent-family .parent-form-grid { grid-template-columns: minmax(0,1fr); } }
+@media(prefers-reduced-motion: reduce) { .parent-family * { scroll-behavior: auto; transition: none !important; animation: none !important; } }
+
+.parent-family .parent-shared-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; margin-top: 18px; }
+.parent-family .parent-shared-project { border: 1px solid var(--border); border-radius: 12px; padding: 14px; min-width: 0; }
+.parent-family .parent-shared-project img { width: 100%; height: auto; border-radius: 10px; }

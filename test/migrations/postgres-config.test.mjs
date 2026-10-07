@@ -58,3 +58,11 @@ test("PostgreSQL harness checks database, effective role and session role after 
   }
   assert.throws(() => assertHarnessIdentity(undefined), /mismatch/);
 });
+
+// Additional local pair must remain exact; crossed pair identities fail closed.
+test("accepts only the explicitly added local database/role pair", () => {
+  const local = "postgres://vidya_test_runner_local:private-secret@localhost/vidya_integration_local";
+  assert.ok(postgresHarnessConfig({VIDYA_RUN_MIGRATION_INTEGRATION:"1",VIDYA_TEST_DATABASE_URL:local}));
+  assert.throws(() => postgresHarnessConfig({VIDYA_RUN_MIGRATION_INTEGRATION:"1",VIDYA_TEST_DATABASE_URL:local.replace("/vidya_integration_local","/vidya_integration")}));
+  assert.throws(() => assertHarnessIdentity({database:"vidya_integration_local",role:"vidya_test_runner",session_role:"vidya_test_runner"}));
+});

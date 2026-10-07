@@ -1,4 +1,6 @@
+import { mergeCreativeStudio } from "../creation/project";
 import { mergeActivityState } from "../learning/activity";
+import { mergeLearningResume } from "../learning/resume";
 import type { GameState, MissedQuestion, ReadingProgress } from "../types";
 import { mergeCard, capNotebook } from "../spaced-repetition";
 import { readTopicConfidenceEntries, type TopicConfidence, type TopicConfidenceEntry } from "../content/school-syllabus";
@@ -237,6 +239,19 @@ function mergeReadingProgress(local: unknown, remote: unknown): Rec<ReadingProgr
   return out;
 }
 
+/** Drafts are a single unfinished project. Keep the newest saved draft;
+ * an older client with no draft must not erase it during synchronization. */
+function mergeMusicDraft(local: GameState["musicDraft"], value: unknown): GameState["musicDraft"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return local;
+  const candidate = value as Record<string, unknown>;
+  if (!Array.isArray(candidate.notes) || typeof candidate.tempoMs !== "number" || !Number.isFinite(candidate.tempoMs)) return local;
+  const remote = value as NonNullable<GameState["musicDraft"]>;
+  if (!local) return remote;
+  const localTime = typeof local.updatedAt === "string" ? Date.parse(local.updatedAt) : NaN;
+  const remoteTime = typeof remote.updatedAt === "string" ? Date.parse(remote.updatedAt) : NaN;
+  return Number.isFinite(remoteTime) && (!Number.isFinite(localTime) || remoteTime > localTime) ? remote : local;
+}
+
 /**
  * Merge `remote` into `local`.
  *
@@ -278,6 +293,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     readBooks: unionStrings(local.readBooks, r.readBooks),
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
     readingProgress: mergeReadingProgress(local.readingProgress, r.readingProgress),
+    learningResume: mergeLearningResume(local.learningResume, r.learningResume),
     completedActivities: unionStrings(local.completedActivities, r.completedActivities),
     moveBreaks: Math.max(num(local.moveBreaks), num(r.moveBreaks)),
     progress: mergeProgress(local.progress, r.progress),
@@ -304,6 +320,8 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     // silently discard a lapse recorded on the other. See mergeCard.
     missedQuestions: mergeMissedQuestions(local.missedQuestions, r.missedQuestions),
     savedCompositions: unionBy(local.savedCompositions, r.savedCompositions, "id"),
+    musicDraft: mergeMusicDraft(local.musicDraft, r.musicDraft),
+    creativeStudio: mergeCreativeStudio(local.creativeStudio, r.creativeStudio),
     classRoster: unionBy(local.classRoster, r.classRoster, "id"),
     classNotes: unionBy(local.classNotes, r.classNotes, "id"),
 

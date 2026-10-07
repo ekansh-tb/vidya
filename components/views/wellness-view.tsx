@@ -3,44 +3,17 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Wind, Heart, Droplet, Pause, Play, Activity as ActivityIcon } from "lucide-react";
-import { MovePanel } from "@/components/views/move-panel";
 import { Button } from "@/components/ui/button";
 import type { GameState } from "@/lib/types";
 import { sfx } from "@/lib/audio";
 
 type Phase = "inhale" | "hold" | "exhale" | "rest";
 
+// Historical IDs remain compatible. These are optional visual cues, not medical advice.
 const PATTERNS: Record<string, { name: string; phases: { phase: Phase; secs: number }[]; cycles: number; desc: string }> = {
-  box: {
-    name: "Box breathing",
-    desc: "4 in · 4 hold · 4 out · 4 hold — astronauts use this to stay calm",
-    cycles: 4,
-    phases: [
-      { phase: "inhale", secs: 4 },
-      { phase: "hold",   secs: 4 },
-      { phase: "exhale", secs: 4 },
-      { phase: "rest",   secs: 4 },
-    ],
-  },
-  "4-7-8": {
-    name: "4-7-8 breath",
-    desc: "Breathe in 4 · hold 7 · breathe out 8. A calm-down trick for big feelings.",
-    cycles: 3,
-    phases: [
-      { phase: "inhale", secs: 4 },
-      { phase: "hold",   secs: 7 },
-      { phase: "exhale", secs: 8 },
-    ],
-  },
-  belly: {
-    name: "Belly breathing",
-    desc: "Soft 5 in · 5 out. Place your hand on your tummy and feel it rise.",
-    cycles: 5,
-    phases: [
-      { phase: "inhale", secs: 5 },
-      { phase: "exhale", secs: 5 },
-    ],
-  },
+  box: { name: "A gentle pause", desc: "Let your breath feel comfortable. You can ignore the timing or stop whenever you like.", cycles: 3, phases: [{phase:"inhale",secs:3},{phase:"exhale",secs:3}] },
+  "4-7-8": { name: "Notice and rest", desc: "Notice one thing around you, then relax at your own pace. No breath holding needed.", cycles: 3, phases: [{phase:"rest",secs:5}] },
+  belly: { name: "Soft waves", desc: "Follow a soft wave if it feels comfortable. Breathing normally is welcome too.", cycles: 3, phases: [{phase:"inhale",secs:3},{phase:"exhale",secs:4}] },
 };
 
 const PHASE_COPY: Record<Phase, string> = {
@@ -51,13 +24,14 @@ const PHASE_COPY: Record<Phase, string> = {
 };
 
 export function WellnessView({
-  state, setState, onBack,
+  state, onBack,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
 }) {
-  const reduce = useReducedMotion();
+  const osReduce = useReducedMotion();
+  const reduce = osReduce || state.settings.motion === false;
   // Two halves of one room: wind DOWN (breathe) and wake UP (move).
   const [mode, setMode] = useState<"breathe" | "move">("breathe");
   const [patternId, setPatternId] = useState<keyof typeof PATTERNS>("box");
@@ -103,12 +77,10 @@ export function WellnessView({
   }, [running, phase.secs, pattern.phases.length, totalCycles]);
 
   useEffect(() => {
-    if (done) {
-      sfx.coin();
-      setState((p) => ({ ...p, xp: p.xp + 12, coins: p.coins + 3 }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [done]);
+    const pauseWhenHidden = () => { if (document.hidden) setRunning(false); };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    return () => document.removeEventListener("visibilitychange", pauseWhenHidden);
+  }, []);
 
   const toggle = () => {
     sfx.click();
@@ -141,7 +113,7 @@ export function WellnessView({
   return (
     <div className="min-h-screen pb-24 max-w-2xl mx-auto">
       <div className="px-5 pt-6">
-        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-white/60 font-medium mb-4 active:scale-95">
+        <button onClick={() => { sfx.click(); onBack(); }} className="flex items-center gap-1 text-[var(--text-muted)] font-medium mb-4 active:scale-95">
           <ChevronLeft className="w-5 h-5" /> Home
         </button>
 
@@ -158,8 +130,8 @@ export function WellnessView({
               onClick={() => { sfx.click(); setMode(id); }}
               className={`flex-1 rounded-xl py-2 text-sm font-bold transition-all inline-flex items-center justify-center gap-1.5 ${
                 mode === id
-                  ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-400/40"
-                  : "text-white/55 active:scale-95"
+                  ? "bg-emerald-500/25 text-[var(--success)] ring-1 ring-emerald-400/40"
+                  : "text-[var(--text-muted)] active:scale-95"
               }`}
             >
               <Icon className="w-4 h-4" /> {label}
@@ -167,18 +139,18 @@ export function WellnessView({
           ))}
         </div>
 
-        {mode === "move" ? <MovePanel state={state} setState={setState} /> : (
+        {mode === "move" ? <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6"><h2 className="font-display text-xl font-bold">A little time away from the screen</h2><p className="mt-3 text-[var(--text-muted)]">Choose a comfortable break with a grown-up. You can rest, change position, or enjoy your own familiar play. Skip anything that feels uncomfortable.</p><p className="mt-3 text-sm text-[var(--text-muted)]">The previous guided exercise collection is being reviewed for suitability. Your saved history stays here, and breaks never need a score.</p></section> : (
         <>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-5 relative overflow-hidden">
           <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: "#34D399" }} />
           <div className="relative flex items-center gap-3">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(52,211,153,0.15)" }}>
-              <Wind className="w-7 h-7 text-emerald-300" />
+              <Wind className="w-7 h-7 text-[var(--success)]" />
             </div>
             <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-emerald-300">Wellness Break</div>
-              <div className="font-display text-2xl font-bold text-white">{pattern.name}</div>
-              <div className="text-sm text-white/60">{pattern.desc}</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--success)]">Wellness Break</div>
+              <div className="font-display text-2xl font-bold text-[var(--text)]">{pattern.name}</div>
+              <div className="text-sm text-[var(--text-muted)]">{pattern.desc}</div>
             </div>
           </div>
         </motion.div>
@@ -190,7 +162,7 @@ export function WellnessView({
               key={id}
               onClick={() => switchPattern(id)}
               className={`rounded-full px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
-                patternId === id ? "bg-emerald-500/25 text-emerald-200 ring-1 ring-emerald-400/40" : "glass text-white/60"
+                patternId === id ? "bg-emerald-500/25 text-[var(--success)] ring-1 ring-emerald-400/40" : "glass text-[var(--text-muted)]"
               }`}
             >
               {PATTERNS[id].name}
@@ -220,10 +192,10 @@ export function WellnessView({
               }}
             >
               <div className="text-center">
-                <div className="text-[10px] uppercase tracking-widest font-bold text-white/70 mb-1">
+                <div className="text-[10px] uppercase tracking-widest font-bold text-[var(--text-muted)] mb-1">
                   {PHASE_COPY[phase.phase]}
                 </div>
-                <div className="font-display text-6xl font-bold text-white tabular-nums">
+                <div className="font-display text-6xl font-bold text-[var(--text)] tabular-nums">
                   {phase.secs - tick}
                 </div>
               </div>
@@ -231,8 +203,8 @@ export function WellnessView({
           </div>
 
           <div className="mt-5 text-center">
-            <div className="text-sm text-white/70">
-              Cycle <span className="font-bold text-white">{Math.min(cycle + 1, totalCycles)}</span> of {totalCycles}
+            <div className="text-sm text-[var(--text-muted)]">
+              Cycle <span className="font-bold text-[var(--text)]">{Math.min(cycle + 1, totalCycles)}</span> of {totalCycles}
             </div>
           </div>
         </div>
@@ -249,16 +221,16 @@ export function WellnessView({
             animate={{ opacity: 1, y: 0 }}
             className="mt-5 glass-card p-4 text-center border border-emerald-400/30"
           >
-            <div className="text-emerald-300 font-display font-bold text-lg">Beautifully done.</div>
-            <div className="text-sm text-white/70 mt-1">+12 XP · +3 coins for taking care of yourself.</div>
+            <div className="text-[var(--success)] font-display font-bold text-lg">Beautifully done.</div>
+            <div className="text-sm text-[var(--text-muted)] mt-1">You took a pause. Rest never needs a score.</div>
           </motion.div>
         )}
 
         {/* Tips */}
         <div className="mt-6 grid grid-cols-3 gap-2">
-          <Tip icon={<Wind className="w-4 h-4 text-emerald-300" />} label="Stretch your arms above your head" />
-          <Tip icon={<Droplet className="w-4 h-4 text-cyan-300" />} label="Sip some water" />
-          <Tip icon={<Heart className="w-4 h-4 text-rose-300" />} label="Smile — even just a little" />
+          <Tip icon={<Wind className="w-4 h-4 text-[var(--success)]" />} label="Stretch your arms above your head" />
+          <Tip icon={<Droplet className="w-4 h-4 text-[var(--accent)]" />} label="Sip some water" />
+          <Tip icon={<Heart className="w-4 h-4 text-[var(--error)]" />} label="Smile — even just a little" />
         </div>
         </>
         )}
@@ -271,7 +243,7 @@ function Tip({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="glass rounded-2xl p-3 text-center">
       <div className="flex justify-center mb-1">{icon}</div>
-      <div className="text-[11px] text-white/70 leading-tight">{label}</div>
+      <div className="text-[11px] text-[var(--text-muted)] leading-tight">{label}</div>
     </div>
   );
 }

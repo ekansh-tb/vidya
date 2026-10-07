@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { reviewedTutorFixture } from "@/test/fixtures/tutor-eligibility";
 
 const mocks = vi.hoisted(() => ({
   streamText: vi.fn(),
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   createParentTutorModel: vi.fn(),
   setAiConnectionStatusForParent: vi.fn(),
   markAiConnectionUsedForParent: vi.fn(),
+  readReviewedTutorEligibility: vi.fn(),
 }));
 
 vi.mock("ai", async (importOriginal) => {
@@ -64,6 +66,7 @@ vi.mock("@/lib/db/ai-connections", () => ({
   setAiConnectionStatusForParent: mocks.setAiConnectionStatusForParent,
   markAiConnectionUsedForParent: mocks.markAiConnectionUsedForParent,
 }));
+vi.mock("@/lib/ai/tutor-eligibility.server", () => ({ readReviewedTutorEligibility: mocks.readReviewedTutorEligibility }));
 
 import { POST } from "./route";
 
@@ -121,6 +124,9 @@ beforeEach(() => {
     identity: learnerIdentity,
   });
   mocks.getLearnerAiTutorRuntimePolicy.mockResolvedValue(runtimePolicy);
+  // A hypothetical reviewed record exercises the future provider path. The
+  // real resolver is separately tested to return null in this release.
+  mocks.readReviewedTutorEligibility.mockResolvedValue(reviewedTutorFixture());
   mocks.configuredCredentialKeyring.mockReturnValue({ currentVersion: "v1", keys: new Map() });
   mocks.credentialAad.mockReturnValue("parent-bound-aad");
   mocks.decryptCredential.mockReturnValue("parent-provider-secret");
@@ -351,6 +357,44 @@ function storedLearner(overrides: Record<string, unknown>) {
   });
 }
 
+describe("live tutor eligibility gate", () => {
+  it("does not forward unknown-age conversations even when the client claims approval", async () => {
+    mocks.readReviewedTutorEligibility.mockResolvedValue(null);
+    const response = await POST(await curriculumRequest({ age: 18, verifiedAge: true, consent: true,
+      providerRetention: "zero-data-retention", language: "hi", confirmedStage: "any", parentApproved: true }));
+    expect(await response.text()).toContain("child safeguards are reviewed");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(mocks.readReviewedTutorEligibility).toHaveBeenCalledWith("learner-a");
+    expect(mocks.decryptCredential).not.toHaveBeenCalled();
+    expect(mocks.createParentTutorModel).not.toHaveBeenCalled();
+    expect(mocks.convertToModelMessages).not.toHaveBeenCalled();
+    expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+  });
+  it("does not silently broaden a reviewed helper with a client stage or language", async () => {
+    mocks.readReviewedTutorEligibility.mockResolvedValue(reviewedTutorFixture({}, { grade: 4 }));
+    const response = await POST(await curriculumRequest({ grade: 4, stage: "reviewed", language: "hi" }));
+    expect(await response.text()).toContain("AI helper is paused");
+    expect(mocks.decryptCredential).not.toHaveBeenCalled();
+    expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
+  });
+  it("fails closed on eligibility storage failure without billing or exposing errors", async () => {
+    mocks.readReviewedTutorEligibility.mockRejectedValue(new Error("private-storage-detail"));
+    const response = await POST(request());
+    expect(await response.text()).toContain("authored activities");
+    expect(mocks.decryptCredential).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+    expect(mocks.bumpCapabilityUsage).not.toHaveBeenCalled();
+  });
+  it("keeps crisis support available without consulting unavailable eligibility", async () => {
+    mocks.readReviewedTutorEligibility.mockResolvedValue(null);
+    const response = await POST(request("I want to kill myself"));
+    expect(await response.text()).toContain("1098");
+    expect(mocks.readReviewedTutorEligibility).not.toHaveBeenCalled();
+    expect(mocks.decryptCredential).not.toHaveBeenCalled();
+  });
+});
+
 describe("authoritative tutor curriculum", () => {
   it.each([
     ["cbse", 6, "cbse-maths", "CBSE"],
@@ -361,6 +405,7 @@ describe("authoritative tutor curriculum", () => {
     ["cambridge-igcse", 10, "igcse-cs", "Cambridge IGCSE"],
   ])("uses stored %s grade %i despite mismatched body metadata", async (board, grade, subject, label) => {
     storedLearner({ board, grade, school: "Stored Example School", name: "Stored Learner" });
+    mocks.readReviewedTutorEligibility.mockResolvedValue(reviewedTutorFixture({}, { board, grade, subjectId: subject }));
     await POST(await curriculumRequest({ board: "cambridge-igcse", grade: 10, school: "CLIENT_SCHOOL", name: "CLIENT_NAME", subject }));
     const system = mocks.streamText.mock.calls[0][0].system;
     expect(system).toContain(`${label}, Grade ${grade}`);
@@ -403,6 +448,7 @@ describe("authoritative tutor curriculum", () => {
   });
   it("allows explicit within-board exploration without claiming school enrollment", async () => {
     storedLearner({ board: "cbse", grade: 6, pickedSubjects: ["cbse-maths"] });
+    mocks.readReviewedTutorEligibility.mockResolvedValue(reviewedTutorFixture({}, { board: "cbse", grade: 6, subjectId: "cbse-science" }));
     await POST(await curriculumRequest({ subject: "cbse-science" }));
     expect(mocks.streamText.mock.calls[0][0].system).toContain('"id":"cbse-science"');
     expect(mocks.streamText.mock.calls[0][0].system).toContain("it does not establish enrollment");

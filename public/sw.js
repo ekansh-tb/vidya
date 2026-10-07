@@ -7,7 +7,7 @@
  */
 
 const CACHE_PREFIX = "vidya-public";
-const CACHE_VERSION = "2026-10-08-media-1";
+const CACHE_VERSION = "2026-10-08-freedom-1";
 // Only this compatibility release forces old browser sessions onto account enrollment.
 const REQUIRED_ACCOUNT_UPDATE_VERSION = "2026-10-07-sync-1";
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;
@@ -33,6 +33,7 @@ const PROTECTED_STATIC_PATHS = new Set([ROOT_SHELL_URL, ...REQUIRED_PRECACHE]);
 const PRIVATE_ROUTE_PREFIXES = [
   "/api",
   "/parent",
+  "/admin",
   "/sign-in",
   "/sign-up",
 ];
@@ -383,6 +384,36 @@ self.addEventListener("fetch", (event) => {
   if (strategy === "learning") {
     event.respondWith(networkFirst(request));
   }
+});
+
+// Push content is deliberately fixed here. A server payload cannot put a
+// child's name, reflection, project or arbitrary navigation URL on a lock screen.
+self.addEventListener("push", (event) => {
+  event.waitUntil(self.registration.showNotification("A little time together", {
+    body: "Choose a story, make something, or explore together. Your weekly Vidya invitation is optional.",
+    icon: "/icons/vidya-192.png",
+    badge: "/icons/vidya-192.png",
+    tag: "vidya-family-invitation",
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const parentWindow = windows.find(client => {
+      try {
+        const url = new URL(client.url);
+        return url.origin === self.location.origin && hasPathPrefix(url.pathname, "/parent");
+      } catch { return false; }
+    });
+    if (parentWindow) {
+      await parentWindow.navigate(`${self.location.origin}/parent`);
+      await parentWindow.focus();
+    } else {
+      await self.clients.openWindow(`${self.location.origin}/parent`);
+    }
+  })());
 });
 
 // The worker has no module boundary. Exposing pure policy helpers here lets the
