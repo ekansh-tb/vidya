@@ -82,3 +82,24 @@ describe("participation and rewards", () => {
     expect(mergeActivityState(replay,first).creations).toEqual(replay.creations);
   });
 });
+
+
+describe("completed activity draft reconciliation", () => {
+  it("a stale device cannot resurrect a completed draft on either merge side", () => {
+    const stale = { completions: [], draft: { ...draft, step: 0 } };
+    const done = completeActivity(stale, activity, { ...draft, updatedAt: "2026-10-03T00:10:00Z" }, context);
+    for (const merged of [mergeActivityState(done, stale), mergeActivityState(stale, done)]) {
+      expect(merged.draft).toBeUndefined();
+      expect(merged.draftClearedAt).toBe("2026-10-03T00:10:00Z");
+      expect(merged.completions).toHaveLength(1);
+      expect(companionUnlocks(merged)).toEqual(["leaf"]);
+    }
+  });
+  it("a later replay remains resumable without duplicating the earlier award", () => {
+    const done = completeActivity({ completions: [] }, activity, draft, context);
+    const replay = { ...draft, step: 0, updatedAt: "2026-10-03T00:20:00Z" };
+    const merged = mergeActivityState({ ...done, draft: replay }, done);
+    expect(merged.draft).toEqual(replay);
+    expect(merged.completions).toHaveLength(1);
+  });
+});

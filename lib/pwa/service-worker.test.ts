@@ -149,7 +149,7 @@ describe("required account compatibility update", () => {
     expect(fetchResource).toHaveBeenCalledTimes(2);
     expect(await (await caches.open(policy.STATIC_CACHE)).match("/")).toBeDefined();
     expect(skipWaiting).toHaveBeenCalledOnce();
-    expect((await policy.readUpdateMarker())?.updateId).toBe("required-2026-10-04-account-1");
+    expect((await policy.readUpdateMarker())?.updateId).toBe("required-2026-10-07-sync-1");
   });
 
   it("keeps the old client when authentication or missing assets prevent a complete shell", async () => {

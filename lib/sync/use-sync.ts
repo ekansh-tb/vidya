@@ -1,176 +1,71 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "../game-store";
-import { mergeGameState } from "./merge";
 import { canSync, pullState, pushWithMerge, deviceLabel, type SyncState } from "./client";
+import { SyncSession } from "./session";
 
-/** How long to wait after the last change before pushing. Long enough that a
- *  quiz's rapid-fire writes collapse into one request, short enough that a kid
- *  closing the tab loses at most a few seconds of progress. */
-const DEBOUNCE_MS = 4000;
-
-/**
- * Keeps the active learner's state mirrored to the server.
- *
- * Runs only for a learner who has been claimed by a parent and linked — an
- * anonymous device-local profile has no owner, and uploading a child's
- * progress before an adult has claimed them would be the wrong default.
- *
- * Account ownership gates play. During connectivity failures the device cache
- * preserves pending work and the UI reports whether it has reached the account.
- */
+/** Mirror pending device work to its owned account without blocking learning. */
 export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
   const learner = useGameStore((s) => s.learner);
-  const state = useGameStore((s) => s.state);
-  const setState = useGameStore((s) => s.set);
   const hydrated = useGameStore((s) => s.hydrated);
-  const updateLearnerMeta = useGameStore((s) => s.updateLearnerMeta);
-
-  /**
-   * The server said this device is no longer who it claimed to be — the parent
-   * revoked it, or the token is gone. Bring the local profile back in line.
-   *
-   * Not just tidiness. `verifiedLevel` is what the client's computeRung reads,
-   * so leaving it at 2 means a revoked kid still sees the Miss Vidya door in
-   * their lobby and only discovers it is shut by tapping it. The rule is that
-   * withdrawn features are ABSENT, never present-and-broken — and a parent who
-   * revokes a device expects the room to go away, not to start erroring.
-   *
-   * Local progress is untouched. Losing access is not losing your work.
-   */
-  const standDown = () => {
-    if (!learner.deviceToken && (learner.verifiedLevel ?? 0) === 0) return;
-    updateLearnerMeta(learner.id, { deviceToken: undefined, verifiedLevel: 0 });
-  };
-
-  const [reconnect, reconnectSet] = useState(0);
-  useEffect(() => {
-    const online = () => reconnectSet(n => n + 1);
-    const offline = () => setStatus("offline");
-    window.addEventListener("online", online); window.addEventListener("offline", offline);
-    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
-  }, []);
-
   const [status, setStatus] = useState<SyncState>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-
-  const revisionRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inFlightRef = useRef(false);
-  // Which learner the current revision belongs to — switching profiles must
-  // not push one child's state against another child's revision.
-  const syncedLearnerRef = useRef<string | null>(null);
-
   const enabled = hydrated && canSync(learner);
 
-  // ---- initial pull + reconcile -------------------------------------------
   useEffect(() => {
-    if (!enabled) {
-      setStatus("idle");
-      return;
-    }
-    const controller = new AbortController();
-    let cancelled = false;
-
-    (async () => {
-      setStatus("syncing");
-      const pulled = await pullState(learner, controller.signal);
-      if (cancelled) return;
-
-      if (!pulled.ok) {
-        // 401 here means revoked or unlinked server-side. Stand down rather
-        // than retrying forever against a door that is now shut.
-        if (pulled.reason === "unauthorized") standDown();
-        setStatus(pulled.reason === "network" ? "offline" : "error");
-        return;
-      }
-
-      if (pulled.profile) useGameStore.getState().updateLearnerMeta(learner.id, pulled.profile);
-      revisionRef.current = pulled.revision;
-      syncedLearnerRef.current = learner.id;
-
-      if (pulled.state) {
-        // Adopt the merge locally BEFORE pushing, so the server copy and this
-        // device converge on the same value rather than ping-ponging.
-        setState((current) => mergeGameState(current, pulled.state));
-      }
-      setStatus("synced");
-      setLastSyncedAt(Date.now());
-    })();
-
-    return () => { cancelled = true; controller.abort(); };
-    // Re-run when the learner changes or linking status flips.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, learner.id, learner.remoteId, learner.verifiedLevel, learner.deviceToken, reconnect]);
-
-  // ---- debounced push on change -------------------------------------------
-  useEffect(() => {
-    if (!enabled) return;
-    if (syncedLearnerRef.current !== learner.id) return; // initial pull not done
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      if (inFlightRef.current) return;
-      inFlightRef.current = true;
-
-      (async () => {
-        try {
-          const result = await pushWithMerge(state, revisionRef.current, deviceLabel(), learner);
-          // A response from the previous child must never modify the active child.
-          const active = useGameStore.getState().learner;
-          if (active.id !== learner.id || active.deviceToken !== learner.deviceToken) return;
-          if (result.unauthorized) standDown();
-          revisionRef.current = result.revision;
-          // A conflict merge produces a state this device must adopt, or the
-          // same conflict recurs on every push.
-          if (result.state !== state) {
-            setState(() => result.state);
-          }
-          setStatus(result.status);
-          if (result.status === "synced") setLastSyncedAt(Date.now());
-        } finally {
-          inFlightRef.current = false;
-        }
-      })();
-    }, DEBOUNCE_MS);
-
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, state, learner.id]);
-
-  // ---- best-effort flush when the tab goes away ----------------------------
-  useEffect(() => {
-    if (!enabled || syncedLearnerRef.current !== learner.id) return;
-    const flush = () => {
-      if (document.visibilityState !== "hidden") return;
-      // keepalive lets the request outlive the page. Fire-and-forget: there is
-      // no chance to handle a conflict on the way out, and the next session's
-      // pull will merge anyway.
-      //
-      // The device token travels in the BODY here, not the usual header —
-      // sendBeacon cannot set headers at all. Same-origin POST, so it is not
-      // exposed anywhere a URL would be.
-      try {
-        navigator.sendBeacon?.(
-          "/api/learner/state",
-          new Blob(
-            [JSON.stringify({
-              state,
-              expectedRevision: revisionRef.current,
-              deviceLabel: deviceLabel(),
-              deviceToken: learner.deviceToken,
-            })],
-            { type: "application/json" },
-          ),
-        );
-      } catch {
-        /* nothing useful to do while the tab is closing */
-      }
+    setLastSyncedAt(null);
+    if (!enabled) { setStatus("idle"); return; }
+    // These credentials belong to this session. Token rotation creates a new
+    // session even when the local learner ID stays the same.
+    const identity = learner;
+    const currentIdentity = () => {
+      const active = useGameStore.getState().learner;
+      return active.id === identity.id && active.remoteId === identity.remoteId && active.deviceToken === identity.deviceToken;
     };
-    document.addEventListener("visibilitychange", flush);
-    return () => document.removeEventListener("visibilitychange", flush);
-  }, [enabled, state, learner.id, learner.deviceToken]);
+    const session = new SyncSession({
+      read: () => useGameStore.getState().state,
+      apply: state => { if (currentIdentity()) useGameStore.getState().set(() => state); },
+      pull: signal => pullState(identity, signal),
+      push: (state, revision, signal) => pushWithMerge(state, revision, deviceLabel(), identity, signal),
+      profile: profile => { if (currentIdentity()) useGameStore.getState().updateLearnerMeta(identity.id, profile); },
+      revoked: () => { if (currentIdentity()) useGameStore.getState().updateLearnerMeta(identity.id, { deviceToken: undefined, verifiedLevel: 0 }); },
+      status: (next, savedAt) => {
+        if (!currentIdentity()) return;
+        setStatus(next);
+        if (savedAt !== undefined) setLastSyncedAt(savedAt);
+      },
+      available: () => navigator.onLine && document.visibilityState !== "hidden",
+    });
+    const unsubscribe = useGameStore.subscribe((next, previous) => {
+      if (!currentIdentity()) { session.dispose(); return; }
+      if (next.state !== previous.state) session.changed();
+    });
+    const wake = () => { if (currentIdentity()) session.wake(); };
+    const offline = () => session.offline();
+    const visibility = () => {
+      if (document.visibilityState === "visible") { wake(); return; }
+      const pending = currentIdentity() ? session.pendingForExit() : null;
+      if (!pending) return;
+      try {
+        navigator.sendBeacon?.("/api/learner/state", new Blob([JSON.stringify({
+          ...pending, deviceLabel: deviceLabel(), deviceToken: identity.deviceToken,
+        })], { type: "application/json" }));
+      } catch { /* The linked cache remains available for the next revisit. */ }
+    };
+    window.addEventListener("online", wake);
+    window.addEventListener("offline", offline);
+    document.addEventListener("visibilitychange", visibility);
+    session.start();
+    return () => {
+      unsubscribe(); session.dispose();
+      window.removeEventListener("online", wake);
+      window.removeEventListener("offline", offline);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+    // Only authority changes retire a session; gameplay is handled by subscribe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, learner.id, learner.remoteId, learner.deviceToken]);
 
   return { status, lastSyncedAt };
 }

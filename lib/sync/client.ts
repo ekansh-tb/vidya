@@ -43,13 +43,13 @@ function authHeaders(learner?: LearnerProfile): Record<string, string> {
   return learner?.deviceToken ? { [DEVICE_TOKEN_HEADER]: learner.deviceToken } : {};
 }
 
-type PullResult =
+export type PullResult =
   | { ok: true; state: GameState | null; revision: number; profile?: Pick<LearnerProfile,"board"|"grade"|"placement"> }
   | { ok: false; reason: "unauthorized" | "unavailable" | "network" };
 
 export async function pullState(learner?: LearnerProfile, signal?: AbortSignal): Promise<PullResult> {
   try {
-    const res = await fetch("/api/learner/state", { signal, headers: authHeaders(learner) });
+    const res = await fetch("/api/learner/state", { signal, cache: "no-store", headers: authHeaders(learner) });
     if (res.status === 401) return { ok: false, reason: "unauthorized" };
     if (res.status === 503) return { ok: false, reason: "unavailable" };
     if (!res.ok) return { ok: false, reason: "network" };
@@ -115,20 +115,23 @@ export async function pushWithMerge(
   expectedRevision: number,
   deviceLabel?: string,
   learner?: LearnerProfile,
-): Promise<{ state: GameState; revision: number; status: SyncState; unauthorized?: boolean }> {
-  const first = await pushState(local, expectedRevision, deviceLabel, undefined, learner);
+  signal?: AbortSignal,
+): Promise<SyncResult> {
+  const first = await pushState(local, expectedRevision, deviceLabel, signal, learner);
   if (first.ok) return { state: local, revision: first.revision, status: "synced" };
 
   if (first.reason === "conflict") {
     const merged = mergeGameState(local, first.serverState);
-    const second = await pushState(merged, first.serverRevision, deviceLabel, undefined, learner);
+    const second = await pushState(merged, first.serverRevision, deviceLabel, signal, learner);
     if (second.ok) return { state: merged, revision: second.revision, status: "synced" };
     // Still contended — keep the merged state locally so nothing is lost, and
     // let the next push settle it.
     return {
-      state: merged,
-      revision: second.ok ? 0 : first.serverRevision,
+      state: second.reason === "conflict" ? mergeGameState(merged, second.serverState) : merged,
+      revision: second.reason === "conflict" ? second.serverRevision : first.serverRevision,
       status: second.reason === "network" ? "offline" : "error",
+      unauthorized: second.reason === "unauthorized",
+      retryable: second.reason !== "unauthorized" && second.reason !== "too_large",
     };
   }
 
@@ -139,8 +142,11 @@ export async function pushWithMerge(
     // Surfaced so the caller can stand the device down instead of retrying
     // against a link the parent revoked. See useSync#standDown.
     unauthorized: first.reason === "unauthorized",
+    retryable: first.reason !== "unauthorized" && first.reason !== "too_large",
   };
 }
+
+export type SyncResult = { state: GameState; revision: number; status: SyncState; unauthorized?: boolean; retryable?: boolean };
 
 /** A short, human label so a parent can tell which device wrote last. */
 export function deviceLabel(): string {
