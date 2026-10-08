@@ -2,11 +2,8 @@ import "server-only";
 
 import { auth, reverificationErrorResponse } from "@clerk/nextjs/server";
 
-/**
- * Require Clerk's strict recent-verification preset for a sensitive parent
- * action. Callers must establish the parent role before calling this helper.
- */
-export async function requireRecentParentReverification(): Promise<Response | null> {
+/** Requires a signed-in account; does not establish guardian authority. */
+export async function requireRecentAccountReverification(): Promise<Response | null> {
   const { has } = await auth();
   if (has({ reverification: "strict" })) return null;
 
@@ -14,3 +11,6 @@ export async function requireRecentParentReverification(): Promise<Response | nu
   response.headers.set("cache-control", "private, no-store");
   return response;
 }
+
+/** Parent routes must establish parent authority separately. */
+export const requireRecentParentReverification = requireRecentAccountReverification;

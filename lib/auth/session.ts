@@ -3,8 +3,8 @@ import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { clerkConfigured } from "./clerk-config";
 import { dbConfigured } from "../db/client";
+import { accountAuthority } from "../db/account-links";
 import {
-  upsertParent,
   getLearnerForClerkUser,
   resolveDeviceToken,
   disabledCapabilitiesForTokens,
@@ -105,19 +105,14 @@ export async function resolveIdentity(): Promise<Identity> {
       };
     }
   }
-  if (role === "learner") {
-    // Signed in as a kid but no learner row yet — they still need to redeem a
-    // claim code. Not a parent, and not entitled to a learner's capabilities.
+  const authority = await accountAuthority(userId);
+  if (authority === "revoked") return { kind: "anonymous", reason: "revoked" };
+  if (role === "learner" || authority === "learner") {
     return { kind: "anonymous", reason: "unlinked" };
   }
-
-  // Everyone else is treated as a parent. Accounts created before roles
-  // existed land here, which matches the pre-existing behaviour of /parent.
-  await upsertParent({
-    id: userId,
-    email,
-    displayName: user?.firstName ?? null,
-  });
+  // Authentication alone does not establish guardian authority. Existing
+  // parents retain access; new accounts complete explicit enrollment.
+  if (authority !== "parent") return { kind: "anonymous", reason: "unlinked" };
   return { kind: "parent", userId, email };
 }
 
