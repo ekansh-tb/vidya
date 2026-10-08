@@ -61,11 +61,11 @@ const pack = { subjectId: "maths", topics: [
   { id: "one", title: "First topic", syllabus: ["First checklist"], blurb: "First" },
   { id: "two", title: "Second topic", syllabus: ["Second checklist"], blurb: "Second" },
 ] };
-function renderSyllabus(state = DEFAULT_STATE, setState: (update: (s: GameState) => GameState) => void = vi.fn()) {
+function renderSyllabus(state = DEFAULT_STATE, setState: (update: (s: GameState) => GameState) => void = vi.fn(), initialTopicId?: string) {
   controls = [];
   motions = [];
   storeState = state;
-  return renderToStaticMarkup(React.createElement(Syllabus, { pack, state, setState }));
+  return renderToStaticMarkup(React.createElement(Syllabus, { pack, state, setState, initialTopicId }));
 }
 
 beforeEach(() => {
@@ -128,6 +128,20 @@ it("keeps aria-expanded synchronized when closing, opening and switching topics"
   expect(expanders().map((p) => p["aria-expanded"])).toEqual([true, false]);
   expect(html).not.toContain("Second checklist");
   expect(expanders().every((p) => p.type === "button")).toBe(true);
+});
+
+it("opens the requested chapter instead of silently returning to the first topic", () => {
+  const html = renderSyllabus(DEFAULT_STATE, vi.fn(), "two");
+  expect(html).toContain("Second checklist");
+  expect(html).not.toContain("First checklist");
+  expect(controls.filter(p => "aria-expanded" in p).map(p => p["aria-expanded"])).toEqual([true, false]);
+});
+
+it("explains a missing requested topic without substituting another topic", () => {
+  const html = renderSyllabus(DEFAULT_STATE, vi.fn(), "missing");
+  expect(html).toContain("That topic is unavailable in this collection");
+  expect(html).not.toContain("First checklist");
+  expect(html).not.toContain("Second checklist");
 });
 
 it("announces the selected confidence after saving and keeps rating controls tappable", () => {
