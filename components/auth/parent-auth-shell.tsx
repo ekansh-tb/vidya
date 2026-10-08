@@ -24,6 +24,7 @@ export function ParentAuthShell({
         </header>
         {children}
         <p className="parent-auth-help">Children open their learning space with a device code from you.</p>
+        <Link className="parent-auth-home" href="/privacy">How we use family and sign-in information</Link>
         <Link className="parent-auth-home" href="/">Back to the learning app</Link>
       </div>
     </main>
