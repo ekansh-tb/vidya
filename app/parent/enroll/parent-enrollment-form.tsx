@@ -2,15 +2,13 @@
 
 import { useCallback, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { SignOutButton, useClerk, useReverification, useUser } from "@clerk/nextjs";
 import { isReverificationCancelledError } from "@clerk/nextjs/errors";
 import { PARENT_ACKNOWLEDGEMENT_TEXT, PARENT_ACKNOWLEDGEMENT_VERSION } from "@/lib/auth/parent-enrollment-contract";
 
-export function ParentEnrollmentForm({ blocked }: { blocked: boolean }) {
+export function ParentEnrollmentForm({ blocked, learningHref }: { blocked: boolean; learningHref: string }) {
   const { user, isLoaded } = useUser();
   const clerk = useClerk();
-  const router = useRouter();
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +29,8 @@ export function ParentEnrollmentForm({ blocked }: { blocked: boolean }) {
     try {
       const result = await enrollWithReverification();
       if (result?.ok === true) {
-        router.replace("/parent"); router.refresh();
+        // Re-read server authority after enrollment, without a cached enrollment redirect.
+        window.location.replace("/parent");
       } else {
         setError(typeof result?.error === "string" ? result.error : "Enrollment was not completed. Please try again.");
       }
@@ -68,7 +67,7 @@ export function ParentEnrollmentForm({ blocked }: { blocked: boolean }) {
       {error && <p role="alert" className="text-sm text-[var(--error)]">{error}</p>}
       <div className="flex flex-wrap items-center gap-5 text-sm">
         <SignOutButton redirectUrl="/sign-in?next=/parent/enroll"><button type="button" className="min-h-11 underline">Sign out and use another account</button></SignOutButton>
-        <Link href="/" className="min-h-11 py-3 text-[var(--text-muted)] underline">Return to learning</Link>
+        <Link href={learningHref} className="min-h-11 py-3 text-[var(--text-muted)] underline">Return to learning</Link>
       </div>
     </div>
   );

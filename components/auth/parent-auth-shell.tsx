@@ -1,17 +1,20 @@
 import Link from "next/link";
+import { headers } from "next/headers";
+import { learningAppHref } from "@/lib/auth/parent-return";
 
-export function ParentAuthShell({
+export async function ParentAuthShell({
   children,
   mode,
 }: {
   children: React.ReactNode;
   mode: "sign-in" | "sign-up";
 }) {
+  const learningHref = learningAppHref((await headers()).get("host"));
   const signingIn = mode === "sign-in";
   return (
     <main className="parent-auth-shell">
       <div className="parent-auth-content">
-        <Link href="/" className="parent-auth-brand" aria-label="Vidya learning home">
+        <Link href={learningHref} className="parent-auth-brand" aria-label="Vidya learning home">
           <span className="kids-brand-mark" aria-hidden="true">v<span>•</span></span>
           <strong>vidya</strong>
           <span className="parent-auth-label">For parents</span>
@@ -25,7 +28,7 @@ export function ParentAuthShell({
         {children}
         <p className="parent-auth-help">Children open their learning space with a device code from you.</p>
         <Link className="parent-auth-home" href="/privacy">How we use family and sign-in information</Link>
-        <Link className="parent-auth-home" href="/">Back to the learning app</Link>
+        <Link className="parent-auth-home" href={learningHref}>Back to the learning app</Link>
       </div>
     </main>
   );

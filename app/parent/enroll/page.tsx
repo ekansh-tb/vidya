@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { learningAppHref } from "@/lib/auth/parent-return";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { resolveIdentity } from "@/lib/auth/session";
@@ -28,7 +30,7 @@ export default async function Page() {
         <h1 id="parent-enrollment-heading" className="font-display text-3xl font-bold">Your parent account</h1>
         {unavailable ? (
           <p role="status">Parent enrollment is temporarily unavailable. Please try again later.</p>
-        ) : <ParentEnrollmentForm blocked={blocked} />}
+        ) : <ParentEnrollmentForm blocked={blocked} learningHref={learningAppHref((await headers()).get("host"))} />}
     </ParentEntryShell>
   );
 }

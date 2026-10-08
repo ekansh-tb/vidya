@@ -31,6 +31,7 @@ export const viewport: Viewport = {
   themeColor: "#f4f8fc",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   // Zoom is deliberately NOT disabled. `maximumScale: 1` / `userScalable: false`
   // fails WCAG 2.1 SC 1.4.4 (Resize Text) and hurts exactly the learners who
   // need it most — anyone with low vision, and any kid squinting at Devanagari

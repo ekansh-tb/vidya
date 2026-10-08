@@ -15,7 +15,8 @@ export default async function SignUpPage({
     <ParentAuthShell mode="sign-up">
       <SignUp
         signInUrl={"/sign-in?next=" + encodeURIComponent(redirectTo)}
-        fallbackRedirectUrl={redirectTo}
+        forceRedirectUrl={redirectTo}
+        signInForceRedirectUrl={redirectTo}
         appearance={parentAuthAppearance}
       />
     </ParentAuthShell>

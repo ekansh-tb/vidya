@@ -122,3 +122,17 @@ describe("existing parent and auth behavior", () => {
      expect(response.headers.get("x-middleware-rewrite")).toBe("https://parents.vidyagyan.study/parent-unavailable");
    });
  });
+
+describe("parent destination survives authentication", () => {
+  it("encodes the original path and query once, without forwarding stray auth overrides", async () => {
+    const response = await responseFor("/parent?section=children");
+    const location = new URL(response.headers.get("location")!);
+    expect(location.searchParams.get("next")).toBe("/parent?section=children");
+    expect([...location.searchParams.keys()]).toEqual(["next"]);
+  });
+  it.each(["/sign-in?redirect_url=%2F", "/sign-up?redirect_url=https%3A%2F%2Foutside.test"])("never sends a signed-in parent back to the children's front page: %s", async path => {
+    mocks.auth.mockResolvedValue({ userId: "synthetic-parent" });
+    const response = await responseFor(path);
+    expect(new URL(response.headers.get("location")!).pathname).toBe("/parent");
+  });
+});

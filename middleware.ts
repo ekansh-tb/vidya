@@ -51,7 +51,8 @@ const withClerk = clerkMiddleware(async (auth, req) => {
   if ((isParentArea(req) || isAdminArea(req)) && !userId) {
     const url = req.nextUrl.clone();
     url.pathname = "/sign-in";
-    url.searchParams.set("next", req.nextUrl.pathname);
+    url.search = "";
+    url.searchParams.set("next", parentReturnPath(req.nextUrl.pathname + req.nextUrl.search));
     return NextResponse.redirect(url);
   }
 
