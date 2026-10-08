@@ -183,7 +183,7 @@ export function ProfileView({
     e.target.value = "";
     if (!file) return;
     if (file.size > 6 * 1024 * 1024) {
-      setUploadError("Image too large — try one under 6MB.");
+      setUploadError("Image too large. Try one under 6MB.");
       return;
     }
     try {
@@ -337,7 +337,7 @@ export function ProfileView({
             {!interestsEditing ? (
               currentInterests.length === 0 ? (
                 <div className="text-xs italic text-[var(--text-muted)]">
-                  Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love — she&apos;ll use them in her examples.
+                  Nothing picked yet. Tap edit to tell Miss Vidya what worlds you love; she&apos;ll use them in her examples.
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1.5">

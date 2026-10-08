@@ -9,7 +9,7 @@ const PEERS_PRIMARY: PeerSeed[] = [
   { name: "Diya",   avatarEmoji: "🦄", vibe: "Loves rainbows and Maths.",       seedXp: 240, weeklyXpRate: 28 },
   { name: "Kabir",  avatarEmoji: "🐯", vibe: "Always has a curious question.",   seedXp: 180, weeklyXpRate: 22 },
   { name: "Meera",  avatarEmoji: "🦚", vibe: "Reading champion of the class.",   seedXp: 300, weeklyXpRate: 30 },
-  { name: "Aarav",  avatarEmoji: "🐢", vibe: "Slow and steady — never gives up.", seedXp: 150, weeklyXpRate: 20 },
+  { name: "Aarav",  avatarEmoji: "🐢", vibe: "Slow and steady, never gives up.", seedXp: 150, weeklyXpRate: 20 },
   { name: "Zara",   avatarEmoji: "🦋", vibe: "First to finish, last to leave.",   seedXp: 270, weeklyXpRate: 26 },
 ];
 
@@ -97,12 +97,12 @@ export function weeklyXpForPeer(peer: ClassMember): number {
 const ENCOURAGEMENTS: Record<string, string[]> = {
   ai: [
     "Want to do a Match Quest together?",
-    "I'm stuck on this chapter too — let's revise.",
+    "I'm stuck on this chapter too. Let's revise.",
     "You're ahead of me on the leaderboard, well done!",
     "Anyone up for a quick quiz race?",
     "Found a cool fact in Library today.",
     "Field-trip stamp unlocked!",
-    "Tomorrow's test — I'm flipping flashcards.",
+    "Tomorrow's test. I'm flipping flashcards.",
     "Saw your composition in Music. Catchy!",
   ],
 };

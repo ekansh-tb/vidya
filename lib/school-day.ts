@@ -47,7 +47,7 @@ export function currentPeriod(now: Date = new Date()): Period {
       start: "00:00",
       end: "23:59",
       kind: "free",
-      cta: "Pick anything — field trips & match",
+      cta: "Pick anything: field trips & match",
     };
   }
   const mins = now.getHours() * 60 + now.getMinutes();

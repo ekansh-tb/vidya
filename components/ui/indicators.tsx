@@ -39,7 +39,7 @@ function ShieldBadge({ count, dim = false }: { count: number; dim?: boolean }) {
         background: dim ? "rgba(255,255,255,0.05)" : "rgba(34, 211, 238, 0.18)",
         color: dim ? "rgba(255,255,255,0.45)" : "#67e8f9",
       }}
-      title={`${count} streak shield${count === 1 ? "" : "s"} — protects your streak if you miss a day`}
+      title={`${count} streak shield${count === 1 ? "" : "s"}: protects your streak if you miss a day`}
     >
       <Shield className="w-2.5 h-2.5" fill="currentColor" />
       <span>{count}</span>

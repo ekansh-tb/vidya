@@ -230,7 +230,7 @@ export function WellnessView({
         <div className="mt-6 grid grid-cols-3 gap-2">
           <Tip icon={<Wind className="w-4 h-4 text-[var(--success)]" />} label="Stretch your arms above your head" />
           <Tip icon={<Droplet className="w-4 h-4 text-[var(--accent)]" />} label="Sip some water" />
-          <Tip icon={<Heart className="w-4 h-4 text-[var(--error)]" />} label="Smile — even just a little" />
+          <Tip icon={<Heart className="w-4 h-4 text-[var(--error)]" />} label="Smile, even just a little" />
         </div>
         </>
         )}

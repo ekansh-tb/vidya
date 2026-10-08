@@ -388,7 +388,7 @@ function Noticeboard({
       <div aria-live="polite">
         <AnimatePresence initial={false}>
           {notes.length === 0 && (
-            <div className="text-center text-sm text-[var(--text-muted)] py-4">No notes yet — say hi to your class!</div>
+            <div className="text-center text-sm text-[var(--text-muted)] py-4">No notes yet. Say hi to your class!</div>
           )}
           {notes.map((n) => (
             <motion.div
@@ -470,7 +470,7 @@ function StreakSetup({ setState }: { setState: (updater: (s: GameState) => GameS
         </div>
         <div className="font-display text-xl font-bold text-[var(--text)]">Start a 1:1 streak</div>
         <div className="text-sm text-[var(--text-muted)] mt-1 max-w-xs mx-auto">
-          Pair with one friend outside class. Each day one of you checks in — your shared days build a streak.
+          Pair with one friend outside class. Each day one of you checks in; your shared days build a streak.
         </div>
       </div>
       <div className="glass-card p-4 space-y-3">

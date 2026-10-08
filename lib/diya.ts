@@ -27,7 +27,7 @@ const NUDGES: Record<DiyaMood, string[]> = {
   sleepy: [
     "Sleepy yawn… see you in the morning ✨",
     "I'll keep a light on. Sweet dreams.",
-    "Rest now — adventures wait at sunrise.",
+    "Rest now. Adventures wait at sunrise.",
   ],
   "miss-you": [
     "Yay, you're back! I missed our streak.",
@@ -36,7 +36,7 @@ const NUDGES: Record<DiyaMood, string[]> = {
   ],
   happy: [
     "Hi friend! What shall we explore today?",
-    "Pick a classroom — I'll walk in with you.",
+    "Pick a classroom. I'll walk in with you.",
     "Field Trip? Math? Match? You choose.",
   ],
   excited: [
@@ -50,14 +50,14 @@ const NUDGES: Record<DiyaMood, string[]> = {
     "Thought for the day, coming up.",
   ],
   study: [
-    "Class time — I'll cheer you on.",
+    "Class time! I'll cheer you on.",
     "Take your time. I'm here.",
-    "Tricky one? Tap me — I have a hint.",
+    "Tricky one? Tap me. I have a hint.",
   ],
   celebrate: [
     "WOW! That deserves a happy dance.",
     "You did it! Spinning with joy 🪔",
-    "Tell your friends — this was big.",
+    "Tell your friends. This was big.",
   ],
 };
 

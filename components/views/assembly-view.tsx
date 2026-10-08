@@ -45,7 +45,7 @@ function isBriefing(v: unknown): v is Briefing {
 function localBriefing(name?: string): Briefing {
   const learner = name?.split(" ")[0] || "scholar";
   const thoughts = [
-    { line: "Dream is not what you see in sleep — it is the thing that does not let you sleep.", by: "A.P.J. Abdul Kalam" },
+    { line: "Dream is not what you see in sleep; it is the thing that does not let you sleep.", by: "A.P.J. Abdul Kalam" },
     { line: "Live as if you were to die tomorrow. Learn as if you were to live forever.", by: "Mahatma Gandhi" },
     { line: "You can't cross the sea merely by standing and staring at the water.", by: "Rabindranath Tagore" },
     { line: "Go, get education. Be self-reliant, be industrious.", by: "Savitribai Phule" },
@@ -255,7 +255,7 @@ export function AssemblyView({
                     &ldquo;{briefing.thought}&rdquo;
                   </div>
                   <div className="text-sm text-[var(--text-muted)] text-center mt-3">
-                    — {briefing.attribution}
+                    By {briefing.attribution}
                   </div>
                 </motion.div>
               )}

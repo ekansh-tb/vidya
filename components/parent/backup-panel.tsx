@@ -67,7 +67,7 @@ export function BackupPanel() {
     setStatus({
       kind: "ok",
       message: parts.length
-        ? `Restored — ${parts.join(", ")}. Nothing already on this device was removed.`
+        ? `Restored: ${parts.join(", ")}. Nothing already on this device was removed.`
         : "That backup matched what's already here. Nothing changed.",
     });
   };
@@ -85,7 +85,7 @@ export function BackupPanel() {
         All progress is stored in this browser only.
       </p>
       <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--text-muted)" }}>
-        Clearing site data, switching browsers or changing device loses it permanently — there is no
+        Clearing site data, switching browsers or changing device loses it permanently; there is no
         server copy. Download a backup now and again, and use it to move a learner to a new device.
       </p>
 
