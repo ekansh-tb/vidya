@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { readCreationProject, frameSVG } from "@/lib/creation/project";
 import { useUser, SignOutButton } from "@clerk/nextjs";
-import { FileDown, HeartHandshake, ArrowRight, Bird, House, Users, Settings } from "lucide-react";
+import { FileDown, HeartHandshake, ArrowRight, Bird, House, Users, Settings, LogOut, ArrowUpRight, UserRound } from "lucide-react";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
@@ -30,6 +30,7 @@ import {
   type ParentReportLoadState,
 } from "@/lib/parent-report";
 import { FamilyNoteComposer, CareNoteComposer } from "@/components/views/parent-view";
+import { InfoPopover } from "@/components/ui/info-popover";
 import { LearnerPicker } from "@/components/parent/learner-picker";
 import { ParentEnrollment } from "@/components/parent/parent-enrollment";
 import { ParentCircles } from "@/components/circles/parent-circles";
@@ -270,12 +271,12 @@ export function ParentDashboard() {
     <a className="parent-skip" href="#parent-content">Skip to family content</a>
     <header className="parent-header"><div className="parent-header-inner">
       <Link href="/parent" className="parent-brand"><Bird size={28} aria-hidden="true" /><span>Vidya<span className="parent-brand-caption">Family space</span></span></Link>
-      <div className="parent-header-actions"><Link href="https://vidyagyan.study">Open learner app <ArrowRight size={16} aria-hidden="true" /></Link><SignOutButton><button type="button">Sign out</button></SignOutButton></div>
+      <div className="parent-header-actions"><Link href="https://vidyagyan.study" className="compact-control" aria-label="Open learner app" title="Open learner app"><ArrowUpRight size={20} aria-hidden="true" /><span className="mobile-control-label">Open learner app</span></Link><SignOutButton><button type="button" className="compact-control" aria-label="Sign out" title="Sign out"><LogOut size={20} aria-hidden="true" /><span className="mobile-control-label">Sign out</span></button></SignOutButton></div>
     </div></header>
     <div className="parent-layout">
-      <aside className="parent-sidebar"><nav aria-label="Parent navigation">{PARENT_DESTINATIONS.map(item => <button key={item} type="button" aria-current={destination === item ? "page" : undefined} onClick={() => navigate(item)}>{item === "Overview" ? <House size={20} aria-hidden="true" /> : item === "Children" ? <Users size={20} aria-hidden="true" /> : <Settings size={20} aria-hidden="true" />}<span>{item}</span></button>)}</nav><p>Room to explore.<br />Someone to come back to.</p></aside>
+      <aside className="parent-sidebar"><nav aria-label="Parent navigation">{PARENT_DESTINATIONS.map(item => <button key={item} type="button" aria-label={item} title={item} aria-current={destination === item ? "page" : undefined} onClick={() => navigate(item)}>{item === "Overview" ? <House size={20} aria-hidden="true" /> : item === "Children" ? <Users size={20} aria-hidden="true" /> : <Settings size={20} aria-hidden="true" />}<span>{item}</span></button>)}</nav><p>Room to explore.<br />Someone to come back to.</p></aside>
       <section className="parent-content" id="parent-content" aria-label={destination}>
-        <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1 ref={heading} tabIndex={-1}>{destination}</h1></div><span className="parent-account">{displayName}{email && email !== displayName && <span>{email}</span>}</span></div>
+        <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1 ref={heading} tabIndex={-1}>{destination}</h1></div><InfoPopover key={destination} className="parent-account" label="Your parent account" summary={<><UserRound size={20} aria-hidden="true" /><span className="mobile-control-label">{displayName}</span></>}><strong>{displayName}</strong>{email && email !== displayName && <p>{email}</p>}</InfoPopover></div>
         {learners.length > 0 && <LearnerPicker key={activeParentId} learners={learners} selectedId={selected?.id ?? ""} onChange={setSelectedId} onFeedback={touchFeedback} />}
         {selected && !adding && <SafetyPanel key={`safety-${selected.id}`} learner={selected} />}
         {learners.length === 0 && (pendingLinkedLearners > 0 || rosterPending) && <div className="parent-card" role="status"><h2>Checking your learners</h2><p>Confirming which saved profiles belong to your account.</p></div>}
