@@ -55,7 +55,7 @@ export function ExamPrepView({
   uploaded?: LearnerSyllabus;
 }) {
   const initialId = subjectId
-    ? hasPack(subjectId, grade) ? subjectId : undefined
+    ? hasPack(subjectId, grade) && (!availablePackIds || availablePackIds.includes(subjectId)) ? subjectId : undefined
     : availablePackIds?.find(id => hasPack(id, grade));
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
@@ -68,17 +68,6 @@ export function ExamPrepView({
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("syllabus");
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
-
-  useEffect(() => {
-    if (!currentId) return;
-    setState(current => ({
-      ...current,
-      learningResume: resumeForNavigation("exam-prep", {
-        subjectId: currentId,
-        ...(currentId === initialId && topicId ? { topicId } : {}),
-      }),
-    }));
-  }, [currentId, initialId, setState, topicId]);
 
   // Reset section when pack changes
   useEffect(() => { setSection("syllabus"); }, [currentId]);
@@ -119,7 +108,10 @@ export function ExamPrepView({
                 return (
                   <button
                     key={id}
-                    onClick={() => { sfx.click(); setCurrentId(id); }}
+                    onClick={() => {
+                      sfx.click(); setCurrentId(id);
+                      setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: id }, undefined, board && grade ? { version: 1, kind: "school", board, grade } : undefined) }));
+                    }}
                     aria-pressed={active}
                     className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 min-h-11 text-xs font-bold whitespace-nowrap transition-all ${
                       active ? "ring-1" : "opacity-65 hover:opacity-100"
@@ -354,7 +346,7 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
               onClick={() => {
                 sfx.click();
                 setOpenId(isOpen ? null : t.id);
-                if (!isOpen) setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: pack.subjectId, topicId: t.id }) }));
+                if (!isOpen) setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: pack.subjectId, topicId: t.id }, undefined, board && grade ? { version: 1, kind: "school", board, grade } : undefined) }));
               }}
               type="button"
               aria-expanded={isOpen}

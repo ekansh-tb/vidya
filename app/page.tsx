@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EnrollmentEntry } from "@/components/views/enrollment-entry";
 import { LearningHub, type LearningHubTab } from "@/components/views/learning-hub";
 import { HomeView, type HomeTab } from "@/components/views/home-view";
@@ -9,7 +9,7 @@ import { QuizView } from "@/components/views/quiz-view";
 import { MatchView } from "@/components/views/match-view";
 import { ClassroomView } from "@/components/views/classroom-view";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { resumeForNavigation, viewForLearningResume } from "@/lib/learning/resume";
+import { resumeForNavigation } from "@/lib/learning/resume";
 import { TutorView } from "@/components/views/tutor-view";
 import { FieldTripView } from "@/components/views/field-trip-view";
 import { AssemblyView } from "@/components/views/assembly-view";
@@ -44,6 +44,8 @@ import { hasPack } from "@/lib/content/packs/pack-index";
 import { syncAudioSettings } from "@/lib/audio";
 import { SoundControl } from "@/components/audio/sound-control";
 import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
+import { LearningRevisit } from "@/lib/learning/revisit";
+import { placementFor } from "@/lib/learning/placement";
 import { useSync } from "@/lib/sync/use-sync";
 import { canSync } from "@/lib/sync/client";
 import { AccountEntry } from "@/components/views/account-entry";
@@ -54,6 +56,8 @@ export default function HomePage() {
     switchLearner, upsertLearner, updateLearnerMeta,
   } = useGameStore();
   const [view, setView] = useState<{ name: ViewName; params?: Record<string, unknown> }>({ name: "home" });
+  const revisit = useRef(new LearningRevisit());
+  const [restoreEpoch, setRestoreEpoch] = useState(0);
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [recommendationNow, setRecommendationNow] = useState(() => Date.now());
   const [showAddLearner, setShowAddLearner] = useState(false);
@@ -70,7 +74,16 @@ export default function HomePage() {
 
   // Mirrors the active learner's progress to the server once they are linked.
   // No-op for anonymous device-local profiles, and never blocks play.
-  const sync = useSync();
+  const restoreSavedView = () => {
+    const current = useGameStore.getState();
+    if (!current.hydrated) return;
+    const destination = revisit.current.restore({ ...current.learner, state: current.state });
+    if (destination) {
+      setView(destination);
+      setRestoreEpoch(epoch => epoch + 1);
+    }
+  };
+  const sync = useSync(restoreSavedView);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -78,15 +91,15 @@ export default function HomePage() {
   }, [hydrated, state.settings]);
 
   useEffect(() => {
+    if (!hydrated) return;
     window.scrollTo({ top: 0, behavior: "instant" });
     setQuizResult(null);
-    const current = useGameStore.getState().state;
-    const resumeView = viewForLearningResume(current.learningResume);
-    setView(resumeView ?? (current.activities?.draft ? { name: "activities", params: { activityId: current.activities.draft.activityId } } : { name: "home" }));
+    restoreSavedView();
     setShowAddLearner(false);
     setHubTab("play");
     setHomeTab("today");
-  }, [learner.id]);
+    // State changes are restored only after the initial account pull, not mid-activity.
+  }, [hydrated, learner.id, learner.remoteId, learner.deviceToken]);
 
   // Theme = learner override OR derived from grade
   const themeId: ThemeId = learner.themeId ?? themeForGrade(learner.grade);
@@ -185,13 +198,14 @@ export default function HomePage() {
   }
 
   const navigate = (name: ViewName, params?: Record<string, unknown>) => {
+    revisit.current.touch();
     if (name === "home" && ["today", "explore", "create", "journey"].includes(String(params?.tab))) setHomeTab(params?.tab as HomeTab);
     if (name === "activities" && ["play", "stories", "make", "journey"].includes(String(params?.tab))) setHubTab(params?.tab as LearningHubTab);
     window.scrollTo({ top: 0, behavior: "instant" });
     setView({ name, params });
-    set(current => ({ ...current, learningResume: resumeForNavigation(name, params) }));
+    set(current => ({ ...current, learningResume: name === "learners" ? current.learningResume : resumeForNavigation(name, params, undefined, placementFor(learner) ?? undefined) }));
   };
-  const back = () => { window.scrollTo({ top: 0, behavior: "instant" }); setView({ name: "home" }); set(current => ({ ...current, learningResume: resumeForNavigation("home") })); };
+  const back = () => { revisit.current.touch(); window.scrollTo({ top: 0, behavior: "instant" }); setView({ name: "home" }); set(current => ({ ...current, learningResume: resumeForNavigation("home") })); };
   const showQuizResult = (result: QuizResult) => {
     setRecommendationNow(Date.now());
     setQuizResult(result);
@@ -226,7 +240,7 @@ export default function HomePage() {
             return;
           }
           if (recommendation.kind === "study-pack") {
-            setView({ name: "exam-prep", params: { subjectId: recommendation.subjectId } });
+            navigate("exam-prep", { subjectId: recommendation.subjectId });
             return;
           }
           setView({
@@ -421,7 +435,7 @@ export default function HomePage() {
           <LearnersView
             learners={Object.values(profiles.learners).filter((l,i,all) => canSync(l) && all.findIndex(other=>other.remoteId===l.remoteId && canSync(other))===i)}
             currentId={learner.id}
-            onSwitch={(id) => { switchLearner(id); back(); }}
+            onSwitch={(id) => { switchLearner(id); }}
             onBack={back}
             onAdd={() => setShowAddLearner(true)}
           />
@@ -447,7 +461,7 @@ export default function HomePage() {
   }
 
   return (
-    <ReducedMotionProvider><div className="kids-surface" data-calm={state.settings.motion === false}>
+    <ReducedMotionProvider><div className="kids-surface" data-calm={state.settings.motion === false} onPointerDownCapture={() => revisit.current.touch()} onKeyDownCapture={() => revisit.current.touch()}>
       <ThemeApplier theme={themeId} appearance={state.settings.appearance} />
       <div className="learning-utility-bar">
         <span className="account-save-status" role="status">{learner.learningLanguage === "hi" ? ({idle:"खाता जोड़ें",syncing:"खाते में सहेज रहे हैं…",synced:"खाते में सहेजा",offline:"ऑफ़लाइन: इस डिवाइस पर सहेजा, इंटरनेट पर सिंक होगा",error:"खाते में नहीं सहेजा: फिर जोड़ें या इंटरनेट जाँचें"})[sync.status] : ({idle:"Connect an account",syncing:"Saving to your account…",synced:"Saved to your account",offline:"Offline: saved on this device, waiting to sync",error:"Account save unavailable. Check connection or reconnect"})[sync.status]}</span>
@@ -458,7 +472,7 @@ export default function HomePage() {
           the transitions that are genuinely entering a learning space rather
           than flipping a settings panel. */}
       <RoomTransition
-        roomKey={quizResult ? "results" : view.name}
+        roomKey={`${learner.id}:${restoreEpoch}:${quizResult ? "results" : view.name}`}
         door={state.settings.motion !== false && !quizResult && ["subject", "classroom", "tutor", "field-trip", "assembly", "library", "music", "exam-prep"].includes(view.name)}
       >
         {content}

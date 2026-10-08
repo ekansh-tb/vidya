@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "../game-store";
 import { canSync, pullState, pushWithMerge, deviceLabel, type SyncState } from "./client";
 import { SyncSession } from "./session";
 
 /** Mirror pending device work to its owned account without blocking learning. */
-export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
+export function useSync(onInitialRestore?: () => void): { status: SyncState; lastSyncedAt: number | null } {
+  const restored = useRef(onInitialRestore);
+  restored.current = onInitialRestore;
   const learner = useGameStore((s) => s.learner);
   const hydrated = useGameStore((s) => s.hydrated);
   const [status, setStatus] = useState<SyncState>("idle");
@@ -29,6 +31,7 @@ export function useSync(): { status: SyncState; lastSyncedAt: number | null } {
       pull: signal => pullState(identity, signal),
       push: (state, revision, signal) => pushWithMerge(state, revision, deviceLabel(), identity, signal),
       profile: profile => { if (currentIdentity()) useGameStore.getState().updateLearnerMeta(identity.id, profile); },
+      restored: () => { if (currentIdentity()) restored.current?.(); },
       revoked: () => { if (currentIdentity()) useGameStore.getState().updateLearnerMeta(identity.id, { deviceToken: undefined, verifiedLevel: 0 }); },
       status: (next, savedAt) => {
         if (!currentIdentity()) return;
