@@ -24,7 +24,7 @@ const sizes: Record<Size, string> = {
 
 export function Button({
   children, onClick, variant = "primary", size = "md",
-  disabled, className, type = "button",
+  disabled, className, type = "button", "aria-label": ariaLabel,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -33,10 +33,12 @@ export function Button({
   disabled?: boolean;
   className?: string;
   type?: "button" | "submit";
+  "aria-label"?: string;
 }) {
   return (
     <motion.button
       type={type}
+      aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
       whileTap={{ scale: 0.96 }}

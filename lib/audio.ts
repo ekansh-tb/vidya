@@ -5,7 +5,7 @@ import { readPersistedAudioSettings, type AudioSettings } from "./audio-bootstra
 import { pitchFrequency, validPitch } from "./music-instruments";
 
 export type StudioInstrument = "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute";
-export type StudioHandle = { play: (note: number, at?: number) => void; stop: () => void; dispose: () => void };
+export type StudioHandle = { play: (note: number, at?: number) => void; now: () => number; schedule: (events: { note: number; delayMs: number; durationMs: number }[], startAt: number) => void; stop: () => void; dispose: () => void };
 type Disposable = { dispose: () => unknown };
 let started = false;
 let intentAuthorized = false;
@@ -123,26 +123,53 @@ export async function createStudioInstrument(kind: StudioInstrument): Promise<St
   const nodes: Disposable[] = [];
   const pitched = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: kind === "synth" || kind === "harp" ? "triangle" : "sine" },
-    envelope: kind === "marimba" ? { attack: 0.001, decay: 0.3, sustain: 0, release: 0.15 }
-      : kind === "harp" ? { attack: 0.002, decay: 0.5, sustain: 0, release: 0.4 }
-      : kind === "flute" ? { attack: 0.08, decay: 0.08, sustain: 0.55, release: 0.18 }
-      : { attack: 0.015, decay: 0.2, sustain: 0.15, release: 0.3 },
+    envelope: kind === "marimba" ? { attack: 0.001, decay: 0.2, sustain: 0, release: 0.06 }
+      : kind === "harp" ? { attack: 0.002, decay: 0.25, sustain: 0, release: 0.06 }
+      : kind === "flute" ? { attack: 0.025, decay: 0.08, sustain: 0.55, release: 0.06 }
+      : { attack: 0.015, decay: 0.12, sustain: 0.15, release: 0.06 },
   }).connect(effectsBus);
   nodes.push(pitched);
-  const drum = kind === "percussion" ? new Tone.MembraneSynth({ volume: -8 }).connect(effectsBus) : null;
+  const drum = kind === "percussion" ? new Tone.MembraneSynth({ volume: -8, envelope: { attack: .001, decay: .08, sustain: 0, release: .05 } }).connect(effectsBus) : null;
   const shaker = kind === "percussion" ? new Tone.NoiseSynth({ volume: -20, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 } }).connect(effectsBus) : null;
   if (drum) nodes.push(drum);
   if (shaker) nodes.push(shaker);
+  const scheduledNodes: Disposable[] = [];
+  const clearScheduled = () => { scheduledNodes.splice(0).forEach(node => node.dispose()); };
   let disposed = false;
   const handle: StudioHandle = {
+    now: () => Tone.immediate(),
     play(note, at) {
       if (disposed || muted || hidden() || !validPitch(note) || (kind === "percussion" && note > 2)) return;
       const time = at ?? Tone.now() + 0.01;
       if (drum && note < 2) drum.triggerAttackRelease(note === 0 ? "C2" : "G2", 0.12, time);
       else if (shaker) shaker.triggerAttackRelease(0.05, time);
-      else pitched.triggerAttackRelease(pitchFrequency(note)!, kind === "flute" ? 0.45 : 0.2, time);
+      else pitched.triggerAttackRelease(pitchFrequency(note)!, 0.18, time);
     },
-    stop() { pitched.releaseAll(); drum?.triggerRelease(); },
+    schedule(events, startAt) {
+      clearScheduled();
+      if (disposed || muted || hidden() || !Number.isFinite(startAt)) return;
+      // Monophonic voices schedule directly on Web Audio. Delayed UI timers
+      // cannot bunch future notes together. Disposal cancels all future sound.
+      const voices: { node: ToneT.Synth | ToneT.MembraneSynth | ToneT.NoiseSynth; end: number; noise: boolean }[] = [];
+      for (const event of [...events].sort((a, b) => a.delayMs - b.delayMs)) {
+        if (!validPitch(event.note) || (kind === "percussion" && event.note > 2) || !Number.isFinite(event.delayMs) || event.delayMs < 0 || !Number.isFinite(event.durationMs)) continue;
+        const time = startAt + event.delayMs / 1000;
+        const duration = Math.min(3, Math.max(.03, event.durationMs / 1000));
+        const noise = kind === "percussion" && event.note === 2;
+        let voice = voices.find(v => v.noise === noise && v.end <= time);
+        if (!voice) {
+          const node = kind === "percussion" ? noise
+            ? new Tone.NoiseSynth({ volume: -20, envelope: { attack: .001, decay: .04, sustain: 0, release: .05 } }).connect(effectsBus!)
+            : new Tone.MembraneSynth({ volume: -8, envelope: { attack: .001, decay: .06, sustain: 0, release: .05 } }).connect(effectsBus!)
+            : new Tone.Synth({ oscillator: { type: kind === "synth" || kind === "harp" ? "triangle" : "sine" }, envelope: { attack: kind === "flute" ? .02 : .005, decay: .04, sustain: kind === "marimba" || kind === "harp" ? .15 : .4, release: .05 } }).connect(effectsBus!);
+          scheduledNodes.push(node); voice = { node, end: 0, noise }; voices.push(voice);
+        }
+        if (noise) (voice.node as ToneT.NoiseSynth).triggerAttackRelease(Math.min(.05, duration), time);
+        else (voice.node as ToneT.Synth).triggerAttackRelease(kind === "percussion" ? event.note === 0 ? "C2" : "G2" : pitchFrequency(event.note)!, duration, time);
+        voice.end = time + duration + .06;
+      }
+    },
+    stop() { clearScheduled(); pitched.releaseAll(); drum?.triggerRelease(); },
     dispose() { if (disposed) return; disposed = true; handle.stop(); nodes.forEach((node) => node.dispose()); studios.delete(handle); },
   };
   studios.add(handle);

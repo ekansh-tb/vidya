@@ -9,7 +9,7 @@ vi.mock("tone", () => {
     toDestination() { return this; } connect() { return this; }
   }
   return {
-    start: mock.start, now: () => 1,
+    start: mock.start, now: () => 1, immediate: () => 1,
     Volume: class extends Node { constructor() { super("volume"); } },
     Reverb: class extends Node { constructor() { super("reverb"); } },
     PolySynth: class extends Node { constructor() { super("poly"); } },
@@ -28,6 +28,17 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("shared audio lifecycle", () => {
+  it("schedules separated notes on the audio clock, then cancels future voices on stop", async () => {
+    const audio = await import("./audio"); const handle = await audio.createStudioInstrument("flute");
+    handle.schedule([{ note: 0, delayMs: 0, durationMs: 420 }, { note: 0, delayMs: 600, durationMs: 420 }, { note: 4, delayMs: 1200, durationMs: 420 }], 2);
+    const voice = mock.nodes.filter(n => n.kind === "synth").at(-1)!;
+    expect(voice.triggerAttackRelease.mock.calls.map(call => call.slice(1))).toEqual([[.42, 2], [.42, 2.6], [.42, 3.2]]);
+    expect(handle.now()).toBe(1);
+    handle.stop(); expect(voice.dispose).toHaveBeenCalledOnce();
+    audio.setMasterMuted(true); handle.schedule([{ note: 1, delayMs: 0, durationMs: 100 }], 4);
+    expect(mock.nodes.filter(n => n.kind === "synth")).toHaveLength(1);
+    handle.dispose(); expect(voice.dispose).toHaveBeenCalledOnce();
+  });
   it("plays sharps and lower octaves on the shared instrument bus", async () => {
     const audio = await import("./audio"); const instrument = await audio.createStudioInstrument("harp");
     const node = mock.nodes.filter(n => n.kind === "poly").at(-1)!;

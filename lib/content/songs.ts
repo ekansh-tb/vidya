@@ -14,6 +14,8 @@ export type Song = {
   title: string;
   tradition: string;          // "English nursery", "German classical", etc.
   difficulty: "starter" | "easy" | "medium";
+  /** Listening groups from the authored note lines; not a complete musical score. */
+  phraseLengths: number[];
   notes: number[];            // NOTE IDs 0–7 from music-view.tsx
   /** Where the melody comes from — for verification, not user-facing. */
   source: string;
@@ -25,6 +27,7 @@ export type Song = {
 export const SONGS: Song[] = [
   {
     id: "twinkle",
+    phraseLengths: [7, 7, 7, 7, 7, 7],
     title: "Twinkle, Twinkle, Little Star",
     tradition: "English nursery",
     difficulty: "starter",
@@ -42,6 +45,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "mary",
+    phraseLengths: [7, 3, 3, 8, 5],
     title: "Mary Had a Little Lamb",
     tradition: "English nursery",
     difficulty: "starter",
@@ -58,6 +62,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "hotcross",
+    phraseLengths: [3, 3, 4, 4, 3],
     title: "Hot Cross Buns",
     tradition: "English nursery",
     difficulty: "starter",
@@ -74,6 +79,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "old-macdonald",
+    phraseLengths: [7, 5, 8, 5],
     title: "Old MacDonald Had a Farm",
     tradition: "English / American folk",
     difficulty: "easy",
@@ -89,6 +95,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "frere",
+    phraseLengths: [4, 4, 3, 3, 6, 6, 3, 3],
     title: "Frère Jacques (Are You Sleeping)",
     tradition: "French nursery (round)",
     difficulty: "easy",
@@ -108,6 +115,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "row-row",
+    phraseLengths: [5, 5, 12, 5],
     title: "Row, Row, Row Your Boat",
     tradition: "English / American round",
     difficulty: "easy",
@@ -123,6 +131,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "london-bridge",
+    phraseLengths: [7, 3, 3, 7, 4],
     title: "London Bridge Is Falling Down",
     tradition: "English nursery",
     difficulty: "easy",
@@ -139,6 +148,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "saints",
+    phraseLengths: [4, 4, 8, 8, 8],
     title: "When the Saints Go Marching In",
     tradition: "American gospel / jazz standard",
     difficulty: "easy",
@@ -155,6 +165,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "ode-to-joy",
+    phraseLengths: [8, 7, 8, 7],
     title: "Ode to Joy",
     tradition: "Beethoven, 9th Symphony (1824)",
     difficulty: "medium",
@@ -170,6 +181,7 @@ export const SONGS: Song[] = [
   },
   {
     id: "jingle-chorus",
+    phraseLengths: [3, 3, 5, 8, 6],
     title: "Jingle Bells (chorus)",
     tradition: "American / English carol",
     difficulty: "easy",
