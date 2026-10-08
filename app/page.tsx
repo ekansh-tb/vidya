@@ -17,6 +17,7 @@ import { NotebookView } from "@/components/views/notebook-view";
 import { PlanningView } from "@/components/views/planning-view";
 import { LibraryView } from "@/components/views/library-view";
 import { CreationView } from "@/components/views/creation-view";
+import { VisualLabView } from "@/components/views/visual-lab-view";
 import { MusicView } from "@/components/views/music-view";
 import { WellnessView } from "@/components/views/wellness-view";
 import { ResultsView } from "@/components/views/results-view";
@@ -261,12 +262,12 @@ export default function HomePage() {
         onStartRecommendation={startRecommendation}
       />
     );
-  } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile", "creation", "music", "library", "wellness", "planning"].includes(view.name)) {
-    content = <LearningHub onCreate={() => navigate("creation")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
+  } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile", "creation", "music", "visual-lab", "library", "wellness", "planning"].includes(view.name)) {
+    content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
   } else {
     switch (view.name) {
       case "activities":
-        content = <LearningHub onCreate={() => navigate("creation")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
+        content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
         break;
       case "home":
         content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={homeTab} />;
@@ -404,6 +405,9 @@ export default function HomePage() {
       case "creation":
         content = <CreationView state={state} setState={set} learner={learner} onBack={back} />;
         break;
+      case "visual-lab":
+        content = <VisualLabView learner={learner} state={state} setState={set} onBack={back} />;
+        break;
       case "music":
         content = <MusicView learner={learner} state={state} setState={set} onBack={back} />;
         break;
@@ -423,6 +427,7 @@ export default function HomePage() {
             onNavigate={navigate}
             subjectId={view.params?.subjectId as SubjectId | undefined}
             topicId={typeof view.params?.topicId === "string" ? view.params.topicId : undefined}
+            pointId={typeof view.params?.pointId === "string" ? view.params.pointId : undefined}
             availablePackIds={availablePackIds}
             grade={learner.grade ?? undefined}
             school={learner.school}

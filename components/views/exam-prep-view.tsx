@@ -19,7 +19,9 @@ import { confidenceStorageKey, readTopicConfidence, saveTopicConfidence, topicCo
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 import { useCapability } from "@/lib/capabilities/use-capability";
-import { resumeForNavigation } from "@/lib/learning/resume";
+import { LessonPointReader } from "@/components/learning/lesson-point-reader";
+import { lessonPoints } from "@/lib/learning/lesson-points";
+import { readLearningResume, resumeForNavigation } from "@/lib/learning/resume";
 
 type SectionId = "overview" | "syllabus" | "flash" | "quiz" | "mistakes" | "cheat";
 
@@ -35,7 +37,7 @@ const STUDY_TOOLS: typeof SECTIONS = [
 ];
 
 export function ExamPrepView({
-  state, setState, onBack, onNavigate, subjectId, topicId, availablePackIds, grade, school, board, uploaded,
+  state, setState, onBack, onNavigate, subjectId, topicId, pointId, availablePackIds, grade, school, board, uploaded,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
@@ -43,6 +45,7 @@ export function ExamPrepView({
   onNavigate: (name: ViewName, params?: Record<string, unknown>) => void;
   subjectId?: SubjectId;
   topicId?: string;
+  pointId?: string;
   /** If provided, lets the learner switch between exam packs they own. */
   availablePackIds?: SubjectId[];
   /** Learner's grade — for grade-aware pack lookup. */
@@ -222,7 +225,7 @@ export function ExamPrepView({
                 aiTutorAllowed={aiTutorAllowed}
               />
             )}
-            {section === "syllabus" && <SyllabusSection key={`${currentId}-syllabus`} pack={pack} initialTopicId={currentId === initialId ? topicId : undefined} state={state} setState={setState} board={board} grade={grade} school={school} />}
+            {section === "syllabus" && <SyllabusSection key={`${currentId}-syllabus`} pack={pack} initialTopicId={currentId === initialId ? topicId : undefined} initialPointId={currentId === initialId ? pointId : undefined} state={state} setState={setState} board={board} grade={grade} school={school} />}
             {section === "flash" && <FlashSection key="flash" pack={pack} />}
             {section === "quiz" && <QuizSection key="quiz" pack={pack} />}
             {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
@@ -316,7 +319,7 @@ function Step({ n, title, hint, onClick }: { n: number; title: string; hint: str
 // =====================
 // Syllabus checklist
 // =====================
-function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, school }: { pack: ExamPack; initialTopicId?: string; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
+function SyllabusSection({ pack, initialTopicId, initialPointId, state, setState, board, grade, school }: { pack: ExamPack; initialTopicId?: string; initialPointId?: string; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
   const osReduced = useReducedMotion();
   const motionEnabled = useGameStore(store => store.state.settings.motion !== false);
   const reduceMotion = Boolean(osReduced || !motionEnabled);
@@ -332,11 +335,16 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
     }));
   };
 
+  const language = useGameStore(store => store.learner.learningLanguage) ?? "en";
+  const saved = readLearningResume(state.learningResume);
   const requested = pack.topics.find(topic => topic.id === initialTopicId);
   const ordered = requested ? [requested, ...pack.topics.filter(topic => topic.id !== requested.id)] : pack.topics;
   const visibleTopics = ordered.slice(0, 3);
   const remainingTopics = ordered.slice(3);
   const renderTopic = (t: ExamPack["topics"][number]) => {
+        const points = lessonPoints(t, JSON.stringify([board, grade, school?.trim().toLowerCase(), pack.subjectId]));
+        const savedPoint = saved?.room === "exam-prep" && saved.subjectId === pack.subjectId && saved.topicId === t.id && "pointId" in saved ? saved.pointId : t.id === initialTopicId ? initialPointId : undefined;
+        const savePoint = (pointId: string) => setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: pack.subjectId, topicId: t.id, pointId }, undefined, board && grade ? { version: 1, kind: "school", board, grade } : undefined) }));
         const identity = topicConfidenceIdentity(pack, t, { board, grade, school });
         const c = map[identity] || "unknown";
         const isOpen = openId === t.id;
@@ -346,7 +354,7 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
               onClick={() => {
                 sfx.click();
                 setOpenId(isOpen ? null : t.id);
-                if (!isOpen) setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: pack.subjectId, topicId: t.id }, undefined, board && grade ? { version: 1, kind: "school", board, grade } : undefined) }));
+                if (!isOpen) savePoint(savedPoint ?? points[0].id);
               }}
               type="button"
               aria-expanded={isOpen}
@@ -370,16 +378,7 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
                 className="overflow-hidden"
               >
                 <div className="px-4 py-3 mt-1 glass rounded-[var(--radius-md)]">
-                  <p className="learning-eyebrow">A starting point</p>
-                  <p className="mt-2 text-base leading-relaxed text-[var(--text)]">{t.syllabus[0] ?? t.blurb}</p>
-                  {t.syllabus.length > 1 && <details className="mt-3"><summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">More learning points · {t.syllabus.length - 1}</summary><ul className="mt-2 space-y-3">
-                    {t.syllabus.slice(1).map((s, i) => (
-                      <li key={i} className="flex gap-2 text-[13px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                        <span style={{ color: "var(--accent)" }}>•</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul></details>}
+                  <LessonPointReader points={points} initialPointId={savedPoint} onChoose={savePoint} language={language} />
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
                     <span className="text-sm font-medium mr-1" style={{ color: "var(--text-muted)" }}>How does it feel?</span>
                     {(["weak", "ok", "strong"] as const).map((opt) => {
@@ -420,7 +419,7 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-      <p className="mb-4 text-sm text-[var(--text-muted)]">Pick a topic. Start with one learning point, then open more when you want.</p>
+      <p className="mb-4 text-sm text-[var(--text-muted)]">Choose a topic. Move through one idea at a time. Your place is saved when you choose a point.</p>
       {initialTopicId && !requested && <p role="status" className="learning-panel mb-4">That topic is unavailable in this collection. Choose another below.</p>}
       {visibleTopics.map(renderTopic)}
       {remainingTopics.length > 0 && <details className="learning-panel mt-4"><summary className="min-h-11 cursor-pointer py-2 font-semibold">More topics · {remainingTopics.length}</summary><div className="mt-3">{remainingTopics.map(renderTopic)}</div></details>}

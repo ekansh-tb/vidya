@@ -241,9 +241,10 @@ export type GameState = {
   /** Per-book resume positions. The newest timestamp wins during sync. */
   readingProgress?: Record<string, ReadingProgress>;
   learningResume?: import("./learning/resume").LearningResume;
+  visualLab?: import("./learning/visual-lab").VisualLabState;
   savedMelody: number[] | null;
   savedCompositions: Composition[];
-  musicDraft?: { updatedAt?: string; notes: number[]; tempoMs: number; bpm?: number; instrument?: "keyboard" | "marimba" | "synth" | "percussion"; layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion"; steps: number[] }[]; name?: string };
+  musicDraft?: { updatedAt?: string; notes: number[]; tempoMs: number; bpm?: number; instrument?: "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute"; layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute"; steps: number[] }[]; name?: string };
   classRoster: ClassMember[];
   classNotes: ClassNote[];
   buddyId: string | null;
@@ -300,8 +301,8 @@ export type ClassNote = {
 export type Composition = {
   version?: 2;
   bpm?: number;
-  instrument?: "keyboard" | "marimba" | "synth" | "percussion";
-  layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion"; steps: number[] }[];
+  instrument?: "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute";
+  layers?: { instrument: "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute"; steps: number[] }[];
   id: string;
   name: string;
   notes: number[];
@@ -325,6 +326,7 @@ export type FriendStreak = {
 
 export type ViewName =
   | "home"
+  | "visual-lab"
   | "creation"
   | "planning"
   | "activities"

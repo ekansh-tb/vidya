@@ -28,6 +28,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("shared audio lifecycle", () => {
+  it("plays sharps and lower octaves on the shared instrument bus", async () => {
+    const audio = await import("./audio"); const instrument = await audio.createStudioInstrument("harp");
+    const node = mock.nodes.filter(n => n.kind === "poly").at(-1)!;
+    instrument.play(161);
+    expect(node.triggerAttackRelease.mock.calls[0][0]).toBeCloseTo(277.18, 1);
+    instrument.play(148);
+    expect(node.triggerAttackRelease.mock.calls[1][0]).toBeCloseTo(130.81, 1);
+    instrument.play(999);
+    expect(node.triggerAttackRelease).toHaveBeenCalledTimes(2);
+    audio.setMasterMuted(true); instrument.play(161);
+    expect(node.triggerAttackRelease).toHaveBeenCalledTimes(2);
+  });
   it("does not authorize audible playback on hydration or arbitrary gestures", async () => {
     const audio = await import("./audio");
     audio.syncAudioSettings(mock.saved); await audio.startMusic(); audio.armAudioOnFirstGesture();

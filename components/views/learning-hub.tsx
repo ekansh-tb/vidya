@@ -39,9 +39,9 @@ const TABS = [
 ] as const;
 export type LearningHubTab = typeof TABS[number]["id"];
 
-export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, onMusic, onLibrary, onPlan, tab = "play", onTabChange, initialActivityId, initialActivityRevision }: {
+export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, onVisualLab, onMusic, onLibrary, onPlan, tab = "play", onTabChange, initialActivityId, initialActivityRevision }: {
   onBack: () => void; onSettings: () => void; onSwitch: () => void; onLink: () => void;
-  onCreate?: () => void; onMusic?: () => void; onLibrary?: () => void; onPlan?: () => void;
+  onCreate?: () => void; onVisualLab?: () => void; onMusic?: () => void; onLibrary?: () => void; onPlan?: () => void;
   tab?: LearningHubTab; onTabChange: (tab: LearningHubTab) => void;
   initialActivityId?: string;
   initialActivityRevision?: number;
@@ -128,6 +128,7 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, on
       {tab === "play" && !domain && filtered.length > visible.length && <button className="kids-show-all" onClick={() => expand(true)}>{hi ? "सभी गतिविधियाँ देखो" : "See all activities"}<ArrowRight aria-hidden="true" size={18} /></button>}
       {tab === "play" && offline && <button id="offline-next" className="kids-outdoor" onClick={() => start(offline.id, "offline-next")}><span className="kids-outdoor-art" aria-hidden="true"><ActivityArt domain="real-world" /></span><span><small>{hi ? "फिर, स्क्रीन से दूर" : "Then, away from the screen"}</small><strong>{offline.title[lang]}</strong><span>{hi ? "बड़े के साथ असली दुनिया में खेलो" : "A little real-world play with your grown-up"}</span></span><ArrowRight aria-hidden="true" /></button>}
     </>}
+    {tab === "make" && onVisualLab && <button onClick={onVisualLab} className="buddy-tile w-full"><span className="buddy-tile-art"><Palette aria-hidden="true"/></span><span><strong>{hi ? "देखो और बदलो" : "Visual playground"}</strong><small>{hi ? "गिनो, बनाओ और बदलाव देखो" : "Build, count and see what changes"}</small></span><ArrowRight aria-hidden="true"/></button>}
     {tab === "journey" && <>
       {onPlan && <section className="learning-panel"><h2>{hi ? "साथ में समय चुनें" : "Choose time together"}</h2><p>{hi ? "बड़े के साथ अपना असली समय देखें। खेलने के लिए योजना पूरी करना ज़रूरी नहीं।" : "With a grown-up, plan around your actual day. A plan is optional and never blocks play."}</p><button onClick={onPlan}>{hi ? "परिवार की योजना" : "Open the family plan"}</button></section>}
       <LearningCompanion compact decorations={companionUnlocks(activityState)} line={hi ? "जो खोजा और बनाया, वह यहाँ रहता है। छुट्टी लेने पर कुछ नहीं खोता।" : "Your discoveries and creations stay here. Taking a break loses nothing."} />

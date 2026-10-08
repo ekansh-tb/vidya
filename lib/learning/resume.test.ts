@@ -26,4 +26,11 @@ describe("saved learning destination", () => {
     expect(readLearningResume({ version: 2, room: "exam-prep", subjectId: "cls-maths", topicId: "../admin", updatedAt: "2026-10-08T00:02:00Z" })).toBeUndefined();
     expect(resumeForNavigation("quiz", { subjectId: "cls-maths", topicId: "integers" }, "2026-10-08T00:03:00Z")).toEqual({ version: 2, room: "none", updatedAt: "2026-10-08T00:03:00Z" });
   });
+  it("round trips an exact point through synchronization and navigation", () => {
+    const saved = resumeForNavigation("exam-prep", { subjectId: "cls-maths", topicId: "integers", pointId: "point-abc123" }, "2026-10-08T01:00:00Z");
+    expect(viewForLearningResume(readLearningResume(saved))?.params).toEqual({ subjectId: "cls-maths", topicId: "integers", pointId: "point-abc123" });
+    expect(mergeLearningResume(active, saved)).toEqual(saved);
+    expect(readLearningResume({ ...saved, pointId: "../invalid" })).toBeUndefined();
+    expect(readLearningResume({ ...saved, topicId: undefined })).toBeUndefined();
+  });
 });

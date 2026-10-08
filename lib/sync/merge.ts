@@ -294,6 +294,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
     readingProgress: mergeReadingProgress(local.readingProgress, r.readingProgress),
     learningResume: mergeLearningResume(local.learningResume, r.learningResume),
+    visualLab: mergeVisualLab(local.visualLab, r.visualLab),
     completedActivities: unionStrings(local.completedActivities, r.completedActivities),
     moveBreaks: Math.max(num(local.moveBreaks), num(r.moveBreaks)),
     progress: mergeProgress(local.progress, r.progress),
@@ -332,3 +333,4 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     onboarded: Boolean(local.onboarded || r.onboarded),
   };
 }
+import { mergeVisualLab } from "../learning/visual-lab";

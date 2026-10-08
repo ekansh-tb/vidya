@@ -11,9 +11,9 @@ type LegacyLearningResume = {
 };
 
 type CurrentLearningResume =
-  | { version: 2; room: "none" | "music" | "creation"; updatedAt: string }
+  | { version: 2; room: "none" | "music" | "creation" | "visual-lab"; updatedAt: string }
   | { version: 2; room: "library"; bookId: string; updatedAt: string }
-  | { version: 2; room: "exam-prep"; subjectId: SubjectId; topicId?: string; placement?: LearningPlacement; updatedAt: string };
+  | { version: 2; room: "exam-prep"; subjectId: SubjectId; topicId?: string; pointId?: string; placement?: LearningPlacement; updatedAt: string };
 
 export type LearningResume = LegacyLearningResume | CurrentLearningResume;
 
@@ -32,24 +32,25 @@ export function readLearningResume(value: unknown): LearningResume | undefined {
     if (r.room === "library" && !safeId(r.bookId)) return undefined;
     return { version: 1, room: r.room as LegacyLearningResume["room"], updatedAt: r.updatedAt, ...(r.room === "library" ? { bookId: r.bookId as string } : {}) };
   }
-  if (["none", "music", "creation"].includes(String(r.room))) {
-    return { version: 2, room: r.room as "none" | "music" | "creation", updatedAt: r.updatedAt };
+  if (["none", "music", "creation", "visual-lab"].includes(String(r.room))) {
+    return { version: 2, room: r.room as "none" | "music" | "creation" | "visual-lab", updatedAt: r.updatedAt };
   }
   if (r.room === "library" && safeId(r.bookId)) {
     return { version: 2, room: "library", bookId: r.bookId, updatedAt: r.updatedAt };
   }
   if (r.room === "exam-prep" && knownSubject(r.subjectId) && (r.topicId === undefined || safeId(r.topicId))) {
+    if (r.pointId !== undefined && (!safeId(r.pointId) || !r.topicId)) return undefined;
     const placement = r.placement === undefined ? undefined : placementSchema.safeParse(r.placement);
     if (placement && (!placement.success || placement.data.kind !== "school")) return undefined;
-    return { version: 2, room: "exam-prep", ...(placement?.success ? { placement: placement.data } : {}), subjectId: r.subjectId, ...(r.topicId ? { topicId: r.topicId as string } : {}), updatedAt: r.updatedAt };
+    return { version: 2, room: "exam-prep", ...(placement?.success ? { placement: placement.data } : {}), subjectId: r.subjectId, ...(r.topicId ? { topicId: r.topicId as string } : {}), ...(r.pointId ? { pointId: r.pointId as string } : {}), updatedAt: r.updatedAt };
   }
   return undefined;
 }
 
 export function resumeForNavigation(name: ViewName, params?: Record<string, unknown>, updatedAt = new Date().toISOString(), placement?: LearningPlacement): LearningResume {
-  if (name === "music" || name === "creation") return { version: 2, room: name, updatedAt };
+  if (name === "music" || name === "creation" || name === "visual-lab") return { version: 2, room: name, updatedAt };
   if (name === "exam-prep" && knownSubject(params?.subjectId) && (params?.topicId === undefined || safeId(params.topicId))) {
-    return { version: 2, room: "exam-prep", ...(placement ? { placement } : {}), subjectId: params.subjectId, ...(params.topicId ? { topicId: params.topicId as string } : {}), updatedAt };
+    return { version: 2, room: "exam-prep", ...(placement ? { placement } : {}), subjectId: params.subjectId, ...(params.topicId ? { topicId: params.topicId as string } : {}), ...(params.topicId && safeId(params.pointId) ? { pointId: params.pointId } : {}), updatedAt };
   }
   return { version: 2, room: "none", updatedAt };
 }
@@ -63,7 +64,7 @@ export function viewForLearningResume(value: unknown, learner?: LearnerProfile):
     if (!subjectsForLearner(placement.board, learner.pickedSubjects, placement.grade).some(subject => subject.id === resume.subjectId) || !hasPack(resume.subjectId, placement.grade)) return undefined;
   }
   if (resume.room === "library") return { name: "library", params: { bookId: resume.bookId } };
-  if (resume.room === "exam-prep") return { name: "exam-prep", params: { subjectId: resume.subjectId, ...(resume.topicId ? { topicId: resume.topicId } : {}) } };
+  if (resume.room === "exam-prep") return { name: "exam-prep", params: { subjectId: resume.subjectId, ...(resume.topicId ? { topicId: resume.topicId } : {}), ...("pointId" in resume && resume.pointId ? { pointId: resume.pointId } : {}) } };
   return { name: resume.room };
 }
 
