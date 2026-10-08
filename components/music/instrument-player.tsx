@@ -70,7 +70,7 @@ export function InstrumentPlayer({ instrument, activeNote, expectedNote, disable
       </div>}
     </div>
     <div className={styles.footer}>
-      <span role="status" aria-live="off">{activeNote === null ? hi ? "बजाने के लिए छुओ" : "Touch to play" : instrument === "percussion" ? drumLabels[activeNote % 3] : pitchLabel(activeNote)}</span>
+      <span role="status" aria-live="off">{activeNote === null ? disabled ? hi ? "एक छोटा विराम" : "A little pause" : hi ? "बजाने के लिए छुओ" : "Touch to play" : instrument === "percussion" ? drumLabels[activeNote % 3] : pitchLabel(activeNote)}</span>
       {!simple && instrument === "keyboard" && <button type="button" disabled={disabled} aria-pressed={wide} onClick={() => { setWide(!wide); setOctave(Math.min(octave, 4)); }}>{hi ? wide ? "कम कुंजियाँ" : "और कुंजियाँ" : wide ? "Fewer keys" : "More keys"}</button>}
     </div>
     <p className={styles.hint}>{simple ? hi ? "एक कुंजी छुओ। रुको और सुनो।" : "Touch a key. Pause and listen." : hi ? "कुंजी छूने से ध्वनि शुरू होगी। पियानो पर और कुंजियाँ देखने के लिए किनारे की ओर स्क्रॉल करो।" : "Touch a key to start sound. Scroll across the piano for more keys, or use the keyboard letters."}</p>

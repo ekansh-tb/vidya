@@ -7,7 +7,7 @@
  */
 
 const CACHE_PREFIX = "vidya-public";
-const CACHE_VERSION = "2026-10-08-visual-1";
+const CACHE_VERSION = "2026-10-08-music-pauses-1";
 // Only this compatibility release forces old browser sessions onto account enrollment.
 const REQUIRED_ACCOUNT_UPDATE_VERSION = "2026-10-07-sync-1";
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${CACHE_VERSION}`;

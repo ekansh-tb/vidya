@@ -4,12 +4,12 @@ import { compositionPlayback, safeLayers, safeNotes } from "./music-composition"
 describe("music composition compatibility", () => {
   it("plays an older composition with its own saved millisecond timing", () => {
     expect(compositionPlayback({ notes: [0, 4, 2], tempoMs: 600 })).toEqual({
-      events: [{ instrument: "keyboard", note: 0, delayMs: 0 }, { instrument: "keyboard", note: 4, delayMs: 600 }, { instrument: "keyboard", note: 2, delayMs: 1200 }], durationMs: 1800,
+      events: [{ instrument: "keyboard", note: 0, delayMs: 0, durationMs: 420 }, { instrument: "keyboard", note: 4, delayMs: 600, durationMs: 420 }, { instrument: "keyboard", note: 2, delayMs: 1200, durationMs: 420 }], durationMs: 1800,
     });
   });
   it("plays simultaneous rhythm layers and melody at the stored tempo", () => {
     const result = compositionPlayback({ notes: [0, 2], tempoMs: 320, bpm: 60, instrument: "marimba", layers: [{ instrument: "percussion", steps: [0, -1, 2] }] });
-    expect(result.events).toEqual([{ instrument: "marimba", note: 0, delayMs: 0 }, { instrument: "percussion", note: 0, delayMs: 0, step: 0 }, { instrument: "marimba", note: 2, delayMs: 500 }, { instrument: "percussion", note: 2, delayMs: 1000, step: 2 }]);
+    expect(result.events).toEqual([{ instrument: "marimba", note: 0, delayMs: 0, durationMs: 320 }, { instrument: "percussion", note: 0, delayMs: 0, durationMs: 320, step: 0 }, { instrument: "marimba", note: 2, delayMs: 500, durationMs: 320 }, { instrument: "percussion", note: 2, delayMs: 1000, durationMs: 320, step: 2 }]);
     expect(result.durationMs).toBe(8000);
   });
   it("normalizes corrupt or oversized archived drafts before rendering", () => {
