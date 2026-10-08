@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X, UserRound } from "lucide-react";
 import { placementLabel } from "@/lib/learning/placement";
 import type { LearnerProfile } from "@/lib/types";
 
@@ -39,8 +39,8 @@ export function LearnerPicker({ learners, selectedId, onChange, onFeedback }: {
         {learners.map(learner => <option key={learner.id} value={learner.id}>{learner.name || "Unnamed learner"} · {placementLabel(learner)}</option>)}
       </select>
     </div>
-    <button type="button" className="parent-learner-trigger" aria-haspopup="dialog" aria-expanded={open} onClick={() => { onFeedback(); setOpen(true); }}>
-      <span><span className="parent-small">Viewing learner</span><strong>{selected?.name || "Choose a learner"}</strong><span className="parent-small">{selected && placementLabel(selected)}</span></span>
+    <button type="button" className="parent-learner-trigger" aria-label={`Choose learner, viewing ${selected?.name || "unnamed learner"}${selected ? `, ${placementLabel(selected)}` : ""}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { onFeedback(); setOpen(true); }}>
+      <span className="parent-learner-avatar" aria-hidden="true"><UserRound size={22} /></span><span className="parent-learner-compact-name"><strong>{selected?.name || "Choose a learner"}</strong><span className="parent-small">{selected && placementLabel(selected)}</span></span>
       <ChevronDown size={20} aria-hidden="true" />
     </button>
     <dialog ref={dialog} className="parent-learner-sheet" aria-labelledby="learner-sheet-title" onClose={() => setOpen(false)} onCancel={() => setOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>

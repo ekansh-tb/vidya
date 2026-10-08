@@ -174,3 +174,30 @@
   .parent-family button { transition: background-color 120ms ease, border-color 120ms ease; }
   .parent-family button:active:not(:disabled) { filter: brightness(.95); }
 }
+
+.parent-family .parent-account { position: relative; align-self: start; }
+.parent-family .parent-account > summary { display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border); }
+.parent-family .parent-account .info-popover-panel { left: auto; right: 0; }
+.parent-family .parent-header-actions .compact-control { display: inline-flex; justify-content: center; }
+.parent-family .parent-learner-avatar { display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; color: var(--accent); background: var(--accent-soft); }
+.parent-family .parent-learner-compact-name { flex: 1; min-width: 0; }
+.parent-family .parent-learner-compact-name strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  .parent-family .parent-header-inner { flex-wrap: nowrap; }
+  .parent-family .parent-header-actions { flex-wrap: nowrap; gap: 6px; }
+  .parent-family .parent-header-actions .compact-control { width: 48px; height: 48px; min-width: 48px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .parent-family .parent-account { max-width: none; width: 48px; flex-shrink: 0; }
+  .parent-family .parent-account > summary { width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .parent-family .parent-page-title { flex-wrap: nowrap; align-items: center; }
+  .parent-family .parent-page-title > div { min-width: 0; }
+  .parent-family .parent-eyebrow { font-size: .7rem; }
+  .parent-family .parent-learner-trigger { gap: 10px; padding: 10px 12px; }
+  .parent-family .parent-learner-trigger strong { margin: 0 0 3px; }
+  .parent-family .parent-sidebar nav button:not([aria-current=page]) > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .parent-family .parent-sidebar nav svg { width: 23px; height: 23px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .parent-family .parent-sidebar nav [aria-current=page] > svg { animation: control-icon-settle 200ms ease-out; }
+  .parent-family .parent-learner-trigger > svg { transition: transform 160ms ease-out; }
+  .parent-family .parent-learner-trigger[aria-expanded=true] > svg { transform: rotate(180deg); }
+}

@@ -607,3 +607,42 @@
 .learning-utility-bar > * { min-width: 0; }
 .learning-utility-bar .account-save-status { flex: 1 1 160px; overflow-wrap: anywhere; }
 .kids-world, .kids-player { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+
+/* Compact chrome keeps complete names and explanations available on demand. */
+.compact-control { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.compact-control svg, .state-icon { flex-shrink: 0; }
+.state-icon { display: inline-flex; transform-origin: center; }
+.info-popover { position: relative; }
+.info-popover > summary { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; min-width: 44px; cursor: pointer; list-style: none; border-radius: 12px; }
+.info-popover > summary::-webkit-details-marker { display: none; }
+.info-popover > summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.info-popover-panel { position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; width: min(280px,calc(100vw - 32px)); padding: 16px; border: 1px solid var(--border); border-radius: 14px; color: var(--text); background: var(--surface); box-shadow: 0 8px 28px #08142618; text-align: left; overflow-wrap: anywhere; font-size: .875rem; line-height: 1.6; }
+.learning-utility-bar { position: relative; z-index: 50; }
+.learning-utility-bar .account-save-status { flex: 1 1 auto; text-align: left; }
+.account-save-status .info-popover { width: fit-content; }
+.account-save-status .info-popover > summary { justify-content: flex-start; padding: 0 6px; }
+.account-save-status[data-save-state=error] { color: var(--error); }
+.account-save-status[data-save-state=offline] { color: var(--warning); }
+.sound-controls-panel { max-width: calc(100vw - 32px); }
+@media (max-width: 760px) {
+  .mobile-control-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .compact-control { width: 48px; height: 48px; min-width: 48px; padding: 0 !important; }
+  .sound-controls > button { min-height: 48px; min-width: 48px; }
+  .learning-utility-bar { flex-wrap: nowrap; gap: 8px; }
+  .kids-nav[data-compact=true] button:not([aria-current=page]) > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .kids-nav[data-compact=true] button { min-height: 56px; }
+  .kids-nav[data-compact=true] button svg { width: 23px; height: 23px; }
+}
+@keyframes control-icon-settle {
+  from { transform: scale(.86) rotate(-6deg); }
+  65% { transform: scale(1.06) rotate(1deg); }
+  to { transform: scale(1) rotate(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .state-icon, .kids-nav button[aria-current=page] > svg { animation: control-icon-settle 200ms ease-out; }
+  .compact-control > svg, .kids-icon > svg, .info-popover summary > svg { transition: transform 140ms ease-out; }
+  .compact-control:active > svg, .kids-icon:active > svg, .info-popover summary:active > svg { transform: scale(.9); }
+  .sound-controls [aria-expanded=true] > svg { transform: rotate(12deg); transition: transform 160ms ease-out; }
+}
+[data-calm=true] .state-icon, [data-calm=true] :is(.compact-control,.kids-icon,.info-popover summary) > svg, .kids-nav[data-calm=true] button > svg { animation: none !important; transition: none !important; transform: none !important; }
+[data-calm=true] .sound-controls [aria-expanded] > svg, .sound-controls[data-calm=true] [aria-expanded] > svg { transition: none !important; transform: none !important; }

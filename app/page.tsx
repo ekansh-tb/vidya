@@ -42,6 +42,7 @@ import type { QuizResult, SubjectId, ViewName } from "@/lib/types";
 import { subjectsForLearner } from "@/lib/content/subjects";
 import { hasPack } from "@/lib/content/packs/pack-index";
 import { syncAudioSettings } from "@/lib/audio";
+import { AccountSaveStatus } from "@/components/learning/account-save-status";
 import { SoundControl } from "@/components/audio/sound-control";
 import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
 import { LearningRevisit } from "@/lib/learning/revisit";
@@ -464,7 +465,7 @@ export default function HomePage() {
     <ReducedMotionProvider><div className="kids-surface" data-calm={state.settings.motion === false} onPointerDownCapture={() => revisit.current.touch()} onKeyDownCapture={() => revisit.current.touch()}>
       <ThemeApplier theme={themeId} appearance={state.settings.appearance} />
       <div className="learning-utility-bar">
-        <span className="account-save-status" role="status">{learner.learningLanguage === "hi" ? ({idle:"खाता जोड़ें",syncing:"खाते में सहेज रहे हैं…",synced:"खाते में सहेजा",offline:"ऑफ़लाइन: इस डिवाइस पर सहेजा, इंटरनेट पर सिंक होगा",error:"खाते में नहीं सहेजा: फिर जोड़ें या इंटरनेट जाँचें"})[sync.status] : ({idle:"Connect an account",syncing:"Saving to your account…",synced:"Saved to your account",offline:"Offline: saved on this device, waiting to sync",error:"Account save unavailable. Check connection or reconnect"})[sync.status]}</span>
+        <AccountSaveStatus status={sync.status} language={learner.learningLanguage ?? "en"} />
         {view.name !== "music" && !(view.name === "library" && state.learningResume?.room === "library") && <SoundControl settings={state.settings} onChange={change => set(s => ({ ...s, settings: { ...s.settings, ...change } }))} />}
       </div>
       {/* Each view change reads as stepping into a different room, which is the
