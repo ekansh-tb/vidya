@@ -12,6 +12,7 @@ import { bumpCapabilityUsage, recordSafetySignal, type LearnerRow } from "@/lib/
 import { resolveTutorCurriculum, tutorCurriculumPrompt, quoteTutorContext, type TutorCurriculum } from "@/lib/ai/tutor-curriculum";
 import { identityFromRequest } from "@/lib/auth/session";
 import { dbConfigured } from "@/lib/db/client";
+import { getActiveParentGuidance, parentGuidancePrompt } from "@/lib/db/parent-guidance";
 import { getLearnerAiTutorRuntimePolicy } from "@/lib/db/ai-tutor-policies";
 import {
   configuredCredentialKeyring,
@@ -303,6 +304,18 @@ async function tutorResponse(req: Request) {
     });
   }
 
+  let guidancePrompt;
+  try {
+    guidancePrompt = parentGuidancePrompt(
+      await getActiveParentGuidance(runtimePolicy.parentId, learnerId),
+    );
+  } catch {
+    console.error("[api/tutor] parent guidance lookup failed");
+    return staticReply("Miss Vidya isn't available right now. Try again later.", {
+      headers: { ...rateHeaders(verdict, RATE.limit), "cache-control": "private, no-store" },
+    });
+  }
+
   let model;
   try {
     const credential = decryptCredential(
@@ -372,6 +385,7 @@ async function tutorResponse(req: Request) {
       // The crisis hint stays last and retains priority over teaching context.
       system:
         systemPrompt(curriculum.scope, { topic, interests, aiTone }) + "\n\n" + subjectHelperPrompt(safeguard.helper) +
+        guidancePrompt +
         (despairHint ? `\n\n${despairHint}` : ""),
       messages: modelMessages,
       maxOutputTokens: runtimePolicy.maxOutputTokens,
