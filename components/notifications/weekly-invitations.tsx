@@ -1,4 +1,5 @@
 "use client";
+import { notificationPermissionFromGesture } from "@/lib/notifications/browser-permission";
 import { useEffect,useState } from "react";
 import "./weekly-invitations.css";
 import { DEFAULT_INVITATION_PREFERENCES,type InvitationPreferences } from "@/lib/notifications/contracts";
@@ -19,7 +20,10 @@ export function WeeklyInvitations() {
    await load();
    if(Notification.permission!=="granted") {setPermissionReady(true);setMessage("Preferences saved. Choose Allow browser notifications to open your browser’s permission prompt.");return;}
   }
-  if(await Notification.requestPermission()!=="granted")throw new Error("Notification permission was not granted. You can still visit Overview any time.");
+  if(Notification.permission !== "granted") {
+   setMessage("Respond to your browser’s notification prompt. Learning remains available.");
+   if(await notificationPermissionFromGesture(() => Notification.requestPermission())!=="granted")throw new Error("Notification permission was not granted. You can still visit Overview any time.");
+  }
   const registration=await navigator.serviceWorker.getRegistration("/");if(!registration?.active)throw new Error("The app is still preparing offline support. Refresh once and try again.");
   const encoded=atob(state.publicKey.replace(/-/g,"+").replace(/_/g,"/"));const key=Uint8Array.from(encoded,c=>c.charCodeAt(0));
   const existing=await registration.pushManager.getSubscription();const subscription=existing ?? await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});

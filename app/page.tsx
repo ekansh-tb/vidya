@@ -407,6 +407,7 @@ export default function HomePage() {
             onBack={back}
             onNavigate={navigate}
             subjectId={view.params?.subjectId as SubjectId | undefined}
+            topicId={typeof view.params?.topicId === "string" ? view.params.topicId : undefined}
             availablePackIds={availablePackIds}
             grade={learner.grade ?? undefined}
             school={learner.school}

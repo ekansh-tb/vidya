@@ -23,22 +23,25 @@ import { useCapability } from "@/lib/capabilities/use-capability";
 type SectionId = "overview" | "syllabus" | "flash" | "quiz" | "mistakes" | "cheat";
 
 const SECTIONS: { id: SectionId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "overview",   label: "Overview",     icon: Rocket },
-  { id: "syllabus",   label: "Syllabus",     icon: ListChecks },
-  { id: "flash",      label: "Flashcards",   icon: Brain },
+  { id: "syllabus",   label: "Learn",        icon: ListChecks },
   { id: "quiz",       label: "Practice",     icon: CircleHelp },
-  { id: "mistakes",   label: "Traps",        icon: AlertTriangle },
-  { id: "cheat",      label: "Cheat sheet",  icon: Sparkles },
+  { id: "overview",   label: "Your plan",    icon: Rocket },
+];
+const STUDY_TOOLS: typeof SECTIONS = [
+  { id: "flash",      label: "Flashcards",   icon: Brain },
+  { id: "mistakes",   label: "Common mistakes", icon: AlertTriangle },
+  { id: "cheat",      label: "Quick reference", icon: Sparkles },
 ];
 
 export function ExamPrepView({
-  state, setState, onBack, onNavigate, subjectId, availablePackIds, grade, school, board, uploaded,
+  state, setState, onBack, onNavigate, subjectId, topicId, availablePackIds, grade, school, board, uploaded,
 }: {
   state: GameState;
   setState: (updater: (s: GameState) => GameState) => void;
   onBack: () => void;
   onNavigate: (name: ViewName, params?: Record<string, unknown>) => void;
   subjectId?: SubjectId;
+  topicId?: string;
   /** If provided, lets the learner switch between exam packs they own. */
   availablePackIds?: SubjectId[];
   /** Learner's grade — for grade-aware pack lookup. */
@@ -50,9 +53,9 @@ export function ExamPrepView({
   /** Scheme of work a parent uploaded for this learner, if any. */
   uploaded?: LearnerSyllabus;
 }) {
-  const initialId = subjectId && hasPack(subjectId, grade)
-    ? subjectId
-    : (availablePackIds?.find((id) => hasPack(id, grade)));
+  const initialId = subjectId
+    ? hasPack(subjectId, grade) ? subjectId : undefined
+    : availablePackIds?.find(id => hasPack(id, grade));
 
   const [currentId, setCurrentId] = useState<SubjectId | undefined>(initialId);
   // Pack bodies are large and load as their own chunk — see pack-index.ts.
@@ -62,11 +65,11 @@ export function ExamPrepView({
     board ? { school, board, uploaded } : undefined,
   );
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
-  const [section, setSection] = useState<SectionId>("overview");
+  const [section, setSection] = useState<SectionId>("syllabus");
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
 
   // Reset section when pack changes
-  useEffect(() => { setSection("overview"); }, [currentId]);
+  useEffect(() => { setSection("syllabus"); }, [currentId]);
 
   // Distinguish "no pack written yet" from "pack still downloading" — the
   // first is a real empty state, the second must not look like one.
@@ -136,13 +139,14 @@ export function ExamPrepView({
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="w-4 h-4" style={{ color: "var(--accent)" }} />
                 <span className="text-[10px] uppercase tracking-widest font-bold" style={{ color: "var(--accent)" }}>
-                  {packError ? "Study pack could not be loaded" : pack ? pack.context : "Loading..."}
+                  {packError ? "Study collection unavailable" : "One idea at a time"}
                 </span>
               </div>
-              <div className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
-                {pack ? pack.title : subject.name}
-              </div>
-              {pack?.highlights && (
+              <h1 className="font-display text-3xl font-bold leading-tight" style={{ color: "var(--text)" }}>
+                {subject.name}
+              </h1>
+              {pack && <details className="mt-3 text-sm text-[var(--text-muted)]"><summary className="min-h-11 cursor-pointer py-2">About this study collection</summary><p>{pack.context}</p>
+              {pack.highlights && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {pack.highlights.map((h, i) => (
                     <div key={i} className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1 text-[11px] font-semibold glass">
@@ -152,6 +156,7 @@ export function ExamPrepView({
                   ))}
                 </div>
               )}
+              </details>}
             </div>
           </motion.div>
 
@@ -164,7 +169,9 @@ export function ExamPrepView({
                 <button
                   key={s.id}
                   onClick={() => { sfx.click(); setSection(s.id); }}
-                  className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all ${
+                  type="button"
+                  aria-pressed={active}
+                  className={`flex min-h-11 items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-sm font-bold whitespace-nowrap transition-all ${
                     active ? "ring-1" : ""
                   }`}
                   style={{
@@ -179,6 +186,7 @@ export function ExamPrepView({
               );
             })}
           </div>
+          <details className="mb-4 text-sm"><summary className="min-h-11 cursor-pointer py-2 font-semibold">More study tools</summary><div className="flex flex-wrap gap-2">{STUDY_TOOLS.map(tool => <button key={tool.id} type="button" aria-pressed={section === tool.id} className="min-h-11 rounded-xl border border-[var(--border)] px-3 py-2" onClick={() => setSection(tool.id)}>{tool.label}</button>)}</div></details>
 
           {/* The pack is fetched, so the skeleton swapping for content is a
               silent change unless it is announced. */}
@@ -210,7 +218,7 @@ export function ExamPrepView({
                 aiTutorAllowed={aiTutorAllowed}
               />
             )}
-            {section === "syllabus" && <SyllabusSection key="syllabus" pack={pack} state={state} setState={setState} board={board} grade={grade} school={school} />}
+            {section === "syllabus" && <SyllabusSection key={`${currentId}-syllabus`} pack={pack} initialTopicId={currentId === initialId ? topicId : undefined} state={state} setState={setState} board={board} grade={grade} school={school} />}
             {section === "flash" && <FlashSection key="flash" pack={pack} />}
             {section === "quiz" && <QuizSection key="quiz" pack={pack} />}
             {section === "mistakes" && <MistakesSection key="mistakes" pack={pack} />}
@@ -249,7 +257,7 @@ function OverviewSection({
         </div>
       )}
 
-      <h3 className="font-display text-xl font-bold mb-3 mt-1" style={{ color: "var(--text)" }}>Tonight&apos;s plan</h3>
+      <h3 className="font-display text-xl font-bold mb-3 mt-1" style={{ color: "var(--text)" }}>Your study plan</h3>
       <div className="space-y-2">
         {pack.plan.map((p, i) => (
           <Step key={i} n={i + 1} title={p.title} hint={p.hint} onClick={() =>
@@ -304,11 +312,11 @@ function Step({ n, title, hint, onClick }: { n: number; title: string; hint: str
 // =====================
 // Syllabus checklist
 // =====================
-function SyllabusSection({ pack, state, setState, board, grade, school }: { pack: ExamPack; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
+function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, school }: { pack: ExamPack; initialTopicId?: string; state: GameState; setState: (u: (s: GameState) => GameState) => void; board?: Board; grade?: number; school?: string }) {
   const osReduced = useReducedMotion();
   const motionEnabled = useGameStore(store => store.state.settings.motion !== false);
   const reduceMotion = Boolean(osReduced || !motionEnabled);
-  const [openId, setOpenId] = useState<string | null>(pack.topics[0]?.id ?? null);
+  const [openId, setOpenId] = useState<string | null>(initialTopicId ? pack.topics.find(topic => topic.id === initialTopicId)?.id ?? null : pack.topics[0]?.id ?? null);
   const storageKey = confidenceStorageKey(pack);
   const map = useMemo(() => readTopicConfidence(state.notebook?.[storageKey]), [state.notebook, storageKey]);
   const setConf = (identity: string, c: TopicConfidence) => {
@@ -320,12 +328,11 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
     }));
   };
 
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-      <div className="text-[11px] mb-3 px-1" style={{ color: "var(--text-faint)" }}>
-        These are your own confidence choices, not a measured score. Tap each topic to tag your confidence for this syllabus version. Earlier ratings are kept separately when a topic or syllabus version changes. If devices disagree, the later recorded edit wins; inaccurate device clocks can affect this. Tied edit times keep the lower rating.
-      </div>
-      {pack.topics.map((t) => {
+  const requested = pack.topics.find(topic => topic.id === initialTopicId);
+  const ordered = requested ? [requested, ...pack.topics.filter(topic => topic.id !== requested.id)] : pack.topics;
+  const visibleTopics = ordered.slice(0, 3);
+  const remainingTopics = ordered.slice(3);
+  const renderTopic = (t: ExamPack["topics"][number]) => {
         const identity = topicConfidenceIdentity(pack, t, { board, grade, school });
         const c = map[identity] || "unknown";
         const isOpen = openId === t.id;
@@ -355,16 +362,18 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                 className="overflow-hidden"
               >
                 <div className="px-4 py-3 mt-1 glass rounded-[var(--radius-md)]">
-                  <ul className="space-y-1.5">
-                    {t.syllabus.map((s, i) => (
+                  <p className="learning-eyebrow">A starting point</p>
+                  <p className="mt-2 text-base leading-relaxed text-[var(--text)]">{t.syllabus[0] ?? t.blurb}</p>
+                  {t.syllabus.length > 1 && <details className="mt-3"><summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">More learning points · {t.syllabus.length - 1}</summary><ul className="mt-2 space-y-3">
+                    {t.syllabus.slice(1).map((s, i) => (
                       <li key={i} className="flex gap-2 text-[13px] leading-relaxed" style={{ color: "var(--text-muted)" }}>
                         <span style={{ color: "var(--accent)" }}>•</span>
                         <span>{s}</span>
                       </li>
                     ))}
-                  </ul>
+                  </ul></details>}
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] uppercase tracking-widest font-bold mr-1" style={{ color: "var(--text-faint)" }}>Confidence</span>
+                    <span className="text-sm font-medium mr-1" style={{ color: "var(--text-muted)" }}>How does it feel?</span>
                     {(["weak", "ok", "strong"] as const).map((opt) => {
                       const bg =
                         c === opt
@@ -393,12 +402,20 @@ function SyllabusSection({ pack, state, setState, board, grade, school }: { pack
                       );
                     })}
                   </div>
+                  <details className="mt-3 text-xs text-[var(--text-muted)]"><summary className="min-h-11 cursor-pointer py-2">About your choices</summary><p>These are your own choices, not a measured score. Earlier ratings remain separate when a topic or syllabus version changes. If devices disagree, the later edit wins; inaccurate device clocks can affect this. Tied edit times keep the lower rating.</p></details>
                 </div>
               </motion.div>
             )}
           </div>
         );
-      })}
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+      <p className="mb-4 text-sm text-[var(--text-muted)]">Pick a topic. Start with one learning point, then open more when you want.</p>
+      {initialTopicId && !requested && <p role="status" className="learning-panel mb-4">That topic is unavailable in this collection. Choose another below.</p>}
+      {visibleTopics.map(renderTopic)}
+      {remainingTopics.length > 0 && <details className="learning-panel mt-4"><summary className="min-h-11 cursor-pointer py-2 font-semibold">More topics · {remainingTopics.length}</summary><div className="mt-3">{remainingTopics.map(renderTopic)}</div></details>}
     </motion.div>
   );
 }

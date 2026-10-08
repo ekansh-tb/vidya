@@ -18,10 +18,22 @@ Guided physical exercises are withheld from the Wellness entry pending suitabili
 
 ## Validation before PR
 
-Full verify: type checking, lint and 1,103 unit/API tests passed. Dedicated database runs: 104 tests covering family/device isolation, owner content, circles and planning; five additional notification SQL tests. Security/migration script suite: 34 passed. Dependency audit: zero vulnerabilities. Production build passed; CI must build the final PR revision after the last UI fixes.
+PR #92 final CI passed type checking, lint, 1,107 unit/API tests, isolated database integration, migration checks, dependency audit and production build. Dedicated database runs previously passed 104 tests covering family/device isolation, owner content, circles and planning plus five notification SQL tests. Security/migration script suite: 34 passed. Dependency audit: zero vulnerabilities.
 
 Migration 0012 had already been applied in this task. Serialized production migration runs then applied additive 0013 through 0017. Migration 0017 changes only the invitation column default; existing explicit off values remain off and it creates no browser subscriptions. Existing learner records, content and histories were retained. Account synchronization rollback floor remains 2026-10-07-sync-1. Public worker version is 2026-10-08-freedom-1. Roll back only to application code compatible with stored placement and circle schema; retain additive changes.
 
-Local browser acceptance so far: synthetic Nursery light/dark home; original reader page, font, language, dark theme, bookmark and direct reload resume; synthetic Grade 2 home at observed 390 CSS pixels (also checked at 300), shape buttons, private creation save and direct reload resume; music layer save and finite playback controls. Audio hardware audibility and real Web Push delivery are not proven by browser controls. Complete parent/owner production journeys, remaining rooms, tablet/laptop layouts and production identity/health are pending.
+Local browser acceptance: synthetic Nursery light/dark home; original reader page, font, language, dark theme, bookmark and direct reload resume; synthetic Grade 2 home at observed 390 CSS pixels (also checked at 300), shape buttons, private creation save and direct reload resume; music layer save and finite playback controls.
+
+## Production verification of PR #92
+
+Squash commit `9e2547bbc46212c179d611dddeb62e7f6a439e7d` deployed Ready to `techbirdit-ej/vidya`, deployment `dpl_6vxSqkL4S77qYkHkKxRpvwvqEFC8`. Both health endpoints on `vidyagyan.study` and `parents.vidyagyan.study` returned 200 and this commit identity. The production synthetic Nursery report retained three app completions and one creation. Overview, Children, Controls, installation guidance and Nursery dark appearance were checked. Owner authorization, the 129-entry authored CMS import and the receipt-backed private sponsorship import were accepted. Real learner records were untouched. Public API placement checks retained 30 activities per preschool level, three each for Grades 1 and 2, and no published Grade 5 or Grade 13 activity substitution.
+
+Audio hardware audibility and real Web Push delivery remain unverified. A production in-app-browser permission request remained unresolved, exposing a controls recovery bug. One in-app-browser learner tab stopped responding after the update action; final update/resume acceptance on that tab is incomplete. Remaining rooms and real family/circle journeys still require acceptance.
+
+## Follow-up subject simplification and permission recovery
+
+Subject entry now offers one primary topic and two alternatives. Further topics, notebook, matching and study tools are expandable. Selecting a study chapter passes its stable ID and opens that chapter directly. The study collection begins with Learn and one learning point; additional points, topics and tools remain available on request. Explicit unavailable subjects/topics do not silently substitute another one. Saved confidence identities are retained. Browser notification permission starts synchronously from the deliberate action and recovers controls after an unanswered 20-second prompt; a late answer cannot continue the abandoned request.
+
+Local verification passed type checking, lint, 1,112 unit/API tests, 34 security/migration checks, zero-vulnerability dependency audit and production build. Chrome accepted a dedicated isolated Grade 7 CBSE learner's exact second-chapter navigation, phone/tablet/laptop widths of 390/820/1366 CSS pixels without horizontal overflow, readable light/dark surfaces and retained last-subject navigation after reload. A chapter itself is not yet a persistent resumable lesson. This follow-up is not deployed yet.
 
 Child usability, independent educator review, language expert review, learning evidence and retention evidence remain separate and unverified. This is an engineering/editorial release, not evidence of those outcomes.
