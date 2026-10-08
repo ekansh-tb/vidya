@@ -258,7 +258,7 @@ export function SyllabusPanel({
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
                 Nothing usable came out of that. It may not be a syllabus, or the photo may be too
-                blurry to read — try a clearer shot or paste the text instead.
+                blurry to read. Try a clearer shot or paste the text instead.
               </span>
             </div>
           ) : (

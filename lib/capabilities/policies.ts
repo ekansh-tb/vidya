@@ -32,7 +32,7 @@ export const CAPABILITY_POLICIES: Record<CapabilityKey, CapabilityPolicy> = {
   // is unreliable. It is a ceiling on runaway use, not a study budget, and it
   // is one number to change. What it is NOT is a spend cap — that belongs on
   // the provider account, because it has to hold even when identity does not.
-  "ai.tutor.full":       policy("ai.tutor.full",    2, "Full Miss Vidya tutor — parent-verified.", { perDay: 60, burst: 8 }),
+  "ai.tutor.full":       policy("ai.tutor.full",    2, "Full Miss Vidya tutor (parent-verified).", { perDay: 60, burst: 8 }),
 
   // Sharing
   "share.crossNetwork":  policy("share.crossNetwork", 1, "Share streaks / app link across networks."),

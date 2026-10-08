@@ -240,42 +240,42 @@ export const HELPLINES = {
 
 const EN_SELF_HARM = `I'm really glad you told me. What you're feeling matters, and you don't have to carry it on your own.
 
-Please tell a grown-up you trust today — a parent, an older brother or sister, a teacher, anyone who feels safe. If it's hard to say out loud, you can show them this message instead.
+Please tell a grown-up you trust today: a parent, an older brother or sister, a teacher, anyone who feels safe. If it's hard to say out loud, you can show them this message instead.
 
 You can also talk to someone right now. It's free, any time of day:
-• **Childline — call ${HELPLINES.childline}** (for children, in many languages)
-• **Tele-MANAS — call ${HELPLINES.teleManas}** (someone kind to talk to)
+• **Childline: call ${HELPLINES.childline}** (for children, in many languages)
+• **Tele-MANAS: call ${HELPLINES.teleManas}** (someone kind to talk to)
 
 I'll be right here when you want to come back to schoolwork. But for this, a real person who cares about you is much better than me.`;
 
 const EN_HARM_FROM_OTHERS = `Thank you for telling me. What you've described is not okay, and it is not your fault.
 
-Please tell a grown-up you trust — if you can, someone outside the situation: a teacher, your school counsellor, or a relative you feel safe with. You are allowed to tell.
+Please tell a grown-up you trust. If you can, someone outside the situation: a teacher, your school counsellor, or a relative you feel safe with. You are allowed to tell.
 
 You can also call for help yourself, free, any time:
-• **Childline — call ${HELPLINES.childline}** (for children, in many languages)
-• **Tele-MANAS — call ${HELPLINES.teleManas}**
+• **Childline: call ${HELPLINES.childline}** (for children, in many languages)
+• **Tele-MANAS: call ${HELPLINES.teleManas}**
 • If you are in danger right now, **call ${HELPLINES.emergency}**
 
 You did the right thing by saying something.`;
 
 const HI_SELF_HARM = `तुमने मुझे बताया, यह बहुत अच्छा किया। तुम जो महसूस कर रहे हो वह मायने रखता है, और तुम्हें इसे अकेले नहीं सहना है।
 
-आज किसी बड़े पर भरोसा करके बात करो — माता-पिता, बड़े भाई-बहन, या कोई शिक्षक। अगर कहना मुश्किल लगे, तो उन्हें यह संदेश दिखा दो।
+आज किसी बड़े पर भरोसा करके बात करो: माता-पिता, बड़े भाई-बहन, या कोई शिक्षक। अगर कहना मुश्किल लगे, तो उन्हें यह संदेश दिखा दो।
 
 तुम अभी, किसी भी समय, मुफ़्त में बात कर सकते हो:
-• **चाइल्डलाइन — ${HELPLINES.childline}** पर कॉल करो
-• **टेली-मानस — ${HELPLINES.teleManas}** पर कॉल करो
+• **चाइल्डलाइन: ${HELPLINES.childline}** पर कॉल करो
+• **टेली-मानस: ${HELPLINES.teleManas}** पर कॉल करो
 
 पढ़ाई के लिए मैं यहीं हूँ, जब तुम तैयार हो। लेकिन इस बात के लिए, तुमसे प्यार करने वाला कोई असली इंसान मुझसे बहुत बेहतर है।`;
 
 const HI_HARM_FROM_OTHERS = `मुझे बताने के लिए धन्यवाद। जो तुमने बताया वह ठीक नहीं है, और इसमें तुम्हारी कोई गलती नहीं है।
 
-किसी बड़े को बताओ जिस पर तुम भरोसा करते हो — अगर हो सके तो कोई ऐसा जो इस सब से बाहर हो: शिक्षक, स्कूल काउंसलर, या कोई रिश्तेदार जिसके साथ तुम सुरक्षित महसूस करते हो। बताना तुम्हारा हक़ है।
+किसी बड़े को बताओ जिस पर तुम भरोसा करते हो। अगर हो सके तो कोई ऐसा जो इस सब से बाहर हो: शिक्षक, स्कूल काउंसलर, या कोई रिश्तेदार जिसके साथ तुम सुरक्षित महसूस करते हो। बताना तुम्हारा हक़ है।
 
 तुम खुद भी मदद के लिए कॉल कर सकते हो, मुफ़्त, किसी भी समय:
-• **चाइल्डलाइन — ${HELPLINES.childline}**
-• **टेली-मानस — ${HELPLINES.teleManas}**
+• **चाइल्डलाइन: ${HELPLINES.childline}**
+• **टेली-मानस: ${HELPLINES.teleManas}**
 • अगर तुम इस समय ख़तरे में हो, तो **${HELPLINES.emergency}** पर कॉल करो
 
 कुछ कहकर तुमने बिलकुल सही किया।`;
@@ -298,7 +298,7 @@ export function supportMessage(signal: CrisisSignal): string {
  * and does NOT notify. Miss Vidya still answers the question — she just leads
  * with the person rather than the topic.
  */
-export const DESPAIR_PROMPT_HINT = `IMPORTANT: this learner just said something self-critical or low. Before anything academic, acknowledge the feeling in one warm sentence and separate their worth from their marks. Then answer the question normally, a little more gently and in smaller steps. Do NOT diagnose, do NOT mention counselling or helplines, do NOT make it a big moment, and do NOT say a grown-up has been told — nobody has been told. If they say anything about hurting themselves, stop teaching and tell them to talk to a trusted adult.`;
+export const DESPAIR_PROMPT_HINT = `IMPORTANT: this learner just said something self-critical or low. Before anything academic, acknowledge the feeling in one warm sentence and separate their worth from their marks. Then answer the question normally, a little more gently and in smaller steps. Do NOT diagnose, do NOT mention counselling or helplines, do NOT make it a big moment, and do NOT say a grown-up has been told; nobody has been told. If they say anything about hurting themselves, stop teaching and tell them to talk to a trusted adult.`;
 
 /** Capped, single-line excerpt for the parent's card and the audit row. */
 export function excerptFor(text: string, max = 400): string {

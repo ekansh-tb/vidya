@@ -78,7 +78,7 @@ export function UsagePanel({ learner }: { learner: LearnerProfile }) {
         </span>
       </div>
       <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
-        Counted per day, and capped — once the cap is reached Miss Vidya says she&apos;ll be
+        Counted per day, and capped. Once the cap is reached Miss Vidya says she&apos;ll be
         ready again tomorrow, and {learner.name || "your child"} is never told a limit exists.
         A count, not a verdict: there is nothing here to read into.
       </p>

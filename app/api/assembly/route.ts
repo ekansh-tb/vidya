@@ -13,13 +13,13 @@ export const runtime = "nodejs";
 const RATE = { limit: 12, windowMs: 10 * 60 * 1000 };
 
 const FALLBACK_THOUGHTS = [
-  { author: "A.P.J. Abdul Kalam", line: "Dream is not what you see in sleep — it is the thing that does not let you sleep." },
+  { author: "A.P.J. Abdul Kalam", line: "Dream is not what you see in sleep; it is the thing that does not let you sleep." },
   { author: "Mahatma Gandhi", line: "Live as if you were to die tomorrow. Learn as if you were to live forever." },
   { author: "Rabindranath Tagore", line: "You can't cross the sea merely by standing and staring at the water." },
-  { author: "Savitribai Phule", line: "Go, get education. Be self-reliant, be industrious. Work — gather wisdom and riches." },
-  { author: "Swami Vivekananda", line: "Take up one idea. Make that one idea your life — think of it, dream of it, live on that idea." },
+  { author: "Savitribai Phule", line: "Go, get education. Be self-reliant, be industrious. Work; gather wisdom and riches." },
+  { author: "Swami Vivekananda", line: "Take up one idea. Make that one idea your life; think of it, dream of it, live on that idea." },
   { author: "Sudha Murty", line: "When you give, you must give without expecting anything in return." },
-  { author: "Helen Keller", line: "The best and most beautiful things in the world cannot be seen or even touched — they must be felt with the heart." },
+  { author: "Helen Keller", line: "The best and most beautiful things in the world cannot be seen or even touched; they must be felt with the heart." },
   { author: "Sachin Tendulkar", line: "I have always believed that the only thing better than dreams is dreams that come true through your own effort." },
 ];
 

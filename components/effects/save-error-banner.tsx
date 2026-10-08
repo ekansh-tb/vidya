@@ -25,7 +25,7 @@ export function SaveErrorBanner() {
     saveError === "quota"
       ? "This browser's storage is full, so progress isn't being saved. Ask a grown-up to open the Parent room and download a backup, then clear some space."
       : saveError === "unavailable"
-        ? "This browser is blocking storage — private browsing usually does this. Progress won't be saved until you open Vidya in a normal window."
+        ? "This browser is blocking storage. Private browsing usually does this. Progress won't be saved until you open Vidya in a normal window."
         : "Progress isn't being saved right now. Ask a grown-up to open the Parent room and download a backup.";
 
   return (

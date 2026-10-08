@@ -29,10 +29,10 @@ const SUGGESTED: Partial<Record<SubjectId, string[]>> = {
     "Truth table for X = (A AND B) OR NOT C",
   ],
   "igcse-maths": ["Solve 3x + 5 = 20", "Pythagoras for 3-4-? triangle", "Factorise x² - 5x + 6"],
-  "igcse-physics": ["Define upthrust", "V = IR — give a 2-line example", "Difference between speed and velocity?"],
+  "igcse-physics": ["Define upthrust", "V = IR: give a 2-line example", "Difference between speed and velocity?"],
   "igcse-chemistry": ["What's an ionic bond?", "Why does sodium react fast with water?", "Mole calculation: 5g NaOH → moles?"],
-  "igcse-biology": ["Cell vs organ — give a 2-line difference", "Photosynthesis word equation", "What is osmosis?"],
-  "igcse-english": ["Plan a descriptive paragraph about Pune monsoon", "Active vs passive voice — exam-style example", "What's a directed-writing task?"],
+  "igcse-biology": ["Cell vs organ: give a 2-line difference", "Photosynthesis word equation", "What is osmosis?"],
+  "igcse-english": ["Plan a descriptive paragraph about Pune monsoon", "Active vs passive voice: exam-style example", "What's a directed-writing task?"],
 };
 
 export function TutorView({
@@ -64,7 +64,7 @@ export function TutorView({
             This room isn&apos;t open yet
           </h2>
           <p className="text-sm mb-6 max-w-sm mx-auto" style={{ color: "var(--text-muted)" }}>
-            Try the Library, Field Trip, or Music room instead — they&apos;re already waiting.
+            Try the Library, Field Trip, or Music room instead; they&apos;re already waiting.
           </p>
           <button
             onClick={() => { sfx.click(); onBack(); }}

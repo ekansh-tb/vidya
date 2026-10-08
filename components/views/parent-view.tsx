@@ -492,9 +492,9 @@ function ExamManager({
                   color: daysAway <= 1 ? "var(--error)" : daysAway <= 7 ? "var(--warning)" : "var(--accent)",
                 }}
               >
-                <div className="font-display text-base font-bold leading-none">{daysAway < 0 ? "—" : daysAway}</div>
+                <div className="font-display text-base font-bold leading-none">{daysAway < 0 ? "Past" : daysAway}</div>
                 <div className="text-[9px] uppercase tracking-widest font-bold leading-none mt-0.5">
-                  {daysAway < 0 ? "past" : daysAway === 1 ? "day" : "days"}
+                  {daysAway < 0 ? "exam" : daysAway === 1 ? "day" : "days"}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
@@ -520,7 +520,7 @@ function ExamManager({
             type="text"
             value={draftTitle}
             onChange={(e) => setDraftTitle(e.target.value)}
-            placeholder="Title (e.g. Physics — Electricity)"
+            placeholder="Title (e.g. Physics: Electricity)"
             className="w-full px-3 py-2 rounded-xl text-sm"
             style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
           />
@@ -610,7 +610,7 @@ export function RecentReflections({ state, name }: { state: GameState; name: str
       </div>
       <div className="text-xs italic mb-4" style={{ color: "var(--text-muted)" }}>
         End-of-day thoughts the kid wrote themselves. Read once, gently. Don&apos;t quote back.
-        {privateCount > 0 && ` ${privateCount} of the last ${recent.length} are private — that's the kid's choice and we respect it.`}
+        {privateCount > 0 && ` ${privateCount} of the last ${recent.length} are private. That's the kid's choice and we respect it.`}
       </div>
       <div className="space-y-3">
         {recent.map((r, i) => (
@@ -787,7 +787,7 @@ export function CareNoteComposer({
       </div>
       <div className="text-[11px] italic mb-3" style={{ color: "var(--text-faint)" }}>
         Miss Vidya reads this before talking to {name}. Tone, focus, things to encourage,
-        things to skip. Not medical — medical lives behind stricter verification.
+        things to skip. Not medical; medical lives behind stricter verification.
       </div>
       {!editing ? (
         note ? (
@@ -807,7 +807,7 @@ export function CareNoteComposer({
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, 500))}
-            placeholder={`e.g. "Aanya gets discouraged when corrected directly. Ask gentle leading questions instead. She loves Marathi but feels shy about her English — be extra encouraging there."`}
+            placeholder={`e.g. "Aanya gets discouraged when corrected directly. Ask gentle leading questions instead. She loves Marathi but feels shy about her English. Be extra encouraging there."`}
             rows={5}
             className="w-full px-3 py-2 rounded-[var(--radius-md)] text-sm resize-none"
             style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
@@ -861,7 +861,7 @@ type Signal = {
    * Where a parent takes this if it worries them.
    *
    * Required on any signal that could read as bad news about their child. The
-   * old inline renderer had no footer at all, so "a recent pause — busy week,
+   * old inline renderer had no footer at all, so "a recent pause: busy week,
    * illness, or just a break" landed as a verdict with nowhere to go. A soft
    * observation about a kid's rhythm that offers no human to talk to is just a
    * worry we handed over.
@@ -890,12 +890,12 @@ export function WellnessSignals({
         observation: `Current streak: ${cur} day${cur === 1 ? "" : "s"}. Longest ever: ${longest} day${longest === 1 ? "" : "s"}.`,
         opinion:
           longest === 0
-            ? "This might mean it's still early — give it a week or two of light use before reading anything into the numbers."
+            ? "This might mean it's still early. Give it a week or two of light use before reading anything into the numbers."
             : ratio >= 0.7
-              ? "This might mean a strong steady rhythm — keep doing what you're doing."
+              ? "This might mean a strong steady rhythm. Keep doing what you're doing."
               : ratio >= 0.3
                 ? "This might mean a typical week. Streaks rise and fall; nothing here calls for action."
-                : "This might mean a recent pause — busy week, illness, or just a break. Worth a gentle check-in, not a push.",
+                : "This might mean a recent pause: busy week, illness, or just a break. Worth a gentle check-in, not a push.",
         tone: longest === 0 ? "neutral" : ratio >= 0.3 ? "warm" : "concern",
         escalation:
           longest > 0 && ratio < 0.3
@@ -935,9 +935,9 @@ export function WellnessSignals({
         observation: `${dq} daily quest${dq === 1 ? "" : "s"} completed lifetime.`,
         opinion:
           dq === 0
-            ? "This might mean daily quests aren't on their radar yet — try walking them through it once together."
+            ? "This might mean daily quests aren't on their radar yet. Try walking them through it once together."
             : dq < 7
-              ? "This might mean it's becoming a habit — the second week tends to be when it sticks."
+              ? "This might mean it's becoming a habit. The second week tends to be when it sticks."
               : "This might mean a real ritual has formed. Worth celebrating out loud now and then.",
         tone: dq === 0 ? "concern" : dq < 7 ? "neutral" : "warm",
       });
@@ -955,7 +955,7 @@ export function WellnessSignals({
           recent >= 5
             ? "This might mean a real journaling habit is forming. They're processing the day in their own words."
             : recent >= 2
-              ? "This might mean reflection is becoming part of the rhythm — keep noticing it out loud."
+              ? "This might mean reflection is becoming part of the rhythm. Keep noticing it out loud."
               : "This might mean today's prompt was a one-off. Let it land naturally, no need to push.",
         tone: recent >= 2 ? "warm" : "neutral",
       });
@@ -972,7 +972,7 @@ export function WellnessSignals({
             windowText: "Subject spread",
             observation: `${pct}% of attempts have been in ${top.name}.`,
             opinion:
-              "This might mean a current passion (great!) or quiet avoidance of other subjects. Worth checking — both are useful to know.",
+              "This might mean a current passion (great!) or quiet avoidance of other subjects. Worth checking; both are useful to know.",
             tone: "neutral",
             escalation: {
               label: "Their teacher will know which of the two it is",
@@ -1026,8 +1026,8 @@ export function WellnessSignals({
 // -----------------------------------------------------------------------------
 
 const CAPABILITY_LABEL: Record<CapabilityKey, string> = {
-  "ai.tutor.limited":    "AI tutor — rate-limited",
-  "ai.tutor.full":       "Miss Vidya — full AI tutor",
+  "ai.tutor.limited":    "AI tutor (rate-limited)",
+  "ai.tutor.full":       "Miss Vidya: full AI tutor",
   "share.crossNetwork":  "Share streaks across networks",
   "byok.openai":         "Bring your own OpenAI key",
   "byok.anthropic":      "Bring your own Anthropic key",
@@ -1047,7 +1047,7 @@ const RUNG_NAME: Record<VerificationLevel, string> = {
 };
 
 const RUNG_HOW_TO_PROMOTE: Record<VerificationLevel, string> = {
-  0: "Default — available the moment a profile exists.",
+  0: "Default: available the moment a profile exists.",
   1: "Auto-promotes when the kid's session matches your Wi-Fi. Not built yet.",
   // Was: "Set a parent PIN on this learner. You're already here." Both halves
   // were false — computeRung ignores parentPin entirely, and it said "already
@@ -1114,7 +1114,7 @@ export function CapabilityMap({
         body: JSON.stringify({ disabled: list }),
       });
       if (res.status === 401) {
-        setSyncNote("Saved on this device only — sign in on the parent dashboard to apply it server-side.");
+        setSyncNote("Saved on this device only. Sign in on the parent dashboard to apply it server-side.");
       } else if (!res.ok) {
         setSyncNote("Saved on this device, but the server didn't accept it. Try again from the parent dashboard.");
       }
@@ -1133,7 +1133,7 @@ export function CapabilityMap({
       </div>
       <div className="text-xs italic mb-3" style={{ color: "var(--text-muted)" }}>
         Each capability has a verification rung. Rooms appear in the kid&apos;s lobby only when their rung meets the rule.
-        The kid never sees a locked door — features are simply present or absent.
+        The kid never sees a locked door; features are simply present or absent.
         {readOnly && " Turning these on or off needs the signed-in parent dashboard."}
       </div>
 
@@ -1196,7 +1196,7 @@ export function CapabilityMap({
                           className="text-[9px] uppercase tracking-widest font-bold flex-shrink-0"
                           style={{ color: effectiveOn ? "var(--success)" : "var(--text-faint)" }}
                         >
-                          {!open ? "—" : isDisabled ? "Off" : "On"}
+                          {!open ? "Unavailable" : isDisabled ? "Off" : "On"}
                         </span>
                       ) : open ? (
                         <button
@@ -1212,7 +1212,7 @@ export function CapabilityMap({
                         </button>
                       ) : (
                         <span className="text-[9px] uppercase tracking-widest font-bold flex-shrink-0" style={{ color: "var(--text-faint)" }}>
-                          —
+                          Unavailable
                         </span>
                       )}
                     </li>

@@ -352,7 +352,7 @@ function MoveRunner({
           <div className="text-5xl mb-2" aria-hidden>{activity.emoji}</div>
           <div className="font-display text-2xl font-bold text-[var(--text)]">Move Break done.</div>
           <div className="text-sm text-[var(--text-muted)] mt-1">
-            +{XP_PER_BREAK} XP · +{COINS_PER_BREAK} coins. Your brain works better now — that is not a slogan, it is blood flow.
+            +{XP_PER_BREAK} XP · +{COINS_PER_BREAK} coins. Your brain works better now; that is not a slogan, it is blood flow.
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-2">

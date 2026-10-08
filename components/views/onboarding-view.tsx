@@ -134,10 +134,10 @@ export function OnboardingView({
                 Which class are you in?
               </h2>
               <p className="text-center text-[var(--text-muted)] mb-2 italic">
-                Pick your board — then the grade you&apos;re in right now.
+                Pick your board, then the grade you&apos;re in right now.
               </p>
               <p className="text-center text-[var(--text-muted)] text-[11px] mb-8">
-                This decides your subjects and how Miss Vidya talks to you, so it has to be yours — not a guess.
+                This decides your subjects and how Miss Vidya talks to you, so it has to be yours, not a guess.
               </p>
 
               <div role="group" aria-label="Board" className="mb-7">
@@ -198,7 +198,7 @@ export function OnboardingView({
                   </>
                 ) : (
                   <p className="text-[var(--text-muted)] text-[11px] px-1">
-                    Pick a board first — then we&apos;ll show the grades it covers.
+                    Pick a board first, then we&apos;ll show the grades it covers.
                   </p>
                 )}
               </div>
@@ -263,7 +263,7 @@ export function OnboardingView({
                 What do you love?
               </h2>
               <p className="text-center text-[var(--text-muted)] mb-2 italic">
-                Pick a few. Or none — you can always tell me later.
+                Pick a few. Or none. You can always tell me later.
               </p>
               <p className="text-center text-[var(--text-muted)] text-[11px] mb-8">
                 Vidya uses these to make examples about worlds you actually care about.

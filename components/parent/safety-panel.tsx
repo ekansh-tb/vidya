@@ -185,7 +185,7 @@ export function SafetyPanel({ learner }: { learner: LearnerProfile }) {
         </p>
         <p className="text-[11px] text-neutral-500 leading-relaxed mt-2">
           Vidya spots this with a simple word-pattern check, not a trained model. It will miss
-          things a child says differently, and it can be wrong — so an empty stretch here is not
+          things a child says differently, and it can be wrong, so an empty stretch here is not
           evidence that everything is fine, and one of these is not a diagnosis.
         </p>
       </div>

@@ -646,7 +646,7 @@ function CheatSheetSection({ pack }: { pack: ExamPack }) {
       <div className="rounded-[var(--radius-md)] p-4 mb-3 flex items-start gap-3" style={{ border: "1px solid var(--border-strong)", background: "color-mix(in oklab, var(--warning) 8%, transparent)" }}>
         <BookOpen className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "var(--warning)" }} />
         <div className="text-sm" style={{ color: "var(--text)" }}>
-          <strong style={{ color: "var(--warning)" }}>Read morning of the test.</strong> Compressed brain-dump — 8–10 minutes end-to-end.
+          <strong style={{ color: "var(--warning)" }}>Read morning of the test.</strong> Compressed brain-dump: 8–10 minutes end-to-end.
         </div>
       </div>
       <div className="space-y-3">

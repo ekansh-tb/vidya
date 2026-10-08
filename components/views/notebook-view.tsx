@@ -90,7 +90,7 @@ export function NotebookView({
             </div>
             <div className="font-display text-xl font-bold text-[var(--text)] mt-3">Notebook</div>
             <p className="text-sm text-[var(--text-muted)] mt-1">
-              Pick your subjects first — then each one gets its own page here.
+              Pick your subjects first, then each one gets its own page here.
             </p>
           </div>
         </div>
