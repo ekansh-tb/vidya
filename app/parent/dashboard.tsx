@@ -20,6 +20,7 @@ import { AiConnectionsPanel } from "@/components/parent/ai-connections-panel";
 import { AiTutorControlsPanel } from "@/components/parent/ai-tutor-controls-panel";
 import { LearnerAiTutorAccessPanel } from "@/components/parent/learner-ai-tutor-access-panel";
 import { FamilyAiPausePanel } from "@/components/parent/family-ai-pause-panel";
+import { LearnerGuidancePanel } from "@/components/parent/learner-guidance-panel";
 import { useGameStore } from "@/lib/game-store";
 import type { LearnerProfile } from "@/lib/types";
 import {
@@ -289,7 +290,7 @@ export function ParentDashboard() {
             <AiConnectionsPanel key={`ai-connections-${activeParentId}`} onConnectionsChanged={() => setAiPolicyRevision(revision => revision + 1)} />
             <AiTutorControlsPanel key={`ai-tutors-${activeParentId}`} refreshToken={aiPolicyRevision} onProfilesChanged={() => setAiPolicyRevision(revision => revision + 1)} />
             <FamilyAiPausePanel key={`family-ai-pause-${activeParentId}`} onPaused={() => setAiPolicyRevision(revision => revision + 1)} />
-            {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool guidance</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. AI tutoring stays unavailable.</p></div> : <LearnerAiTutorAccessPanel key={`learner-ai-access-${activeParentId}`} learner={selected} refreshToken={aiPolicyRevision} />)}
+            {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool guidance</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. AI tutoring stays unavailable.</p></div> : <><LearnerAiTutorAccessPanel key={`learner-ai-access-${activeParentId}`} learner={selected} refreshToken={aiPolicyRevision} />{selected.remoteId && <LearnerGuidancePanel key={`guidance-${selected.remoteId}`} learnerId={selected.remoteId} />}</>)}
           </details>
         </div>
         <footer className="parent-footer">Practice observations describe the available evidence. A completed activity does not prove understanding. No recorded activity does not mean no learning.<Link href="/mission">Our mission</Link></footer>
