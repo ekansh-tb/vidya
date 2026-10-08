@@ -2,8 +2,9 @@
 
 import type * as ToneT from "tone";
 import { readPersistedAudioSettings, type AudioSettings } from "./audio-bootstrap";
+import { pitchFrequency, validPitch } from "./music-instruments";
 
-export type StudioInstrument = "keyboard" | "marimba" | "synth" | "percussion";
+export type StudioInstrument = "keyboard" | "marimba" | "synth" | "percussion" | "harp" | "flute";
 export type StudioHandle = { play: (note: number, at?: number) => void; stop: () => void; dispose: () => void };
 type Disposable = { dispose: () => unknown };
 let started = false;
@@ -120,10 +121,12 @@ export async function createStudioInstrument(kind: StudioInstrument): Promise<St
   const Tone = await import("tone");
   if (!effectsBus) throw new Error("Sound is unavailable. Try enabling sound again.");
   const nodes: Disposable[] = [];
-  const frequencies = [261.63, 293.66, 329.63, 349.23, 392, 440, 493.88, 523.25];
   const pitched = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: kind === "synth" ? "triangle" : "sine" },
-    envelope: kind === "marimba" ? { attack: 0.001, decay: 0.3, sustain: 0, release: 0.15 } : { attack: 0.015, decay: 0.2, sustain: 0.15, release: 0.3 },
+    oscillator: { type: kind === "synth" || kind === "harp" ? "triangle" : "sine" },
+    envelope: kind === "marimba" ? { attack: 0.001, decay: 0.3, sustain: 0, release: 0.15 }
+      : kind === "harp" ? { attack: 0.002, decay: 0.5, sustain: 0, release: 0.4 }
+      : kind === "flute" ? { attack: 0.08, decay: 0.08, sustain: 0.55, release: 0.18 }
+      : { attack: 0.015, decay: 0.2, sustain: 0.15, release: 0.3 },
   }).connect(effectsBus);
   nodes.push(pitched);
   const drum = kind === "percussion" ? new Tone.MembraneSynth({ volume: -8 }).connect(effectsBus) : null;
@@ -133,11 +136,11 @@ export async function createStudioInstrument(kind: StudioInstrument): Promise<St
   let disposed = false;
   const handle: StudioHandle = {
     play(note, at) {
-      if (disposed || muted || hidden() || !Number.isInteger(note) || note < 0 || note > 7) return;
+      if (disposed || muted || hidden() || !validPitch(note) || (kind === "percussion" && note > 2)) return;
       const time = at ?? Tone.now() + 0.01;
       if (drum && note < 2) drum.triggerAttackRelease(note === 0 ? "C2" : "G2", 0.12, time);
       else if (shaker) shaker.triggerAttackRelease(0.05, time);
-      else pitched.triggerAttackRelease(frequencies[note], 0.2, time);
+      else pitched.triggerAttackRelease(pitchFrequency(note)!, kind === "flute" ? 0.45 : 0.2, time);
     },
     stop() { pitched.releaseAll(); drum?.triggerRelease(); },
     dispose() { if (disposed) return; disposed = true; handle.stop(); nodes.forEach((node) => node.dispose()); studios.delete(handle); },

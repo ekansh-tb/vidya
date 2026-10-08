@@ -7,6 +7,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState } from "@/lib/types";
 import * as schoolSyllabus from "@/lib/content/school-syllabus";
+import * as lessonPoints from "@/lib/learning/lesson-points";
 import * as learningResume from "@/lib/learning/resume";
 
 // Use the existing SSR fixture approach without changing shared JSX configuration.
@@ -49,7 +50,9 @@ function load(file: string, syllabus = false) {
     if (id === "@/lib/speech") return speech;
     if (id === "@/lib/content/school-syllabus") return schoolSyllabus;
     if (id === "@/lib/learning/resume") return learningResume;
-    if (id === "@/lib/game-store") return { useGameStore: (select: (store: { state: GameState }) => unknown) => select({ state: storeState }) };
+    if (id === "@/lib/learning/lesson-points") return lessonPoints;
+    if (id === "@/components/learning/lesson-point-reader") return { LessonPointReader: LessonReader };
+    if (id === "@/lib/game-store") return { useGameStore: (select: (store: { state: GameState; learner: { learningLanguage: string } }) => unknown) => select({ state: storeState, learner: { learningLanguage: "en" } }) };
     if (id.startsWith("@/")) return {};
     if (id === "next/link") return { default: (props: Props) => React.createElement("a", props) };
     return require(id);
@@ -57,6 +60,7 @@ function load(file: string, syllabus = false) {
   return exports;
 }
 
+const LessonReader = load("../learning/lesson-point-reader.tsx").LessonPointReader;
 const Settings = load("./settings-view.tsx").SettingsView;
 const Syllabus = load("./exam-prep-view.tsx", true).SyllabusSection;
 const pack = { subjectId: "maths", topics: [
