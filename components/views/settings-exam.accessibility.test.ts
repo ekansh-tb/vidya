@@ -7,6 +7,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState } from "@/lib/types";
 import * as schoolSyllabus from "@/lib/content/school-syllabus";
+import * as learningResume from "@/lib/learning/resume";
 
 // Use the existing SSR fixture approach without changing shared JSX configuration.
 const require = createRequire(import.meta.url);
@@ -47,6 +48,7 @@ function load(file: string, syllabus = false) {
     if (id === "@/lib/audio") return audio;
     if (id === "@/lib/speech") return speech;
     if (id === "@/lib/content/school-syllabus") return schoolSyllabus;
+    if (id === "@/lib/learning/resume") return learningResume;
     if (id === "@/lib/game-store") return { useGameStore: (select: (store: { state: GameState }) => unknown) => select({ state: storeState }) };
     if (id.startsWith("@/")) return {};
     if (id === "next/link") return { default: (props: Props) => React.createElement("a", props) };
@@ -135,6 +137,20 @@ it("opens the requested chapter instead of silently returning to the first topic
   expect(html).toContain("Second checklist");
   expect(html).not.toContain("First checklist");
   expect(controls.filter(p => "aria-expanded" in p).map(p => p["aria-expanded"])).toEqual([true, false]);
+});
+
+it("saves the exact chapter when the learner opens it", () => {
+  let state: GameState = { ...DEFAULT_STATE };
+  renderSyllabus(state, (update) => { state = update(state); });
+  const second = controls.filter((props) => "aria-expanded" in props)[1];
+  second.onClick!();
+  expect(state.learningResume).toMatchObject({
+    version: 2,
+    room: "exam-prep",
+    subjectId: "maths",
+    topicId: "two",
+  });
+  expect(Date.parse(state.learningResume!.updatedAt)).not.toBeNaN();
 });
 
 it("explains a missing requested topic without substituting another topic", () => {

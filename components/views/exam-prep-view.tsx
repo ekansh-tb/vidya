@@ -19,6 +19,7 @@ import { confidenceStorageKey, readTopicConfidence, saveTopicConfidence, topicCo
 import { sfx } from "@/lib/audio";
 import { shuffle } from "@/lib/utils";
 import { useCapability } from "@/lib/capabilities/use-capability";
+import { resumeForNavigation } from "@/lib/learning/resume";
 
 type SectionId = "overview" | "syllabus" | "flash" | "quiz" | "mistakes" | "cheat";
 
@@ -67,6 +68,17 @@ export function ExamPrepView({
   const subject = currentId ? SUBJECT_MAP[currentId] : undefined;
   const [section, setSection] = useState<SectionId>("syllabus");
   const aiTutorAllowed = useCapability("ai.tutor.full").allowed;
+
+  useEffect(() => {
+    if (!currentId) return;
+    setState(current => ({
+      ...current,
+      learningResume: resumeForNavigation("exam-prep", {
+        subjectId: currentId,
+        ...(currentId === initialId && topicId ? { topicId } : {}),
+      }),
+    }));
+  }, [currentId, initialId, setState, topicId]);
 
   // Reset section when pack changes
   useEffect(() => { setSection("syllabus"); }, [currentId]);
@@ -339,7 +351,11 @@ function SyllabusSection({ pack, initialTopicId, state, setState, board, grade, 
         return (
           <div key={t.id} className="mb-2">
             <button
-              onClick={() => { sfx.click(); setOpenId(isOpen ? null : t.id); }}
+              onClick={() => {
+                sfx.click();
+                setOpenId(isOpen ? null : t.id);
+                if (!isOpen) setState(current => ({ ...current, learningResume: resumeForNavigation("exam-prep", { subjectId: pack.subjectId, topicId: t.id }) }));
+              }}
               type="button"
               aria-expanded={isOpen}
               className="w-full glass-card p-3 flex items-center gap-3 text-left motion-safe:active:scale-[0.99] transition"

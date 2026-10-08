@@ -9,7 +9,7 @@ import { QuizView } from "@/components/views/quiz-view";
 import { MatchView } from "@/components/views/match-view";
 import { ClassroomView } from "@/components/views/classroom-view";
 import { ReducedMotionProvider } from "@/components/ui/reduced-motion";
-import { readLearningResume } from "@/lib/learning/resume";
+import { resumeForNavigation, viewForLearningResume } from "@/lib/learning/resume";
 import { TutorView } from "@/components/views/tutor-view";
 import { FieldTripView } from "@/components/views/field-trip-view";
 import { AssemblyView } from "@/components/views/assembly-view";
@@ -81,8 +81,8 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "instant" });
     setQuizResult(null);
     const current = useGameStore.getState().state;
-    const resume = readLearningResume(current.learningResume);
-    setView(resume && resume.room !== "none" ? { name: resume.room, params: { bookId: resume.bookId } } : current.activities?.draft ? { name: "activities", params: { activityId: current.activities.draft.activityId } } : { name: "home" });
+    const resumeView = viewForLearningResume(current.learningResume);
+    setView(resumeView ?? (current.activities?.draft ? { name: "activities", params: { activityId: current.activities.draft.activityId } } : { name: "home" }));
     setShowAddLearner(false);
     setHubTab("play");
     setHomeTab("today");
@@ -189,9 +189,9 @@ export default function HomePage() {
     if (name === "activities" && ["play", "stories", "make", "journey"].includes(String(params?.tab))) setHubTab(params?.tab as LearningHubTab);
     window.scrollTo({ top: 0, behavior: "instant" });
     setView({ name, params });
-    set(current => ({ ...current, learningResume: { version: 1, room: name === "music" || name === "creation" ? name : "none", updatedAt: new Date().toISOString() } }));
+    set(current => ({ ...current, learningResume: resumeForNavigation(name, params) }));
   };
-  const back = () => { window.scrollTo({ top: 0, behavior: "instant" }); setView({ name: "home" }); set(current => ({ ...current, learningResume: { version: 1, room: "none", updatedAt: new Date().toISOString() } })); };
+  const back = () => { window.scrollTo({ top: 0, behavior: "instant" }); setView({ name: "home" }); set(current => ({ ...current, learningResume: resumeForNavigation("home") })); };
   const showQuizResult = (result: QuizResult) => {
     setRecommendationNow(Date.now());
     setQuizResult(result);
