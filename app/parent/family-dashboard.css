@@ -128,3 +128,49 @@
 .parent-family .parent-shared-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; margin-top: 18px; }
 .parent-family .parent-shared-project { border: 1px solid var(--border); border-radius: 12px; padding: 14px; min-width: 0; }
 .parent-family .parent-shared-project img { width: 100%; height: auto; border-radius: 10px; }
+
+/* Stable touch layout, with a native modal learner chooser. */
+.parent-dashboard.parent-family { min-height: 100svh; overflow-wrap: anywhere; }
+.parent-family .parent-sidebar nav button { display: flex; align-items: center; gap: 10px; }
+.parent-family .parent-sidebar nav svg { flex-shrink: 0; }
+.parent-family .parent-learner-desktop { display: flex; align-items: center; gap: 14px; width: 100%; min-width: 0; }
+.parent-family .parent-learner-trigger { display: none; }
+.parent-family .parent-touch-preference { display: flex; align-items: center; gap: 12px; min-height: 48px; }
+.parent-family .parent-learner-sheet { width: min(100%, 480px); max-width: 100%; max-height: min(82svh, 680px); margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); color: var(--text); overflow-y: auto; overscroll-behavior-y: contain; }
+.parent-family .parent-learner-sheet::backdrop { background: #08142680; }
+.parent-family .parent-sheet-content { padding: 0 20px 24px; }
+.parent-family .parent-sheet-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.parent-family .parent-sheet-title button { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; flex-shrink: 0; }
+.parent-family .parent-sheet-handle { display: grid; place-items: center; width: 100%; min-height: 44px; border: 0; background: transparent; touch-action: none; }
+.parent-family .parent-sheet-handle span { width: 36px; height: 4px; border-radius: 4px; background: var(--border-strong); }
+.parent-family .parent-sheet-options { display: grid; gap: 10px; margin-top: 18px; }
+.parent-family .parent-sheet-options button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; min-height: 72px; }
+.parent-family .parent-sheet-options [aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.parent-family .parent-sheet-options strong, .parent-family .parent-sheet-options .parent-small { display: block; }
+.parent-family .parent-content :is(input,select,textarea,button) { min-width: 0; }
+@media (max-width: 760px) {
+  .parent-family .parent-header-inner { padding: 12px max(16px,env(safe-area-inset-right)) 12px max(16px,env(safe-area-inset-left)); }
+  .parent-family .parent-header-actions { gap: 8px; }
+  .parent-family .parent-brand { gap: 8px; font-size: 1.3rem; }
+  .parent-family .parent-header-actions a { font-size: .75rem; }
+  .parent-family .parent-header-actions button { padding: 8px 10px; }
+  .parent-family .parent-content { padding: 24px max(16px,env(safe-area-inset-right)) calc(100px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
+  .parent-family .parent-sidebar { padding: 0; }
+  .parent-family .parent-sidebar nav { position: fixed; z-index: 45; bottom: 0; left: 0; right: 0; padding: 8px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); border-top: 1px solid var(--border); background: var(--surface); box-shadow: 0 -4px 20px #08142608; }
+  .parent-family .parent-sidebar nav button { min-height: 56px; flex-direction: column; justify-content: center; gap: 4px; padding: 6px; font-size: .75rem; }
+  .parent-family .parent-page-title { margin-bottom: 18px; gap: 10px; }
+  .parent-family .parent-learner-desktop { display: none; }
+  .parent-family .parent-learner-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 12px 16px; }
+  .parent-family .parent-learner-trigger strong, .parent-family .parent-learner-trigger .parent-small { display: block; }
+  .parent-family .parent-learner-trigger strong { font-size: 1rem; margin: 3px 0; }
+  .parent-family .parent-learner-trigger svg { flex-shrink: 0; }
+  .parent-family .parent-learner-sheet { margin: auto auto 0; border-radius: 22px 22px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .parent-family .parent-form-grid { grid-template-columns: minmax(0,1fr); }
+  .parent-family :is(button,summary), .parent-family .parent-header-actions a { min-height: 48px; }
+  .parent-family .parent-week { gap: 4px; }
+  .parent-family .parent-day { min-width: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .parent-family button { transition: background-color 120ms ease, border-color 120ms ease; }
+  .parent-family button:active:not(:disabled) { filter: brightness(.95); }
+}

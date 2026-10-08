@@ -596,3 +596,14 @@
 .learning-primary { background:var(--accent); color:var(--bg-base); }
 [data-appearance="dark"] .learning-hub button.learning-primary, [data-appearance="dark"] .activity-shell button.learning-primary { color:#101a2b; }
 @media(max-width:540px) { .kids-header { flex-wrap:wrap; gap:12px; } .learning-utility-bar { padding:10px 16px 0; } .learning-topbar { flex-wrap:wrap; } }
+
+/* Avoid accidental double-tap zoom on controls without disabling pinch zoom. */
+:where(button, a, summary, select, input, textarea) { touch-action: manipulation; }
+@media (max-width: 760px), (pointer: coarse) {
+  /* 16px prevents Safari's focus zoom; larger accessibility text still wins. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea { font-size: max(1rem, 16px) !important; }
+}
+.learning-utility-bar { min-height: 56px; }
+.learning-utility-bar > * { min-width: 0; }
+.learning-utility-bar .account-save-status { flex: 1 1 160px; overflow-wrap: anywhere; }
+.kids-world, .kids-player { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }

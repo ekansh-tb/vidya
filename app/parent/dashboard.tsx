@@ -4,12 +4,12 @@ import { PlacementEditor } from "@/components/parent/placement-editor";
 import { profilePlacementFields } from "@/lib/learning/placement";
 import { placementLabel } from "@/lib/learning/placement";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { readCreationProject, frameSVG } from "@/lib/creation/project";
 import { useUser, SignOutButton } from "@clerk/nextjs";
-import { FileDown, HeartHandshake, ArrowRight, Bird } from "lucide-react";
+import { FileDown, HeartHandshake, ArrowRight, Bird, House, Users, Settings } from "lucide-react";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
@@ -30,6 +30,7 @@ import {
   type ParentReportLoadState,
 } from "@/lib/parent-report";
 import { FamilyNoteComposer, CareNoteComposer } from "@/components/views/parent-view";
+import { LearnerPicker } from "@/components/parent/learner-picker";
 import { ParentEnrollment } from "@/components/parent/parent-enrollment";
 import { ParentCircles } from "@/components/circles/parent-circles";
 import { LearningPlanner } from "@/components/planning/learning-planner";
@@ -43,6 +44,8 @@ import "./family-dashboard.css";
 export function ParentDashboard() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { profiles, hydrated, hydrate, updateLearnerMeta } = useGameStore();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [touchPreference, setTouchPreference] = useState<{ parentId: string | null; enabled: boolean }>({ parentId: null, enabled: false });
   const [adding, add] = useState(false);
   const [destination, setDestination] = useState<ParentDestination>("Overview");
   const [appearanceState, setAppearance] = useState<{ parentId: string | null; value: ParentAppearance }>({ parentId: null, value: "light" });
@@ -73,12 +76,29 @@ export function ParentDashboard() {
     add(false);
     setDestination("Overview");
   }, [activeParentId]);
+  const hapticsEnabled = touchPreference.parentId === activeParentId && touchPreference.enabled;
+  const touchFeedback = () => {
+    if (!hapticsEnabled || typeof navigator.vibrate !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    try { navigator.vibrate(12); } catch { /* Unsupported hardware needs no fallback. */ }
+  };
+  const navigate = (next: ParentDestination) => {
+    if (next === destination) return;
+    touchFeedback();
+    setDestination(next);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      heading.current?.focus({ preventScroll: true });
+    });
+  };
   const appearance = appearanceState.parentId === activeParentId ? appearanceState.value : "light";
   useEffect(() => {
     if (!activeParentId) return;
     let value: ParentAppearance = "light";
     try { value = parseParentAppearance(localStorage.getItem(`vidya:parent:appearance:v1:${activeParentId}`)); } catch { /* Storage is optional. */ }
     setAppearance({ parentId: activeParentId, value });
+    let enabled = false;
+    try { enabled = localStorage.getItem(`vidya:parent:haptics:v1:${activeParentId}`) === "true"; } catch { /* Optional preference. */ }
+    setTouchPreference({ parentId: activeParentId, enabled });
   }, [activeParentId]);
   const changeAppearance = (value: ParentAppearance) => {
     setAppearance({ parentId: activeParentId, value });
@@ -244,7 +264,7 @@ export function ParentDashboard() {
   const rosterFailed = rosterLoad.parentId === activeParentId && rosterLoad.status === "error";
   const report = selectedReport ?? (selected ? chooseParentReportState(selected.state, { status: "unlinked" }) : null);
   const reportLearner = selected && report ? { ...selected, state: report.state } : null;
-  const startEnrollment = () => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); setDestination("Children"); };
+  const startEnrollment = () => { pendingEnrollmentSet(null); enrollmentErrorSet(""); add(true); navigate("Children"); };
 
   return <main className="parent-dashboard parent-family" data-parent-appearance={appearance}>
     <a className="parent-skip" href="#parent-content">Skip to family content</a>
@@ -253,16 +273,16 @@ export function ParentDashboard() {
       <div className="parent-header-actions"><Link href="https://vidyagyan.study">Open learner app <ArrowRight size={16} aria-hidden="true" /></Link><SignOutButton><button type="button">Sign out</button></SignOutButton></div>
     </div></header>
     <div className="parent-layout">
-      <aside className="parent-sidebar"><nav aria-label="Parent navigation">{PARENT_DESTINATIONS.map(item => <button key={item} type="button" aria-current={destination === item ? "page" : undefined} onClick={() => setDestination(item)}>{item}</button>)}</nav><p>Room to explore.<br />Someone to come back to.</p></aside>
+      <aside className="parent-sidebar"><nav aria-label="Parent navigation">{PARENT_DESTINATIONS.map(item => <button key={item} type="button" aria-current={destination === item ? "page" : undefined} onClick={() => navigate(item)}>{item === "Overview" ? <House size={20} aria-hidden="true" /> : item === "Children" ? <Users size={20} aria-hidden="true" /> : <Settings size={20} aria-hidden="true" />}<span>{item}</span></button>)}</nav><p>Room to explore.<br />Someone to come back to.</p></aside>
       <section className="parent-content" id="parent-content" aria-label={destination}>
-        <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1>{destination}</h1></div><span className="parent-account">{displayName}{email && email !== displayName && <span>{email}</span>}</span></div>
-        {learners.length > 0 && <div className="parent-learner-picker"><label htmlFor="parent-selected-learner">Viewing learner</label><select id="parent-selected-learner" value={selected?.id ?? ""} onChange={event => setSelectedId(event.target.value)}>{learners.map(learner => <option key={learner.id} value={learner.id}>{learner.name || "Unnamed learner"} · {placementLabel(learner)}</option>)}</select></div>}
+        <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1 ref={heading} tabIndex={-1}>{destination}</h1></div><span className="parent-account">{displayName}{email && email !== displayName && <span>{email}</span>}</span></div>
+        {learners.length > 0 && <LearnerPicker key={activeParentId} learners={learners} selectedId={selected?.id ?? ""} onChange={setSelectedId} onFeedback={touchFeedback} />}
         {selected && !adding && <SafetyPanel key={`safety-${selected.id}`} learner={selected} />}
         {learners.length === 0 && (pendingLinkedLearners > 0 || rosterPending) && <div className="parent-card" role="status"><h2>Checking your learners</h2><p>Confirming which saved profiles belong to your account.</p></div>}
         {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
         {learners.length === 0 && pendingLinkedLearners === 0 && !rosterPending && !rosterFailed && <div className="parent-card parent-welcome"><h2>A little setup. A world to explore.</h2><p>{deniedLinkedLearners > 0 ? "The profiles on this browser belong to another account. Add a learner to your own family space." : "Add your learner, confirm their level, then connect their device with a single-use code."}</p><ol><li>Sign in <span>Done</span></li><li>Add a learner and confirm their level</li><li>Link their device</li></ol><button className="parent-primary" onClick={startEnrollment}>Add a learner <ArrowRight size={16} aria-hidden="true" /></button></div>}
         {destination === "Overview" && <>
-          <ParentInstallationAlert onOpenControls={()=>setDestination("Controls")} />
+          <ParentInstallationAlert onOpenControls={()=>navigate("Controls")} />
           <WeeklyFamilyInvitation />
           {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />
           <details className="parent-card"><summary>More practice observations</summary><ParticipationDetails learner={reportLearner} /><ReportExport learner={reportLearner} reportSource={report} /></details></>}
@@ -283,6 +303,11 @@ export function ParentDashboard() {
         </div>
         <div hidden={destination !== "Controls"}>
           <section className="parent-card"><h2>Appearance</h2><p>Choose how this family space looks. This does not change your child’s theme.</p><div className="parent-appearance" role="group" aria-label="Family space appearance">{(["light", "dark", "system"] as const).map(value => <button key={value} type="button" aria-pressed={appearance === value} onClick={() => changeAppearance(value)}>{value.charAt(0).toUpperCase() + value.slice(1)}</button>)}</div></section>
+          <section className="parent-card"><h2>Touch feedback</h2><label className="parent-touch-preference"><input type="checkbox" checked={hapticsEnabled} onChange={event => {
+            const enabled = event.target.checked;
+            setTouchPreference({ parentId: activeParentId, enabled });
+            if (activeParentId) try { localStorage.setItem(`vidya:parent:haptics:v1:${activeParentId}`, String(enabled)); } catch { /* Continue for this visit. */ }
+          }} />Gentle vibration when navigating</label><p className="parent-small">Optional on supported devices. Respects reduced motion and stays separate from your child’s settings.</p></section>
           <ParentInstallationGuide />
           <WeeklyInvitations key={`weekly-invitations-${activeParentId}`} />
           <ParentCircles learnerId={selected?.remoteId} />
