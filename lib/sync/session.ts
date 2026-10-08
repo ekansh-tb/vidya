@@ -12,6 +12,7 @@ type SessionOptions = {
   push: (state: GameState, revision: number, signal: AbortSignal) => Promise<SyncResult>;
   profile: (profile: NonNullable<Extract<PullResult, { ok: true }>["profile"]>) => void;
   revoked: () => void;
+  restored?: () => void;
   status: (status: SyncState, savedAt?: number) => void;
   available: () => boolean;
 };
@@ -108,8 +109,10 @@ export class SyncSession {
         }
         if (pulled.profile) this.options.profile(pulled.profile);
         this.revision = pulled.revision;
+        const firstPull = !this.ready;
         this.ready = true;
         if (pulled.state) this.adopt(mergeGameState(this.options.read(), pulled.state));
+        if (firstPull) this.options.restored?.();
         // A pull is not acknowledgement of pending device work.
         this.dirty = true;
       }

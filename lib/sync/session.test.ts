@@ -16,11 +16,12 @@ function fixture() {
   const status = vi.fn();
   const revoked = vi.fn();
   const profile = vi.fn();
+  const restored = vi.fn();
   const pull = vi.fn(async (signal: AbortSignal): Promise<PullResult> => { void signal; return { ok: true, state: null, revision: 0 }; });
   const push = vi.fn(async (snapshot: GameState, revision: number): Promise<SyncResult> => ({ state: snapshot, revision: revision + 1, status: "synced" }));
-  const session = new SyncSession({ read: () => state, apply: next => { state = next; session.changed(); }, pull, push, profile, revoked, status, available: () => available });
+  const session = new SyncSession({ read: () => state, apply: next => { state = next; session.changed(); }, pull, push, profile, restored, revoked, status, available: () => available });
   sessions.push(session);
-  return { session, pull, push, status, revoked, get state() { return state; }, edit: (next: GameState) => { state = next; session.changed(); }, offline: () => { available = false; session.offline(); }, online: () => { available = true; session.wake(); } };
+  return { session, pull, push, status, restored, revoked, get state() { return state; }, edit: (next: GameState) => { state = next; session.changed(); }, offline: () => { available = false; session.offline(); }, online: () => { available = true; session.wake(); } };
 }
 let sessions: SyncSession[];
 beforeEach(() => { sessions = []; vi.useFakeTimers(); });
@@ -28,6 +29,30 @@ afterEach(() => { sessions.forEach(s => s.dispose()); vi.useRealTimers(); });
 const tick = () => vi.advanceTimersByTimeAsync(0);
 
 describe("account sync under interrupted learning", () => {
+  it("offers initial restoration after merging, only once per linked session", async () => {
+    const f = fixture();
+    const remote = { ...f.state, learningResume: { version: 2 as const, room: "music" as const, updatedAt: "2026-10-08T01:00:00Z" } };
+    f.pull.mockResolvedValue({ ok: true, state: remote, revision: 3 });
+    f.restored.mockImplementation(() => expect(f.state.learningResume).toEqual(remote.learningResume));
+    f.session.start(); await tick();
+    expect(f.restored).toHaveBeenCalledOnce();
+    f.session.wake(); await tick();
+    expect(f.pull).toHaveBeenCalledTimes(2);
+    expect(f.restored).toHaveBeenCalledOnce();
+  });
+
+  it("does not restore a retired identity from a delayed pull", async () => {
+    const f = fixture();
+    const request = deferred<PullResult>();
+    f.pull.mockImplementationOnce(() => request.promise);
+    f.session.start();
+    f.session.dispose();
+    request.resolve({ ok: true, state: f.state, revision: 1 });
+    await tick();
+    expect(f.restored).not.toHaveBeenCalled();
+    expect(f.push).not.toHaveBeenCalled();
+  });
+
   it("never says saved after only a pull and before pending work is acknowledged", async () => {
     const f = fixture();
     const request = deferred<SyncResult>();
