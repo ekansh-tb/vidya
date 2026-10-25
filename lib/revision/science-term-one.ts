@@ -1,14 +1,10 @@
 /** Original revision material. Unit scope supplied by parent, not a school paper. */
-export const SCIENCE_COURSE_ID = 'cambridge-science-7-term1-v1';
+import type {RevisionUnit} from './outline';
+export {SCIENCE_COURSE_ID,SCIENCE_UNITS,SCIENCE_MOCK_IDS} from './outline';
+export type {RevisionUnit} from './outline';
 export const SCIENCE_SOURCE = 'https://assets.cambridge.org/97811087/42788/excerpt/9781108742788_excerpt.pdf';
-export type RevisionUnit = 'cells' | 'materials' | 'forces';
 export type RevisionLesson = { id: string; unit: RevisionUnit; title: string; points: string[]; check: string; answer: string; visual?: 'cells' | 'particles' | 'weight' };
 export type RevisionQuestion = { id: string; unit: RevisionUnit; question: string; options?: string[]; correct?: string; hint: string; points: string[]; marks: number };
-export const SCIENCE_UNITS: {id: RevisionUnit; title: string; number: number}[] = [
-  {id:'cells',title:'Cells',number:1},
-  {id:'materials',title:'Materials and their structure',number:2},
-  {id:'forces',title:'Forces and energy',number:3},
-];
 export const SCIENCE_LESSONS: RevisionLesson[] = [
   {id:'plant-cells',unit:'cells',title:'A plant cell: name it, then give its job',visual:'cells',points:[
     'A cell is the basic unit of living organisms. A typical leaf cell has a nucleus, cytoplasm and a cell membrane, plus a cell wall, chloroplasts and a large permanent vacuole.',
@@ -160,5 +156,3 @@ export const SCIENCE_QUESTIONS: RevisionQuestion[] = [
  q('f11','forces','Explain why Earth has day and night.',['Earth rotates on its axis.','The side facing the Sun has daylight; the side facing away has night.'],'Do not confuse rotation with the year-long orbit.'),
  q('f12','forces','You test how release height affects a ball’s first bounce height. State the independent variable and one control variable.',['Independent variable: the release height.','Keep the same ball or the same surface. Measure first bounce height as the dependent variable.'],'Change one thing and keep other relevant factors the same.'),
 ];
-// A fixed, reproducible 30-mark rehearsal. No claim about the school paper’s format.
-export const SCIENCE_MOCK_IDS = ['c2','c3','c5','c8','c12','m1','m3','m5','m7','m10','f1','f2','f4','f8','f9'];

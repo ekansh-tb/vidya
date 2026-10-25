@@ -65,3 +65,6 @@
  .revision-print h1 { font-size:20pt; }.revision-print h2 { font-size:12pt; }
  .revision-writing-space { height:25mm; border-bottom:1px solid #aaa; }
 }
+
+.revision-sharing { margin-top:16px; font-size:.85rem; color:var(--text-muted); }
+.revision-sharing summary { display:flex; align-items:center; cursor:pointer; text-decoration:underline; text-underline-offset:4px; }

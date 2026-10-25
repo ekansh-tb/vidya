@@ -49,6 +49,7 @@ export function ScienceRevision({state,setState,onBack,onFullYear}:{state:GameSt
    {mock&&!progress.submittedAt&&<button className="revision-primary revision-submit" onClick={()=>{setHint(false);save({submittedAt:Date.now(),index:0});}}>Finish and review {mockAnswered<15?`(${15-mockAnswered} unanswered)`:''}</button>}
    {mode==='learn'&&index===length-1&&<button className="revision-primary revision-submit" onClick={()=>change({mode:'practice',index:0})}>Practise this unit<ArrowRight size={18} aria-hidden="true"/></button>}
    <p className="revision-small revision-save">Your place and typed answers are saved with your learner progress. Use a short revision block, take a break, then try explaining the idea without looking.</p>
+   <details className="revision-sharing"><summary>What your grown-ups can see</summary><p className="revision-small">Your family progress shows saved-answer counts and your self-assessed marks. Your typed answers stay in your learning space. It does not show every tap or prove what you understand.</p></details>
    <section className="revision-print"><h1>Science Term 1: practice paper</h1><p>Units 1–3 · 30 marks · Original Vidya rehearsal, not an official paper.</p>{SCIENCE_MOCK_IDS.map((id,i)=>{const q=SCIENCE_QUESTIONS.find(item=>item.id===id)!;return <div key={id}><h2>{i+1}. {q.question} [{q.marks}]</h2><div className="revision-writing-space"/></div>;})}</section>
  </main>;
 }

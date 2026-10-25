@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {sciencePreparationSummary,sciencePreparationSummarySchema,type SciencePreparationSummary} from "./revision/parent-summary";
 import { creationProjectSchema } from "./creation/project";
 import type { GameState, MissedQuestion, SubjectId } from "./types";
 
@@ -19,6 +20,7 @@ const activityEvidenceSchema = z.object({ completions: activityCompletionsSchema
 
 const syncedStateSchema = z.object({
   creativeStudio: z.unknown().optional(),
+  scienceRevision: z.unknown().optional(),
   activities: activityEvidenceSchema,
   progress: z.record(
     z.string().min(1).max(128),
@@ -66,6 +68,7 @@ const parentReportReflectionSchema = z.discriminatedUnion("private", [
 ]);
 
 const parentReportStateSchema = z.object({
+  sciencePreparation: sciencePreparationSummarySchema.optional(),
   sharedCreations: z.array(creationProjectSchema.extend({ visibility: z.literal("parent") })).max(20).optional(),
   activities: activityEvidenceSchema,
   progress: syncedStateSchema.shape.progress,
@@ -118,7 +121,9 @@ export function minimizeParentReportState(value: unknown): ParentReportState | n
   const parsed = syncedStateSchema.safeParse(value);
   if (!parsed.success) return null;
 
+  const preparation = sciencePreparationSummary(parsed.data.scienceRevision);
   return {
+    ...(preparation ? {sciencePreparation:preparation} : {}),
     ...(parsed.data.activities ? { activities: { completions: parsed.data.activities.completions } } : {}),
     sharedCreations: (() => {
       const studio = parsed.data.creativeStudio;
@@ -186,6 +191,7 @@ export type ParentReportLoadState =
   | { status: "unavailable" };
 
 export type ParentReportDecision = {
+  sciencePreparation?: SciencePreparationSummary;
   state: GameState;
   source: "remote" | "local";
   fallbackReason?: Exclude<ParentReportLoadState["status"], "ready">;
@@ -235,13 +241,16 @@ export function chooseParentReportState(
   if (remote.status === "ready") {
     return {
       state: applyRemoteReport(localState, remote.state),
+      ...(remote.state.sciencePreparation ? {sciencePreparation:remote.state.sciencePreparation} : {}),
       source: "remote",
       updatedAt: remote.updatedAt,
     };
   }
 
+  const preparation = sciencePreparationSummary(localState.scienceRevision);
   return {
     state: localState,
+    ...(preparation ? {sciencePreparation:preparation} : {}),
     source: "local",
     fallbackReason: remote.status,
   };
