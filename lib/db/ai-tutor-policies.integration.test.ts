@@ -16,6 +16,7 @@ import {
   setAiConnectionStatusForParent,
 } from "./ai-connections";
 import {
+  toggleLearnerAiForParent,
   createAiTutorProfileForParent,
   deleteAiTutorProfileForParent,
   getLearnerAiAssignmentForParent,
@@ -300,6 +301,21 @@ d("AI tutor policy database isolation", { timeout: DB_TIMEOUT_MS }, () => {
     expect(rows.map((row) => row.event)).toContain("profile_created");
     expect(rows.map((row) => row.event)).toContain("assignment_set");
     expect(JSON.stringify(rows)).not.toContain("parent-a-secret");
+  });
+
+  it("co-parent pause preserves the primary parent's current allowances", async () => {
+    const sql = getSql();
+    await sql`insert into learner_guardians(learner_id,parent_id,invited_by) values(${learnerA},${PARENT_B},${PARENT_A})`;
+    try {
+      await setLearnerAiAssignmentForParent({ parentId:PARENT_A, actorId:PARENT_A, learnerId:learnerA, tutorProfileId:PROFILE_A, enabled:true, dailyTurnLimit:2, maxOutputTokens:300 });
+      const paused = await toggleLearnerAiForParent(PARENT_B,learnerA,PROFILE_A,false);
+      expect(paused).toMatchObject({enabled:false,dailyTurnLimit:2,maxOutputTokens:300});
+      expect((await listAiTutorProfilesForParent(PARENT_B)).map(p=>p.id)).not.toContain(PROFILE_A);
+      expect(await toggleLearnerAiForParent(PARENT_B,learnerA,PROFILE_B,true)).toBeNull();
+    } finally {
+      await sql`update learner_guardians set revoked_at=now() where learner_id=${learnerA} and parent_id=${PARENT_B}`;
+    }
+    expect(await toggleLearnerAiForParent(PARENT_B,learnerA,PROFILE_A,true)).toBeNull();
   });
 
   it("lets the owner remove an assignment and profile", async () => {

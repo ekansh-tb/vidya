@@ -1,5 +1,7 @@
 "use client";
 import { scienceCourseAvailable } from "@/lib/revision/availability";
+import { SharedAiAccess } from "@/components/parent/shared-ai-access";
+import { FamilyAccess, JoinFamily } from "@/components/parent/family-access";
 import { makeLearner } from "@/components/views/add-learner-view";
 import { PlacementEditor } from "@/components/parent/placement-editor";
 import { profilePlacementFields } from "@/lib/learning/placement";
@@ -56,6 +58,7 @@ export function ParentDashboard() {
   const [pendingEnrollment, pendingEnrollmentSet] = useState<LearnerProfile | null>(null);
   const [rosterRefresh, refreshRoster] = useState(0);
   const [rosterLoad, setRosterLoad] = useState<{ parentId: string | null; status: "loading" | "ready" | "error" }>({ parentId: null, status: "loading" });
+  const [sharedLearners, setSharedLearners] = useState<{parentId:string|null;ids:string[]}>({parentId:null,ids:[]});
   const [ownedRoster, roster] = useState<{parentId:string|null; learners:LearnerProfile[]}>({parentId:null,learners:[]});
   const updateProfile = (id:string, patch:Partial<LearnerProfile>) => {
     if (useGameStore.getState().profiles.learners[id]) updateLearnerMeta(id,patch);
@@ -73,10 +76,19 @@ export function ParentDashboard() {
   const activeParentId = isSignedIn ? user?.id ?? null : null;
   useEffect(() => {
     setSelectedId(null);
+    setSharedLearners({parentId:null,ids:[]});
     pendingEnrollmentSet(null);
     enrollmentErrorSet("");
     add(false);
     setDestination("Overview");
+  }, [activeParentId]);
+  useEffect(() => {
+    if (!activeParentId) return;
+    const refresh = () => { if (document.visibilityState === "visible") refreshRoster(value => value + 1); };
+    const hide = () => { if (document.visibilityState === "hidden") { roster({parentId:activeParentId,learners:[]}); setRosterLoad({parentId:activeParentId,status:"loading"}); setRemoteReportCache({parentId:activeParentId,reports:{}}); } else refresh(); };
+    window.addEventListener("focus", refresh); document.addEventListener("visibilitychange", hide);
+    const timer = window.setInterval(refresh, 30_000);
+    return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", hide); window.clearInterval(timer); };
   }, [activeParentId]);
   const hapticsEnabled = touchPreference.parentId === activeParentId && touchPreference.enabled;
   const touchFeedback = () => {
@@ -126,6 +138,7 @@ export function ParentDashboard() {
           if (!context.success || typeof row.id !== "string" || typeof row.name !== "string") continue;
           entries.push({...makeLearner({id:`remote:${row.id}`,name:row.name,...context.data,avatarId:"peacock",themeId:row.grade===null || row.grade<=2 ? "playful" : "vivid"}),remoteId:row.id,createdAt:row.createdAt});
         }
+        setSharedLearners({parentId:activeParentId,ids:data.learners.filter((row:{parentId?:string}) => row.parentId !== activeParentId).map((row:{id:string}) => `remote:${row.id}`)});
         roster({parentId:activeParentId,learners:entries});
         setRosterLoad({ parentId: activeParentId, status: "ready" });
       } catch { if (!controller.signal.aborted) setRosterLoad({ parentId: activeParentId, status: "error" }); }
@@ -145,8 +158,8 @@ export function ParentDashboard() {
     return report?.status !== "loading" && report?.status !== "denied" && Boolean(report);
   }), [activeReports, localLearners]);
   const selected = useMemo(
-    () => learners.find((learner) => learner.id === selectedId) || learners[0] || null,
-    [learners, selectedId],
+    () => learners.find((learner) => learner.id === selectedId) || learners.find(learner => sharedLearners.parentId === activeParentId && sharedLearners.ids.some(id => id === learner.id || id === `remote:${learner.remoteId}`)) || learners[0] || null,
+    [learners, selectedId, sharedLearners, activeParentId],
   );
   const linkedRemoteIdsKey = useMemo(
     () => [...new Set(localLearners.map((learner) => learner.remoteId).filter((id): id is string => Boolean(id)))]
@@ -279,6 +292,7 @@ export function ParentDashboard() {
       <section className="parent-content" id="parent-content" aria-label={destination}>
         <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1 ref={heading} tabIndex={-1}>{destination}</h1></div><InfoPopover key={destination} className="parent-account" label="Your parent account" summary={<><UserRound size={20} aria-hidden="true" /><span className="mobile-control-label">{displayName}</span></>}><strong>{displayName}</strong>{email && email !== displayName && <p>{email}</p>}</InfoPopover></div>
         {learners.length > 0 && <LearnerPicker key={activeParentId} learners={learners} selectedId={selected?.id ?? ""} onChange={setSelectedId} onFeedback={touchFeedback} />}
+        {selected && sharedLearners.parentId === activeParentId && sharedLearners.ids.includes(`remote:${selected.remoteId}`) && <p className="family-profile-label">Shared family profile · The same saved progress is available to both parents.</p>}
         {selected && !adding && <SafetyPanel key={`safety-${selected.id}`} learner={selected} />}
         {learners.length === 0 && (pendingLinkedLearners > 0 || rosterPending) && <div className="parent-card" role="status"><h2>Checking your learners</h2><p>Confirming which saved profiles belong to your account.</p></div>}
         {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
@@ -293,6 +307,8 @@ export function ParentDashboard() {
           <div className="parent-card"><h2>What your child shares</h2><p>Routine reports contain practice observations. Private reflections and AI conversations do not appear here. Children choose what to show you themselves. Specific safeguarding concerns may need a separate response.</p></div>
         </>}
         <div hidden={destination !== "Children"}>
+          <JoinFamily key={`join-family-${activeParentId}`} onJoined={() => refreshRoster(value => value + 1)} />
+          {selected?.remoteId && activeParentId && <FamilyAccess key={`family-${activeParentId}-${selected.remoteId}`} learnerId={selected.remoteId} learnerName={selected.name} accountId={activeParentId} refreshToken={rosterRefresh} onChanged={() => refreshRoster(value => value + 1)} />}
           <div className="parent-actions parent-section-actions"><p>Keep each learner’s level and devices together.</p><button className="parent-primary" onClick={startEnrollment}>Add a learner</button></div>
           {adding && <div aria-busy={savingLearner}>{enrollmentError && <p className="parent-error" role="alert">{enrollmentError} Your details are still here. Try saving again.</p>}<ParentEnrollment busy={savingLearner} onBack={() => { add(false); pendingEnrollmentSet(null); }} onSave={learner => void saveEnrollment(learner)} /></div>}
           {selected && !adding && <><div className="parent-card"><h2>{selected.name || "Your learner"}</h2><p>{placementLabel(selected)}{selected.school ? ` · ${selected.school}` : ""}</p><PlacementEditor learner={selected} onChange={patch => updateProfile(selected.id, patch)} /></div>
@@ -318,7 +334,7 @@ export function ParentDashboard() {
             <AiConnectionsPanel key={`ai-connections-${activeParentId}`} onConnectionsChanged={() => setAiPolicyRevision(revision => revision + 1)} />
             <AiTutorControlsPanel key={`ai-tutors-${activeParentId}`} refreshToken={aiPolicyRevision} onProfilesChanged={() => setAiPolicyRevision(revision => revision + 1)} />
             <FamilyAiPausePanel key={`family-ai-pause-${activeParentId}`} onPaused={() => setAiPolicyRevision(revision => revision + 1)} />
-            {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool guidance</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. AI tutoring stays unavailable.</p></div> : <><LearnerAiTutorAccessPanel key={`learner-ai-access-${activeParentId}`} learner={selected} refreshToken={aiPolicyRevision} />{selected.remoteId && <LearnerGuidancePanel key={`guidance-${selected.remoteId}`} learnerId={selected.remoteId} />}</>)}
+            {selected && (selected.placement?.kind === "early-years" ? <div className="learning-panel"><h2>Preschool guidance</h2><p>Nursery, LKG and UKG use authored guidance and scripted companion reactions. AI tutoring stays unavailable.</p></div> : <>{sharedLearners.parentId === activeParentId && sharedLearners.ids.includes(`remote:${selected.remoteId}`) && selected.remoteId ? <SharedAiAccess key={`shared-ai-${selected.remoteId}`} learnerId={selected.remoteId} refreshToken={aiPolicyRevision} /> : <LearnerAiTutorAccessPanel key={`learner-ai-access-${activeParentId}`} learner={selected} refreshToken={aiPolicyRevision} />}{selected.remoteId && <LearnerGuidancePanel key={`guidance-${selected.remoteId}`} learnerId={selected.remoteId} />}</>)}
           </details>
         </div>
         <footer className="parent-footer">Practice observations describe the available evidence. A completed activity does not prove understanding. No recorded activity does not mean no learning.<Link href="/mission">Our mission</Link></footer>

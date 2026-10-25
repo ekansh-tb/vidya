@@ -40,7 +40,7 @@ export async function listParentGuidance(
       ) as has_older
     from parent_guidance_versions g
     join learners l on l.id = g.learner_id and l.parent_id = g.parent_id
-    where g.parent_id = ${parentId} and g.learner_id = ${learnerId}
+    where vidya_can_manage_learner(${parentId}, l.id) and g.learner_id = ${learnerId}
       and (${before}::integer is null or g.version < ${before}::integer)
     order by g.version desc
     limit ${limit}
@@ -61,7 +61,7 @@ export async function appendParentGuidance(parentId: string, learnerId: string, 
     insert into parent_guidance_versions (learner_id, parent_id, version, status, content)
     select l.id, l.parent_id, ${expectedVersion + 1}, ${status}, ${content}
     from learners l
-    where l.id = ${learnerId} and l.parent_id = ${parentId}
+    where l.id = ${learnerId} and vidya_can_manage_learner(${parentId}, l.id)
       and coalesce((select max(g.version) from parent_guidance_versions g
         where g.learner_id = l.id), 0) = ${expectedVersion}
     on conflict (learner_id, version) do nothing
@@ -84,7 +84,7 @@ export async function getActiveParentGuidance(parentId: string, learnerId: strin
     select current_guidance.content from (
       select g.content, g.status from parent_guidance_versions g
       join learners l on l.id = g.learner_id and l.parent_id = g.parent_id
-      where g.parent_id = ${parentId} and g.learner_id = ${learnerId}
+      where vidya_can_manage_learner(${parentId}, l.id) and g.learner_id = ${learnerId}
       order by g.version desc limit 1
     ) current_guidance where current_guidance.status = 'approved'
   `;

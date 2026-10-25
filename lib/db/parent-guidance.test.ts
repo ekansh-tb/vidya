@@ -69,7 +69,7 @@ describe("bounded guidance history", () => {
     sql.mockImplementation(async (parts, parent, learner, before, bound, limit) => {
       const query = parts.join("?");
       expect(query).toContain("join learners l on l.id = g.learner_id and l.parent_id = g.parent_id");
-      expect(query).toContain("where g.parent_id = ? and g.learner_id = ?");
+      expect(query).toContain("where vidya_can_manage_learner(?, l.id) and g.learner_id = ?");
       expect(query).toContain("g.version < ?::integer");
       expect(query).toContain("order by g.version desc\n    limit ?");
       expect(query).toContain("select 1 from parent_guidance_versions older");

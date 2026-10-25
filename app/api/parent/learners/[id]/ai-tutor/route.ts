@@ -5,6 +5,7 @@ import { TUTOR_POLICY_LIMITS } from "@/lib/ai/tutor-policy";
 import { requireParent } from "@/lib/auth/session";
 import { requireRecentParentReverification } from "@/lib/auth/reverification";
 import {
+  toggleLearnerAiForParent,
   getLearnerAiAssignmentForParent,
   removeLearnerAiAssignmentForParent,
   setLearnerAiAssignmentForParent,
@@ -153,4 +154,18 @@ export async function DELETE(
     console.error("[api/parent/learners/:id/ai-tutor] delete failed");
     return json({ error: "Could not remove learner AI settings" }, 500);
   }
+}
+
+/** Toggle only enabled; preserve the other parent's latest limits. */
+export async function PATCH(req:Request,ctx:{params:Promise<{id:string}>}) {
+ const resolved=await parentAndLearner(req,ctx);if(!resolved.ok)return resolved.response;
+ const limit=await rateLimit(`parent-learner-ai-set:${resolved.parentId}`,RATE);
+ if(limit.unavailable)return json({error:"Please try again later"},503);
+ if(!limit.ok)return json({error:"Too many requests"},429);
+ const recent=await requireRecentParentReverification();if(recent)return recent;
+ const body=await readBoundedJson(req,MAX_BODY_BYTES);if(!body.ok)return json({error:"Bad request"},400);
+ const input=z.object({tutorProfileId:z.uuid(),enabled:z.boolean()}).strict().safeParse(body.value);
+ if(!input.success)return json({error:"Bad request"},400);
+ try{const assignment=await toggleLearnerAiForParent(resolved.parentId,resolved.learnerId,input.data.tutorProfileId,input.data.enabled);return assignment?json({assignment}):json({error:"AI settings changed. Refresh and try again."},409);}
+ catch{return json({error:"Could not update AI access"},503);}
 }

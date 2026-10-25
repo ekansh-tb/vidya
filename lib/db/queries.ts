@@ -96,7 +96,7 @@ export async function listLearnersForParent(parentId: string): Promise<LearnerRo
   const sql = getSql();
   const rows = await sql`
     select * from learners
-    where parent_id = ${parentId}
+    where vidya_can_manage_learner(${parentId}, id)
     order by created_at asc
   `;
   return rows.map(toLearner);
@@ -114,7 +114,7 @@ export async function getLearnerForParent(
   const sql = getSql();
   const rows = await sql`
     select * from learners
-    where id = ${learnerId} and parent_id = ${parentId}
+    where id = ${learnerId} and vidya_can_manage_learner(${parentId}, id)
     limit 1
   `;
   return rows.length ? toLearner(rows[0]) : null;
@@ -184,7 +184,7 @@ export async function updateLearnerForParent(
       city            = coalesce(${patch.city ?? null}, city),
       subjects_locked = coalesce(${patch.subjectsLocked ?? null}, subjects_locked),
       picked_subjects = coalesce(${patch.pickedSubjects === undefined ? null : JSON.stringify(patch.pickedSubjects)}::jsonb, picked_subjects)
-    where id = ${learnerId} and parent_id = ${parentId}
+    where id = ${learnerId} and vidya_can_manage_learner(${parentId}, id)
     returning *
   `;
   return rows.length ? toLearner(rows[0]) : null;
@@ -210,7 +210,7 @@ export async function setDisabledCapabilities(
   const rows = await sql`
     update learners
     set disabled_capabilities = ${JSON.stringify(keys)}::jsonb
-    where id = ${learnerId} and parent_id = ${parentId}
+    where id = ${learnerId} and vidya_can_manage_learner(${parentId}, id)
     returning *
   `;
   if (!rows.length) return null;
@@ -273,7 +273,7 @@ export async function getLearnerStateForParent(
     select s.state, s.revision, s.updated_at
     from learners l
     left join learner_states s on s.learner_id = l.id
-    where l.id = ${learnerId} and l.parent_id = ${parentId}
+    where l.id = ${learnerId} and vidya_can_manage_learner(${parentId}, l.id)
     limit 1
   `;
   if (!rows.length) return null;
@@ -393,25 +393,11 @@ export async function issueClaimCode(
   learnerId: string,
   ttlMinutes = CLAIM_CODE_TTL_MINUTES,
 ): Promise<{ code: string; expiresAt: string } | null> {
-  const owned = await getLearnerForParent(parentId, learnerId);
-  if (!owned) return null;
-
   const sql = getSql();
-  await sql`delete from claim_codes where learner_id = ${learnerId} and used_at is null`;
-
-  // Retry on the vanishingly unlikely primary-key collision.
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateCode();
-    const rows = await sql`
-      insert into claim_codes (code, learner_id, created_by, expires_at)
-      values (${code}, ${learnerId}, ${parentId},
-              now() + (${ttlMinutes} || ' minutes')::interval)
-      on conflict (code) do nothing
-      returning code, expires_at
-    `;
-    if (rows.length) {
-      return { code: rows[0].code, expiresAt: String(rows[0].expires_at) };
-    }
+    const rows = await sql`select * from vidya_issue_guardian_device_code(${parentId}, ${learnerId}::uuid, ${code}, ${ttlMinutes}::int)`;
+    if (rows.length) return { code: rows[0].code, expiresAt: String(rows[0].expires_at) };
   }
   return null;
 }
@@ -446,48 +432,11 @@ export async function redeemClaimCode(
   code: string,
   opts: { deviceLabel?: string | null } = {},
 ): Promise<RedeemResult> {
-  const sql = getSql();
-  const rows = await sql`
-    select c.code, c.learner_id, c.expires_at, c.used_at
-    from claim_codes c
-    join learners l on l.id = c.learner_id
-    where c.code = ${code.trim().toUpperCase()}
-    limit 1
-  `;
-  if (!rows.length) return { ok: false, reason: "invalid" };
-
-  const row = rows[0];
-  if (row.used_at) return { ok: false, reason: "used" };
-  if (new Date(row.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
-
   const token = generateDeviceToken();
-
-  const updated = await sql`
-    update learners
-    set verification_level = greatest(verification_level, 2)
-    where id = ${row.learner_id}
-    returning *
-  `;
-  await sql`
-    insert into learner_devices (learner_id, token_hash, label, claim_code)
-    values (${row.learner_id}, ${hashDeviceToken(token)},
-            ${opts.deviceLabel ?? null}, ${row.code})
-  `;
-  // Marked used only after the device row exists, so a failure mid-way leaves
-  // the code still redeemable rather than burning it for nothing.
-  await sql`
-    update claim_codes set used_at = now(), used_by = ${"device"}
-    where code = ${row.code}
-  `;
-  await audit({
-    parentId: null,
-    learnerId: row.learner_id,
-    event: "linked",
-    actor: null,
-    detail: { via: "claim_code", device: opts.deviceLabel ?? null },
-  });
-
-  return { ok: true, learner: toLearner(updated[0]), deviceToken: token };
+  const rows = await getSql()`select * from vidya_redeem_guardian_device(${code.trim().toUpperCase()}, ${hashDeviceToken(token)}, ${opts.deviceLabel ?? null})`;
+  const row = rows[0];
+  if (row?.result === "ok" && row.learner) return { ok: true, learner: toLearner(row.learner), deviceToken: token };
+  return { ok: false, reason: row?.result === "used" ? "used" : row?.result === "expired" ? "expired" : "invalid" };
 }
 
 // --------------------------------------------------------- device tokens
@@ -647,39 +596,9 @@ export async function revokeDeviceForParent(
   learnerId: string,
   deviceId: string | "all",
 ): Promise<{ revoked: number } | null> {
-  const owned = await getLearnerForParent(parentId, learnerId);
-  if (!owned) return null;
-  const sql = getSql();
-
-  const rows = deviceId === "all"
-    ? await sql`
-        update learner_devices set revoked_at = now()
-        where learner_id = ${learnerId} and revoked_at is null
-        returning id`
-    : await sql`
-        update learner_devices set revoked_at = now()
-        where learner_id = ${learnerId} and id = ${deviceId} and revoked_at is null
-        returning id`;
-
-  const remaining = await sql`
-    select 1 from learner_devices
-    where learner_id = ${learnerId} and revoked_at is null
-    limit 1
-  `;
-  if (!remaining.length) {
-    await sql`
-      update learners set verification_level = 0 where id = ${learnerId}
-    `;
-  }
-
-  await audit({
-    parentId,
-    learnerId,
-    event: "unlinked",
-    actor: parentId,
-    detail: { devices: rows.length, scope: deviceId },
-  });
-  return { revoked: rows.length };
+  const rows = await getSql()`select vidya_revoke_guardian_device(${parentId}, ${learnerId}::uuid, ${deviceId}) as revoked`;
+  const revoked = Number(rows[0]?.revoked ?? -1);
+  return revoked < 0 ? null : { revoked };
 }
 
 /**

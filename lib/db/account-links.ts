@@ -35,7 +35,7 @@ export async function inspectAccountLink(parentId: string, learnerId: string, to
       and r.used_at is null and r.expires_at > clock_timestamp()
       and r.clerk_user_id <> ${parentId}
       and not exists (select 1 from parents where id = r.clerk_user_id)
-      and exists (select 1 from learners where id = ${learnerId}::uuid and parent_id = ${parentId} and clerk_user_id is null)
+      and exists (select 1 from learners where id = ${learnerId}::uuid and vidya_can_manage_learner(${parentId}, id) and clerk_user_id is null)
       and not exists (select 1 from learner_account_subjects where clerk_user_id = ${parentId})
   `;
   return rows.length ? { clerkUserId: String(rows[0].clerk_user_id), expiresAt: new Date(rows[0].expires_at).toISOString() } : null;
@@ -63,7 +63,7 @@ export async function learnerAccountLinkStatus(userId: string) {
 }
 
 export async function parentAccountLinkStatus(parentId: string, learnerId: string) {
-  const rows = await getSql()`select clerk_user_id from learners where id = ${learnerId}::uuid and parent_id = ${parentId}`;
+  const rows = await getSql()`select clerk_user_id from learners where id = ${learnerId}::uuid and vidya_can_manage_learner(${parentId}, id)`;
   return rows.length ? { clerkUserId: rows[0].clerk_user_id ? String(rows[0].clerk_user_id) : null } : null;
 }
 

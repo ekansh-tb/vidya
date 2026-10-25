@@ -22,13 +22,13 @@ export async function circlesForLearner(learnerId: string): Promise<CircleSummar
   return rows.map((row) => ({ id: row.id, status: row.status, alias: row.alias, friendAlias: row.friend_alias ?? null, expiresAt: new Date(row.expires_at).toISOString() }));
 }
 export async function parentOwnsCircleLearner(parentId: string, learnerId: string): Promise<boolean> {
-  const rows = await getSql()`select id from learners where id=${learnerId} and parent_id=${parentId}`; return rows.length > 0;
+  const rows = await getSql()`select id from learners where id=${learnerId} and vidya_can_manage_learner(${parentId},id)`; return rows.length > 0;
 }
 export async function closeCircleForLearner(learnerId: string, circleId: string, status: "left" | "blocked"): Promise<boolean> {
   const rows = await getSql()`update private_circles set status=${status},closed_at=now() where id=${circleId} and status in ('pending','active') and (source_learner=${learnerId} or target_learner=${learnerId}) returning id`; return rows.length > 0;
 }
 export async function closeCircleForParent(parentId: string, circleId: string, status: "left" | "blocked"): Promise<boolean> {
-  const rows = await getSql()`update private_circles c set status=${status},closed_at=now() where c.id=${circleId} and c.status in ('pending','active') and exists(select 1 from learners l where l.parent_id=${parentId} and l.id in (c.source_learner,c.target_learner)) returning c.id`; return rows.length > 0;
+  const rows = await getSql()`update private_circles c set status=${status},closed_at=now() where c.id=${circleId} and c.status in ('pending','active') and exists(select 1 from learners l where vidya_can_manage_learner(${parentId},l.id) and l.id in (c.source_learner,c.target_learner)) returning c.id`; return rows.length > 0;
 }
 export async function requestCircleCard(learnerId: string, circleId: string, projectId: string): Promise<boolean> {
   const sql = getSql();
@@ -42,7 +42,7 @@ export async function requestCircleCard(learnerId: string, circleId: string, pro
 }
 export async function reviewCircleCard(parentId: string, cardId: string, approved: boolean): Promise<boolean> {
   const rows = await getSql()`update private_circle_cards card set status=${approved ? "approved" : "declined"},reviewed_by=${parentId},reviewed_at=now()
-    where card.id=${cardId} and card.status='pending' and exists(select 1 from learners l where l.id=card.learner_id and l.parent_id=${parentId})
+    where card.id=${cardId} and card.status='pending' and exists(select 1 from learners l where l.id=card.learner_id and vidya_can_manage_learner(${parentId},l.id))
     and exists(select 1 from private_circles c where c.id=card.circle_id and c.status='active') returning card.id`;
   return rows.length > 0;
 }

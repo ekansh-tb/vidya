@@ -1,0 +1,20 @@
+import {beforeEach,describe,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({parent:vi.fn(),user:vi.fn(),configured:vi.fn(()=>true),origin:vi.fn(()=>true),rate:vi.fn(),recent:vi.fn(),invite:vi.fn(),accept:vi.fn(),remove:vi.fn(),cancel:vi.fn(),access:vi.fn()}));
+vi.mock('@clerk/nextjs/server',()=>({currentUser:m.user}));
+vi.mock('@/lib/auth/session',()=>({requireParent:m.parent}));
+vi.mock('@/lib/auth/reverification',()=>({requireRecentParentReverification:m.recent}));
+vi.mock('@/lib/db/client',()=>({dbConfigured:m.configured}));
+vi.mock('@/lib/api/guard',()=>({isSameOrigin:m.origin,rateLimit:m.rate}));
+vi.mock('@/lib/db/guardians',()=>({inviteGuardian:m.invite,acceptGuardian:m.accept,removeGuardian:m.remove,cancelGuardianInvite:m.cancel,guardianAccess:m.access}));
+import {GET,POST} from './route';
+const id='0b47cf97-8d86-45cf-9ec3-fd858194eada',code='a'.repeat(43);
+const req=(data:unknown)=>new Request('https://vidyagyan.study/api/parent/family',{method:'POST',headers:{origin:'https://vidyagyan.study','content-type':'application/json'},body:JSON.stringify(data)});
+beforeEach(()=>{vi.resetAllMocks();m.configured.mockReturnValue(true);m.origin.mockReturnValue(true);m.parent.mockResolvedValue({userId:'signed-in-parent'});m.rate.mockResolvedValue({ok:true});m.recent.mockResolvedValue(null);m.user.mockResolvedValue({id:'signed-in-parent',primaryEmailAddress:{emailAddress:'verified@example.test',verification:{status:'verified'}}});});
+describe('family access boundary',()=>{
+ it('requires authenticated parent authority and same-origin requests',async()=>{m.origin.mockReturnValue(false);expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(403);m.origin.mockReturnValue(true);m.parent.mockResolvedValue(null);expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(401);expect(m.accept).not.toHaveBeenCalled();});
+ it('uses the authenticated parent and fresh verified Clerk email, never client-supplied identity',async()=>{m.accept.mockResolvedValue(id);expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(200);expect(m.accept).toHaveBeenCalledWith('signed-in-parent','verified@example.test',code);expect((await POST(req({action:'accept',code,confirmAccess:true,email:'attacker@example.test'}))).status).toBe(400);});
+ it('rejects unverified emails and missing explicit confirmation',async()=>{m.user.mockResolvedValue({id:'signed-in-parent',primaryEmailAddress:{emailAddress:'verified@example.test',verification:null}});expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(403);expect((await POST(req({action:'accept',code}))).status).toBe(400);expect(m.accept).not.toHaveBeenCalled();});
+ it('requires recent verification before changing adult access',async()=>{m.recent.mockResolvedValue(Response.json({error:'verify'},{status:403}));expect((await POST(req({action:'invite',learnerId:id,email:'wife@example.test'}))).status).toBe(403);expect(m.invite).not.toHaveBeenCalled();});
+ it('returns no-store responses and masks inaccessible learners',async()=>{m.access.mockResolvedValue(null);const r=await GET(new Request(`https://vidyagyan.study/api/parent/family?learnerId=${id}`,{headers:{origin:'https://vidyagyan.study'}}));expect(r.status).toBe(404);expect(r.headers.get('cache-control')).toBe('private, no-store');expect(m.access).toHaveBeenCalledWith('signed-in-parent',id);});
+ it('fails closed on quota outage or invalid invitations',async()=>{m.rate.mockResolvedValue({ok:false,unavailable:true});expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(503);m.rate.mockResolvedValue({ok:true});m.accept.mockResolvedValue(null);expect((await POST(req({action:'accept',code,confirmAccess:true}))).status).toBe(409);});
+});

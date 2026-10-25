@@ -217,14 +217,15 @@ export async function setLearnerAiAssignmentForParent(input: {
         learner_id, parent_id, tutor_profile_id, enabled,
         daily_turn_limit, max_output_tokens
       )
-      select l.id, ${input.parentId}, p.id, ${input.enabled},
+      select l.id, l.parent_id, p.id, ${input.enabled},
              ${input.dailyTurnLimit}, ${input.maxOutputTokens}
       from learners l
       join ai_tutor_profiles p
-        on p.id = ${input.tutorProfileId} and p.parent_id = ${input.parentId}
+        on p.id = ${input.tutorProfileId} and p.parent_id = l.parent_id
       join ai_provider_connections c
         on c.id = p.connection_id and c.parent_id = p.parent_id
-      where l.id = ${input.learnerId} and l.parent_id = ${input.parentId}
+      where l.id = ${input.learnerId} and vidya_can_manage_learner(${input.parentId}, l.id)
+        and (l.parent_id = ${input.parentId} or exists(select 1 from learner_ai_assignments current_assignment where current_assignment.learner_id=l.id and current_assignment.tutor_profile_id=p.id))
         and (${input.enabled} = false or c.status = 'active')
       on conflict (learner_id) do update set
         tutor_profile_id = excluded.tutor_profile_id,
@@ -260,7 +261,7 @@ export async function getLearnerAiAssignmentForParent(
     select a.*
     from learner_ai_assignments a
     join learners l on l.id = a.learner_id and l.parent_id = a.parent_id
-    where a.learner_id = ${learnerId} and a.parent_id = ${parentId}
+    where a.learner_id = ${learnerId} and vidya_can_manage_learner(${parentId}, l.id)
     limit 1
   `;
   return rows.length ? learnerAiAssignmentSummaryFromRow(rows[0]) : null;
@@ -275,7 +276,7 @@ export async function pauseAllLearnerAiAssignmentsForParent(
     with changed as (
       update learner_ai_assignments
       set enabled = false
-      where parent_id = ${parentId} and enabled = true
+      where vidya_can_manage_learner(${parentId}, learner_id) and enabled = true
       returning parent_id, tutor_profile_id, learner_id
     ), audited as (
       insert into ai_tutor_policy_audit (
@@ -330,7 +331,7 @@ export async function removeLearnerAiAssignmentForParent(
   const rows = await sql`
     with deleted as (
       delete from learner_ai_assignments
-      where learner_id = ${learnerId} and parent_id = ${parentId}
+      where learner_id = ${learnerId} and vidya_can_manage_learner(${parentId}, learner_id)
       returning *
     ), audited as (
       insert into ai_tutor_policy_audit (
@@ -343,4 +344,19 @@ export async function removeLearnerAiAssignmentForParent(
     select learner_id from deleted
   `;
   return rows.length > 0;
+}
+
+/** A co-parent toggle never copies stale quotas or swaps provider configuration. */
+export async function toggleLearnerAiForParent(parentId:string,learnerId:string,tutorProfileId:string,enabled:boolean){
+ const rows=await getSql()`with changed as (
+  update learner_ai_assignments a set enabled=${enabled}
+  where a.learner_id=${learnerId}::uuid and a.tutor_profile_id=${tutorProfileId}::uuid
+   and vidya_can_manage_learner(${parentId},a.learner_id)
+   and (${enabled}=false or exists(select 1 from ai_tutor_profiles p join ai_provider_connections c on c.id=p.connection_id and c.parent_id=p.parent_id where p.id=a.tutor_profile_id and p.parent_id=a.parent_id and c.status='active'))
+  returning a.*
+ ), audited as (
+  insert into ai_tutor_policy_audit(parent_id,tutor_profile_id,learner_id,event,actor,detail)
+  select parent_id,tutor_profile_id,learner_id,'assignment_set',${parentId},jsonb_build_object('enabled',enabled,'reason','parent_toggle') from changed returning id
+ ) select * from changed`;
+ return rows[0]?learnerAiAssignmentSummaryFromRow(rows[0]):null;
 }
