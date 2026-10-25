@@ -39,9 +39,9 @@ const TABS = [
 ] as const;
 export type LearningHubTab = typeof TABS[number]["id"];
 
-export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, onVisualLab, onMusic, onLibrary, onPlan, tab = "play", onTabChange, initialActivityId, initialActivityRevision }: {
+export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, onVisualLab, onMusic, onLibrary, onPlan, onPreparation, tab = "play", onTabChange, initialActivityId, initialActivityRevision }: {
   onBack: () => void; onSettings: () => void; onSwitch: () => void; onLink: () => void;
-  onCreate?: () => void; onVisualLab?: () => void; onMusic?: () => void; onLibrary?: () => void; onPlan?: () => void;
+  onCreate?: () => void; onVisualLab?: () => void; onMusic?: () => void; onLibrary?: () => void; onPlan?: () => void; onPreparation?: () => void;
   tab?: LearningHubTab; onTabChange: (tab: LearningHubTab) => void;
   initialActivityId?: string;
   initialActivityRevision?: number;
@@ -130,6 +130,7 @@ export function LearningHub({ onBack, onSettings, onSwitch, onLink, onCreate, on
     </>}
     {tab === "make" && onVisualLab && <button onClick={onVisualLab} className="buddy-tile w-full"><span className="buddy-tile-art"><Palette aria-hidden="true"/></span><span><strong>{hi ? "देखो और बदलो" : "Visual playground"}</strong><small>{hi ? "गिनो, बनाओ और बदलाव देखो" : "Build, count and see what changes"}</small></span><ArrowRight aria-hidden="true"/></button>}
     {tab === "journey" && <>
+      {onPreparation && <section className="learning-panel"><h2>{hi?"साथ में दोहराएँ":"Explore together"}</h2><p>{hi?"परिवार के छोटे सवाल, बातें और खेल।":"Short family prompts, talking and real-world play. No exam or timer."}</p><button onClick={onPreparation}>{hi?"परिवार का संग्रह":"Open family collection"}</button></section>}
       {onPlan && <section className="learning-panel"><h2>{hi ? "साथ में समय चुनें" : "Choose time together"}</h2><p>{hi ? "बड़े के साथ अपना असली समय देखें। खेलने के लिए योजना पूरी करना ज़रूरी नहीं।" : "With a grown-up, plan around your actual day. A plan is optional and never blocks play."}</p><button onClick={onPlan}>{hi ? "परिवार की योजना" : "Open the family plan"}</button></section>}
       <LearningCompanion compact decorations={companionUnlocks(activityState)} line={hi ? "जो खोजा और बनाया, वह यहाँ रहता है। छुट्टी लेने पर कुछ नहीं खोता।" : "Your discoveries and creations stay here. Taking a break loses nothing."} />
       <section className="learning-panel learning-history"><h2>{hi ? "तुम्हारे सीखने के दिन" : "Your learning days"}</h2><p>{completedDays.length} {hi ? "अलग दिन" : "distinct days"}</p><div className="learning-week" aria-label={hi ? "पिछले सात दिन" : "Last seven days"}>{Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setDate(date.getDate() - 6 + index); const key = dayKeyOf(date); return <span key={key} className={completedDays.includes(key) ? "participated" : ""} title={key}>{date.toLocaleDateString(hi ? "hi-IN" : "en-IN", { weekday: "short" })}<b aria-label={completedDays.includes(key) ? (hi ? "भाग लिया" : "participated") : (hi ? "खाली दिन" : "open day")}>{completedDays.includes(key) ? "●" : "○"}</b></span>; })}</div><p>{hi ? "साथी के पत्ते, स्कार्फ़ और तारे 1, 3 और 7 अलग दिनों पर जुड़ते हैं।" : "Tara’s leaf, scarf, and star appear after 1, 3, and 7 distinct days."}</p></section>

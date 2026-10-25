@@ -1,3 +1,4 @@
+import {mergePreparation} from '../preparation/contracts';
 import { mergeScienceRevision } from "../revision/progress";
 import { mergeCreativeStudio } from "../creation/project";
 import { mergeActivityState } from "../learning/activity";
@@ -294,6 +295,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     readBooks: unionStrings(local.readBooks, r.readBooks),
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
     readingProgress: mergeReadingProgress(local.readingProgress, r.readingProgress),
+    preparation: mergePreparation(local.preparation,r.preparation),
     scienceRevision: mergeScienceRevision(local.scienceRevision, r.scienceRevision),
     learningResume: mergeLearningResume(local.learningResume, r.learningResume),
     visualLab: mergeVisualLab(local.visualLab, r.visualLab),

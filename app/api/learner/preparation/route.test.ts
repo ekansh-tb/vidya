@@ -1,0 +1,5 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({identity:vi.fn(),configured:vi.fn(),origin:vi.fn(),load:vi.fn()}));vi.mock('@/lib/auth/session',()=>({requireLearnerFrom:m.identity}));vi.mock('@/lib/db/client',()=>({dbConfigured:m.configured}));vi.mock('@/lib/api/guard',()=>({isSameOrigin:m.origin}));vi.mock('@/lib/db/preparation-sets',()=>({preparationSetsForLearner:m.load}));
+import {GET} from './route';
+beforeEach(()=>{vi.clearAllMocks();m.configured.mockReturnValue(true);m.origin.mockReturnValue(true);m.identity.mockResolvedValue({learner:{id:'authenticated-learner'}});m.load.mockResolvedValue([]);});
+it('refuses revoked devices and never accepts client-supplied learner identity',async()=>{const req=new Request('https://vidya.example/api/learner/preparation?learnerId=other');const response=await GET(req);expect(m.identity).toHaveBeenCalledWith(req);expect(m.load).toHaveBeenCalledWith({id:'authenticated-learner'});expect(response.headers.get('cache-control')).toContain('no-store');m.identity.mockResolvedValue(null);expect((await GET(req)).status).toBe(401);m.origin.mockReturnValue(false);expect((await GET(req)).status).toBe(403);});

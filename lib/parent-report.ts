@@ -1,3 +1,4 @@
+import {preparationObservations,preparationObservationsSchema,type PreparationObservation} from './preparation/observations';
 import { z } from "zod";
 import {sciencePreparationSummary,sciencePreparationSummarySchema,type SciencePreparationSummary} from "./revision/parent-summary";
 import { creationProjectSchema } from "./creation/project";
@@ -19,6 +20,7 @@ const activityCompletionsSchema = z.array(z.object({
 const activityEvidenceSchema = z.object({ completions: activityCompletionsSchema }).optional();
 
 const syncedStateSchema = z.object({
+  preparation:z.unknown().optional(),
   creativeStudio: z.unknown().optional(),
   scienceRevision: z.unknown().optional(),
   activities: activityEvidenceSchema,
@@ -68,6 +70,7 @@ const parentReportReflectionSchema = z.discriminatedUnion("private", [
 ]);
 
 const parentReportStateSchema = z.object({
+  preparationSessions:preparationObservationsSchema.optional(),
   sciencePreparation: sciencePreparationSummarySchema.optional(),
   sharedCreations: z.array(creationProjectSchema.extend({ visibility: z.literal("parent") })).max(20).optional(),
   activities: activityEvidenceSchema,
@@ -123,6 +126,7 @@ export function minimizeParentReportState(value: unknown): ParentReportState | n
 
   const preparation = sciencePreparationSummary(parsed.data.scienceRevision);
   return {
+    preparationSessions:preparationObservations(parsed.data.preparation),
     ...(preparation ? {sciencePreparation:preparation} : {}),
     ...(parsed.data.activities ? { activities: { completions: parsed.data.activities.completions } } : {}),
     sharedCreations: (() => {
@@ -191,6 +195,7 @@ export type ParentReportLoadState =
   | { status: "unavailable" };
 
 export type ParentReportDecision = {
+  preparationSessions?:PreparationObservation[];
   sciencePreparation?: SciencePreparationSummary;
   state: GameState;
   source: "remote" | "local";
@@ -241,6 +246,7 @@ export function chooseParentReportState(
   if (remote.status === "ready") {
     return {
       state: applyRemoteReport(localState, remote.state),
+      preparationSessions:remote.state.preparationSessions,
       ...(remote.state.sciencePreparation ? {sciencePreparation:remote.state.sciencePreparation} : {}),
       source: "remote",
       updatedAt: remote.updatedAt,
@@ -250,6 +256,7 @@ export function chooseParentReportState(
   const preparation = sciencePreparationSummary(localState.scienceRevision);
   return {
     state: localState,
+    preparationSessions:preparationObservations(localState.preparation),
     ...(preparation ? {sciencePreparation:preparation} : {}),
     source: "local",
     fallbackReason: remote.status,

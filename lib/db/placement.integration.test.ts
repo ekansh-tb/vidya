@@ -4,7 +4,8 @@ import { getSql } from "./client";
 import { upsertParent, createLearner, getLearnerForParent, updateLearnerForParent } from "./queries";
 const suite = integrationDatabaseConfigured() ? describe : describe.skip;
 const parent = `placement-itest-${Date.now()}`;
-suite("database placement floor", () => {
+// Several real database round trips exceed Vitest’s five-second default locally.
+suite("database placement floor", {timeout:20000}, () => {
   afterAll(async () => { await getSql()`delete from parents where id = ${parent}`; });
   it("preserves early placement, rejects legacy overwrites, and isolates families", async () => {
     await upsertParent({ id: parent });
