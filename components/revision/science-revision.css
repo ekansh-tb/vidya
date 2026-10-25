@@ -3,7 +3,7 @@
 .science-revision :is(button,summary,a) { min-height:44px; touch-action:manipulation; }
 .science-revision button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font-size:.875rem; }
 .science-revision button:disabled { opacity:.5; cursor:not-allowed; }
-.science-revision :is(button,a,input,textarea,summary):focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+.science-revision :is(button,a,input,textarea,select,summary):focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
 .revision-header,.revision-pagination { display:flex; justify-content:space-between; align-items:center; gap:12px; }
 .revision-intro { padding:28px 0 24px; }
 .revision-intro h1 { font:650 clamp(1.9rem,4vw,2.8rem)/1.15 var(--font-display); letter-spacing:-.025em; text-wrap:balance; margin:0 0 14px; }
@@ -68,3 +68,16 @@
 
 .revision-sharing { margin-top:16px; font-size:.85rem; color:var(--text-muted); }
 .revision-sharing summary { display:flex; align-items:center; cursor:pointer; text-decoration:underline; text-underline-offset:4px; }
+
+.revision-paper-picker { padding:20px; margin-bottom:20px; border:1px solid var(--border); border-radius:16px; background:var(--accent-soft); }
+.revision-paper-picker h2 { display:flex; align-items:center; gap:10px; font:600 1.25rem var(--font-display); }
+.revision-paper-picker p { font-size:.875rem; }
+.revision-paper-picker label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:16px; font-size:.875rem; }
+.revision-paper-picker select { flex:1; min-width:0; min-height:44px; padding:8px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface); color:var(--text); font-size:16px; }
+@media(prefers-reduced-motion:no-preference) { .science-revision button { transition:background-color .15s,transform .15s; }.science-revision button:active:not(:disabled) { transform:scale(.98); } }
+.revision-note-focus { margin-top:20px; }
+.revision-note-text { font-size:1.08rem; min-height:6em; }
+.revision-note-focus details { margin-top:20px; }
+.revision-note-focus summary { cursor:pointer; display:flex; align-items:center; color:var(--accent); text-decoration:underline; text-underline-offset:4px; }
+
+.revision-answer textarea::placeholder { color:var(--text-muted); opacity:1; }
