@@ -51,16 +51,16 @@ export function ParentEnrollmentForm({ blocked, learningHref }: { blocked: boole
         <p role="status" className="text-[var(--text-muted)]">This is a learner account. A parent or guardian must use a separate adult account. Unlinking a learner does not change its account type.</p>
       ) : (
         <form onSubmit={submit} className="space-y-5">
-          <p className="text-sm leading-relaxed text-[var(--text-muted)]">Set up your own parent account to manage learners you are responsible for. This does not give you access to another family. This acknowledgement is a self-declaration, not verification of age or guardianship.</p>
+          <p className="text-sm leading-relaxed text-[var(--text-muted)]">Confirm below, then add your child and connect their device.</p>
           {!verified && <p role="status" className="text-sm text-[var(--warning)]">Verify your primary email in account settings before continuing.</p>}
-          <button type="button" onClick={() => clerk.openUserProfile()} className="min-h-11 text-sm text-[var(--accent)] underline focus-visible:outline focus-visible:outline-2">Account settings and email verification</button>
+          {!verified && <button type="button" onClick={() => clerk.openUserProfile()} className="min-h-11 text-sm text-[var(--accent)] underline focus-visible:outline focus-visible:outline-2">Account settings and email verification</button>}
           <label className="flex items-start gap-3 rounded-lg border border-[var(--border)] p-4 text-sm leading-relaxed">
             <input type="checkbox" required checked={accepted} disabled={busy} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" />
             <span>{PARENT_ACKNOWLEDGEMENT_TEXT}</span>
           </label>
-          <p className="text-xs text-[var(--text-muted)]">Acknowledgement version: {PARENT_ACKNOWLEDGEMENT_VERSION}. Vidya records the text, time, verified email and account/session references. You may be asked to verify your sign-in again.</p>
+          <details className="enrollment-details"><summary>What this confirmation means</summary><p className="text-sm text-[var(--text-muted)]">This is your declaration, not verification of age or guardianship. It does not give access to another family.</p><p className="text-xs text-[var(--text-muted)]">Acknowledgement version: {PARENT_ACKNOWLEDGEMENT_VERSION}. Vidya records the text, time, verified email and account/session references. You may be asked to verify your sign-in again.</p></details>
           <button type="submit" disabled={!accepted || !verified || busy} className="parent-primary w-full justify-center">
-            {busy ? "Setting up your account..." : "Confirm and create parent account"}
+            {busy ? "Setting up your account..." : "Create my family space"}
           </button>
         </form>
       )}

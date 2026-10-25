@@ -20,11 +20,12 @@ export async function ParentAuthShell({
           <span className="parent-auth-label">For parents</span>
         </Link>
         <header className="parent-auth-intro">
-          <h1>{signingIn ? "Welcome back" : "Your family's learning starts here"}</h1>
+          <h1>{signingIn ? "Welcome back" : "Room for their curiosity"}</h1>
           <p>{signingIn
             ? "Sign in to see your child’s learning and manage your family."
-            : "Create your parent account. Then add a learner and connect their device."}</p>
+            : "Your account first. Their learning space next. Children don’t need their own email."}</p>
         </header>
+        <ol className="family-setup-steps" aria-label="Family setup"><li aria-current="step"><span>1</span>Your account</li><li><span>2</span>Add your child</li><li><span>3</span>Connect a device</li></ol>
         {children}
         <p className="parent-auth-help">Children open their learning space with a device code from you.</p>
         <Link className="parent-auth-home" href="/privacy">How we use family and sign-in information</Link>

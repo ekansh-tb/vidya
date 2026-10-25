@@ -9,8 +9,8 @@
     --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
     --font-mono:ui-monospace,Menlo,monospace;
     --font-deva:'Noto Sans Devanagari',var(--font-body);
-    --bg-base:#f4f8fc; --surface:#ffffff; --surface-strong:#eaf1f8; --surface-elevated:#ffffff;
-    --text:#182c46; --text-muted:#50627a; --text-faint:#62738a;
+    --bg-base:#faf9f5; --surface:#ffffff; --surface-strong:#edf2f5; --surface-elevated:#ffffff;
+    --text:#172d48; --text-muted:#4d6074; --text-faint:#5b6e80;
     --border:#d5e0ed; --border-strong:#98afc5;
     --accent:#0e716b; --accent-soft:#dcefeb; --accent-glow:#0e716b20; --accent-2:#6555ad;
     --success:#176b4b; --warning:#80570a; --error:#b23245;
@@ -646,3 +646,89 @@
 }
 [data-calm=true] .state-icon, [data-calm=true] :is(.compact-control,.kids-icon,.info-popover summary) > svg, .kids-nav[data-calm=true] button > svg { animation: none !important; transition: none !important; transform: none !important; }
 [data-calm=true] .sound-controls [aria-expanded] > svg, .sound-controls[data-calm=true] [aria-expanded] > svg { transition: none !important; transform: none !important; }
+
+/* Creative studio: shared rhythm, intentional colour and visible controls. */
+::selection { background:var(--accent-soft); color:var(--text); }
+html { scrollbar-color:var(--border-strong) var(--bg-base); scrollbar-width:thin; }
+::-webkit-scrollbar { width:8px; height:8px; }
+::-webkit-scrollbar-thumb { background:var(--border-strong); border:2px solid var(--bg-base); border-radius:8px; }
+input, textarea { caret-color:var(--accent); }
+.kids-world :is(h1,h2), .parent-auth-shell h1 { text-wrap:balance; }
+.kids-world :is(button,a,input,summary):focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+.kids-world :is(button,a), .parent-auth-shell :is(button,a) { touch-action:manipulation; }
+.account-entry .kids-header { margin-bottom:48px; }
+.studio-welcome { align-items:center; gap:64px; }
+.account-entry .welcome-story h1 { font-size:clamp(2.5rem,5.4vw,4.6rem); line-height:1.05; font-weight:650; letter-spacing:-.035em; }
+.account-entry .welcome-description { max-width:39ch; font-size:1.08rem; line-height:1.75; }
+.studio-introduction { max-width:450px; }
+.studio-entry { padding:32px; background:var(--surface); border:1px solid var(--border); border-radius:16px; min-width:0; }
+.studio-entry h2 { font:650 1.6rem/1.2 var(--font-display); margin:0 0 12px; }
+.studio-entry>.learning-caption { margin-bottom:24px; }
+.learning-hub .entry-route { display:flex; width:100%; align-items:center; gap:16px; text-align:left; padding:20px 16px; margin:12px 0; border:0; border-radius:12px; min-height:106px; text-decoration:none; color:var(--kid-ink); }
+.learning-hub .entry-student { background:var(--kid-sky); }
+.learning-hub .entry-parent { background:var(--kid-mint); }
+.entry-route-icon { flex-shrink:0; display:grid; place-items:center; width:40px; }
+.entry-route>span:nth-child(2) { flex:1; min-width:0; }
+.entry-route strong { display:block; font:600 1.15rem/1.35 var(--font-display); }
+.entry-route small { display:block; margin-top:6px; font-size:.78rem; line-height:1.5; }
+.entry-route>svg { flex-shrink:0; width:18px; }
+.entry-reassurance { display:flex; align-items:center; gap:10px; margin:20px 0 0; font-size:.75rem; line-height:1.6; color:var(--kid-muted); }
+.entry-reassurance svg { flex-shrink:0; }
+.learning-hub .entry-back { display:flex; align-items:center; gap:8px; padding:8px 0; background:none; border:0; margin-bottom:14px; color:var(--kid-muted); font-size:.85rem; }
+.studio-entry .welcome-code { padding:0; box-shadow:none; border:0; }
+.studio-entry .welcome-code input { font-size:1.3rem; letter-spacing:.12em; }
+.studio-entry .welcome-code .learning-primary { min-height:52px; border-radius:12px; }
+.studio-entry .account-help p { line-height:1.7; color:var(--kid-muted); }
+.studio-entry .account-help a { display:inline-flex; align-items:center; gap:8px; min-height:44px; font-weight:650; color:var(--accent); }
+.kids-world .kids-heading { margin:30px 0 24px; }
+.kids-world .kids-heading h1 { font-size:clamp(2rem,4vw,3.2rem); line-height:1.12; }
+.kids-world .kids-adventure { border:0; background:var(--kid-sky); border-radius:16px; padding:32px; }
+.kids-world .kids-adventure.domain-creative { background:var(--kid-peach); }
+.kids-world .kids-adventure.domain-discovery { background:var(--kid-mint); }
+.kids-adventure-art { background:transparent; border-radius:0; }
+.kids-world .kids-tag { border-radius:6px; background:var(--surface); color:var(--text); }
+.kids-world .kids-adventure h2 { font-size:clamp(1.65rem,3vw,2.4rem); }
+.kids-world .kids-adventure p { max-width:44ch; line-height:1.7; }
+.buddy-home .buddy-tile { min-height:112px; padding:22px; border-color:var(--border); align-items:center; }
+.buddy-home .buddy-tile>svg:first-child { padding:10px; width:46px; height:46px; border-radius:12px; background:var(--kid-mint); color:var(--accent); flex-shrink:0; }
+.buddy-home .buddy-tile:nth-child(3n+2)>svg:first-child { background:var(--kid-sky); color:var(--text); }
+.buddy-home .buddy-tile:nth-child(3n)>svg:first-child { background:var(--kid-peach); color:var(--text); }
+.buddy-home .buddy-tile strong { font-family:var(--font-display); font-size:1.15rem; }
+.buddy-home .buddy-tile small { line-height:1.65; margin-top:5px; }
+.kids-nav { background:var(--surface); box-shadow:0 8px 30px #172d4818; border:0; padding:8px; }
+.kids-nav button[aria-current=page] { background:var(--accent-soft); color:var(--accent); }
+.kids-world.mode-focus .kids-heading h1 { font-size:clamp(1.8rem,3vw,2.5rem); }
+.kids-world.mode-focus .buddy-tile>svg:first-child { background:var(--surface-strong); }
+.family-setup-steps { display:flex; gap:12px; list-style:none; padding:0; margin:24px 0; color:#4d6074; }
+.family-setup-steps li { flex:1; font-size:.72rem; line-height:1.5; }
+.family-setup-steps span { display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:#e7eeef; color:#172d48; margin-bottom:8px; font-weight:700; }
+.family-setup-steps [aria-current=step] { color:#086b63; font-weight:650; }
+.family-setup-steps [aria-current=step] span { background:#086b63; color:white; }
+.parent-auth-shell { background:#faf9f5; }
+.parent-auth-intro h1 { color:#172d48; }
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+  .entry-route { transition:transform 180ms ease-out,box-shadow 180ms ease-out; }
+  .kids-world:not([data-calm=true]) .entry-route:hover { transform:translateY(-3px); box-shadow:0 8px 20px #172d4810; }
+  .kids-world:not([data-calm=true]) .entry-route:hover>svg { transform:translateX(3px); }
+}
+@media(prefers-reduced-motion:no-preference) {
+  .kids-world:not([data-calm=true]) :is(.entry-route,.buddy-tile,.learning-primary):active { transform:scale(.985); }
+  .kids-world:not([data-calm=true]) .kids-nav button { transition:background-color 160ms ease-out,color 160ms ease-out; }
+}
+@media(max-width:700px) {
+  .studio-welcome { gap:24px; }
+  .studio-welcome .welcome-access { grid-row:1; }
+  .studio-welcome .welcome-story { padding-top:12px; }
+  .account-entry .kids-header { margin-bottom:24px; }
+  .studio-entry { padding:24px; }
+  .account-entry .welcome-story h1 { font-size:2.65rem; }
+  .kids-world .kids-adventure { padding:24px; }
+}
+@media(max-width:380px) {
+  .studio-entry { padding:20px 16px; }
+  .learning-hub .entry-route { gap:10px; padding:16px 12px; }
+  .entry-route-icon { width:28px; }
+  .entry-route strong { font-size:1rem; }
+  .account-entry { padding:18px 16px 32px; }
+  .buddy-home .buddy-tile { padding:18px; }
+}

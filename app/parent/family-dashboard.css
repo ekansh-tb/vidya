@@ -219,3 +219,28 @@
 
 .parent-report-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0 20px; }
 .parent-report-actions button { display:inline-flex; align-items:center; gap:8px; }
+/* Family studio shares the learning palette, with quieter task surfaces. */
+.parent-dashboard.parent-family:not([data-parent-appearance=dark]):not([data-parent-appearance=system]) { --bg-base:#faf9f5; --surface-2:#eef3f4; --border:#d5dfdf; --text:#172d48; --text-muted:#4d6074; }
+.parent-family .parent-header-inner { min-height:88px; }
+.parent-family .parent-card { border-radius:16px; }
+.parent-family .parent-sidebar nav button { display:flex; align-items:center; gap:12px; min-height:52px; }
+.parent-family .parent-content { padding-top:40px; }
+.parent-family .parent-page-title h1 { font-size:clamp(2rem,4vw,2.85rem); }
+.parent-family .parent-welcome { background:var(--accent-soft); border:0; padding:32px; }
+.parent-family .parent-welcome h2 { font-size:1.65rem; }
+.parent-family .parent-welcome ol { display:grid; gap:12px; margin:24px 0; }
+.parent-family .parent-enrollment fieldset { display:grid; gap:10px; }
+.parent-family .parent-enrollment :is(input:not([type=checkbox]),select) { min-height:52px; width:100%; font-size:16px; }
+.parent-family .parent-enrollment label { margin-top:10px; font-size:.875rem; font-weight:650; }
+.parent-family .parent-check { font-weight:400!important; }
+.parent-family .enrollment-details { color:var(--text-muted); font-size:.8rem; }
+.parent-family .parent-family-invitation { background:var(--surface-2); border:0; }
+.parent-family :is(button,a,summary) { touch-action:manipulation; }
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+  .parent-family button { transition:background-color 160ms ease-out,box-shadow 160ms ease-out; }
+  .parent-family button:not(:disabled):hover { box-shadow:0 3px 10px #172d4810; }
+}
+@media(max-width:700px) {
+  .parent-family .parent-content { padding-top:24px; }
+  .parent-family .parent-welcome { padding:24px; }
+}
