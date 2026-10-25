@@ -26,8 +26,8 @@ export default async function Page() {
   }
   return (
     <ParentEntryShell>
-        <p className="text-sm text-neutral-400">Vidya · Parent and guardian entry</p>
-        <h1 id="parent-enrollment-heading" className="font-display text-3xl font-bold">Your parent account</h1>
+
+        <h1 id="parent-enrollment-heading" className="font-display text-3xl font-bold">One step to your family space</h1>
         {unavailable ? (
           <p role="status">Parent enrollment is temporarily unavailable. Please try again later.</p>
         ) : <ParentEnrollmentForm blocked={blocked} learningHref={learningAppHref((await headers()).get("host"))} />}

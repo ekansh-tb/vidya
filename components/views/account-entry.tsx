@@ -6,13 +6,16 @@ import { profilePlacementFields } from "@/lib/learning/placement";
 import { makeLearner } from "./add-learner-view";
 import { deviceLabel } from "@/lib/sync/client";
 import { recoverableAccountCache } from "@/lib/sync/account-cache";
-import { ArrowRight, BookOpen, Compass, Palette } from "lucide-react";
+import { ArrowRight, ArrowLeft, BookOpen, Compass, Palette, KeyRound, Users } from "lucide-react";
 import { VidyaIntroduction } from "@/components/learning/vidya-introduction";
 import { SaveErrorBanner } from "@/components/effects/save-error-banner";
 import { LearningInstallationAlert } from "@/components/pwa/learning-installation-alert";
 
 /** Local archives cannot establish account ownership. Only redeem can open play. */
 export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
+  const [studentEntry, showStudentEntry] = useState(false);
+  const codeInput = useRef<HTMLInputElement>(null);
+  const learnerButton = useRef<HTMLButtonElement>(null);
   const [code, codeSet] = useState("");
   const [hi, hindi] = useState(false);
   const [busy, busySet] = useState(false);
@@ -37,29 +40,36 @@ export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
   };
   return <div className="kids-surface"><main className="learning-hub kids-world account-entry" lang={hi ? "hi" : "en"}>
     <header className="kids-header"><div className="kids-brand"><span className="kids-brand-mark" aria-hidden="true">v<span>•</span></span><strong>vidya</strong></div><nav aria-label={hi ? "स्वागत" : "Welcome navigation"} className="welcome-navigation"><Link href="/mission">{hi ? "हमारा उद्देश्य" : "Our mission"}</Link><button className="kids-language" onClick={()=>hindi(!hi)}>{hi ? "English" : "हिंदी"}</button></nav></header>
-    <div className="welcome-layout">
+    <div className="welcome-layout studio-welcome">
       <section className="welcome-story" aria-labelledby="welcome-title">
-        <p className="learning-eyebrow">{hi ? "हर बच्चे का सीखने का साथी" : "Every child’s learning buddy"}</p>
-        <h1 id="welcome-title">{hi ? <>सवाल से शुरू करो।<br/><span>अपनी दुनिया खोजो।</span></> : <>A question can open<br/><span>a whole new world.</span></>}</h1>
-        <p className="welcome-description">{hi ? "विद्या में किताबें, कहानियाँ, प्रैक्टिस और रचनात्मक गतिविधियाँ एक साथ हैं। अपने स्तर पर शुरू करो, कुछ खोजो और अपनी सोच को नया रूप दो।" : "Vidya brings books, stories, practice and creative activities into one learning space. Start at your level, follow your curiosity, and make something of your own."}</p>
-        <Link className="welcome-mission" href="/mission">{hi ? "विद्या का उद्देश्य जानो" : "Discover the mission behind Vidya"}<ArrowRight size={18} aria-hidden="true"/></Link>
-        <a className="welcome-start" href="#device-code">{hi ? "कोड मिल गया? अपनी जगह खोलो" : "Have a code? Open your learning space"}<ArrowRight size={18} aria-hidden="true"/></a>
-        <VidyaIntroduction language={hi ? "hi" : "en"} presentation="visual" />
+        <h1 id="welcome-title">{hi ? <>सोचो। बनाओ।<br/><span>अपनी दुनिया खोजो।</span></> : <>Big questions.<br/><span>Your own discoveries.</span></>}</h1>
+        <p className="welcome-description">{hi ? "कहानियाँ, विज्ञान, संगीत और कुछ अपना बनाने की जगह। अपने स्तर पर, अपनी गति से।" : "Stories, science, music and room to make something of your own. Learning at your level, at your pace."}</p>
+        <Link className="welcome-mission" href="/mission">{hi ? "विद्या का उद्देश्य" : "Why we’re building Vidya"}<ArrowRight size={18} aria-hidden="true"/></Link>
+        <div className="studio-introduction"><VidyaIntroduction language={hi ? "hi" : "en"} presentation="visual" /></div>
       </section>
-      <section className="welcome-access" aria-labelledby="entry-title">
-        <form className="learning-panel welcome-code" onSubmit={connect}>
-          <span className="welcome-step">{hi ? "सीखना शुरू करो" : "Your learning space"}</span>
-          <h2 id="entry-title">{hi ? "कोड से अपनी जगह खोलो" : "Ready to explore?"}</h2>
-          <p className="learning-caption">{hi ? "बड़े से डिवाइस कोड लो। अपनी प्रगति वहीं से जारी रखो।" : "Use the device code from your grown-up to open your profile and saved progress."}</p>
+      <section className="welcome-access studio-entry" aria-labelledby="entry-title">
+        {!studentEntry ? <>
+          <h2 id="entry-title">{hi ? "यहाँ से शुरू करो" : "Find your way in"}</h2>
+          <p className="learning-caption">{hi ? "सीखने वाला या बड़ा? अपनी जगह चुनो।" : "A space for learners. A helping hand for grown-ups."}</p>
+          <button ref={learnerButton} className="entry-route entry-student" onClick={() => { showStudentEntry(true); requestAnimationFrame(() => codeInput.current?.focus()); }}>
+            <span className="entry-route-icon"><Compass aria-hidden="true" size={28}/></span><span><strong>{hi ? "मैं सीखने आया हूँ" : "I’m a learner"}</strong><small>{hi ? "बड़े का कोड लेकर शुरू करो" : "Open my space with a code"}</small></span><ArrowRight aria-hidden="true"/>
+          </button>
+          <Link className="entry-route entry-parent" href="/parent">
+            <span className="entry-route-icon"><Users aria-hidden="true" size={28}/></span><span><strong>{hi ? "मैं अभिभावक हूँ" : "I’m a parent or guardian"}</strong><small>{hi ? "साइन इन करें या परिवार जोड़ें" : "Sign in or set up my family"}</small></span><ArrowRight aria-hidden="true"/>
+          </Link>
+          <p className="entry-reassurance"><KeyRound size={16} aria-hidden="true"/>{hi ? "बच्चों को ईमेल या पासवर्ड नहीं चाहिए।" : "Children don’t need an email or password."}</p>
+        </> : <form className="welcome-code" onSubmit={connect}>
+          <button type="button" className="entry-back" disabled={busy} onClick={() => { showStudentEntry(false); errorSet(""); requestAnimationFrame(() => learnerButton.current?.focus()); }}><ArrowLeft size={18} aria-hidden="true"/>{hi ? "वापस" : "Back"}</button>
+          <h2 id="entry-title">{hi ? "तुम्हारी जगह तैयार है" : "Your space is waiting"}</h2>
+          <p className="learning-caption">{hi ? "बड़े से मिला कोड यहाँ डालो।" : "Enter the code your grown-up gave you."}</p>
           <label htmlFor="device-code">{hi ? "डिवाइस कोड" : "Device code"}</label>
-          <input id="device-code" aria-describedby="code-help" placeholder="XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={12} required minLength={4} value={code} onChange={event=>codeSet(event.target.value)} disabled={busy}/>
-          <p id="code-help" className="learning-caption">{hi ? "कोड बड़े के खाते में मिलता है।" : "Your grown-up can make a code in their parent account."}</p>
+          <input ref={codeInput} id="device-code" aria-describedby="code-help" placeholder="XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} maxLength={12} required minLength={4} value={code} onChange={event=>codeSet(event.target.value)} disabled={busy}/>
+          <p id="code-help" className="learning-caption">{hi ? "एक बार जोड़ने के बाद, इसी डिवाइस पर फिर से शुरू कर सकते हो।" : "Connect once. Come back to your saved learning on this device."}</p>
           <button className="learning-primary" disabled={busy}>{busy ? (hi ? "जोड़ रहे हैं…" : "Connecting…") : (hi ? "मेरी जगह खोलो" : "Open my learning space")}<ArrowRight size={18} aria-hidden="true"/></button>
           {error && <p className="welcome-error" role="alert">{error}</p>}
-        </form>
-        <section className="account-grown-up"><div><h2>{hi ? "पहली बार आए हो?" : "New to Vidya?"}</h2><p>{hi ? "बड़े खाते में सीखने वाला जोड़ें और डिवाइस के लिए कोड बनाएँ।" : "Create a learner profile, choose their level, then connect their device."}</p></div><Link href="/parent">{hi ? "बड़े यहाँ शुरू करें" : "Grown-ups start here"}<ArrowRight size={18} aria-hidden="true"/></Link></section>
-        <details className="account-help"><summary>{hi ? "पुराने ब्राउज़र प्रोफ़ाइल की मदद" : "Returning with an older browser profile?"}</summary><p className="learning-caption">{hi ? "पुराने ब्राउज़र प्रोफ़ाइल अब अपने आप नहीं खुलते। खाते से जोड़ने के बाद इंटरनेट पर प्रगति सहेजी जाती है। किताबें और गतिविधियाँ रखी गई हैं।" : "Old browser profiles no longer open automatically. Connect to an account to save progress online. Books and activities are still here."}</p></details>
-        {onCancel && <button className="welcome-back" onClick={onCancel}>{hi ? "वापस" : "Back to learning"}</button>}
+          <details className="account-help"><summary>{hi ? "कोड नहीं है?" : "Don’t have a code?"}</summary><p>{hi ? "बड़े अपने खाते में तुम्हारा नाम और स्तर जोड़कर कोड बनाएँगे।" : "Ask your grown-up to sign in, add your name and learning level, then choose Connect a device."}</p><Link href="/parent">{hi ? "अभिभावक का खाता खोलें" : "Open parent account"}<ArrowRight size={16} aria-hidden="true"/></Link></details>
+        </form>}
+        {onCancel && <button className="welcome-back" onClick={onCancel}>{hi ? "सीखने पर लौटो" : "Back to learning"}</button>}
       </section>
     </div>
     <section className="welcome-paths" aria-label={hi ? "सीखने के तरीके" : "Ways to learn"}>
