@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { scienceCourseAvailable } from "@/lib/revision/availability";
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
@@ -22,6 +24,8 @@ import { useCapability } from "@/lib/capabilities/use-capability";
 import { LessonPointReader } from "@/components/learning/lesson-point-reader";
 import { lessonPoints } from "@/lib/learning/lesson-points";
 import { readLearningResume, resumeForNavigation } from "@/lib/learning/resume";
+
+const ScienceRevision = dynamic(() => import("@/components/revision/science-revision").then(m => m.ScienceRevision), { loading: () => <p role="status" className="p-6">Opening Science revision…</p> });
 
 type SectionId = "overview" | "syllabus" | "flash" | "quiz" | "mistakes" | "cheat";
 
@@ -57,6 +61,7 @@ export function ExamPrepView({
   /** Scheme of work a parent uploaded for this learner, if any. */
   uploaded?: LearnerSyllabus;
 }) {
+  const [fullYear, setFullYear] = useState(Boolean(topicId || pointId));
   const initialId = subjectId
     ? hasPack(subjectId, grade) && (!availablePackIds || availablePackIds.includes(subjectId)) ? subjectId : undefined
     : availablePackIds?.find(id => hasPack(id, grade));
@@ -74,6 +79,8 @@ export function ExamPrepView({
 
   // Reset section when pack changes
   useEffect(() => { setSection("syllabus"); }, [currentId]);
+
+  if (!fullYear && subjectId === "cls-science" && scienceCourseAvailable(board, grade)) return <ScienceRevision state={state} setState={setState} onBack={onBack} onFullYear={() => setFullYear(true)} />;
 
   // Distinguish "no pack written yet" from "pack still downloading" — the
   // first is a real empty state, the second must not look like one.
@@ -167,6 +174,7 @@ export function ExamPrepView({
             </div>
           </motion.div>
 
+          {fullYear && currentId === "cls-science" && scienceCourseAvailable(board, grade) && <button className="learning-primary mb-4" onClick={() => setFullYear(false)}>Open Term 1 revision: Units 1–3</button>}
           {/* Tabs */}
           <div className="flex gap-1.5 overflow-x-auto pb-1 mb-4 no-scrollbar">
             {SECTIONS.map((s) => {

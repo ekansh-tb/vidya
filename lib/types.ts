@@ -240,6 +240,7 @@ export type GameState = {
   rewardedBooks?: string[];
   /** Per-book resume positions. The newest timestamp wins during sync. */
   readingProgress?: Record<string, ReadingProgress>;
+  scienceRevision?: import("./revision/progress").ScienceRevisionProgress;
   learningResume?: import("./learning/resume").LearningResume;
   visualLab?: import("./learning/visual-lab").VisualLabState;
   savedMelody: number[] | null;

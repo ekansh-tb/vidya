@@ -1,4 +1,5 @@
 "use client";
+import { scienceCourseAvailable } from "@/lib/revision/availability";
 import { makeLearner } from "@/components/views/add-learner-view";
 import { PlacementEditor } from "@/components/parent/placement-editor";
 import { profilePlacementFields } from "@/lib/learning/placement";
@@ -283,6 +284,7 @@ export function ParentDashboard() {
         {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
         {learners.length === 0 && pendingLinkedLearners === 0 && !rosterPending && !rosterFailed && <div className="parent-card parent-welcome"><h2>A little setup. A world to explore.</h2><p>{deniedLinkedLearners > 0 ? "The profiles on this browser belong to another account. Add a learner to your own family space." : "Add your learner, confirm their level, then connect their device with a single-use code."}</p><ol><li>Sign in <span>Done</span></li><li>Add a learner and confirm their level</li><li>Link their device</li></ol><button className="parent-primary" onClick={startEnrollment}>Add a learner <ArrowRight size={16} aria-hidden="true" /></button></div>}
         {destination === "Overview" && <>
+          {selected && scienceCourseAvailable(selected.board, selected.grade) && <section className="parent-card"><h2>Science Term 1: support their revision</h2><p>Units 1–3: answer guides, suggested marking points and prompts to help your child explain their thinking.</p><Link className="parent-primary" href="/parent/science-term-1">Open the parent answer guide <ArrowRight size={18} aria-hidden="true" /></Link></section>}
           <ParentInstallationAlert onOpenControls={()=>navigate("Controls")} />
           <WeeklyFamilyInvitation />
           {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />

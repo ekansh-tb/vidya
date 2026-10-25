@@ -1,3 +1,4 @@
+import { mergeScienceRevision } from "../revision/progress";
 import { mergeCreativeStudio } from "../creation/project";
 import { mergeActivityState } from "../learning/activity";
 import { mergeLearningResume } from "../learning/resume";
@@ -293,6 +294,7 @@ export function mergeGameState(local: GameState, remote: Partial<GameState> | nu
     readBooks: unionStrings(local.readBooks, r.readBooks),
     rewardedBooks: unionStrings(local.rewardedBooks, r.rewardedBooks),
     readingProgress: mergeReadingProgress(local.readingProgress, r.readingProgress),
+    scienceRevision: mergeScienceRevision(local.scienceRevision, r.scienceRevision),
     learningResume: mergeLearningResume(local.learningResume, r.learningResume),
     visualLab: mergeVisualLab(local.visualLab, r.visualLab),
     completedActivities: unionStrings(local.completedActivities, r.completedActivities),
