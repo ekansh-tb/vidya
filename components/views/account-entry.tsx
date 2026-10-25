@@ -15,6 +15,7 @@ import { LearningInstallationAlert } from "@/components/pwa/learning-installatio
 export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
   const [studentEntry, showStudentEntry] = useState(false);
   const codeInput = useRef<HTMLInputElement>(null);
+  const learnerButton = useRef<HTMLButtonElement>(null);
   const [code, codeSet] = useState("");
   const [hi, hindi] = useState(false);
   const [busy, busySet] = useState(false);
@@ -50,7 +51,7 @@ export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
         {!studentEntry ? <>
           <h2 id="entry-title">{hi ? "यहाँ से शुरू करो" : "Find your way in"}</h2>
           <p className="learning-caption">{hi ? "सीखने वाला या बड़ा? अपनी जगह चुनो।" : "A space for learners. A helping hand for grown-ups."}</p>
-          <button className="entry-route entry-student" onClick={() => { showStudentEntry(true); requestAnimationFrame(() => codeInput.current?.focus()); }}>
+          <button ref={learnerButton} className="entry-route entry-student" onClick={() => { showStudentEntry(true); requestAnimationFrame(() => codeInput.current?.focus()); }}>
             <span className="entry-route-icon"><Compass aria-hidden="true" size={28}/></span><span><strong>{hi ? "मैं सीखने आया हूँ" : "I’m a learner"}</strong><small>{hi ? "बड़े का कोड लेकर शुरू करो" : "Open my space with a code"}</small></span><ArrowRight aria-hidden="true"/>
           </button>
           <Link className="entry-route entry-parent" href="/parent">
@@ -58,7 +59,7 @@ export function AccountEntry({ onCancel }: { onCancel?: () => void }) {
           </Link>
           <p className="entry-reassurance"><KeyRound size={16} aria-hidden="true"/>{hi ? "बच्चों को ईमेल या पासवर्ड नहीं चाहिए।" : "Children don’t need an email or password."}</p>
         </> : <form className="welcome-code" onSubmit={connect}>
-          <button type="button" className="entry-back" disabled={busy} onClick={() => { showStudentEntry(false); errorSet(""); }}><ArrowLeft size={18} aria-hidden="true"/>{hi ? "वापस" : "Back"}</button>
+          <button type="button" className="entry-back" disabled={busy} onClick={() => { showStudentEntry(false); errorSet(""); requestAnimationFrame(() => learnerButton.current?.focus()); }}><ArrowLeft size={18} aria-hidden="true"/>{hi ? "वापस" : "Back"}</button>
           <h2 id="entry-title">{hi ? "तुम्हारी जगह तैयार है" : "Your space is waiting"}</h2>
           <p className="learning-caption">{hi ? "बड़े से मिला कोड यहाँ डालो।" : "Enter the code your grown-up gave you."}</p>
           <label htmlFor="device-code">{hi ? "डिवाइस कोड" : "Device code"}</label>

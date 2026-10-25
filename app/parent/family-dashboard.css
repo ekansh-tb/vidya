@@ -244,3 +244,6 @@
   .parent-family .parent-content { padding-top:24px; }
   .parent-family .parent-welcome { padding:24px; }
 }
+
+.parent-family .parent-form-grid>div { min-width:0; }
+.parent-family .enrollment-details p { overflow-wrap:anywhere; }

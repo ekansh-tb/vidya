@@ -25,7 +25,7 @@ export async function ParentAuthShell({
             ? "Sign in to see your child’s learning and manage your family."
             : "Your account first. Their learning space next. Children don’t need their own email."}</p>
         </header>
-        <ol className="family-setup-steps" aria-label="Family setup"><li aria-current="step"><span>1</span>Your account</li><li><span>2</span>Add your child</li><li><span>3</span>Connect a device</li></ol>
+        {!signingIn && <ol className="family-setup-steps" aria-label="Family setup"><li aria-current="step"><span>1</span>Your account</li><li><span>2</span>Add your child</li><li><span>3</span>Connect a device</li></ol>}
         {children}
         <p className="parent-auth-help">Children open their learning space with a device code from you.</p>
         <Link className="parent-auth-home" href="/privacy">How we use family and sign-in information</Link>
