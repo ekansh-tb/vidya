@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  toggleLearnerAiForParent: vi.fn(),
   requireParent: vi.fn(),
   requireRecentParentReverification: vi.fn(),
   dbConfigured: vi.fn(),
@@ -27,12 +28,13 @@ vi.mock("@/lib/api/guard", () => ({
 }));
 vi.mock("@/lib/db/queries", () => ({ getLearnerForParent: mocks.getLearnerForParent }));
 vi.mock("@/lib/db/ai-tutor-policies", () => ({
+  toggleLearnerAiForParent: mocks.toggleLearnerAiForParent,
   getLearnerAiAssignmentForParent: mocks.getLearnerAiAssignmentForParent,
   setLearnerAiAssignmentForParent: mocks.setLearnerAiAssignmentForParent,
   removeLearnerAiAssignmentForParent: mocks.removeLearnerAiAssignmentForParent,
 }));
 
-import { DELETE, GET, PUT } from "./route";
+import { DELETE, GET, PUT, PATCH } from "./route";
 
 const LEARNER_ID = "11111111-1111-4111-8111-111111111111";
 const PROFILE_ID = "22222222-2222-4222-8222-222222222222";
@@ -52,7 +54,7 @@ const input = {
   maxOutputTokens: 500,
 };
 
-function request(method: "GET" | "PUT" | "DELETE", body?: unknown) {
+function request(method: "GET" | "PUT" | "DELETE" | "PATCH", body?: unknown) {
   return new Request(`https://vidya.example/api/parent/learners/${LEARNER_ID}/ai-tutor`, {
     method,
     headers: body === undefined ? undefined : { "content-type": "application/json" },
@@ -170,4 +172,12 @@ describe("parent learner AI assignment", () => {
     mocks.removeLearnerAiAssignmentForParent.mockResolvedValue(false);
     expect(await (await DELETE(request("DELETE"), context())).json()).toEqual({ deleted: false });
   });
+});
+
+it("shared toggle accepts only enabled and leaves current quotas on the server", async () => {
+  mocks.toggleLearnerAiForParent.mockResolvedValue({...assignment,enabled:false,dailyTurnLimit:2});
+  const result = await PATCH(request("PATCH",{tutorProfileId:PROFILE_ID,enabled:false}),context());
+  expect(result.status).toBe(200);
+  expect(mocks.toggleLearnerAiForParent).toHaveBeenCalledWith("parent-a",LEARNER_ID,PROFILE_ID,false);
+  expect((await PATCH(request("PATCH",{...input,enabled:false}),context())).status).toBe(400);
 });
