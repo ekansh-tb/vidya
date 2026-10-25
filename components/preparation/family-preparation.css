@@ -1,0 +1,21 @@
+.family-prep { margin-top:18px; }
+.family-prep h2 { font:650 1.5rem var(--font-display); }
+.family-prep p { line-height:1.7; }
+.family-prep .parent-actions { margin:18px 0; flex-wrap:wrap; }
+.family-prep button { min-height:44px; display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--parent-border,var(--border)); border-radius:10px; }
+.family-prep :is(button,input,select,textarea,summary):focus-visible { outline:3px solid var(--parent-accent,var(--accent)); outline-offset:3px; }
+.family-prep-list { display:grid; gap:10px; margin:18px 0; }
+.family-prep-list button { text-align:left; background:var(--parent-surface,var(--surface)); }
+.family-prep-list small { display:block; line-height:1.6; margin-top:5px; }
+.family-prep fieldset { min-width:0; border:0; padding:0; margin:24px 0; }
+.family-prep legend { font-weight:650; margin-bottom:12px; }
+.family-prep label { display:grid; gap:8px; margin:16px 0; font-size:.875rem; }
+.family-prep :is(input:not([type=checkbox]),textarea,select) { width:100%; padding:12px; border:1px solid var(--parent-border,var(--border-strong)); border-radius:10px; color:inherit; background:var(--parent-input,var(--surface)); font-size:16px; line-height:1.6; }
+.family-prep textarea::placeholder,.family-prep input::placeholder { color:var(--parent-muted,var(--text-muted)); opacity:1; }
+.family-prep textarea { resize:vertical; }
+.family-prep-fields { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.family-prep-question { border:1px solid var(--parent-border,var(--border)); border-radius:12px; padding:16px; margin:16px 0; }
+.family-prep-question summary { display:flex; align-items:center; justify-content:space-between; cursor:pointer; min-height:44px; font-weight:600; }
+.family-prep .family-prep-check { display:flex; align-items:flex-start; gap:12px; padding:8px 0; line-height:1.6; }
+.family-prep-check input { margin-top:4px; width:20px; height:20px; flex-shrink:0; accent-color:var(--parent-accent,var(--accent)); }
+@media(max-width:600px) { .family-prep-fields { grid-template-columns:1fr; gap:0; }.family-prep-question { padding:12px; } }

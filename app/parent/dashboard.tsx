@@ -1,4 +1,7 @@
 "use client";
+import {FamilyPreparationEditor} from '@/components/preparation/family-preparation-editor';
+import {ParentPreparationObservations} from '@/components/preparation/parent-preparation-observations';
+
 import { scienceCourseAvailable } from "@/lib/revision/availability";
 import { SciencePreparationCard } from "@/components/parent/science-preparation-summary";
 import { SharedAiAccess } from "@/components/parent/shared-ai-access";
@@ -309,6 +312,7 @@ export function ParentDashboard() {
           {selected && scienceCourseAvailable(selected.board, selected.grade) && <SciencePreparationCard summary={selectedReport?.sciencePreparation} source={selectedReport?.source} updatedAt={selectedReport?.updatedAt} />}
 
           <ParentInstallationAlert onOpenControls={()=>navigate("Controls")} />
+          <ParentPreparationObservations sessions={selectedReport?.preparationSessions}/>
           <WeeklyFamilyInvitation />
           {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />
           <details className="parent-card"><summary>More practice observations</summary><ParticipationDetails learner={reportLearner} /><ReportExport learner={reportLearner} reportSource={report} /></details></>}
@@ -324,6 +328,7 @@ export function ParentDashboard() {
             <ClaimAccountPanel key={`claim-${selected.id}`} learner={selected} onClaimed={remoteId => updateLearnerMeta(selected.id, { remoteId })} />
             <LearnerLinkPanel key={`link-${selected.id}`} learner={selected} />
             <DevicePanel key={`devices-${selected.id}`} learner={selected} />
+            {selected.remoteId && <details className="parent-card"><summary>Preparation sets and answer guides</summary><FamilyPreparationEditor key={`preparation-${activeParentId}-${selected.remoteId}`} learner={selected}/></details>}
             {selected.remoteId && <details className="parent-card"><summary>Plan learning together</summary><LearningPlanner key={`plan-${selected.remoteId}`} endpoint={`/api/parent/learners/${selected.remoteId}/plan`} /></details>}
             <details className="parent-card"><summary>Optional learning setup</summary>{selected.board && <SyllabusPanel key={`syllabus-${selected.id}`} learner={selected} onSave={patch => updateLearnerMeta(selected.id, patch)} />}
               {profiles.learners[selected.id] ? <><FamilyNoteComposer name={selected.name || "your learner"} note={selected.familyNote} onChange={next => updateProfile(selected.id, { familyNote: next })} />{selected.placement?.kind !== "early-years" && <CareNoteComposer name={selected.name || "your learner"} note={selected.careNote} onChange={next => updateProfile(selected.id, { careNote: next })} />}</> : <p>Family and care notes can be edited on the enrolled learner device. This linked report does not save note edits across devices.</p>}

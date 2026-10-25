@@ -11,7 +11,7 @@ type LegacyLearningResume = {
 };
 
 type CurrentLearningResume =
-  | { version: 2; room: "none" | "music" | "creation" | "visual-lab"; updatedAt: string }
+  | { version: 2; room: "none" | "music" | "creation" | "visual-lab" | "preparation"; updatedAt: string }
   | { version: 2; room: "library"; bookId: string; updatedAt: string }
   | { version: 2; room: "exam-prep"; subjectId: SubjectId; topicId?: string; pointId?: string; placement?: LearningPlacement; updatedAt: string };
 
@@ -32,8 +32,8 @@ export function readLearningResume(value: unknown): LearningResume | undefined {
     if (r.room === "library" && !safeId(r.bookId)) return undefined;
     return { version: 1, room: r.room as LegacyLearningResume["room"], updatedAt: r.updatedAt, ...(r.room === "library" ? { bookId: r.bookId as string } : {}) };
   }
-  if (["none", "music", "creation", "visual-lab"].includes(String(r.room))) {
-    return { version: 2, room: r.room as "none" | "music" | "creation" | "visual-lab", updatedAt: r.updatedAt };
+  if (["none", "music", "creation", "visual-lab", "preparation"].includes(String(r.room))) {
+    return { version: 2, room: r.room as "none" | "music" | "creation" | "visual-lab" | "preparation", updatedAt: r.updatedAt };
   }
   if (r.room === "library" && safeId(r.bookId)) {
     return { version: 2, room: "library", bookId: r.bookId, updatedAt: r.updatedAt };
@@ -48,7 +48,7 @@ export function readLearningResume(value: unknown): LearningResume | undefined {
 }
 
 export function resumeForNavigation(name: ViewName, params?: Record<string, unknown>, updatedAt = new Date().toISOString(), placement?: LearningPlacement): LearningResume {
-  if (name === "music" || name === "creation" || name === "visual-lab") return { version: 2, room: name, updatedAt };
+  if (name === "music" || name === "creation" || name === "visual-lab" || name === "preparation") return { version: 2, room: name, updatedAt };
   if (name === "exam-prep" && knownSubject(params?.subjectId) && (params?.topicId === undefined || safeId(params.topicId))) {
     return { version: 2, room: "exam-prep", ...(placement ? { placement } : {}), subjectId: params.subjectId, ...(params.topicId ? { topicId: params.topicId as string } : {}), ...(params.topicId && safeId(params.pointId) ? { pointId: params.pointId } : {}), updatedAt };
   }

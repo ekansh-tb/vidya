@@ -14,6 +14,8 @@ import { TutorView } from "@/components/views/tutor-view";
 import { FieldTripView } from "@/components/views/field-trip-view";
 import { AssemblyView } from "@/components/views/assembly-view";
 import { NotebookView } from "@/components/views/notebook-view";
+import dynamic from 'next/dynamic';
+const PreparationStudio=dynamic(()=>import('@/components/preparation/preparation-studio').then(m=>m.PreparationStudio),{loading:()=> <p role="status" className="p-6">Opening practice studio…</p>});
 import { PlanningView } from "@/components/views/planning-view";
 import { LibraryView } from "@/components/views/library-view";
 import { CreationView } from "@/components/views/creation-view";
@@ -262,12 +264,12 @@ export default function HomePage() {
         onStartRecommendation={startRecommendation}
       />
     );
-  } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile", "creation", "music", "visual-lab", "library", "wellness", "planning"].includes(view.name)) {
-    content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
+  } else if (learner.placement?.kind === "early-years" && !["settings", "parent", "learners", "link-account", "profile", "creation", "music", "visual-lab", "library", "wellness", "planning", "preparation"].includes(view.name)) {
+    content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPreparation={() => navigate("preparation")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
   } else {
     switch (view.name) {
       case "activities":
-        content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
+        content = <LearningHub onCreate={() => navigate("creation")} onVisualLab={() => navigate("visual-lab")} onMusic={() => navigate("music")} onLibrary={() => navigate("library")} onPreparation={() => navigate("preparation")} onPlan={() => navigate("planning")} onBack={back} onSettings={() => navigate("settings")} onSwitch={() => navigate("learners")} onLink={() => navigate("link-account")} tab={hubTab} onTabChange={setHubTab} initialActivityId={typeof view.params?.activityId === "string" ? view.params.activityId : undefined} initialActivityRevision={typeof view.params?.activityRevision === "number" ? view.params.activityRevision : undefined}/>;
         break;
       case "home":
         content = <HomeView state={state} learner={learner} onNavigate={navigate} tab={homeTab} />;
@@ -395,6 +397,9 @@ export default function HomePage() {
             initialSubject={view.params?.subjectId as SubjectId | undefined}
           />
         );
+        break;
+      case "preparation":
+        content = <PreparationStudio key={learner.id} learner={learner} state={state} setState={set} onBack={back} onNavigate={navigate}/>;
         break;
       case "planning":
         content = <PlanningView learner={learner} onBack={back} onOpenActivity={(activityId, activityRevision) => navigate("activities", { activityId, activityRevision })} />;
