@@ -6,6 +6,7 @@ import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hubActivities } from "@/lib/learning/hub-selection";
 import type { LearningActivity } from "@/lib/learning/activity";
+import { scienceCourseAvailable } from "@/lib/revision/availability";
 import { placementLabel, experienceMode } from "@/lib/learning/placement";
 import { DEFAULT_STATE } from "@/lib/game-store";
 import type { GameState, LearnerProfile, ViewName } from "@/lib/types";
@@ -44,6 +45,7 @@ new Function("require", "exports", compiled)((id: string) => {
   if (id === "react/jsx-runtime") return { ...runtime, jsx, jsxs };
   if (id === "framer-motion") return { motion, useReducedMotion: () => reduced };
   if (id === "@/lib/game-store") return { useGameStore: (select: (s: object) => unknown) => select({ updateLearnerMeta: vi.fn(), set: vi.fn() }) };
+  if (id === "@/lib/revision/availability") return { scienceCourseAvailable };
   if (id === "@/lib/audio") return { sfx: { click: vi.fn(), coin: vi.fn() } };
   if (id === "@/lib/capabilities/use-capability") return { useCapability: () => ({ allowed: true }) };
   if (id === "@/lib/content/subjects") return { subjectsForLearner: () => [subject] };

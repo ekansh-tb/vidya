@@ -1,0 +1,16 @@
+'use client';
+import {useState} from 'react';
+import {Printer} from 'lucide-react';
+import {SCIENCE_QUESTIONS,SCIENCE_UNITS,SCIENCE_MOCK_IDS,SCIENCE_SOURCE} from '@/lib/revision/science-term-one';
+import './science-parent-guide.css';
+export function ScienceParentGuide(){
+ const [scope,setScope]=useState('mock');
+ const questions=scope==='mock'?SCIENCE_MOCK_IDS.map(id=>SCIENCE_QUESTIONS.find(q=>q.id===id)!):SCIENCE_QUESTIONS.filter(q=>q.unit===scope);
+ return <div className="science-parent-guide"><header><h1>Help them explain, not just remember.</h1><p>Grade 6 Science · Term 1 · Cells, materials, forces and energy</p><p>Original Vidya practice for the CNS Pune unit scope supplied by a parent. This is not the school’s paper or official mark scheme.</p></header>
+  <section className="parent-card guide-coaching"><h2>A calm revision session</h2><ol><li><strong>Let your child choose a unit.</strong> Use a short block, then take a break. Prioritise school notes where they differ from this collection.</li><li><strong>Ask for an explanation before a hint.</strong> “What makes you think that?” is more useful than immediately supplying the answer.</li><li><strong>Match ideas, not exact wording.</strong> Each answer point is a suggested mark. Accept scientifically equivalent explanations. Label units and working in calculations.</li><li><strong>Revisit one uncertain idea.</strong> Ask a similar question after a break, without the answer guide open.</li><li><strong>Finish with confidence and rest.</strong> Pack what is needed for the exam. Avoid turning every remaining minute into another test.</li></ol><p className="parent-small">The child’s typed answers stay in their learning space. This page contains the authored guide, not private responses or an ability judgement.</p></section>
+  <section className="parent-card"><h2>Quick checks worth asking aloud</h2><ul><li>Cells: “Which structure, and how does it help the cell’s job?”</li><li>Materials: “What happens to the particles, rather than just the substance?”</li><li>Forces: “Is that mass or weight? What is the unit?”</li><li>Energy: “Where did the energy transfer? It did not disappear.”</li></ul></section>
+  <section className="parent-card"><h2>Answer and marking guide</h2><div className="parent-actions guide-tools"><label htmlFor="guide-scope">Question set<select id="guide-scope" value={scope} onChange={e=>setScope(e.target.value)}><option value="mock">30-mark mock paper</option>{SCIENCE_UNITS.map(u=><option key={u.id} value={u.id}>{u.number}. {u.title}: all practice</option>)}</select></label><button onClick={()=>window.print()}><Printer size={18} aria-hidden="true"/>Print this answer guide</button></div>
+   {questions.map((q,i)=><article className="guide-question" key={q.id}><h3>{i+1}. {q.question}</h3><p className="parent-small">{q.marks} suggested {q.marks===1?'mark':'marks'} · {SCIENCE_UNITS.find(u=>u.id===q.unit)!.title}</p>{q.correct&&<p><strong>Correct choice:</strong> {q.correct}</p>}<ol>{q.points.map(point=><li key={point}>{point}</li>)}</ol><p className="parent-small"><strong>If they need a hint:</strong> {q.hint}</p></article>)}
+  </section><p><a href={SCIENCE_SOURCE} target="_blank" rel="noreferrer">Publisher’s unit contents</a>. Teacher instructions and school marking conventions take priority.</p>
+ </div>;
+}

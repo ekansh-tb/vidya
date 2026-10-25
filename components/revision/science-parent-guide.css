@@ -1,0 +1,18 @@
+.science-parent-guide { padding-top:24px; }
+.science-parent-guide header { max-width:65ch; }
+.science-parent-guide :is(ol,ul) { padding-left:22px; list-style:decimal; display:grid; gap:12px; line-height:1.8; }
+.science-parent-guide ul { list-style:disc; }
+.science-parent-guide .guide-question { padding:24px 0; border-top:1px solid var(--border); }
+.science-parent-guide .guide-question:first-of-type { margin-top:24px; }
+.science-parent-guide .guide-tools { flex-wrap:wrap; margin:20px 0; }
+.science-parent-guide .guide-tools label { display:grid; gap:8px; flex:1; min-width:0; }
+.science-parent-guide .guide-tools button { display:inline-flex; gap:8px; align-items:center; }
+.science-parent-guide a { text-decoration:underline; text-underline-offset:3px; color:var(--accent); }
+@media print {
+ body { background:white!important; }
+ .science-parent-guide { color:black; padding:0; }
+ .parent-dashboard.parent-family { --surface:white;--bg-base:white;--text:black;--text-muted:#333; }
+ .parent-content>.parent-secondary,.guide-tools,.guide-coaching { display:none!important; }
+ .science-parent-guide .parent-card { border:0; padding:0; }
+ .guide-question { break-inside:avoid; }
+}
