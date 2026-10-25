@@ -213,3 +213,9 @@
 .family-invitation-code,.family-access-confirm { padding:18px; border-radius:12px; background:var(--surface-2); margin-top:20px; }
 .family-invitation-code textarea { margin:10px 0; resize:vertical; overflow-wrap:anywhere; }
 .family-profile-label { color:var(--accent); font-size:.8rem; font-weight:650; margin-bottom:16px; }
+
+.science-unit-summary>div { padding:16px 0; border-top:1px solid var(--border); }
+.science-unit-summary p { font-size:.85rem; }
+
+.parent-report-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:12px 0 20px; }
+.parent-report-actions button { display:inline-flex; align-items:center; gap:8px; }

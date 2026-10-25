@@ -1,5 +1,6 @@
 "use client";
 import { scienceCourseAvailable } from "@/lib/revision/availability";
+import { SciencePreparationCard } from "@/components/parent/science-preparation-summary";
 import { SharedAiAccess } from "@/components/parent/shared-ai-access";
 import { FamilyAccess, JoinFamily } from "@/components/parent/family-access";
 import { makeLearner } from "@/components/views/add-learner-view";
@@ -12,7 +13,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { readCreationProject, frameSVG } from "@/lib/creation/project";
 import { useUser, SignOutButton } from "@clerk/nextjs";
-import { FileDown, HeartHandshake, ArrowRight, Bird, House, Users, Settings, LogOut, ArrowUpRight, UserRound } from "lucide-react";
+import { RefreshCw, FileDown, HeartHandshake, ArrowRight, Bird, House, Users, Settings, LogOut, ArrowUpRight, UserRound } from "lucide-react";
 import { dayKeyOf } from "@/lib/utils";
 import { ClaimAccountPanel } from "@/components/parent/claim-account-panel";
 import { LearnerLinkPanel } from "@/components/parent/learner-link-panel";
@@ -182,10 +183,16 @@ export function ParentDashboard() {
     const controller = new AbortController();
     const capturedParentId = activeParentId;
     const remoteIds = linkedRemoteIdsKey.split(",");
-    setRemoteReportCache({
+    // Keep validated reports during a background refresh so an open learner
+    // editor is not unmounted. Denials still remove access when the reply arrives.
+    setRemoteReportCache(current => ({
       parentId: capturedParentId,
-      reports: Object.fromEntries(remoteIds.map((id) => [id, { status: "loading" }])),
-    });
+      reports: Object.fromEntries(remoteIds.map(id => [id,
+        current.parentId === capturedParentId && current.reports[id]?.status !== "denied"
+          ? current.reports[id] ?? {status:"loading"}
+          : {status:"loading"},
+      ])),
+    }));
 
     remoteIds.forEach((remoteId) => {
       void (async () => {
@@ -231,7 +238,7 @@ export function ParentDashboard() {
     });
 
     return () => controller.abort();
-  }, [activeParentId, hydrated, isLoaded, linkedRemoteIdsKey]);
+  }, [activeParentId, hydrated, isLoaded, linkedRemoteIdsKey, rosterRefresh]);
 
   const selectedReport = useMemo(() => {
     if (!selected) return null;
@@ -292,13 +299,15 @@ export function ParentDashboard() {
       <section className="parent-content" id="parent-content" aria-label={destination}>
         <div className="parent-page-title"><div><p className="parent-eyebrow">{destination === "Overview" ? "Stay connected" : destination === "Children" ? "One learner, one learning space" : "Your family choices"}</p><h1 ref={heading} tabIndex={-1}>{destination}</h1></div><InfoPopover key={destination} className="parent-account" label="Your parent account" summary={<><UserRound size={20} aria-hidden="true" /><span className="mobile-control-label">{displayName}</span></>}><strong>{displayName}</strong>{email && email !== displayName && <p>{email}</p>}</InfoPopover></div>
         {learners.length > 0 && <LearnerPicker key={activeParentId} learners={learners} selectedId={selected?.id ?? ""} onChange={setSelectedId} onFeedback={touchFeedback} />}
+        {selected && destination === "Overview" && <div className="parent-report-actions"><button type="button" aria-label="Refresh progress" title="Refresh progress" disabled={rosterPending} onClick={() => refreshRoster(value => value + 1)}><RefreshCw size={18} aria-hidden="true"/><span className="mobile-control-label">{rosterPending ? "Refreshing…" : "Refresh progress"}</span></button><span className="parent-small">Shows the latest progress saved by the learner’s device.</span></div>}
         {selected && sharedLearners.parentId === activeParentId && sharedLearners.ids.includes(`remote:${selected.remoteId}`) && <p className="family-profile-label">Shared family profile · The same saved progress is available to both parents.</p>}
         {selected && !adding && <SafetyPanel key={`safety-${selected.id}`} learner={selected} />}
         {learners.length === 0 && (pendingLinkedLearners > 0 || rosterPending) && <div className="parent-card" role="status"><h2>Checking your learners</h2><p>Confirming which saved profiles belong to your account.</p></div>}
         {rosterFailed && <div className="parent-card" role="alert"><h2>Your saved learners could not be loaded</h2><p>Check your connection and try again. Existing learner profiles have not been changed.</p><button onClick={() => refreshRoster(value => value + 1)}>Try again</button></div>}
         {learners.length === 0 && pendingLinkedLearners === 0 && !rosterPending && !rosterFailed && <div className="parent-card parent-welcome"><h2>A little setup. A world to explore.</h2><p>{deniedLinkedLearners > 0 ? "The profiles on this browser belong to another account. Add a learner to your own family space." : "Add your learner, confirm their level, then connect their device with a single-use code."}</p><ol><li>Sign in <span>Done</span></li><li>Add a learner and confirm their level</li><li>Link their device</li></ol><button className="parent-primary" onClick={startEnrollment}>Add a learner <ArrowRight size={16} aria-hidden="true" /></button></div>}
         {destination === "Overview" && <>
-          {selected && scienceCourseAvailable(selected.board, selected.grade) && <section className="parent-card"><h2>Science Term 1: support their revision</h2><p>Units 1–3: answer guides, suggested marking points and prompts to help your child explain their thinking.</p><Link className="parent-primary" href="/parent/science-term-1">Open the parent answer guide <ArrowRight size={18} aria-hidden="true" /></Link></section>}
+          {selected && scienceCourseAvailable(selected.board, selected.grade) && <SciencePreparationCard summary={selectedReport?.sciencePreparation} source={selectedReport?.source} updatedAt={selectedReport?.updatedAt} />}
+
           <ParentInstallationAlert onOpenControls={()=>navigate("Controls")} />
           <WeeklyFamilyInvitation />
           {reportLearner && report && <><ReportSourceNotice source={report} /><FamilyOverview learner={reportLearner} /><SharedCreations learner={reportLearner} />
@@ -347,6 +356,7 @@ function FamilyOverview({ learner }: { learner: LearnerProfile }) {
   const report = familyParticipation(learner.state);
   return <section className="parent-card"><div className="parent-summary-title"><div><p className="parent-eyebrow">Last seven calendar days</p><h2>{learner.name || "Your learner"}’s participation</h2></div><span className="parent-small">{report.window}</span></div>
     <div className="parent-week" aria-label="Recorded participation by day">{report.days.map(day => <div key={day.day}><span>{day.label}</span><span className={`parent-day ${day.app ? "has-app" : day.caregiver ? "has-caregiver" : ""}`} aria-label={`${day.day}: ${day.app ? "app participation" : day.caregiver ? "caregiver-reported activity" : "no recorded activity"}`}>{day.app ? "●" : day.caregiver ? "○" : "·"}</span></div>)}</div>
+    <p className="parent-small">This chart counts saved activity completions, not every room or time spent. Science preparation is reported separately.</p>
     <p className="parent-small">Filled circles: app participation. Outlined circles: caregiver reports. Both are shown separately in the totals.</p>
     <dl className="parent-stats"><div><dt>App completions</dt><dd>{report.appCompletions}</dd></div><div><dt>Caregiver reports</dt><dd>{report.caregiverReports}</dd></div><div><dt>Creation activities completed</dt><dd>{report.completedCreations}</dd></div></dl>
     {report.appCompletions + report.caregiverReports === 0 && <p>No activity completion records in this window. Older rooms may not record this evidence, and offline changes may still need to sync.</p>}
