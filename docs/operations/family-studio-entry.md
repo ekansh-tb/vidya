@@ -6,7 +6,7 @@ The public welcome now offers explicit learner and parent/guardian entry. Learne
 
 Parent sign-up shows the account, learner and device sequence. Returning sign-in omits this setup sequence. Adult acknowledgement text and version are unchanged; supporting explanations are available in a disclosure. Unverified accounts retain the email-verification action.
 
-The shared light palette uses warm white and ink blue. Dark tokens retain their independent foregrounds. Entry choices use Lucide icons, touch targets, keyboard focus and brief hover/press feedback. Reduced motion and existing calm preferences suppress the new movement. Parent placement inputs use 52-pixel targets and a single-column phone layout where needed.
+The shared light palette uses warm white and ink blue. Dark tokens retain their independent foregrounds. Entry choices use Lucide icons, touch targets, keyboard focus and brief hover/press feedback. Reduced motion and existing calm preferences suppress the new movement. Parent placement inputs use 52-pixel targets and a single-column phone layout where needed. Learner-home headings, cards, navigation and shortcut spacing share the studio styling; shortcut icons use semantic colors to remain legible in dark mode.
 
 ## Data and compatibility
 
